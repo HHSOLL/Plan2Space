@@ -1,0 +1,11 @@
+{
+  "name": "plan2space",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev"
+  }
+}
