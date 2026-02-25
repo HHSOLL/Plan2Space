@@ -1,0 +1,305 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 59334
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 12344,
+      "max": [
+        0.1932307481765747,
+        1.2801183462142944,
+        0.8067970275878906
+      ],
+      "min": [
+        -0.19324660301208496,
+        -0.394923597574234,
+        -2.31228973746056e-8
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 12344
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 12344
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1008
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 256,
+      "max": [
+        0.17393745481967926,
+        0.9191105365753174,
+        0.7871799468994141
+      ],
+      "min": [
+        -0.17387129366397858,
+        0.5472171306610107,
+        0.4399160146713257
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 256
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 256
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 672
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 148,
+      "max": [
+        0.02999619022011757,
+        0.7111213207244873,
+        0.6435678601264954
+      ],
+      "min": [
+        -0.029995445162057877,
+        0.6366691589355469,
+        0.5835762023925781
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 148
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 148
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 61199
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 61199,
+      "byteLength": 1629
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 62828,
+      "byteLength": 1398
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "street_lamp_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "street_lamp_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_diff_1k.jpg"
+    },
+    {
+      "name": "street_lamp_02_metal-street_lamp_02_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_arm_1k.jpg"
+    },
+    {
+      "name": "street_lamp_02_diff-street_lamp_02_opacity",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_diff_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "street_lamp_02.bin",
+      "byteLength": 64226
+    }
+  ],
+  "materials": [
+    {
+      "name": "street_lamp_02",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "street_lamp_02_glass",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "street_lamp_02_bulb",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "street_lamp_02_stem_mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "street_lamp_02",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

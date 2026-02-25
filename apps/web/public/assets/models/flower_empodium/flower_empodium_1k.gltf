@@ -1,0 +1,437 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2274
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 657,
+      "max": [
+        0.10208135098218918,
+        0.26477786898612976,
+        0.07379169762134552
+      ],
+      "min": [
+        -0.1152864322066307,
+        -0.0022940149065107107,
+        -0.17697839438915253
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 657
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 657
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2274
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 645,
+      "max": [
+        0.0790056511759758,
+        0.18717965483665466,
+        0.10225968062877655
+      ],
+      "min": [
+        -0.10251105576753616,
+        -0.003344173077493906,
+        -0.10240572690963745
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 645
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 645
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2799
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 810,
+      "max": [
+        0.1146262064576149,
+        0.17509298026561737,
+        0.107112355530262
+      ],
+      "min": [
+        -0.10225417464971542,
+        -0.0035159438848495483,
+        -0.05081859976053238
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 810
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 810
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1080
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 300,
+      "max": [
+        0.0960063487291336,
+        0.16469928622245789,
+        0.1028098613023758
+      ],
+      "min": [
+        -0.09807941317558289,
+        -0.003309954423457384,
+        -0.09146563708782196
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 300
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 300
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 732
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 201,
+      "max": [
+        0.07130086421966553,
+        0.14334551990032196,
+        0.07957375794649124
+      ],
+      "min": [
+        -0.03987874463200569,
+        -0.003573642810806632,
+        -0.08639029413461685
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 201
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 201
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 5665
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5665,
+      "byteLength": 5627
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11292,
+      "byteLength": 6869
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 18161,
+      "byteLength": 2735
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20896,
+      "byteLength": 1893
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "flower_empodium_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/flower_empodium_nor_gl_1k.jpg"
+    },
+    {
+      "name": "flower_empodium_diff-flower_empodium_alpha",
+      "mimeType": "image/jpeg",
+      "uri": "textures/flower_empodium_diff_1k.jpg"
+    },
+    {
+      "name": "flower_empodium_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/flower_empodium_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "flower_empodium.bin",
+      "byteLength": 22789
+    }
+  ],
+  "materials": [
+    {
+      "name": "flower_empodium",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.040",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.045",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.072",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.064",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "flower_empodium_a_LOD0",
+      "translation": [
+        -0.5681260228157043,
+        0,
+        0
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "flower_empodium_b_LOD0",
+      "translation": [
+        -0.2840630114078522,
+        0,
+        0
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "flower_empodium_c_LOD0",
+      "mesh": 2
+    },
+    {
+      "name": "flower_empodium_d_LOD0",
+      "translation": [
+        0.2840630114078522,
+        0,
+        0
+      ],
+      "mesh": 3
+    },
+    {
+      "name": "flower_empodium_e_LOD0",
+      "translation": [
+        0.5681260228157043,
+        0,
+        0
+      ],
+      "mesh": 4
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

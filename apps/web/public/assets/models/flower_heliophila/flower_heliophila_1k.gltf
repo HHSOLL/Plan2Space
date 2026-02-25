@@ -1,0 +1,302 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 154491
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 30410,
+      "max": [
+        0.7429932355880737,
+        0.3943587839603424,
+        0.7943307161331177
+      ],
+      "min": [
+        -0.9197109937667847,
+        -0.004596852231770754,
+        -0.6230731010437012
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 30410
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 30410
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 97533
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 19411,
+      "max": [
+        0.3440414369106293,
+        0.3700070381164551,
+        0.2995498478412628
+      ],
+      "min": [
+        -0.33027079701423645,
+        -0.004912722855806351,
+        -0.30207517743110657
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 19411
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 19411
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 52779
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10301,
+      "max": [
+        0.23434604704380035,
+        0.26881298422813416,
+        0.11743807792663574
+      ],
+      "min": [
+        -0.10914008319377899,
+        -0.0009147088858298957,
+        -0.1566925048828125
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10301
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 10301
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 213886
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 213886,
+      "byteLength": 143761
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 357647,
+      "byteLength": 77746
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "flower_heliophila_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/flower_heliophila_nor_gl_1k.jpg"
+    },
+    {
+      "name": "flower_heliophila_diff-flower_heliophila_alpha",
+      "mimeType": "image/jpeg",
+      "uri": "textures/flower_heliophila_diff_1k.jpg"
+    },
+    {
+      "name": "flower_heliophila_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/flower_heliophila_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "flower_heliophila.bin",
+      "byteLength": 435393
+    }
+  ],
+  "materials": [
+    {
+      "name": "flower_heliophila",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.5122",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.5143",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.2197",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "flower_heliophila_large",
+      "translation": [
+        -0.5,
+        0,
+        0
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "flower_heliophila_medium",
+      "translation": [
+        0.5,
+        0,
+        0
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "flower_heliophila_small",
+      "translation": [
+        1.100000023841858,
+        0,
+        0
+      ],
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 18444
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4203,
+      "max": [
+        0.5042927265167236,
+        1.1690952777862549,
+        0.528948187828064
+      ],
+      "min": [
+        -0.5043071508407593,
+        -5.651812884366336e-8,
+        -0.6613625288009644
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4203
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4203
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 26616
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "mid_century_lounge_chair_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/mid_century_lounge_chair_nor_gl_1k.jpg"
+    },
+    {
+      "name": "mid_century_lounge_chair_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/mid_century_lounge_chair_diff_1k.jpg"
+    },
+    {
+      "name": "mid_century_lounge_chair_metal-mid_century_lounge_chair_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/mid_century_lounge_chair_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "mid_century_lounge_chair.bin",
+      "byteLength": 26616
+    }
+  ],
+  "materials": [
+    {
+      "name": "mid_century_lounge_chair",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "lounge_chair",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "mid_century_lounge_chair",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

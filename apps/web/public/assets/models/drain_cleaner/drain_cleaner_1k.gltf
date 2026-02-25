@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13014
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2990,
+      "max": [
+        0.0802587941288948,
+        0.17849822342395782,
+        0.028167637065052986
+      ],
+      "min": [
+        -0.0851396694779396,
+        -0.00005495836740010418,
+        -0.028167670592665672
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2990
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2990
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 18193
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "drain_cleaner_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/drain_cleaner_nor_gl_1k.jpg"
+    },
+    {
+      "name": "drain_cleaner_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/drain_cleaner_diff_1k.jpg"
+    },
+    {
+      "name": "drain_cleaner_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/drain_cleaner_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "drain_cleaner.bin",
+      "byteLength": 18193
+    }
+  ],
+  "materials": [
+    {
+      "name": "drain_cleaner",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.003",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "drain_cleaner",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "blend_export",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,456 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4398
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1258,
+      "max": [
+        0.015117683447897434,
+        0.0481225959956646,
+        0.015117685310542583
+      ],
+      "min": [
+        -0.015116813592612743,
+        -0.008082072250545025,
+        -0.015116811729967594
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1258
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1258
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4398
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1258,
+      "max": [
+        0.015117677859961987,
+        0.048122588545084,
+        0.015117679722607136
+      ],
+      "min": [
+        -0.015116813592612743,
+        -0.008082072250545025,
+        -0.015116811729967594
+      ]
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1258
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1258
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1944
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 450,
+      "max": [
+        0.14215949177742004,
+        0.02366582304239273,
+        0.02365071512758732
+      ],
+      "min": [
+        -0.14215949177742004,
+        -0.04021613299846649,
+        -0.02365768514573574
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 450
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 450
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4536
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2018,
+      "max": [
+        0.14829930663108826,
+        0.03710578754544258,
+        0.03710579127073288
+      ],
+      "min": [
+        -0.14829930663108826,
+        -0.037102703005075455,
+        -0.037102699279785156
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2018
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2018
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9300
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3090,
+      "max": [
+        0.1155448704957962,
+        0.1156233474612236,
+        0.180498868227005
+      ],
+      "min": [
+        -0.1155448704957962,
+        -0.028760140761733055,
+        -0.0375574454665184
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3090
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3090
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 7674
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7674,
+      "byteLength": 7637
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15311,
+      "byteLength": 3105
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 18416,
+      "byteLength": 10013
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 28429,
+      "byteLength": 15523
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "garden_sprinkler_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/garden_sprinkler_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "garden_sprinkler_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/garden_sprinkler_01_diff_1k.jpg"
+    },
+    {
+      "name": "garden_sprinkler_01_metal-garden_sprinkler_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/garden_sprinkler_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "garden_sprinkler_01.bin",
+      "byteLength": 43952
+    }
+  ],
+  "materials": [
+    {
+      "name": "garden_sprinkler_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "garden_sprinkler_01_nozel_left",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "garden_sprinkler_01_nozel_right",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "TEXCOORD_0": 6,
+            "NORMAL": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "TEXCOORD_0": 1,
+                "NORMAL": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "garden_sprinkler_01_spinner",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "garden_sprinkler_01_wheels",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "garden_sprinkler_01_body_main",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "garden_sprinkler_01_nozel_left",
+      "translation": [
+        -0.13056278228759766,
+        0.011915326118469238,
+        0.011915400624275208
+      ],
+      "rotation": [
+        -0.4619397521018982,
+        0.8001031875610352,
+        0.33141353726387024,
+        0.19134169816970825
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "garden_sprinkler_01_nozel_right",
+      "translation": [
+        0.13056278228759766,
+        0.011915326118469238,
+        -0.011915415525436401
+      ],
+      "rotation": [
+        -0.33141353726387024,
+        -0.19134169816970825,
+        -0.4619397521018982,
+        0.8001031875610352
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "garden_sprinkler_01_spinner",
+      "translation": [
+        0,
+        0.13798780739307404,
+        0.07819050550460815
+      ],
+      "mesh": 2,
+      "children": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "garden_sprinkler_01_wheels",
+      "translation": [
+        0,
+        0.00834415853023529,
+        -0.03147345781326294
+      ],
+      "mesh": 3
+    },
+    {
+      "name": "garden_sprinkler_01_body_main",
+      "translation": [
+        0,
+        0.028758570551872253,
+        -0.07819050550460815
+      ],
+      "mesh": 4,
+      "children": [
+        2,
+        3
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        4
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

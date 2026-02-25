@@ -1,0 +1,230 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 7032
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1613,
+      "max": [
+        0.9035835862159729,
+        0.7094975709915161,
+        0.30201733112335205
+      ],
+      "min": [
+        -0.9035837054252625,
+        -5.960464477539063e-8,
+        -0.5089631676673889
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1613
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1613
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1152
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 212,
+      "max": [
+        0.7098315358161926,
+        0.4103464186191559,
+        0.3087957203388214
+      ],
+      "min": [
+        -0.7062357068061829,
+        0.24655179679393768,
+        -0.2188045084476471
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 212
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 212
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 12635
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 12635,
+      "byteLength": 2098
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "sofa_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/sofa_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "sofa_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/sofa_02_diff_1k.jpg"
+    },
+    {
+      "name": "sofa_02_metallic-sofa_02_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/sofa_02_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "sofa_02.bin",
+      "byteLength": 14733
+    }
+  ],
+  "materials": [
+    {
+      "name": "sofa_02",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mesh.007",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "sofa_02_Base",
+      "translation": [
+        0.00026735191931948066,
+        0.00020578503608703613,
+        0.03126468509435654
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "sofa_02_Seat",
+      "translation": [
+        0.00026735191931948066,
+        0.00020578503608703613,
+        0.03126468509435654
+      ],
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

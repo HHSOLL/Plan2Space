@@ -1,0 +1,528 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13824
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2698,
+      "max": [
+        0.3350479304790497,
+        0.16971252858638763,
+        0.4489899277687073
+      ],
+      "min": [
+        -0.348467081785202,
+        -0.009316205978393555,
+        -0.43819326162338257
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2698
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2698
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13824
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2673,
+      "max": [
+        0.3371585011482239,
+        0.2918740510940552,
+        0.03953748941421509
+      ],
+      "min": [
+        -0.3421531915664673,
+        -0.1758446991443634,
+        -0.49750977754592896
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2673
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2673
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13824
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2694,
+      "max": [
+        0.3093316853046417,
+        0.15136104822158813,
+        0.4308454692363739
+      ],
+      "min": [
+        -0.3242199122905731,
+        -0.02314799278974533,
+        -0.4218182861804962
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2694
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2694
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 14652
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2852,
+      "max": [
+        0.34073877334594727,
+        0.7018166780471802,
+        0.19603446125984192
+      ],
+      "min": [
+        -0.3499070405960083,
+        -0.005449920892715454,
+        -0.1918548047542572
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2852
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2852
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5126,
+      "count": 140,
+      "max": [
+        5.833333492279053
+      ],
+      "min": [
+        0.0416666679084301
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 140,
+      "bufferView": 0,
+      "byteOffset": 560
+    },
+    {
+      "type": "VEC4",
+      "componentType": 5126,
+      "count": 140,
+      "bufferView": 0,
+      "byteOffset": 2240
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 140,
+      "bufferView": 0,
+      "byteOffset": 4480
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 140,
+      "bufferView": 0,
+      "byteOffset": 6160
+    },
+    {
+      "type": "VEC4",
+      "componentType": 5126,
+      "count": 140,
+      "bufferView": 0,
+      "byteOffset": 7840
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 10080
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10080,
+      "byteLength": 13974
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 24054,
+      "byteLength": 15395
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 39449,
+      "byteLength": 13781
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 53230,
+      "byteLength": 17645
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "compost_bags_sss",
+      "mimeType": "image/jpeg",
+      "uri": "textures/compost_bags_sss_1k.jpg"
+    },
+    {
+      "name": "compost_bags_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/compost_bags_nor_gl_1k.jpg"
+    },
+    {
+      "name": "compost_bags_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/compost_bags_diff_1k.jpg"
+    },
+    {
+      "name": "compost_bags_metal-compost_bags_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/compost_bags_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "compost_bags.bin",
+      "byteLength": 70875
+    }
+  ],
+  "materials": [
+    {
+      "name": "compost_bags",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.053",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.055",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.058",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.059",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "compost_bags_floorstacked",
+      "translation": [
+        -0.3957645297050476,
+        0.0703745186328888,
+        0
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "compost_bags_leaning",
+      "translation": [
+        0.6992377638816833,
+        0,
+        0.07745946198701859
+      ],
+      "rotation": [
+        0.5431910753250122,
+        0.41769400238990784,
+        -0.35757339000701904,
+        0.6345205903053284
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "compost_bags_floor",
+      "translation": [
+        -0.3957645297050476,
+        0,
+        0
+      ],
+      "rotation": [
+        0.026090096682310104,
+        0,
+        0,
+        0.9996595978736877
+      ],
+      "mesh": 2
+    },
+    {
+      "name": "compost_bags_standing",
+      "translation": [
+        0.24523834884166718,
+        0,
+        -0.006528545171022415
+      ],
+      "mesh": 3
+    }
+  ],
+  "animations": [
+    {
+      "name": "compost_bags_leaning",
+      "samplers": [
+        {
+          "input": 16,
+          "output": 17,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 16,
+          "output": 18,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 16,
+          "output": 19,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 1,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 1,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "node": 1,
+            "path": "scale"
+          }
+        }
+      ]
+    },
+    {
+      "name": "compost_bags_floor",
+      "samplers": [
+        {
+          "input": 16,
+          "output": 20,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 16,
+          "output": 21,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 16,
+          "output": 19,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 2,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 2,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "node": 2,
+            "path": "scale"
+          }
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

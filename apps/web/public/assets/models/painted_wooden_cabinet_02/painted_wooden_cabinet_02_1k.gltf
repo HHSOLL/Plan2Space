@@ -1,0 +1,301 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1446
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 548,
+      "max": [
+        0.4985150396823883,
+        2.5675508975982666,
+        0.3322271704673767
+      ],
+      "min": [
+        -0.49846675992012024,
+        -0.0010216402588412166,
+        -0.3221842646598816
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 548
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 548
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 948
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 324,
+      "max": [
+        0.46241724491119385,
+        0.10946717858314514,
+        0.2594018578529358
+      ],
+      "min": [
+        -0.46241724491119385,
+        -0.10944926738739014,
+        -0.25938159227371216
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 324
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 324
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 504
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 176,
+      "max": [
+        -0.0007662177085876465,
+        0.388726145029068,
+        0.034960031509399414
+      ],
+      "min": [
+        -0.5695545673370361,
+        -0.43679293990135193,
+        -0.03810366988182068
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 176
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 176
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 3223
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3223,
+      "byteLength": 1979
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5202,
+      "byteLength": 1228
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "painted_wooden_cabinet_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/painted_wooden_cabinet_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "painted_wooden_cabinet_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/painted_wooden_cabinet_02_diff_1k.jpg"
+    },
+    {
+      "name": "painted_wooden_cabinet_02_metal-painted_wooden_cabinet_02_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/painted_wooden_cabinet_02_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "painted_wooden_cabinet_02.bin",
+      "byteLength": 6430
+    }
+  ],
+  "materials": [
+    {
+      "name": "painted_wooden_cabinet_02",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "cabinet.002",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "cabinet.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "cabinet.003",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "painted_wooden_cabinet_02",
+      "mesh": 0
+    },
+    {
+      "name": "painted_wooden_cabinet_02_drawer",
+      "translation": [
+        -0.0002657175064086914,
+        1.0177390575408936,
+        0.12031605839729309
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "painted_wooden_cabinet_02_door",
+      "translation": [
+        0.28470778465270996,
+        0.4712721109390259,
+        0.3267021179199219
+      ],
+      "rotation": [
+        0,
+        0.040126629173755646,
+        0,
+        0.9991946220397949
+      ],
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

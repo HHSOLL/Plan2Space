@@ -1,0 +1,231 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 159060
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 28562,
+      "max": [
+        0.07349744439125061,
+        0.1926819086074829,
+        0.07322735339403152
+      ],
+      "min": [
+        -0.05708564817905426,
+        -0.2057059407234192,
+        -0.07663924247026443
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 28562
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 28562
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 77100
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 14054,
+      "max": [
+        0.06388748437166214,
+        0.1871795654296875,
+        0.10021588951349258
+      ],
+      "min": [
+        -0.07682818919420242,
+        -0.23714306950569153,
+        -0.09157492965459824
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 14054
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 14054
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 179342
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 179342,
+      "byteLength": 94561
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "dry_quiver_leaf_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/dry_quiver_leaf_nor_gl_1k.jpg"
+    },
+    {
+      "name": "dry_quiver_leaf_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/dry_quiver_leaf_diff_1k.jpg"
+    },
+    {
+      "name": "dry_quiver_leaf_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/dry_quiver_leaf_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "dry_quiver_leaf.bin",
+      "byteLength": 273903
+    }
+  ],
+  "materials": [
+    {
+      "name": "dry_quiver_leaf",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "dry_barbed_finger_02_high_remesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dry_barbed_finger_01_high_remesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "dry_quiver_leaf_b",
+      "translation": [
+        0,
+        0.008695343509316444,
+        0.0028984472155570984
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "dry_quiver_leaf_a",
+      "translation": [
+        -0.24636808037757874,
+        0.013526087626814842,
+        -0.019322983920574188
+      ],
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

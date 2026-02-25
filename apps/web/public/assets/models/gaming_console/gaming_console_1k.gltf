@@ -1,0 +1,248 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 95064
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 37980,
+      "max": [
+        0.16250522434711456,
+        0.09998007118701935,
+        0.15204156935214996
+      ],
+      "min": [
+        -0.16250522434711456,
+        -0.00028257217491045594,
+        -0.13694258034229279
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 37980
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 37980
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 66
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 44,
+      "max": [
+        0.05538911372423172,
+        -0.0000021494925022125244,
+        0.001292163273319602
+      ],
+      "min": [
+        -0.05538911372423172,
+        -0.02957817167043686,
+        -0.0010068416595458984
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 44
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 44
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 100205
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 100205,
+      "byteLength": 359
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "gaming_console_emissive",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gaming_console_emissive_1k.jpg"
+    },
+    {
+      "name": "gaming_console_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gaming_console_nor_gl_1k.jpg"
+    },
+    {
+      "name": "gaming_console_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gaming_console_diff_1k.jpg"
+    },
+    {
+      "name": "gaming_console_metal-gaming_console_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gaming_console_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "gaming_console.bin",
+      "byteLength": 100564
+    }
+  ],
+  "materials": [
+    {
+      "name": "gaming_console",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 3
+        }
+      },
+      "emissiveFactor": [
+        1,
+        1,
+        1
+      ],
+      "emissiveTexture": {
+        "index": 1
+      },
+      "normalTexture": {
+        "index": 2
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "7th_gen_console_01.007",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7th_gen_console_01.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "gaming_console",
+      "mesh": 0
+    },
+    {
+      "name": "gaming_console_lid",
+      "translation": [
+        -0.08131296187639236,
+        0.08220235258340836,
+        0.1520223617553711
+      ],
+      "rotation": [
+        -0.7071068286895752,
+        0,
+        0,
+        0.7071068286895752
+      ],
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5125,
+      "count": 703617
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 157795,
+      "max": [
+        0.8972651958465576,
+        1.9721317291259766,
+        -0.8327058553695679
+      ],
+      "min": [
+        -1.225670576095581,
+        -0.10013766586780548,
+        -2.6929798126220703
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 157795
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 157795
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5125,
+      "count": 431241
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 97996,
+      "max": [
+        0.5597571134567261,
+        1.2048718929290771,
+        0.7656465172767639
+      ],
+      "min": [
+        -0.7142535448074341,
+        -0.09610245376825333,
+        -0.806404173374176
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 97996
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 97996
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 116664
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 26998,
+      "max": [
+        0.3370319902896881,
+        0.8465513586997986,
+        1.8699182271957397
+      ],
+      "min": [
+        -0.4819674789905548,
+        -0.08885807543992996,
+        0.8127429485321045
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 26998
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 26998
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1031495
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1031495,
+      "byteLength": 643754
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1675249,
+      "byteLength": 179461
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "didelta_spinosa_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/didelta_spinosa_nor_gl_1k.jpg"
+    },
+    {
+      "name": "didelta_spinosa_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/didelta_spinosa_diff_1k.jpg"
+    },
+    {
+      "name": "didelta_spinosa_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/didelta_spinosa_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "didelta_spinosa.bin",
+      "byteLength": 1854710
+    }
+  ],
+  "materials": [
+    {
+      "name": "didelta_spinosa",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Icosphere.007",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Icosphere.024",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Icosphere.023",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "didelta_spinosa_large_LOD0",
+      "mesh": 0
+    },
+    {
+      "name": "didelta_spinosa_medium_LOD0",
+      "mesh": 1
+    },
+    {
+      "name": "didelta_spinosa_small_LOD0",
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

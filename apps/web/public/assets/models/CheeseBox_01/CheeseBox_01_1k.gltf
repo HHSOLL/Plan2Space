@@ -1,0 +1,225 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2094
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 657,
+      "max": [
+        0.12019958347082138,
+        0.06396623700857162,
+        0.05321205407381058
+      ],
+      "min": [
+        -0.12019599229097366,
+        0.000004551606252789497,
+        -0.05320000648498535
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 657
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 657
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 558
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 177,
+      "max": [
+        0.11877112835645676,
+        0.06363686174154282,
+        0.05342491716146469
+      ],
+      "min": [
+        -0.11976752430200577,
+        0.059763867408037186,
+        -0.05194675922393799
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 177
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 177
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 3701
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3701,
+      "byteLength": 1384
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "CheeseBox_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/CheeseBox_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "CheeseBox_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/CheeseBox_01_diff_1k.jpg"
+    },
+    {
+      "name": "CheeseBox_01_metallic-CheeseBox_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/CheeseBox_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "CheeseBox_01.bin",
+      "byteLength": 5085
+    }
+  ],
+  "materials": [
+    {
+      "name": "CheeseBox_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.003",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "CheeseBox_01",
+      "mesh": 0
+    },
+    {
+      "name": "CheeseBox_01_lid",
+      "translation": [
+        0,
+        0.0023373784497380257,
+        0
+      ],
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

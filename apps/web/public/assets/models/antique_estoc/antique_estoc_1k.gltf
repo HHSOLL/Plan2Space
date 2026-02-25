@@ -1,0 +1,161 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 24738
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5537,
+      "max": [
+        0.18565483391284943,
+        0.07384170591831207,
+        0.19931817054748535
+      ],
+      "min": [
+        -0.18582312762737274,
+        -0.07527782022953033,
+        -1.2930612564086914
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5537
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 5537
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 30284
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "antique_estoc_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/antique_estoc_nor_gl_1k.jpg"
+    },
+    {
+      "name": "antique_estoc_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/antique_estoc_diff_1k.jpg"
+    },
+    {
+      "name": "antique_estoc_metal-antique_estoc_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/antique_estoc_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "antique_estoc.bin",
+      "byteLength": 30284
+    }
+  ],
+  "materials": [
+    {
+      "name": "antique_estoc",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.004",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "antique_estoc",
+      "rotation": [
+        0.7071068286895752,
+        0,
+        0,
+        0.7071068286895752
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

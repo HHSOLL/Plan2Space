@@ -1,0 +1,438 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 17712
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3388,
+      "max": [
+        0.30688169598579407,
+        0.415876179933548,
+        0.21013227105140686
+      ],
+      "min": [
+        -0.2937181890010834,
+        -0.008426041342318058,
+        -0.315498024225235
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3388
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3388
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 10338
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1990,
+      "max": [
+        0.16901610791683197,
+        0.297178715467453,
+        0.24281249940395355
+      ],
+      "min": [
+        -0.178414985537529,
+        -0.006017263047397137,
+        -0.1974693387746811
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1990
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1990
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 10626
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2042,
+      "max": [
+        0.19778862595558167,
+        0.27933624386787415,
+        0.15513622760772705
+      ],
+      "min": [
+        -0.17742910981178284,
+        -0.004648428410291672,
+        -0.22870343923568726
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2042
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2042
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5406
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1048,
+      "max": [
+        0.14747604727745056,
+        0.1268516331911087,
+        0.06555144488811493
+      ],
+      "min": [
+        -0.07890930771827698,
+        -0.003510290291160345,
+        -0.0975322276353836
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1048
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1048
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5982
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1152,
+      "max": [
+        0.10372710227966309,
+        0.1471526324748993,
+        0.07809418439865112
+      ],
+      "min": [
+        -0.10907256603240967,
+        -0.004412822425365448,
+        -0.17346054315567017
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1152
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1152
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 23060
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 23060,
+      "byteLength": 14573
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 37633,
+      "byteLength": 14501
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 52134,
+      "byteLength": 8027
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 60161,
+      "byteLength": 8588
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "calathea_orbifolia_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/calathea_orbifolia_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "calathea_orbifolia_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/calathea_orbifolia_01_diff_1k.jpg"
+    },
+    {
+      "name": "calathea_orbifolia_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/calathea_orbifolia_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "calathea_orbifolia_01.bin",
+      "byteLength": 68749
+    }
+  ],
+  "materials": [
+    {
+      "name": "calathea_orbifolia_01",
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.5,
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.014",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.003",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cylinder.012",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.019",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cylinder.015",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "calathea_orbifolia_01_a",
+      "translation": [
+        -1,
+        0,
+        0
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "calathea_orbifolia_01_b",
+      "mesh": 1
+    },
+    {
+      "name": "calathea_orbifolia_01_c",
+      "translation": [
+        1,
+        0,
+        0
+      ],
+      "mesh": 2
+    },
+    {
+      "name": "calathea_orbifolia_01_d",
+      "translation": [
+        -0.5,
+        0,
+        0.800000011920929
+      ],
+      "mesh": 3
+    },
+    {
+      "name": "calathea_orbifolia_01_e",
+      "translation": [
+        0.5,
+        0,
+        0.800000011920929
+      ],
+      "mesh": 4
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

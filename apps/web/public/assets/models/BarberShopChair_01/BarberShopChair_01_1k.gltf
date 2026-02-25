@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 12840
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4037,
+      "max": [
+        0.3628968596458435,
+        1.489005208015442,
+        0.8857253789901733
+      ],
+      "min": [
+        -0.39364826679229736,
+        -5.504142563950154e-8,
+        -0.4421367347240448
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4037
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4037
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 24312
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "BarberShopChair_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/BarberShopChair_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "BarberShopChair_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/BarberShopChair_01_diff_1k.jpg"
+    },
+    {
+      "name": "BarberShopChair_01_arm.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/BarberShopChair_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "BarberShopChair_01.bin",
+      "byteLength": 24312
+    }
+  ],
+  "materials": [
+    {
+      "name": "BarberShopChair_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh.005",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "BarberShopChair_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,384 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9216
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1946,
+      "max": [
+        0.07483547925949097,
+        0.2719894349575043,
+        0.07483547180891037
+      ],
+      "min": [
+        -0.07483093440532684,
+        -2.7939677238464355e-9,
+        -0.07483094185590744
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1946
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1946
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9792
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2175,
+      "max": [
+        0.07054851949214935,
+        0.26576897501945496,
+        0.07054854929447174
+      ],
+      "min": [
+        -0.070555180311203,
+        -0.000004996545612812042,
+        -0.07055515050888062
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2175
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2175
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9792
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2209,
+      "max": [
+        0.07462053000926971,
+        0.2721051871776581,
+        0.0746205598115921
+      ],
+      "min": [
+        -0.07462790608406067,
+        3.259629011154175e-9,
+        -0.07462787628173828
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2209
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2209
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 10402
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10402,
+      "byteLength": 11612
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 22014,
+      "byteLength": 9837
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 5,
+      "sampler": 0
+    },
+    {
+      "source": 7,
+      "sampler": 0
+    },
+    {
+      "source": 6,
+      "sampler": 0
+    },
+    {
+      "source": 8,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "brass_goblet_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_01_diff_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_01_metal-brass_goblet_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_01_arm_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_02_diff_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_02_metal-brass_goblet_02_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_02_arm_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_03_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_03_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_03_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_03_diff_1k.jpg"
+    },
+    {
+      "name": "brass_goblet_03_metal-brass_goblet_03_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_goblet_03_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "brass_goblets.bin",
+      "byteLength": 31851
+    }
+  ],
+  "materials": [
+    {
+      "name": "brass_goblets_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "brass_goblets_02",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      },
+      "normalTexture": {
+        "index": 4
+      }
+    },
+    {
+      "name": "brass_goblets_03",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 6
+        },
+        "metallicRoughnessTexture": {
+          "index": 8
+        }
+      },
+      "normalTexture": {
+        "index": 7
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "brass_goblet_01",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "brass_goblet_02",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "brass_goblet_03",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "brass_goblet_01",
+      "translation": [
+        -0.00032767606899142265,
+        0.004920530132949352,
+        0.12025979906320572
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "brass_goblet_02",
+      "translation": [
+        -0.14954441785812378,
+        0.005822327919304371,
+        -0.030845999717712402
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "brass_goblet_03",
+      "translation": [
+        0.15866722166538239,
+        0.006193193141371012,
+        -0.027895381674170494
+      ],
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

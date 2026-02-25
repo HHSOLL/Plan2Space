@@ -1,0 +1,437 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1866
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 494,
+      "max": [
+        0.1309727132320404,
+        0.17882084846496582,
+        0.10531732439994812
+      ],
+      "min": [
+        -0.14475402235984802,
+        -0.007033416070044041,
+        -0.12291501462459564
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 494
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 494
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1797
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 476,
+      "max": [
+        0.11727766692638397,
+        0.13940106332302094,
+        0.1478506177663803
+      ],
+      "min": [
+        -0.13444285094738007,
+        -0.005121094174683094,
+        -0.1588074117898941
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 476
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 476
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 12903
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4235,
+      "max": [
+        0.13705752789974213,
+        0.17198415100574493,
+        0.08180288225412369
+      ],
+      "min": [
+        -0.12008963525295258,
+        -0.0036067296750843525,
+        -0.10453974455595016
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4235
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4235
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9006
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2934,
+      "max": [
+        0.10135926306247711,
+        0.14578688144683838,
+        0.1351529061794281
+      ],
+      "min": [
+        -0.0853729248046875,
+        -0.003715887665748596,
+        -0.08777454495429993
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2934
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2934
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1326
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 360,
+      "max": [
+        0.09468427300453186,
+        0.11952736973762512,
+        0.08574917912483215
+      ],
+      "min": [
+        -0.09359151124954224,
+        -0.004132588393986225,
+        -0.13055673241615295
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 360
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 360
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 4506
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4506,
+      "byteLength": 4312
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8818,
+      "byteLength": 28422
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 37240,
+      "byteLength": 20267
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 57507,
+      "byteLength": 3312
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "celandine_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/celandine_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "celandine_01_diff-celandine_01_alpha",
+      "mimeType": "image/jpeg",
+      "uri": "textures/celandine_01_diff_1k.jpg"
+    },
+    {
+      "name": "celandine_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/celandine_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "celandine_01.bin",
+      "byteLength": 60819
+    }
+  ],
+  "materials": [
+    {
+      "name": "celandine_01",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.006",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.007",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.008",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.009",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.010",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "celandine_01_a_LOD0",
+      "translation": [
+        -1,
+        0,
+        0
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "celandine_01_b_LOD0",
+      "translation": [
+        -0.5,
+        0,
+        0
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "celandine_01_c_LOD0",
+      "mesh": 2
+    },
+    {
+      "name": "celandine_01_d_LOD0",
+      "translation": [
+        0.5,
+        0,
+        0
+      ],
+      "mesh": 3
+    },
+    {
+      "name": "celandine_01_e_LOD0",
+      "translation": [
+        1,
+        0,
+        0
+      ],
+      "mesh": 4
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

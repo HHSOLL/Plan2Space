@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2112
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 796,
+      "max": [
+        1.1422406435012817,
+        0.8600190877914429,
+        0.48372194170951843
+      ],
+      "min": [
+        -1.143192172050476,
+        -2.483498029448583e-8,
+        -0.4851073920726776
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 796
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 796
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 5132
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "chinese_sofa_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_sofa_nor_gl_1k.jpg"
+    },
+    {
+      "name": "chinese_sofa_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_sofa_diff_1k.jpg"
+    },
+    {
+      "name": "chinese_sofa_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_sofa_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "chinese_sofa.bin",
+      "byteLength": 5132
+    }
+  ],
+  "materials": [
+    {
+      "name": "chinese_sofa",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.000",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "chinese_sofa",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

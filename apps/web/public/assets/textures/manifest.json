@@ -1,0 +1,102 @@
+[
+  {
+    "id": "wood_floor",
+    "maps": {
+      "diffuse": "/assets/textures/wood_floor/wood_floor_diff_2k.jpg",
+      "roughness": "/assets/textures/wood_floor/wood_floor_rough_2k.jpg",
+      "normal": "/assets/textures/wood_floor/wood_floor_nor_gl_2k.jpg",
+      "ao": "/assets/textures/wood_floor/wood_floor_ao_2k.jpg",
+      "displacement": "/assets/textures/wood_floor/wood_floor_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "weathered_brown_planks",
+    "maps": {
+      "diffuse": "/assets/textures/weathered_brown_planks/weathered_brown_planks_diff_2k.jpg",
+      "roughness": "/assets/textures/weathered_brown_planks/weathered_brown_planks_rough_2k.jpg",
+      "normal": "/assets/textures/weathered_brown_planks/weathered_brown_planks_nor_gl_2k.jpg",
+      "ao": "/assets/textures/weathered_brown_planks/weathered_brown_planks_ao_2k.jpg",
+      "displacement": "/assets/textures/weathered_brown_planks/weathered_brown_planks_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "concrete_floor_worn_001",
+    "maps": {
+      "diffuse": "/assets/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg",
+      "roughness": "/assets/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg",
+      "normal": "/assets/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg",
+      "ao": "/assets/textures/concrete_floor_worn_001/concrete_floor_worn_001_ao_2k.jpg",
+      "displacement": "/assets/textures/concrete_floor_worn_001/concrete_floor_worn_001_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "concrete_layers_02",
+    "maps": {
+      "diffuse": "/assets/textures/concrete_layers_02/concrete_layers_02_diff_2k.jpg",
+      "roughness": "/assets/textures/concrete_layers_02/concrete_layers_02_rough_2k.jpg",
+      "normal": "/assets/textures/concrete_layers_02/concrete_layers_02_nor_gl_2k.jpg",
+      "ao": "/assets/textures/concrete_layers_02/concrete_layers_02_ao_2k.jpg",
+      "displacement": "/assets/textures/concrete_layers_02/concrete_layers_02_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "concrete_wall_007",
+    "maps": {
+      "diffuse": "/assets/textures/concrete_wall_007/concrete_wall_007_diff_2k.jpg",
+      "roughness": "/assets/textures/concrete_wall_007/concrete_wall_007_rough_2k.jpg",
+      "normal": "/assets/textures/concrete_wall_007/concrete_wall_007_nor_gl_2k.jpg",
+      "ao": "/assets/textures/concrete_wall_007/concrete_wall_007_ao_2k.jpg",
+      "displacement": "/assets/textures/concrete_wall_007/concrete_wall_007_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "painted_plaster_wall",
+    "maps": {
+      "diffuse": "/assets/textures/painted_plaster_wall/painted_plaster_wall_diff_2k.jpg",
+      "roughness": "/assets/textures/painted_plaster_wall/painted_plaster_wall_rough_2k.jpg",
+      "normal": "/assets/textures/painted_plaster_wall/painted_plaster_wall_nor_gl_2k.jpg",
+      "ao": "/assets/textures/painted_plaster_wall/painted_plaster_wall_ao_2k.jpg",
+      "displacement": "/assets/textures/painted_plaster_wall/painted_plaster_wall_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "white_plaster_02",
+    "maps": {
+      "diffuse": "/assets/textures/white_plaster_02/white_plaster_02_diff_2k.jpg",
+      "roughness": "/assets/textures/white_plaster_02/white_plaster_02_rough_2k.jpg",
+      "normal": "/assets/textures/white_plaster_02/white_plaster_02_nor_gl_2k.jpg",
+      "ao": "/assets/textures/white_plaster_02/white_plaster_02_ao_2k.jpg",
+      "displacement": "/assets/textures/white_plaster_02/white_plaster_02_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "marble_01",
+    "maps": {
+      "diffuse": "/assets/textures/marble_01/marble_01_diff_2k.jpg",
+      "roughness": "/assets/textures/marble_01/marble_01_rough_2k.jpg",
+      "normal": "/assets/textures/marble_01/marble_01_nor_gl_2k.jpg",
+      "ao": "/assets/textures/marble_01/marble_01_ao_2k.jpg",
+      "displacement": "/assets/textures/marble_01/marble_01_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "laminate_floor_02",
+    "maps": {
+      "diffuse": "/assets/textures/laminate_floor_02/laminate_floor_02_diff_2k.jpg",
+      "roughness": "/assets/textures/laminate_floor_02/laminate_floor_02_rough_2k.jpg",
+      "normal": "/assets/textures/laminate_floor_02/laminate_floor_02_nor_gl_2k.jpg",
+      "ao": "/assets/textures/laminate_floor_02/laminate_floor_02_ao_2k.jpg",
+      "displacement": "/assets/textures/laminate_floor_02/laminate_floor_02_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "linoleum_brown",
+    "maps": {
+      "diffuse": "/assets/textures/linoleum_brown/linoleum_brown_diff_2k.jpg",
+      "roughness": "/assets/textures/linoleum_brown/linoleum_brown_rough_2k.jpg",
+      "normal": "/assets/textures/linoleum_brown/linoleum_brown_nor_gl_2k.jpg",
+      "ao": "/assets/textures/linoleum_brown/linoleum_brown_ao_2k.jpg",
+      "displacement": "/assets/textures/linoleum_brown/linoleum_brown_disp_2k.jpg"
+    }
+  }
+]
