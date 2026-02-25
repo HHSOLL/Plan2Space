@@ -20,6 +20,13 @@ const nextConfig = {
   transpilePackages: ["@webinterior/shared"],
   images: {
     remotePatterns: supabaseRemotePattern
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...(config.resolve.fallback || {}),
+      canvas: false
+    };
+    return config;
   }
 };
 

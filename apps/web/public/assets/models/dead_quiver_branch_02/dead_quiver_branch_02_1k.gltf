@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 43158
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8260,
+      "max": [
+        0.1486358493566513,
+        0.5280643105506897,
+        0.1156458929181099
+      ],
+      "min": [
+        -0.13870181143283844,
+        0.0016802126774564385,
+        -0.08539087325334549
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8260
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 8260
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 58419
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "dead_quiver_branch_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/dead_quiver_branch_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "dead_quiver_branch_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/dead_quiver_branch_02_diff_1k.jpg"
+    },
+    {
+      "name": "dead_quiver_branch_02_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/dead_quiver_branch_02_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "dead_quiver_branch_02.bin",
+      "byteLength": 58419
+    }
+  ],
+  "materials": [
+    {
+      "name": "dead_quiver_branch_02",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "realCap_Model_2",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "dead_quiver_branch_02",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

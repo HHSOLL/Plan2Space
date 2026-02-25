@@ -1,0 +1,242 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 29688
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8129,
+      "max": [
+        0.3618898093700409,
+        0.47010552883148193,
+        0.1131397932767868
+      ],
+      "min": [
+        -0.3618898093700409,
+        0,
+        -0.07333849370479584
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8129
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 8129
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 816
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 190,
+      "max": [
+        0.3500259220600128,
+        0.24793654680252075,
+        0.11304780840873718
+      ],
+      "min": [
+        -0.3500259220600128,
+        0.016166947782039642,
+        0.08360657840967178
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 190
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 190
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 41768
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 41768,
+      "byteLength": 1641
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "boombox_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/boombox_nor_gl_1k.jpg"
+    },
+    {
+      "name": "boombox_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/boombox_diff_1k.jpg"
+    },
+    {
+      "name": "boombox_metal-boombox_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/boombox_arm_1k.jpg"
+    },
+    {
+      "name": "boombox_speakers_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/boombox_speakers_diff_1k.jpg"
+    },
+    {
+      "name": "boombox_speakers_metal-boombox_speakers_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/boombox_speakers_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "boombox.bin",
+      "byteLength": 43409
+    }
+  ],
+  "materials": [
+    {
+      "name": "boombox",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "boombox_speakers",
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.5,
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 4
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.095",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "boombox",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

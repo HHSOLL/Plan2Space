@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 47424
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10433,
+      "max": [
+        0.1425524652004242,
+        0.11448198556900024,
+        0.11428358405828476
+      ],
+      "min": [
+        -0.228113055229187,
+        -0.18559351563453674,
+        -0.11416112631559372
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10433
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 10433
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64396
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "Megaphone_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Megaphone_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "Megaphone_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Megaphone_01_diff_1k.jpg"
+    },
+    {
+      "name": "Megaphone_01_metallic-Megaphone_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Megaphone_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "Megaphone_01.bin",
+      "byteLength": 64396
+    }
+  ],
+  "materials": [
+    {
+      "name": "Megaphone_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Polsen MP-25 LP",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Megaphone_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

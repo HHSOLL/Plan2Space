@@ -1,0 +1,339 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 11256
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4292,
+      "max": [
+        0.12658363580703735,
+        0.8526440858840942,
+        0.8640666007995605
+      ],
+      "min": [
+        -0.34507811069488525,
+        -0.005937529727816582,
+        0.2645845413208008
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4292
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4292
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6972
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3188,
+      "max": [
+        0.2661633789539337,
+        0.7259218692779541,
+        0.41698476672172546
+      ],
+      "min": [
+        -0.4255073368549347,
+        -3.356562316980671e-8,
+        -0.2748631536960602
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3188
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3188
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 11256
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4292,
+      "max": [
+        0.36703214049339294,
+        0.8526440858840942,
+        -0.1712055206298828
+      ],
+      "min": [
+        -0.23045846819877625,
+        -0.005937529727816582,
+        -0.8422229290008545
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4292
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4292
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 19862
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 19862,
+      "byteLength": 11429
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 31291,
+      "byteLength": 19814
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 5,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "outdoor_table_chair_set_01_chair_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/outdoor_table_chair_set_01_chair_nor_gl_1k.jpg"
+    },
+    {
+      "name": "outdoor_table_chair_set_01_chair_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/outdoor_table_chair_set_01_chair_diff_1k.jpg"
+    },
+    {
+      "name": "outdoor_table_chair_set_01_chair_metal-outdoor_table_chair_set_01_chair_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/outdoor_table_chair_set_01_chair_arm_1k.jpg"
+    },
+    {
+      "name": "outdoor_table_chair_set_01_table_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/outdoor_table_chair_set_01_table_nor_gl_1k.jpg"
+    },
+    {
+      "name": "outdoor_table_chair_set_01_table_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/outdoor_table_chair_set_01_table_diff_1k.jpg"
+    },
+    {
+      "name": "outdoor_table_chair_set_01_table_metal-outdoor_table_chair_set_01_table_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/outdoor_table_chair_set_01_table_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "outdoor_table_chair_set_01.bin",
+      "byteLength": 51105
+    }
+  ],
+  "materials": [
+    {
+      "name": "outdoor_table_chair_set_01_chair",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "outdoor_table_chair_set_01_table",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      },
+      "normalTexture": {
+        "index": 4
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Folding_Chair_Wood",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Folding_Table_Wood.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Folding_Chair_Wood.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "outdoor_table_chair_set_01_chair_01",
+      "rotation": [
+        0,
+        0.12110016494989395,
+        0,
+        0.9926403164863586
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "outdoor_table_chair_set_01_table",
+      "mesh": 1
+    },
+    {
+      "name": "outdoor_table_chair_set_01_chair_02",
+      "rotation": [
+        0,
+        0.13368111848831177,
+        0,
+        0.991024374961853
+      ],
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

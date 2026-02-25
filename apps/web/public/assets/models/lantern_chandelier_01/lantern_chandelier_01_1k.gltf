@@ -1,0 +1,358 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 17277
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5566,
+      "max": [
+        0.428200900554657,
+        0.017969727516174316,
+        0.4187776446342468
+      ],
+      "min": [
+        -0.4159274101257324,
+        -1.2611048221588135,
+        -0.4187144637107849
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5566
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 5566
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 5566
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 30
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 20,
+      "max": [
+        0.32635408639907837,
+        -0.7710096836090088,
+        0.3749040961265564
+      ],
+      "min": [
+        -0.3811676502227783,
+        -1.139709234237671,
+        -0.3689880967140198
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 20
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 20
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 20
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 606
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 127,
+      "max": [
+        0.0696980208158493,
+        -0.673557698726654,
+        0.06751341372728348
+      ],
+      "min": [
+        -0.06818835437297821,
+        -0.830290675163269,
+        -0.07037296146154404
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 127
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 127
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 127
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 28819
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 28819,
+      "byteLength": 394
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 29213,
+      "byteLength": 1261
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 5,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    },
+    {
+      "source": 6,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "lantern_chandelier_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "lantern_chandelier_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_diff_1k.jpg"
+    },
+    {
+      "name": "lantern_chandelier_01_metal-lantern_chandelier_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_arm_1k.jpg"
+    },
+    {
+      "name": "lantern_chandelier_glass_01_alpha",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_glass_alpha_1k.jpg"
+    },
+    {
+      "name": "lantern_chandelier_glass_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_glass_nor_gl_1k.jpg"
+    },
+    {
+      "name": "lantern_chandelier_glass_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_glass_diff_1k.jpg"
+    },
+    {
+      "name": "lantern_chandelier_glass_01_metal-lantern_chandelier_glass_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lantern_chandelier_01_glass_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "lantern_chandelier_01.bin",
+      "byteLength": 30474
+    }
+  ],
+  "materials": [
+    {
+      "name": "lantern_chandelier_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "lantern_chandelier_01_glass",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      },
+      "normalTexture": {
+        "index": 4
+      }
+    },
+    {
+      "name": "lantern_chandelier_01_lamp",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8000000715255737,
+          0.7333472371101379,
+          0.5533292889595032,
+          1
+        ],
+        "roughnessFactor": 0.1664227843284607,
+        "metallicFactor": 0
+      },
+      "emissiveFactor": [
+        1,
+        0.7282659411430359,
+        0.4313444495201111
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3,
+            "TEXCOORD_1": 4
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2,
+                "TEXCOORD_1": 3
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7,
+            "TEXCOORD_0": 8,
+            "TEXCOORD_1": 9
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 5,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2,
+                "TEXCOORD_1": 3
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 11,
+            "NORMAL": 12,
+            "TEXCOORD_0": 13,
+            "TEXCOORD_1": 14
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 10,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2,
+                "TEXCOORD_1": 3
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "lantern_chandelier_01",
+      "scale": [
+        0.686111569404602,
+        0.686111569404602,
+        0.686111569404602
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

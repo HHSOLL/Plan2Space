@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5970
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1031,
+      "max": [
+        0.09791653603315353,
+        0.06095746532082558,
+        0.04321640357375145
+      ],
+      "min": [
+        -0.1020834669470787,
+        -0.001033622189424932,
+        -0.03230090066790581
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1031
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1031
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 9075
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "croissant_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/croissant_nor_gl_1k.jpg"
+    },
+    {
+      "name": "croissant_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/croissant_diff_1k.jpg"
+    },
+    {
+      "name": "croissant_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/croissant_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "croissant.bin",
+      "byteLength": 9075
+    }
+  ],
+  "materials": [
+    {
+      "name": "croissant",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Croissant_croissant_10M_textured.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "croissant",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

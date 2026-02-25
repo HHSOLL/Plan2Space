@@ -1,0 +1,455 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6048
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621,
+      "max": [
+        0.08056766539812088,
+        0.29912418127059937,
+        0.29912421107292175
+      ],
+      "min": [
+        -0.08046972006559372,
+        -0.29912418127059937,
+        -0.299124151468277
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6048
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621,
+      "max": [
+        0.08047512918710709,
+        0.30000007152557373,
+        0.30000001192092896
+      ],
+      "min": [
+        -0.08055765181779861,
+        -0.2999999523162842,
+        -0.30000001192092896
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6048
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621,
+      "max": [
+        0.08045689016580582,
+        0.29996609687805176,
+        0.299966037273407
+      ],
+      "min": [
+        -0.08055765181779861,
+        -0.2999659776687622,
+        -0.299966037273407
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6048
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621,
+      "max": [
+        0.08056306093931198,
+        0.30000007152557373,
+        0.30000001192092896
+      ],
+      "min": [
+        -0.08046972006559372,
+        -0.2999999523162842,
+        -0.30000001192092896
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1621
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13578
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4238,
+      "max": [
+        0.9046640396118164,
+        1.4109888076782227,
+        2.1763384342193604
+      ],
+      "min": [
+        -0.8842806816101074,
+        0.1257612705230713,
+        -2.20391583442688
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4238
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4238
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 9629
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9629,
+      "byteLength": 10015
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 19644,
+      "byteLength": 10322
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 29966,
+      "byteLength": 9625
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 39591,
+      "byteLength": 26412
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "covered_car_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/covered_car_nor_gl_1k.jpg"
+    },
+    {
+      "name": "covered_car_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/covered_car_diff_1k.jpg"
+    },
+    {
+      "name": "covered_car_metal-covered_car_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/covered_car_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "covered_car.bin",
+      "byteLength": 66003
+    }
+  ],
+  "materials": [
+    {
+      "name": "covered_car",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "covered_car",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "wheel_01",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "wheel_02",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "wheel_03",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "wheel_04",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "car_cover",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "covered_car_wheel_01",
+      "translation": [
+        0.7576000690460205,
+        0.30000001192092896,
+        1.2806000709533691
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "covered_car_wheel_02",
+      "translation": [
+        -0.6823999881744385,
+        0.30000001192092896,
+        1.2806000709533691
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "covered_car_wheel_03",
+      "translation": [
+        -0.6724001169204712,
+        0.30000001192092896,
+        -1.299399971961975
+      ],
+      "mesh": 2
+    },
+    {
+      "name": "covered_car_wheel_04",
+      "translation": [
+        0.7475999593734741,
+        0.30000001192092896,
+        -1.2993998527526855
+      ],
+      "mesh": 3
+    },
+    {
+      "name": "covered_car",
+      "translation": [
+        0.037599992007017136,
+        0,
+        0.037599992007017136
+      ],
+      "mesh": 4
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

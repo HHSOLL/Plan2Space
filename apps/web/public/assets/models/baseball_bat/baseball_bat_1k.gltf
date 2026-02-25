@@ -1,0 +1,162 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 8016
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1813,
+      "max": [
+        0.03154108673334122,
+        0.03145410865545273,
+        0.25420910120010376
+      ],
+      "min": [
+        -0.03200323134660721,
+        -0.0320902094244957,
+        -0.658989667892456
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1813
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1813
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 10644
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "baseball_bat_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/baseball_bat_nor_gl_1k.jpg"
+    },
+    {
+      "name": "baseball_bat_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/baseball_bat_diff_1k.jpg"
+    },
+    {
+      "name": "baseball_bat_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/baseball_bat_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "baseball_bat.bin",
+      "byteLength": 10644
+    }
+  ],
+  "materials": [
+    {
+      "name": "baseball_bat",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Bolt.004",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "baseball_bat",
+      "rotation": [
+        0.7071068286895752,
+        0,
+        0,
+        0.7071068286895752
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

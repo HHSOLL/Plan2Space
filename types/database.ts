@@ -294,6 +294,47 @@ export interface Database {
           }
         ];
       };
+      shared_projects: {
+        Row: {
+          id: UUID;
+          project_id: UUID;
+          token: string;
+          permissions: string;
+          expires_at: string | null;
+          created_by: UUID;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: UUID;
+          project_id: UUID;
+          token: string;
+          permissions?: string;
+          expires_at?: string | null;
+          created_by: UUID;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: UUID;
+          project_id?: UUID;
+          token?: string;
+          permissions?: string;
+          expires_at?: string | null;
+          created_by?: UUID;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shared_projects_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       assets: {
         Row: {
           id: UUID;

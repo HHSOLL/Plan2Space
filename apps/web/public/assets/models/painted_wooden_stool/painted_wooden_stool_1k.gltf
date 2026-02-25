@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2028
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 604,
+      "max": [
+        0.19736836850643158,
+        0.5779256820678711,
+        0.21627981960773468
+      ],
+      "min": [
+        -0.18747957050800323,
+        -0.000989402993582189,
+        -0.18980525434017181
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 604
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 604
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 4566
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "painted_wooden_stool_nor_gl.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/painted_wooden_stool_nor_gl_1k.jpg"
+    },
+    {
+      "name": "painted_wooden_stool_diff.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/painted_wooden_stool_diff_1k.jpg"
+    },
+    {
+      "name": "painted_wooden_stool_rough.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/painted_wooden_stool_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "painted_wooden_stool.bin",
+      "byteLength": 4566
+    }
+  ],
+  "materials": [
+    {
+      "name": "painted_wooden_stool",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "stool.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "painted_wooden_stool",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

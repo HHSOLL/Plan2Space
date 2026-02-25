@@ -1,0 +1,352 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5835
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1472,
+      "max": [
+        -0.5589134097099304,
+        1.869994044303894,
+        0.5098515748977661
+      ],
+      "min": [
+        -1.4589331150054932,
+        1.487499713897705,
+        -0.4111367166042328
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1472
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1472
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5805
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1458,
+      "max": [
+        0.4324321746826172,
+        1.869974970817566,
+        0.509446382522583
+      ],
+      "min": [
+        -0.4324340224266052,
+        1.4877291917800903,
+        -0.41284114122390747
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1458
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1458
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5835
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1472,
+      "max": [
+        1.4544730186462402,
+        1.8699920177459717,
+        0.5098464488983154
+      ],
+      "min": [
+        0.5544581413269043,
+        1.487499713897705,
+        -0.4111369252204895
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1472
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1472
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2850
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1054,
+      "max": [
+        2.2438838481903076,
+        2.0198006629943848,
+        0.5508110523223877
+      ],
+      "min": [
+        -2.2466022968292236,
+        0,
+        -0.6190232038497925
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1054
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1054
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 8039
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8039,
+      "byteLength": 7991
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 16030,
+      "byteLength": 7747
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 23777,
+      "byteLength": 6248
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "chinese_commode_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_commode_nor_gl_1k.jpg"
+    },
+    {
+      "name": "chinese_commode_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_commode_diff_1k.jpg"
+    },
+    {
+      "name": "chinese_commode_metal-chinese_commode_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_commode_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "chinese_commode.bin",
+      "byteLength": 30025
+    }
+  ],
+  "materials": [
+    {
+      "name": "chinese_commode",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.006",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.007",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.011",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane.004",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "chinese_commode_drawer_01",
+      "mesh": 0
+    },
+    {
+      "name": "chinese_commode_drawer_02",
+      "mesh": 1
+    },
+    {
+      "name": "chinese_commode_drawer_03",
+      "mesh": 2
+    },
+    {
+      "name": "chinese_commode",
+      "mesh": 3,
+      "children": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        3
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 35250
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8056,
+      "max": [
+        0.06472406536340714,
+        0.21062062680721283,
+        0.1452479362487793
+      ],
+      "min": [
+        -0.06472184509038925,
+        0,
+        -0.11403953284025192
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8056
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 8056
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 44697
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "brass_blowtorch_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_blowtorch_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_blowtorch_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_blowtorch_diff_1k.jpg"
+    },
+    {
+      "name": "brass_blowtorch_metal-brass_blowtorch_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_blowtorch_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "brass_blowtorch.bin",
+      "byteLength": 44697
+    }
+  ],
+  "materials": [
+    {
+      "name": "brass_blowtorch",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.017",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "brass_blowtorch",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

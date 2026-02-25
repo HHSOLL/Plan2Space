@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 26730
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8174,
+      "max": [
+        0.08894313871860504,
+        0.5270119309425354,
+        0.028746291995048523
+      ],
+      "min": [
+        -0.08893050253391266,
+        0.000049248337745666504,
+        -0.02201041579246521
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8174
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 8174
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 42132
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "Ukulele_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Ukulele_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "Ukulele_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Ukulele_01_diff_1k.jpg"
+    },
+    {
+      "name": "Ukulele_01_metallic-Ukulele_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Ukulele_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "Ukulele_01.bin",
+      "byteLength": 42132
+    }
+  ],
+  "materials": [
+    {
+      "name": "Ukulele_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Circle.015",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Ukulele_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

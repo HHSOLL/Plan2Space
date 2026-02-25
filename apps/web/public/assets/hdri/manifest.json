@@ -1,0 +1,52 @@
+[
+  {
+    "id": "small_empty_room_1",
+    "label": "Small Empty Room 1",
+    "path": "/assets/hdri/small_empty_room_1_1k.hdr"
+  },
+  {
+    "id": "poly_haven_studio",
+    "label": "Poly Haven Studio",
+    "path": "/assets/hdri/poly_haven_studio_1k.hdr"
+  },
+  {
+    "id": "photo_studio_01",
+    "label": "Photo Studio 01",
+    "path": "/assets/hdri/photo_studio_01_1k.hdr"
+  },
+  {
+    "id": "photo_studio_loft_hall",
+    "label": "Photo Studio Loft Hall",
+    "path": "/assets/hdri/photo_studio_loft_hall_1k.hdr"
+  },
+  {
+    "id": "photo_studio_london_hall",
+    "label": "Photo Studio London Hall",
+    "path": "/assets/hdri/photo_studio_london_hall_1k.hdr"
+  },
+  {
+    "id": "brown_photostudio_01",
+    "label": "Brown Photostudio 01",
+    "path": "/assets/hdri/brown_photostudio_01_1k.hdr"
+  },
+  {
+    "id": "brown_photostudio_05",
+    "label": "Brown Photostudio 05",
+    "path": "/assets/hdri/brown_photostudio_05_1k.hdr"
+  },
+  {
+    "id": "modern_bathroom",
+    "label": "Modern Bathroom",
+    "path": "/assets/hdri/modern_bathroom_1k.hdr"
+  },
+  {
+    "id": "hotel_room",
+    "label": "Hotel Room",
+    "path": "/assets/hdri/hotel_room_1k.hdr"
+  },
+  {
+    "id": "kiara_interior",
+    "label": "Kiara Interior",
+    "path": "/assets/hdri/kiara_interior_1k.hdr"
+  }
+]

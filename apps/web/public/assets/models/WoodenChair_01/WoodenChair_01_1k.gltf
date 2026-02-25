@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 59952
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 13315,
+      "max": [
+        0.3440878987312317,
+        2.2721478939056396,
+        0.29132789373397827
+      ],
+      "min": [
+        -0.3440864086151123,
+        -0.0013669622130692005,
+        -0.3671490550041199
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 13315
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 13315
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 75969
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "WoodenChair_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/WoodenChair_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "WoodenChair_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/WoodenChair_01_diff_1k.jpg"
+    },
+    {
+      "name": "WoodenChair_01_metallic-WoodenChair_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/WoodenChair_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "WoodenChair_01.bin",
+      "byteLength": 75969
+    }
+  ],
+  "materials": [
+    {
+      "name": "WoodenChair_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "WoodenChair_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

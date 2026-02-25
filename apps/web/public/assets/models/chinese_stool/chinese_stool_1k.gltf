@@ -1,0 +1,162 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 3270
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1051,
+      "max": [
+        0.25463008880615234,
+        0.6305584907531738,
+        0.3002516031265259
+      ],
+      "min": [
+        -0.2517642378807068,
+        -8.019227060174217e-9,
+        -0.2987077832221985
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1051
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1051
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 6887
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "chinese_stool_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_stool_nor_gl_1k.jpg"
+    },
+    {
+      "name": "chinese_stool_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_stool_diff_1k.jpg"
+    },
+    {
+      "name": "chinese_stool_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_stool_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "chinese_stool.bin",
+      "byteLength": 6887
+    }
+  ],
+  "materials": [
+    {
+      "name": "chinese_stool",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane.003",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "chinese_stool",
+      "rotation": [
+        0,
+        -0.7071068286895752,
+        0,
+        0.7071068286895752
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

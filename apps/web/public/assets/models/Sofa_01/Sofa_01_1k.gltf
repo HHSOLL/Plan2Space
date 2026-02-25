@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 12303
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2706,
+      "max": [
+        0.7933560609817505,
+        0.7959378957748413,
+        0.29681190848350525
+      ],
+      "min": [
+        -0.7781115770339966,
+        -0.0005869903834536672,
+        -0.3612036406993866
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2706
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2706
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 19749
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "Sofa_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Sofa_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "Sofa_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Sofa_01_diff_1k.jpg"
+    },
+    {
+      "name": "Sofa_01_metallic-Sofa_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Sofa_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "Sofa_01.bin",
+      "byteLength": 19749
+    }
+  ],
+  "materials": [
+    {
+      "name": "Sofa_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Line1789534131.002",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Sofa_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 546
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 362,
+      "max": [
+        0.5016727447509766,
+        2.080310344696045,
+        0.25700682401657104
+      ],
+      "min": [
+        -0.5017218589782715,
+        0,
+        -3.3892558803927386e-7
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 362
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 362
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1382
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "Shelf_01_nor_gl.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Shelf_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "Shelf_01_diff.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Shelf_01_diff_1k.jpg"
+    },
+    {
+      "name": "Shelf_01_metallic.png-Shelf_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/Shelf_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "Shelf_01.bin",
+      "byteLength": 1382
+    }
+  ],
+  "materials": [
+    {
+      "name": "Shelf_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Shelf_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

@@ -1,0 +1,463 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13740
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3761,
+      "max": [
+        1.3066017627716064,
+        2.3116140365600586,
+        0.36020544171333313
+      ],
+      "min": [
+        -1.0443785190582275,
+        -0.00019049644470214844,
+        -0.3583051264286041
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3761
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3761
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2628
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 790,
+      "max": [
+        1.297106146812439,
+        1.7526326179504395,
+        0.3300855755805969
+      ],
+      "min": [
+        -1.0444751977920532,
+        0.27933594584465027,
+        -0.32823848724365234
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 790
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 790
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2940
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 660,
+      "max": [
+        0.4821770489215851,
+        0.049890898168087006,
+        0.032534658908843994
+      ],
+      "min": [
+        -0.48217877745628357,
+        -0.04988223314285278,
+        -0.6157258152961731
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 660
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 660
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2940
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 660,
+      "max": [
+        0.4821770489215851,
+        0.049786798655986786,
+        0.032534778118133545
+      ],
+      "min": [
+        -0.48217877745628357,
+        -0.049986332654953,
+        -0.6157256960868835
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 660
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 660
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2940
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 660,
+      "max": [
+        0.4821770489215851,
+        0.04982580989599228,
+        0.03253453969955444
+      ],
+      "min": [
+        -0.48217877745628357,
+        -0.04994732141494751,
+        -0.6157259345054626
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 660
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 660
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 18166
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 18166,
+      "byteLength": 4963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 23129,
+      "byteLength": 3635
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 26764,
+      "byteLength": 3630
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 30394,
+      "byteLength": 3644
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 5,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "steel_frame_shelves_03_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/steel_frame_shelves_03_nor_gl_2k.jpg"
+    },
+    {
+      "name": "steel_frame_shelves_03_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/steel_frame_shelves_03_diff_2k.jpg"
+    },
+    {
+      "name": "steel_frame_shelves_03_metal-steel_frame_shelves_03_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/steel_frame_shelves_03_arm_2k.jpg"
+    },
+    {
+      "name": "steel_frame_shelves_03_drawers_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/steel_frame_shelves_03_drawers_nor_gl_2k.jpg"
+    },
+    {
+      "name": "steel_frame_shelves_03_drawers_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/steel_frame_shelves_03_drawers_diff_2k.jpg"
+    },
+    {
+      "name": "steel_frame_shelves_03_drawers_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/steel_frame_shelves_03_drawers_arm_2k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "steel_frame_shelves_03.bin",
+      "byteLength": 34038
+    }
+  ],
+  "materials": [
+    {
+      "name": "steel_frame_shelves_03",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "steel_frame_shelves_03_drawers",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      },
+      "normalTexture": {
+        "index": 4
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.002",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.004",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.005",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "steel_frame_shelves_03",
+      "mesh": 0
+    },
+    {
+      "name": "steel_frame_shelves_03_drawer_01",
+      "translation": [
+        -0.5146840214729309,
+        0.5844902992248535,
+        0.330425500869751
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "steel_frame_shelves_03_drawer_02",
+      "translation": [
+        -0.5146840214729309,
+        0.4684321880340576,
+        0.330425500869751
+      ],
+      "mesh": 2
+    },
+    {
+      "name": "steel_frame_shelves_03_drawer_03",
+      "translation": [
+        -0.5146840214729309,
+        0.35096606612205505,
+        0.3304257392883301
+      ],
+      "mesh": 3
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

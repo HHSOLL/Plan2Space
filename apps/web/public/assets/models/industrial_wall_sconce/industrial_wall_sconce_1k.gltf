@@ -1,0 +1,246 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 21390
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4833,
+      "max": [
+        0.07517829537391663,
+        0.17087751626968384,
+        0.2504469156265259
+      ],
+      "min": [
+        -0.0751740038394928,
+        -0.17090433835983276,
+        -0.0011277049779891968
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4833
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4833
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 8088
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1824,
+      "max": [
+        0.02878214791417122,
+        0.005759254097938538,
+        0.214082732796669
+      ],
+      "min": [
+        -0.032660942524671555,
+        -0.09449193626642227,
+        0.15263964235782623
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1824
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1824
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 28173
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 28173,
+      "byteLength": 12610
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "industrial_wall_sconce_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/industrial_wall_sconce_nor_gl_1k.jpg"
+    },
+    {
+      "name": "industrial_wall_sconce_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/industrial_wall_sconce_diff_1k.jpg"
+    },
+    {
+      "name": "industrial_wall_sconce_metal-industrial_wall_sconce_rough.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/industrial_wall_sconce_arm_1k.jpg"
+    },
+    {
+      "name": "industrial_wall_sconce_bulb_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/industrial_wall_sconce_bulb_diff_1k.jpg"
+    },
+    {
+      "name": "industrial_wall_sconce_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/industrial_wall_sconce_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "industrial_wall_sconce.bin",
+      "byteLength": 40783
+    }
+  ],
+  "materials": [
+    {
+      "name": "industrial_wall_sconce",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "industrial_wall_sconce_bulb",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 4
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.009",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "industrial_wall_sconce",
+      "translation": [
+        0.001505084685049951,
+        0.1513962596654892,
+        0.008094342425465584
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

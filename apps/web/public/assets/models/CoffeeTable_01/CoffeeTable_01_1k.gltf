@@ -1,0 +1,177 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 31212
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 6939,
+      "max": [
+        0.7700076699256897,
+        0.5251326560974121,
+        0.48638826608657837
+      ],
+      "min": [
+        -0.7700034976005554,
+        0.0019255455117672682,
+        -0.4864235520362854
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 6939
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 6939
+    },
+    {
+      "type": "VEC4",
+      "componentType": 5123,
+      "count": 6939,
+      "normalized": true
+    },
+    {
+      "type": "VEC4",
+      "componentType": 5123,
+      "count": 6939,
+      "normalized": true
+    },
+    {
+      "type": "VEC4",
+      "componentType": 5123,
+      "count": 6939,
+      "normalized": true
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 45674
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "CoffeeTable_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/CoffeeTable_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "CoffeeTable_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/CoffeeTable_01_diff_1k.jpg"
+    },
+    {
+      "name": "CoffeeTable_01_metallic-CoffeeTable_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/CoffeeTable_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "CoffeeTable_01.bin",
+      "byteLength": 45674
+    }
+  ],
+  "materials": [
+    {
+      "name": "CoffeeTable_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3,
+            "COLOR_0": 5,
+            "COLOR_1": 5
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2,
+                "COLOR_0": 3,
+                "COLOR_1": 4
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "CoffeeTable_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

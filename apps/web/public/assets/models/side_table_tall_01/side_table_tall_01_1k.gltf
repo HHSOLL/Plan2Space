@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 19224
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4534,
+      "max": [
+        0.1919991672039032,
+        0.7611303329467773,
+        0.1919991821050644
+      ],
+      "min": [
+        -0.19199135899543762,
+        -0.000021163985366001725,
+        -0.19199134409427643
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4534
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4534
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 23998
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "side_table_tall_01_gl_normal",
+      "mimeType": "image/jpeg",
+      "uri": "textures/side_table_tall_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "side_table_tall_01_BaseColor.png",
+      "mimeType": "image/jpeg",
+      "uri": "textures/side_table_tall_01_diff_1k.jpg"
+    },
+    {
+      "name": "side_table_tall_01_metallic-side_table_tall_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/side_table_tall_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "side_table_tall_01.bin",
+      "byteLength": 23998
+    }
+  ],
+  "materials": [
+    {
+      "name": "side_table_tall_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "side_table_tall_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

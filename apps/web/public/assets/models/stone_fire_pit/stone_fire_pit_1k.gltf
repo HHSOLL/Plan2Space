@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 11661
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2278,
+      "max": [
+        0.7121797800064087,
+        0.1948939710855484,
+        0.7182915210723877
+      ],
+      "min": [
+        -0.736316442489624,
+        -0.19342292845249176,
+        -0.7149089574813843
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2278
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2278
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 18446
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "stone_fire_pit_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/stone_fire_pit_nor_gl_1k.jpg"
+    },
+    {
+      "name": "stone_fire_pit_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/stone_fire_pit_diff_1k.jpg"
+    },
+    {
+      "name": "stone_fire_pit_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/stone_fire_pit_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "stone_fire_pit.bin",
+      "byteLength": 18446
+    }
+  ],
+  "materials": [
+    {
+      "name": "stone_fire_pit",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "texturedMesh.002",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "stone_fire_pit",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

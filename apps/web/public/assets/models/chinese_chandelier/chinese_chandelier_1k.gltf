@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 23484
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 7699,
+      "max": [
+        0.4390074610710144,
+        0.00014144182205200195,
+        0.439013808965683
+      ],
+      "min": [
+        -0.4393801689147949,
+        -0.7480729818344116,
+        -0.4396956264972687
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 7699
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 7699
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 39424
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "chinese_chandelier_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_chandelier_nor_gl_1k.jpg"
+    },
+    {
+      "name": "chinese_chandelier_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_chandelier_diff_1k.jpg"
+    },
+    {
+      "name": "chinese_chandelier_metal-chinese_chandelier_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_chandelier_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "chinese_chandelier.bin",
+      "byteLength": 39424
+    }
+  ],
+  "materials": [
+    {
+      "name": "chinese_chandelier",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "chinese_chandelier",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

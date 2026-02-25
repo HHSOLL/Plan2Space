@@ -1,0 +1,437 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1953
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 689,
+      "max": [
+        0.5460881590843201,
+        0.13764804601669312,
+        0.03276842460036278
+      ],
+      "min": [
+        -0.004630344919860363,
+        -0.7967368960380554,
+        -0.033675964921712875
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 689
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 689
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1929
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 675,
+      "max": [
+        0.0047702789306640625,
+        0.13771849870681763,
+        0.031489159911870956
+      ],
+      "min": [
+        -0.5474433898925781,
+        -0.7970734238624573,
+        -0.03384299948811531
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 675
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 675
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1239
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 416,
+      "max": [
+        0.2589055895805359,
+        0.06323420256376266,
+        0.4402173161506653
+      ],
+      "min": [
+        -0.25911396741867065,
+        -0.06551972776651382,
+        -0.015512123703956604
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 416
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 416
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1173
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 386,
+      "max": [
+        0.25943201780319214,
+        0.06327802687883377,
+        0.4402056932449341
+      ],
+      "min": [
+        -0.25911396741867065,
+        -0.06570170074701309,
+        -0.015512123703956604
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 386
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 386
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 40710
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10301,
+      "max": [
+        0.6296584010124207,
+        2.872056245803833,
+        0.251519113779068
+      ],
+      "min": [
+        -0.6329219937324524,
+        -0.00004253143197274767,
+        -0.2558270990848541
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10301
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 10301
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 4026
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4026,
+      "byteLength": 3880
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7906,
+      "byteLength": 2604
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10510,
+      "byteLength": 2452
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 12962,
+      "byteLength": 49638
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "chinese_cabinet_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_cabinet_nor_gl_1k.jpg"
+    },
+    {
+      "name": "chinese_cabinet_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_cabinet_diff_1k.jpg"
+    },
+    {
+      "name": "chinese_cabinet_metal-chinese_cabinet_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/chinese_cabinet_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "chinese_cabinet.bin",
+      "byteLength": 62600
+    }
+  ],
+  "materials": [
+    {
+      "name": "chinese_cabinet",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.002",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.003",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.004",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cube.013",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "chinese_cabinet_door_01",
+      "translation": [
+        -0.5466499924659729,
+        1.1135352849960327,
+        0.25662457942962646
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "chinese_cabinet_door_02",
+      "translation": [
+        0.5472373962402344,
+        1.1135352849960327,
+        0.25662457942962646
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "chinese_cabinet_drawer_01",
+      "translation": [
+        -0.2865453362464905,
+        1.3703293800354004,
+        -0.1661425232887268
+      ],
+      "mesh": 2
+    },
+    {
+      "name": "chinese_cabinet_drawer_02",
+      "translation": [
+        0.2855112552642822,
+        1.3703293800354004,
+        -0.17241963744163513
+      ],
+      "mesh": 3
+    },
+    {
+      "name": "chinese_cabinet",
+      "mesh": 4,
+      "children": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        4
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

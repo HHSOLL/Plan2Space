@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 28224
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5024,
+      "max": [
+        0.12750250101089478,
+        0.4394349753856659,
+        0.12750251591205597
+      ],
+      "min": [
+        -0.12751498818397522,
+        -0.00011807833652710542,
+        -0.12751497328281403
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5024
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 5024
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 24414
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "antique_ceramic_vase_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/antique_ceramic_vase_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "antique_ceramic_vase_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/antique_ceramic_vase_01_diff_1k.jpg"
+    },
+    {
+      "name": "antique_ceramic_vase_01_metal-antique_ceramic_vase_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/antique_ceramic_vase_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "antique_ceramic_vase_01.bin",
+      "byteLength": 24414
+    }
+  ],
+  "materials": [
+    {
+      "name": "antique_ceramic_vase_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.006",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "antique_ceramic_vase_01",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

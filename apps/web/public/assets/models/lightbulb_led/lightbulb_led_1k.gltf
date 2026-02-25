@@ -1,0 +1,155 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 19260
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4004,
+      "max": [
+        0.030722344294190407,
+        0.08457459509372711,
+        0.030722342431545258
+      ],
+      "min": [
+        -0.030720753595232964,
+        -0.015676606446504593,
+        -0.030720755457878113
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4004
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4004
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 26319
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "lightbulb_led_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lightbulb_led_nor_gl_1k.jpg"
+    },
+    {
+      "name": "lightbulb_led_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lightbulb_led_diff_1k.jpg"
+    },
+    {
+      "name": "lightbulb_led_metal-lightbulb_led_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/lightbulb_led_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "lightbulb_led.bin",
+      "byteLength": 26319
+    }
+  ],
+  "materials": [
+    {
+      "name": "lightbulb_led",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "lightbulb_led",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

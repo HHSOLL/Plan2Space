@@ -1,0 +1,156 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 34680
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8883,
+      "max": [
+        0.290063738822937,
+        1.0335233211517334,
+        0.33829259872436523
+      ],
+      "min": [
+        -0.29072773456573486,
+        -0.00016570091247558594,
+        -0.26559174060821533
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8883
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 8883
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 46291
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "gallinera_chair_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gallinera_chair_nor_gl_1k.jpg"
+    },
+    {
+      "name": "gallinera_chair_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gallinera_chair_diff_1k.jpg"
+    },
+    {
+      "name": "gallinera_chair_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/gallinera_chair_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "gallinera_chair.bin",
+      "byteLength": 46291
+    }
+  ],
+  "materials": [
+    {
+      "name": "gallinera_chair",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.021",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "gallinera_chair",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

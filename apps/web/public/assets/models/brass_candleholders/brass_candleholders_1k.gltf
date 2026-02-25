@@ -1,0 +1,679 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 96312
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 20645,
+      "max": [
+        0.20422466099262238,
+        0.8089985847473145,
+        0.18241657316684723
+      ],
+      "min": [
+        -0.20404000580310822,
+        -0.0004652440547943115,
+        -0.18226955831050873
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 20645
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 20645
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 168
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 112,
+      "max": [
+        0.180533766746521,
+        0.8347846865653992,
+        0.15673674643039703
+      ],
+      "min": [
+        -0.1798979938030243,
+        0.7166427969932556,
+        -0.1590123027563095
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 112
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 112
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 19764
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4840,
+      "max": [
+        0.13057151436805725,
+        0.2599315941333771,
+        0.048705458641052246
+      ],
+      "min": [
+        -0.13057151436805725,
+        0,
+        -0.0487031415104866
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4840
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4840
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2376
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 549,
+      "max": [
+        0.11567309498786926,
+        0.37943392992019653,
+        0.009166994132101536
+      ],
+      "min": [
+        -0.1155049204826355,
+        0.23893223702907562,
+        -0.009416992776095867
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 549
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 549
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 72
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 48,
+      "max": [
+        0.11203476786613464,
+        0.4008612334728241,
+        0.005622397176921368
+      ],
+      "min": [
+        -0.11215081810951233,
+        0.35857754945755005,
+        -0.0062690312042832375
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 48
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 48
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 7092
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1741,
+      "max": [
+        0.04870732128620148,
+        0.34832286834716797,
+        0.04870732128620148
+      ],
+      "min": [
+        -0.0487031415104866,
+        0.00041017401963472366,
+        -0.0487031415104866
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1741
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1741
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 24
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 16,
+      "max": [
+        0.005919296760112047,
+        0.36595451831817627,
+        0.005616459995508194
+      ],
+      "min": [
+        -0.005966186989098787,
+        0.34218209981918335,
+        -0.0062690237537026405
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 16
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 16
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 102324
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 102324,
+      "byteLength": 793
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 103117,
+      "byteLength": 26517
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 129634,
+      "byteLength": 4059
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 133693,
+      "byteLength": 471
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 134164,
+      "byteLength": 9365
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 143529,
+      "byteLength": 292
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 6,
+      "sampler": 0
+    },
+    {
+      "source": 5,
+      "sampler": 0
+    },
+    {
+      "source": 7,
+      "sampler": 0
+    },
+    {
+      "source": 9,
+      "sampler": 0
+    },
+    {
+      "source": 8,
+      "sampler": 0
+    },
+    {
+      "source": 10,
+      "sampler": 0
+    },
+    {
+      "source": 12,
+      "sampler": 0
+    },
+    {
+      "source": 11,
+      "sampler": 0
+    },
+    {
+      "source": 13,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "brass_candleholders_03_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_03_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_03_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_03_diff_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_03_metal-brass_candleholders_03_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_03_arm_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_flame_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_flame_diff_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_flame_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_flame_diff_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_02_diff_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_02_metal-brass_candleholders_02_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_02_arm_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_candles_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_candles_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_candles_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_candles_diff_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_candles_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_candles_arm_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_01_diff_1k.jpg"
+    },
+    {
+      "name": "brass_candleholders_01_metal-brass_candleholders_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/brass_candleholders_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "brass_candleholders.bin",
+      "byteLength": 143821
+    }
+  ],
+  "materials": [
+    {
+      "name": "brass_candleholders_03",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "brass_candleholders_flame",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 3
+        }
+      },
+      "emissiveFactor": [
+        1,
+        1,
+        1
+      ],
+      "emissiveTexture": {
+        "index": 4
+      }
+    },
+    {
+      "name": "brass_candleholders_02",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 5
+        },
+        "metallicRoughnessTexture": {
+          "index": 7
+        }
+      },
+      "normalTexture": {
+        "index": 6
+      }
+    },
+    {
+      "name": "brass_candleholders_candles",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 8
+        },
+        "metallicRoughnessTexture": {
+          "index": 10
+        }
+      },
+      "normalTexture": {
+        "index": 9
+      }
+    },
+    {
+      "name": "brass_candleholders_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 11
+        },
+        "metallicRoughnessTexture": {
+          "index": 13
+        }
+      },
+      "normalTexture": {
+        "index": 12
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Circle.022",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vert.008",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 12,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 3,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 16,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 4,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vert.005",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 21,
+            "NORMAL": 22,
+            "TEXCOORD_0": 23
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 20,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 5,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 25,
+            "NORMAL": 26,
+            "TEXCOORD_0": 27
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 24,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 6,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "brass_candleholder_03",
+      "translation": [
+        0.4000000059604645,
+        0,
+        0
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "brass_candleholder_02",
+      "mesh": 1
+    },
+    {
+      "name": "brass_candleholder_01",
+      "translation": [
+        -0.4000000059604645,
+        0,
+        0
+      ],
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_draco_mesh_compression"
+  ]
+}

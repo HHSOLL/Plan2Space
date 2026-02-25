@@ -1,0 +1,392 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 104361
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 19355,
+      "max": [
+        1.7236499786376953,
+        3.5607376098632812,
+        1.2547868490219116
+      ],
+      "min": [
+        -1.4278439283370972,
+        -0.020327899605035782,
+        -1.7317125797271729
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 19355
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 19355
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5125,
+      "count": 3180096
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 927528,
+      "max": [
+        2.4107038974761963,
+        5.0071187019348145,
+        2.2341415882110596
+      ],
+      "min": [
+        -2.3444457054138184,
+        0.6301747560501099,
+        -2.583538055419922
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 927528
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 927528
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5125,
+      "count": 1513752
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 357055,
+      "max": [
+        2.3549556732177734,
+        4.951547622680664,
+        2.202267646789551
+      ],
+      "min": [
+        -2.3148062229156494,
+        0.649992048740387,
+        -2.542656898498535
+      ]
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 357055
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 357055
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 116157
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 116157,
+      "byteLength": 5902093
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6018250,
+      "byteLength": 1969523
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 4,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    },
+    {
+      "source": 5,
+      "sampler": 0
+    },
+    {
+      "source": 7,
+      "sampler": 0
+    },
+    {
+      "source": 6,
+      "sampler": 0
+    },
+    {
+      "source": 8,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "island_tree_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_diff_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_arm_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_leaves_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_leaves_nor_gl_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_leaves_diff-island_tree_01_leaves_alpha",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_leaves_diff_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_leaves_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_leaves_arm_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_branches_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_branches_nor_gl_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_branches_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_branches_diff_1k.jpg"
+    },
+    {
+      "name": "island_tree_01_branches_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/island_tree_01_branches_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "island_tree_01.bin",
+      "byteLength": 7987773
+    }
+  ],
+  "materials": [
+    {
+      "name": "island_tree_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "island_tree_01_leaves",
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      },
+      "normalTexture": {
+        "index": 4
+      }
+    },
+    {
+      "name": "island_tree_01_branches",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 6,
+          "extensions": {
+            "KHR_texture_transform": {
+              "offset": [
+                0,
+                -2.4000000953674316
+              ],
+              "scale": [
+                15,
+                3.4000000953674316
+              ]
+            }
+          }
+        },
+        "metallicRoughnessTexture": {
+          "index": 8,
+          "extensions": {
+            "KHR_texture_transform": {
+              "offset": [
+                0,
+                -2.4000000953674316
+              ],
+              "scale": [
+                15,
+                3.4000000953674316
+              ]
+            }
+          }
+        }
+      },
+      "normalTexture": {
+        "index": 7,
+        "scale": 0.5,
+        "extensions": {
+          "KHR_texture_transform": {
+            "offset": [
+              0,
+              -2.4000000953674316
+            ],
+            "scale": [
+              15,
+              3.4000000953674316
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "island_trees_01_blockout_cleaned",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 8,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 2,
+              "attributes": {
+                "POSITION": 0,
+                "NORMAL": 1,
+                "TEXCOORD_0": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "island_tree_01_LOD0",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_texture_transform",
+    "KHR_draco_mesh_compression"
+  ],
+  "extensionsRequired": [
+    "KHR_texture_transform",
+    "KHR_draco_mesh_compression"
+  ]
+}
