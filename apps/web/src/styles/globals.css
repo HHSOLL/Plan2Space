@@ -1,0 +1,65 @@
+/* stylelint-disable at-rule-no-unknown */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  :root {
+    --background: 60 20% 99%;
+    --foreground: 20 10% 10%;
+    --border: 40 5% 90%;
+  }
+
+  body {
+    @apply bg-[#fdfdfc] text-[#1a1a1a] antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/40 backdrop-blur-md border border-black/5;
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .glass-dark {
+    @apply bg-white/60 backdrop-blur-lg border border-black/10;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-[#1a1a1a] via-[#333333] to-[#666666];
+  }
+
+  .arch-card {
+    @apply border border-[#e5e5e0] bg-white transition-all duration-500;
+  }
+
+  .arch-card:hover {
+    box-shadow: 0 24px 80px -20px rgba(0, 0, 0, 0.08);
+  }
+}
+
+html,
+body {
+  height: 100%;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

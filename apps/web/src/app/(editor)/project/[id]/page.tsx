@@ -1,0 +1,912 @@
+"use client";
+
+import { Canvas } from "@react-three/fiber";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useMemo, Suspense } from "react";
+import { toast } from "sonner";
+import CameraRig from "../../../../components/canvas/core/CameraRig";
+import PhysicsWorld from "../../../../components/canvas/core/PhysicsWorld";
+import Lights from "../../../../components/canvas/effects/Lights";
+import PostEffects from "../../../../components/canvas/effects/PostEffects";
+import ProceduralCeiling from "../../../../components/canvas/features/ProceduralCeiling";
+import ProceduralFloor from "../../../../components/canvas/features/ProceduralFloor";
+import Furniture from "../../../../components/canvas/features/Furniture";
+import ProceduralWall from "../../../../components/canvas/features/ProceduralWall";
+import InteractionManager from "../../../../components/canvas/interaction/InteractionManager";
+import AssetTransformControls from "../../../../components/canvas/interaction/AssetTransformControls";
+import EditorHotkeys from "../../../../components/canvas/interaction/EditorHotkeys";
+import { LandingHeroCanvas } from "../../../../components/landing/landing-hero-canvas";
+import { FloorplanEditor } from "../../../../components/editor/FloorplanEditor";
+import AssetPanel from "../../../../components/overlay/panels/AssetPanel";
+import AIAssistantPanel from "../../../../components/overlay/panels/AIAssistantPanel";
+import Crosshair from "../../../../components/overlay/hud/Crosshair";
+import MobileTouchHint from "../../../../components/overlay/hud/MobileTouchHint";
+import MobileControls from "../../../../components/overlay/hud/MobileControls";
+import { useEditorStore, type EditorViewMode } from "../../../../lib/stores/useEditorStore";
+import { useSceneStore } from "../../../../lib/stores/useSceneStore";
+import { useProjectStore } from "../../../../lib/stores/useProjectStore";
+import { motion, AnimatePresence } from "framer-motion";
+import { SaveButton } from "../../../../components/editor/SaveButton";
+import { ShareModal } from "../../../../components/editor/ShareModal";
+import { Upload, ChevronLeft, Play, Edit3, Box, RotateCcw, Share2, Copy } from "lucide-react";
+import SceneEnvironment from "../../../../components/canvas/core/SceneEnvironment";
+import * as THREE from "three";
+import { WebGPURenderer } from "three/webgpu";
+import InteractiveDoors from "../../../../components/canvas/features/InteractiveDoors";
+import InteractiveLights from "../../../../components/canvas/features/InteractiveLights";
+import { createUnknownScaleInfo, getScaleGateMessage, parseScaleInfo } from "../../../../lib/ai/scaleInfo";
+
+type AnalysisRecovery = {
+  message: string;
+  providerErrors: string[];
+  errorCode?: string | null;
+};
+
+export default function ProjectEditorPage() {
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectId = params.id as string;
+
+  const viewMode = useEditorStore((state) => state.viewMode);
+  const setViewMode = useEditorStore((state) => state.setViewMode);
+  const setReadOnly = useEditorStore((state) => state.setReadOnly);
+  const walls = useSceneStore((state) => state.walls);
+  const openings = useSceneStore((state) => state.openings);
+  const scale = useSceneStore((state) => state.scale);
+  const scaleInfo = useSceneStore((state) => state.scaleInfo);
+  const setWalls = useSceneStore((state) => state.setWalls);
+  const setOpenings = useSceneStore((state) => state.setOpenings);
+  const setScale = useSceneStore((state) => state.setScale);
+  const setScene = useSceneStore((state) => state.setScene);
+  const resetScene = useSceneStore((state) => state.resetScene);
+  const { currentProject, selectProject, loadProjects } = useProjectStore();
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const hasAutoAnalyzedRef = useRef(false);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisRecovery, setAnalysisRecovery] = useState<AnalysisRecovery | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isWebGPUReady, setIsWebGPUReady] = useState(false);
+  const [catalogApartmentName, setCatalogApartmentName] = useState("");
+  const [catalogTypeName, setCatalogTypeName] = useState("");
+  const [catalogRegion, setCatalogRegion] = useState("");
+
+  // Load project data on mount
+  useEffect(() => {
+    const init = async () => {
+      await loadProjects();
+      selectProject(projectId);
+      setIsInitialLoad(false);
+      setReadOnly(false);
+    };
+    init();
+  }, [projectId, loadProjects, selectProject, setReadOnly]);
+
+  useEffect(() => {
+    const supportsWebGPU = typeof navigator !== "undefined" && Boolean((navigator as any).gpu);
+    setIsWebGPUReady(supportsWebGPU);
+  }, []);
+
+  const preferWebGPU = searchParams.get("renderer") === "webgpu" && isWebGPUReady;
+  const createRenderer = useMemo(() => {
+    if (!preferWebGPU) return undefined;
+    return (canvas: HTMLCanvasElement) => {
+      try {
+        const renderer = new WebGPURenderer({ canvas, antialias: true });
+        if ("init" in renderer && typeof (renderer as unknown as { init?: () => Promise<void> }).init === "function") {
+          throw new Error("WebGPU async init is not supported.");
+        }
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        return renderer;
+      } catch (error) {
+        console.warn("[renderer] WebGPU fallback -> WebGL", error);
+        setIsWebGPUReady(false);
+        const fallback = new THREE.WebGLRenderer({
+          canvas,
+          antialias: true,
+          alpha: false,
+          stencil: false,
+          depth: true,
+          powerPreference: "high-performance",
+          preserveDrawingBuffer: false
+        });
+        fallback.setPixelRatio(window.devicePixelRatio);
+        fallback.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        return fallback;
+      }
+    };
+  }, [preferWebGPU, setIsWebGPUReady]);
+
+  // Sync project thumbnail and topology to scene
+  useEffect(() => {
+    hasAutoAnalyzedRef.current = false;
+    if (!currentProject) {
+      resetScene();
+      setImageSrc(null);
+      return;
+    }
+
+    const metadata = currentProject.metadata;
+    const floorPlan =
+      metadata && typeof metadata === "object" && !Array.isArray(metadata)
+        ? (metadata as { floorPlan?: { scale?: number; scaleInfo?: unknown; walls?: any[]; openings?: any[] } }).floorPlan
+        : undefined;
+
+    if (floorPlan && Array.isArray(floorPlan.walls) && floorPlan.walls.length > 0) {
+      const nextScale = typeof floorPlan.scale === "number" && floorPlan.scale > 0 ? floorPlan.scale : 1;
+      const nextScaleInfo = parseScaleInfo(floorPlan.scaleInfo, nextScale);
+      setScene({
+        scale: nextScale,
+        scaleInfo: nextScaleInfo,
+        walls: floorPlan.walls as any,
+        openings: Array.isArray(floorPlan.openings) ? (floorPlan.openings as any) : []
+      });
+      const entrance = Array.isArray(floorPlan.openings)
+        ? (floorPlan.openings as Array<{ id?: string; isEntrance?: boolean }>).find((o) => o.isEntrance)
+        : undefined;
+      if (entrance?.id) {
+        useSceneStore.setState({ entranceId: entrance.id });
+      }
+      setAnalysisRecovery(null);
+      setViewMode("top");
+    } else {
+      resetScene();
+      setAnalysisRecovery(null);
+    }
+
+    if (currentProject.thumbnail) {
+      setImageSrc(currentProject.thumbnail);
+    } else {
+      setImageSrc(null);
+    }
+  }, [currentProject, resetScene, setScene, setViewMode]);
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+
+  const getMimeTypeFromDataUrl = (dataUrl: string) => {
+    const match = dataUrl.match(/^data:(image\/(?:png|jpeg));base64,/);
+    return match?.[1];
+  };
+
+  const createPlaceholderFloorplanDataUrl = useCallback(() => {
+    if (typeof document === "undefined") return null;
+    const width = 1280;
+    const height = 900;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#111214";
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= width; x += 64) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += 64) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.font = "600 18px sans-serif";
+    ctx.fillText("Template-based floorplan (no source image)", 28, 44);
+    return canvas.toDataURL("image/png");
+  }, []);
+
+  const runAnalysis = useCallback(
+    async (dataUrl: string, mimeType?: string) => {
+      setIsAnalyzing(true);
+      setViewMode("2d-edit");
+      setAnalysisRecovery(null);
+      try {
+        setImageSrc(dataUrl);
+
+        // Mock delay for premium feel
+        await new Promise(r => setTimeout(r, 2000));
+
+        const response = await fetch("/api/ai/parse-floorplan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "upload", base64: dataUrl, mimeType })
+        });
+
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("Invalid analysis response.");
+        }
+
+        const payload = data as {
+          walls?: any[];
+          openings?: any[];
+          scale?: number;
+          scaleInfo?: unknown;
+          metadata?: {
+            scale?: number;
+            scaleInfo?: unknown;
+          };
+          warning?: string;
+          cacheHit?: boolean;
+          cacheDistance?: number;
+          source?: string;
+          recoverable?: boolean;
+          errorCode?: string;
+          details?: string;
+          error?: string;
+          errors?: string[];
+          providerErrors?: string[];
+          candidates?: Array<{ provider?: string; errors?: string[] }>;
+          providerOrder?: string[];
+          forceProvider?: string | null;
+        };
+
+        const debugErrors = Array.isArray(payload.errors)
+          ? payload.errors
+          : Array.isArray(payload.providerErrors)
+            ? payload.providerErrors
+            : [];
+        if (!response.ok) {
+          const details = payload.details || payload.error || "AI analysis failed.";
+          if (response.status === 422 && payload.recoverable) {
+            setWalls([]);
+            setOpenings([]);
+            setScale(1, createUnknownScaleInfo(1, details));
+            setAnalysisRecovery({
+              message: details,
+              providerErrors: debugErrors,
+              errorCode: payload.errorCode ?? null
+            });
+            setViewMode("2d-edit");
+            toast.error("AI analysis failed. Continue in manual 2D correction mode.");
+            return;
+          }
+          throw new Error(details);
+        }
+
+        if (debugErrors.length > 0) {
+          const details = debugErrors.join(" | ");
+          console.error("[parse-floorplan] provider errors:", details);
+          if (payload.providerOrder || payload.forceProvider) {
+            console.error("[parse-floorplan] provider meta:", {
+              providerOrder: payload.providerOrder,
+              forceProvider: payload.forceProvider
+            });
+          }
+        }
+        if (payload.warning || debugErrors.length > 0) {
+          toast.error(payload.warning ?? debugErrors[0]);
+        }
+        setAnalysisRecovery(null);
+        if (payload.cacheHit) {
+          toast.success("Loaded cached analysis.");
+        }
+
+        const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
+        const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
+        const normalizedWalls = nextWalls.map((wall: any) => ({
+          id: wall.id,
+          start: wall.start,
+          end: wall.end,
+          thickness: wall.thickness,
+          height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
+          type: wall.type,
+          isPartOfBalcony: wall.isPartOfBalcony,
+          confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
+        }));
+        setWalls(normalizedWalls as any);
+        const processedOpenings = nextOpenings.map((o: any) => ({
+          id: o.id,
+          wallId: o.wallId,
+          type: o.type as "door" | "window",
+          offset: o.offset,
+          width: o.width,
+          height: o.height,
+          isEntrance: o.isEntrance,
+          detectConfidence: typeof o.detectConfidence === "number" ? o.detectConfidence : undefined,
+          attachConfidence: typeof o.attachConfidence === "number" ? o.attachConfidence : undefined,
+          typeConfidence: typeof o.typeConfidence === "number" ? o.typeConfidence : undefined
+        }));
+        setOpenings(processedOpenings);
+
+        const entrance = processedOpenings.find((o: any) => o.isEntrance);
+        if (entrance) {
+          useSceneStore.setState({ entranceId: entrance.id });
+        }
+
+        const normalizedScale =
+          typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
+            ? payload.metadata.scale
+            : typeof payload.scale === "number" && payload.scale > 0
+              ? payload.scale
+              : 1;
+        const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
+        setScale(normalizedScale, nextScaleInfo);
+        if (!payload.warning && !payload.cacheHit) {
+          toast.success("Design blueprint analyzed successfully.");
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Low confidence in analysis. Entering manual adjustment mode.";
+        setWalls([]);
+        setOpenings([]);
+        setScale(1, createUnknownScaleInfo(1, message));
+        setAnalysisRecovery({
+          message,
+          providerErrors: []
+        });
+        setViewMode("2d-edit");
+        toast.error(message);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    },
+    [setWalls, setOpenings, setScale, setViewMode]
+  );
+
+  const runCatalogAnalysis = useCallback(
+    async (query: { apartmentName: string; typeName: string; region?: string }) => {
+      if (!query.apartmentName.trim() || !query.typeName.trim()) {
+        toast.error("Apartment name and type are required.");
+        return;
+      }
+      setIsAnalyzing(true);
+      setViewMode("2d-edit");
+      setAnalysisRecovery(null);
+      try {
+        const response = await fetch("/api/ai/parse-floorplan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "catalog",
+            catalogQuery: {
+              apartmentName: query.apartmentName.trim(),
+              typeName: query.typeName.trim(),
+              region: query.region?.trim() || undefined
+            }
+          })
+        });
+
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("Invalid catalog analysis response.");
+        }
+
+        const payload = data as {
+          walls?: any[];
+          openings?: any[];
+          scale?: number;
+          scaleInfo?: unknown;
+          metadata?: {
+            scale?: number;
+            scaleInfo?: unknown;
+          };
+          recoverable?: boolean;
+          errorCode?: string;
+          details?: string;
+          error?: string;
+          errors?: string[];
+          providerErrors?: string[];
+        };
+        const debugErrors = Array.isArray(payload.errors)
+          ? payload.errors
+          : Array.isArray(payload.providerErrors)
+            ? payload.providerErrors
+            : [];
+
+        const placeholder = createPlaceholderFloorplanDataUrl();
+        if (placeholder) {
+          setImageSrc(placeholder);
+        }
+
+        if (!response.ok) {
+          const details = payload.details || payload.error || "Template lookup failed.";
+          if (response.status === 422 && payload.recoverable) {
+            setWalls([]);
+            setOpenings([]);
+            setScale(1, createUnknownScaleInfo(1, details));
+            setAnalysisRecovery({
+              message: details,
+              providerErrors: debugErrors,
+              errorCode: payload.errorCode ?? null
+            });
+            setViewMode("2d-edit");
+            toast.error("Template lookup failed. Continue in manual 2D correction mode.");
+            return;
+          }
+          throw new Error(details);
+        }
+
+        const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
+        const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
+        const normalizedWalls = nextWalls.map((wall: any) => ({
+          id: wall.id,
+          start: wall.start,
+          end: wall.end,
+          thickness: wall.thickness,
+          height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
+          type: wall.type,
+          isPartOfBalcony: wall.isPartOfBalcony,
+          confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
+        }));
+        const processedOpenings = nextOpenings.map((opening: any) => ({
+          id: opening.id,
+          wallId: opening.wallId,
+          type: opening.type as "door" | "window",
+          offset: opening.offset,
+          width: opening.width,
+          height: opening.height,
+          isEntrance: opening.isEntrance,
+          detectConfidence: typeof opening.detectConfidence === "number" ? opening.detectConfidence : undefined,
+          attachConfidence: typeof opening.attachConfidence === "number" ? opening.attachConfidence : undefined,
+          typeConfidence: typeof opening.typeConfidence === "number" ? opening.typeConfidence : undefined
+        }));
+        setWalls(normalizedWalls as any);
+        setOpenings(processedOpenings);
+
+        const entrance = processedOpenings.find((opening) => opening.isEntrance);
+        if (entrance?.id) {
+          useSceneStore.setState({ entranceId: entrance.id });
+        }
+
+        const normalizedScale =
+          typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
+            ? payload.metadata.scale
+            : typeof payload.scale === "number" && payload.scale > 0
+              ? payload.scale
+              : 1;
+        const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
+        setScale(normalizedScale, nextScaleInfo);
+        setAnalysisRecovery(null);
+        toast.success("Template matched. Review and confirm in 2D.");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Template lookup failed.";
+        setWalls([]);
+        setOpenings([]);
+        setScale(1, createUnknownScaleInfo(1, message));
+        setAnalysisRecovery({
+          message,
+          providerErrors: []
+        });
+        setViewMode("2d-edit");
+        toast.error(message);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    },
+    [createPlaceholderFloorplanDataUrl, setImageSrc, setOpenings, setScale, setViewMode, setWalls]
+  );
+
+  const analyzeFloorplan = useCallback(
+    async (file: File) => {
+      const dataUrl = await readFileAsDataUrl(file);
+      await runAnalysis(dataUrl, file.type);
+    },
+    [runAnalysis]
+  );
+
+  useEffect(() => {
+    if (!imageSrc || isAnalyzing || walls.length > 0 || hasAutoAnalyzedRef.current) return;
+    if (!imageSrc.startsWith("data:image/")) return;
+    hasAutoAnalyzedRef.current = true;
+    void runAnalysis(imageSrc, getMimeTypeFromDataUrl(imageSrc));
+  }, [imageSrc, isAnalyzing, runAnalysis, walls.length]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) analyzeFloorplan(file);
+  };
+
+  const handleConfirm2D = () => {
+    if (walls.length === 0) {
+      toast.error("No walls detected. Add at least one wall before entering 3D.");
+      return;
+    }
+    const scaleGateMessage = getScaleGateMessage(scale, scaleInfo);
+    if (scaleGateMessage) {
+      toast.error(scaleGateMessage);
+      return;
+    }
+    setViewMode("top");
+    toast.success("3D Workspace Initialized");
+  };
+
+  const requestViewMode = (mode: EditorViewMode) => {
+    if (mode === "top" || mode === "walk") {
+      if (walls.length === 0) {
+        toast.error("No walls detected. Add at least one wall before entering 3D.");
+        setViewMode("2d-edit");
+        return;
+      }
+      const scaleGateMessage = getScaleGateMessage(scale, scaleInfo);
+      if (scaleGateMessage) {
+        toast.error(scaleGateMessage);
+        setViewMode("2d-edit");
+        return;
+      }
+    }
+    setViewMode(mode);
+  };
+
+  const handleCopyRecoveryErrors = useCallback(async () => {
+    if (!analysisRecovery) return;
+    const lines = [
+      analysisRecovery.message,
+      ...(analysisRecovery.errorCode ? [`Code: ${analysisRecovery.errorCode}`] : []),
+      ...(analysisRecovery.providerErrors.length > 0 ? ["", ...analysisRecovery.providerErrors] : [])
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      toast.success("Recovery details copied.");
+    } catch {
+      toast.error("Failed to copy recovery details.");
+    }
+  }, [analysisRecovery]);
+
+  const handleRetryRecovery = useCallback(() => {
+    if (!imageSrc || !imageSrc.startsWith("data:image/")) {
+      toast.error("Re-upload the original image to retry AI analysis.");
+      return;
+    }
+    void runAnalysis(imageSrc, getMimeTypeFromDataUrl(imageSrc));
+  }, [imageSrc, runAnalysis]);
+
+  const handleStartManualRecovery = useCallback(() => {
+    setWalls([]);
+    setOpenings([]);
+    const reason = analysisRecovery?.message ?? "Continue in manual 2D correction mode.";
+    setScale(1, createUnknownScaleInfo(1, reason));
+    setViewMode("2d-edit");
+    toast.message("Manual correction mode enabled.");
+  }, [analysisRecovery?.message, setOpenings, setScale, setViewMode, setWalls]);
+
+  const isSceneVisible = viewMode === "top" || viewMode === "walk";
+
+  if (isInitialLoad) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0b]">
+        <div className="text-white/20 text-[10px] font-bold uppercase tracking-[0.5em] animate-pulse">
+          Synchronizing Workspace...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen bg-[#0a0a0b] text-white">
+      {/* Background Ambience for 2D modes */}
+      {!isSceneVisible && <LandingHeroCanvas onAction={() => { }} />}
+
+      {/* Glass Navigation Header */}
+      <div className="fixed top-8 inset-x-8 z-[100] flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-6 pointer-events-auto">
+          <button
+            onClick={() => router.push("/studio")}
+            className="p-4 glass-dark rounded-[24px] hover:bg-white/10 transition-all group shadow-2xl border border-white/5 active:scale-95"
+          >
+            <ChevronLeft className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
+          </button>
+
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex flex-col"
+          >
+            <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em] mb-1">Architecture Studio</span>
+            <h1 className="text-lg font-outfit font-medium tracking-tight text-white leading-none">
+              {currentProject?.name || (isSceneVisible ? "System Simulation" : "Topology Analysis")}
+            </h1>
+          </motion.div>
+        </div>
+
+        <div className="flex items-center gap-4 pointer-events-auto">
+          <div className="flex p-1.5 glass-dark rounded-[24px] border border-white/5 shadow-2xl">
+            {[
+              { id: "2d-edit", icon: Edit3, label: "2D Plan" },
+              { id: "top", icon: Box, label: "3D Edit" },
+              { id: "walk", icon: Play, label: "Walkthrough" }
+            ].map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => requestViewMode(mode.id as EditorViewMode)}
+                className={`flex items-center gap-2.5 px-6 py-3 rounded-[18px] text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${viewMode === mode.id
+                  ? "bg-white text-black shadow-lg scale-100"
+                  : "text-white/40 hover:text-white hover:bg-white/5 scale-95"
+                  }`}
+              >
+                <mode.icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{mode.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setIsShareOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 rounded-[18px] text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 hover:text-white hover:bg-white/10 transition-all"
+          >
+            <Share2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Share</span>
+          </button>
+          <SaveButton projectId={projectId} />
+        </div>
+      </div>
+
+      {/* Primary Workspace */}
+      <div className="relative w-full h-screen overflow-hidden pt-12 pb-12 px-12">
+        <AnimatePresence mode="popLayout" initial={false}>
+          {/* Step 1: Upload */}
+          {!imageSrc && !isAnalyzing && (
+            <motion.div
+              key="upload_state"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, y: 40 }}
+              className="w-full h-full flex items-center justify-center p-20"
+            >
+              <div
+                onClick={() => inputRef.current?.click()}
+                className="group relative w-full max-w-4xl h-full flex flex-col items-center justify-center gap-8 rounded-[60px] border border-white/10 glass-dark hover:border-white/20 cursor-pointer transition-all duration-700 shadow-3xl"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="relative p-12 rounded-full bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:scale-110 transition-all duration-700">
+                    <Upload className="w-16 h-16 text-white/20 group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+                <div className="text-center space-y-4 max-w-md">
+                  <h2 className="text-4xl font-outfit font-light tracking-tight">Deploy Blueprint</h2>
+                  <p className="text-white/30 text-base font-light font-outfit leading-relaxed">
+                    Upload your architectural floorplan. Claude 3.5 will automatically extract structural topology.
+                  </p>
+                </div>
+                <div
+                  className="w-full max-w-2xl rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-white/55">
+                    Template Catalog
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <input
+                      value={catalogApartmentName}
+                      onChange={(event) => setCatalogApartmentName(event.target.value)}
+                      placeholder="Apartment name"
+                      className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-white/40"
+                    />
+                    <input
+                      value={catalogTypeName}
+                      onChange={(event) => setCatalogTypeName(event.target.value)}
+                      placeholder="Type (e.g. 84A)"
+                      className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-white/40"
+                    />
+                    <input
+                      value={catalogRegion}
+                      onChange={(event) => setCatalogRegion(event.target.value)}
+                      placeholder="Region (optional)"
+                      className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-white/40"
+                    />
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void runCatalogAnalysis({
+                          apartmentName: catalogApartmentName,
+                          typeName: catalogTypeName,
+                          region: catalogRegion
+                        })
+                      }
+                      disabled={isAnalyzing}
+                      className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/85 transition hover:bg-white/15 disabled:opacity-40"
+                    >
+                      Find Template
+                    </button>
+                  </div>
+                </div>
+                <input ref={inputRef} type="file" className="hidden" onChange={handleFileChange} />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Processing */}
+          {isAnalyzing && (
+            <motion.div
+              key="processing_state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full h-full flex flex-col items-center justify-center gap-10"
+            >
+              <div className="relative w-32 h-32">
+                <div className="absolute inset-0 border-[3px] border-white/5 rounded-full" />
+                <motion.div
+                  className="absolute inset-0 border-[3px] border-t-white border-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                />
+              </div>
+              <div className="text-center space-y-3">
+                <h2 className="text-3xl font-outfit font-light tracking-tight">Processing Matrix</h2>
+                <div className="flex items-center justify-center gap-4 text-white/40 uppercase tracking-[0.4em] text-[10px]">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span>Analyzing via Sonnet 3.5</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: 2D Refinement */}
+          {viewMode === "2d-edit" && imageSrc && !isAnalyzing && (
+            <motion.div
+              key="refine_state"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full h-full glass-dark overflow-hidden rounded-[40px] shadow-3xl border border-white/10 p-4"
+            >
+              <div className="flex h-full flex-col gap-4">
+                {analysisRecovery && (
+                  <div className="rounded-2xl border border-amber-400/40 bg-amber-200/10 p-4 text-amber-100">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">
+                          Recoverable AI Failure
+                        </p>
+                        <p className="text-sm">{analysisRecovery.message}</p>
+                        {analysisRecovery.errorCode && (
+                          <p className="text-[11px] text-amber-100/70">Code: {analysisRecovery.errorCode}</p>
+                        )}
+                        <p className="text-[11px] text-amber-100/80">
+                          Walls/openings are cleared. Draw walls and calibrate scale to continue.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCopyRecoveryErrors}
+                          className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Copy Errors
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRetryRecovery}
+                          className="inline-flex items-center rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
+                        >
+                          Try AI Again
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleStartManualRecovery}
+                          className="inline-flex items-center rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
+                        >
+                          Start Manual
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="min-h-0 flex-1 overflow-hidden rounded-[28px] border border-white/10">
+                  <FloorplanEditor image={imageSrc} onConfirm={handleConfirm2D} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 4: 3D Workspace */}
+          {isSceneVisible && (
+            <motion.div
+              key="workspace_state"
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full h-full rounded-[48px] overflow-hidden bg-[#050505] shadow-3xl border border-white/5 border-b-0"
+            >
+              <Canvas
+                shadows
+                dpr={[1, 2]}
+                gl={
+                  createRenderer ?? {
+                    antialias: true,
+                    alpha: false,
+                    stencil: false,
+                    depth: true,
+                    powerPreference: "high-performance",
+                    preserveDrawingBuffer: false
+                  }
+                }
+                camera={{ fov: 40, position: [0, 10, 20] }}
+                className="h-full w-full"
+                onCreated={({ gl }) => {
+                  const renderer = gl as THREE.WebGLRenderer & { physicallyCorrectLights?: boolean };
+                  renderer.shadowMap.enabled = true;
+                  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                  renderer.toneMappingExposure = 1.1;
+                  renderer.outputColorSpace = THREE.SRGBColorSpace;
+                  if ("physicallyCorrectLights" in renderer) {
+                    renderer.physicallyCorrectLights = true;
+                  }
+                }}
+              >
+                <color attach="background" args={["#0a0a0b"]} />
+                <Suspense fallback={null}>
+                  <PhysicsWorld>
+                    <Lights />
+                    <SceneEnvironment />
+                    <CameraRig />
+                    <EditorHotkeys />
+                    <AssetTransformControls />
+                    <InteractionManager>
+                      <ProceduralFloor />
+                      <ProceduralCeiling />
+                      <ProceduralWall />
+                      <InteractiveDoors />
+                      <InteractiveLights />
+                      <Furniture />
+                    </InteractionManager>
+                  </PhysicsWorld>
+                  <PostEffects />
+                </Suspense>
+              </Canvas>
+              <AssetPanel />
+              <AIAssistantPanel />
+              <Crosshair />
+              <MobileTouchHint />
+              <MobileControls />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Status Bar */}
+      <div className="fixed bottom-12 inset-x-12 z-[100] flex items-center justify-between pointer-events-none">
+        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full px-6 py-3 flex items-center gap-4 pointer-events-auto">
+          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+          <span className="text-[10px] font-bold text-white/60 tracking-[0.2em] uppercase">Studio Online</span>
+          <div className="w-px h-4 bg-white/10" />
+          <AssetCountBadge />
+        </div>
+
+        <div className="flex items-center gap-3 pointer-events-auto">
+          <button
+            onClick={() => {
+              setWalls([]);
+              setOpenings([]);
+              router.push("/studio");
+            }}
+            className="p-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full hover:bg-red-500/10 hover:border-red-500/20 group transition-all"
+          >
+            <RotateCcw className="w-5 h-5 text-white/30 group-hover:text-red-500 transition-colors" />
+          </button>
+        </div>
+      </div>
+
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.03),transparent_50%)]" />
+      <ShareModal projectId={projectId} isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} />
+    </div >
+  );
+}
+
+function AssetCountBadge() {
+  const assetsCount = useSceneStore((state) => state.assets.length);
+  return (
+    <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.1em]">
+      Assets: {assetsCount}
+    </span>
+  );
+}

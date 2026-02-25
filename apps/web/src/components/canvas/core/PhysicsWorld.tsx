@@ -1,0 +1,149 @@
+"use client";
+
+import { Physics, CuboidCollider, RigidBody } from "@react-three/rapier";
+import type { ReactNode } from "react";
+import { useMemo } from "react";
+import { useSceneStore } from "../../../lib/stores/useSceneStore";
+
+type PhysicsWorldProps = {
+  children: ReactNode;
+  debug?: boolean;
+};
+
+const DEFAULT_HEIGHT = 2.8;
+const FLOOR_THICKNESS = 0.2;
+
+function computeBounds(walls: { start: [number, number]; end: [number, number] }[], scale: number) {
+  if (walls.length === 0) {
+    return { minX: -2.5, maxX: 2.5, minZ: -2.5, maxZ: 2.5 };
+  }
+
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+
+  walls.forEach((wall) => {
+    [wall.start, wall.end].forEach(([x, z]) => {
+      const scaledX = x * scale;
+      const scaledZ = z * scale;
+      minX = Math.min(minX, scaledX);
+      maxX = Math.max(maxX, scaledX);
+      minZ = Math.min(minZ, scaledZ);
+      maxZ = Math.max(maxZ, scaledZ);
+    });
+  });
+
+  return { minX, maxX, minZ, maxZ };
+}
+
+export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
+  const walls = useSceneStore((state) => state.walls);
+  const openings = useSceneStore((state) => state.openings);
+  const scale = useSceneStore((state) => state.scale);
+
+  const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
+  const width = Math.max(1, bounds.maxX - bounds.minX + 2);
+  const depth = Math.max(1, bounds.maxZ - bounds.minZ + 2);
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerZ = (bounds.minZ + bounds.maxZ) / 2;
+
+  const wallColliders = useMemo(() => {
+    const openingsByWall = new Map<string, typeof openings>();
+    openings.forEach((opening) => {
+      if (opening.type !== "door") return;
+      const list = openingsByWall.get(opening.wallId) ?? [];
+      list.push(opening);
+      openingsByWall.set(opening.wallId, list);
+    });
+
+    const colliders: {
+      id: string;
+      args: [number, number, number];
+      position: [number, number, number];
+      rotation: [number, number, number];
+    }[] = [];
+
+    walls.forEach((wall) => {
+      const dx = (wall.end[0] - wall.start[0]) * scale;
+      const dz = (wall.end[1] - wall.start[1]) * scale;
+      const length = Math.hypot(dx, dz);
+      if (!Number.isFinite(length) || length < 0.05) return;
+      const angle = Math.atan2(dz, dx);
+      const thickness = Math.max(0.02, wall.thickness * scale);
+      const height = wall.height > 0 ? wall.height : DEFAULT_HEIGHT;
+      const ux = dx / length;
+      const uz = dz / length;
+
+      const wallOpenings = (openingsByWall.get(wall.id) ?? [])
+        .map((opening) => ({
+          offset: opening.offset * scale,
+          width: opening.width * scale
+        }))
+        .filter((opening) => opening.width > 0.05)
+        .sort((a, b) => a.offset - b.offset);
+
+      const segments: { start: number; length: number }[] = [];
+      let cursor = 0;
+      wallOpenings.forEach((opening) => {
+        const start = Math.max(0, opening.offset);
+        if (start > cursor + 0.05) {
+          segments.push({ start: cursor, length: start - cursor });
+        }
+        cursor = Math.max(cursor, opening.offset + opening.width);
+      });
+      if (length - cursor > 0.05) {
+        segments.push({ start: cursor, length: length - cursor });
+      }
+
+      if (segments.length === 0) {
+        const midX = (wall.start[0] + wall.end[0]) * 0.5 * scale;
+        const midZ = (wall.start[1] + wall.end[1]) * 0.5 * scale;
+        colliders.push({
+          id: wall.id,
+          args: [length / 2, height / 2, thickness / 2],
+          position: [midX, height / 2, midZ],
+          rotation: [0, angle, 0]
+        });
+        return;
+      }
+
+      segments.forEach((segment, index) => {
+        const midOffset = segment.start + segment.length / 2;
+        const midX = wall.start[0] * scale + ux * midOffset;
+        const midZ = wall.start[1] * scale + uz * midOffset;
+        colliders.push({
+          id: `${wall.id}-${index}`,
+          args: [segment.length / 2, height / 2, thickness / 2],
+          position: [midX, height / 2, midZ],
+          rotation: [0, angle, 0]
+        });
+      });
+    });
+
+    return colliders;
+  }, [openings, scale, walls]);
+
+  return (
+    <Physics gravity={[0, -9.81, 0]}>
+      {/* Floor Collider */}
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider
+          args={[width / 2, FLOOR_THICKNESS / 2, depth / 2]}
+          position={[centerX, -FLOOR_THICKNESS / 2, centerZ]}
+        />
+      </RigidBody>
+
+      {/* Wall Colliders */}
+      {wallColliders.map((wall) =>
+        wall ? (
+          <RigidBody key={wall.id} type="fixed" colliders={false} position={wall.position} rotation={wall.rotation}>
+            <CuboidCollider args={wall.args} />
+          </RigidBody>
+        ) : null
+      )}
+
+      {children}
+    </Physics>
+  );
+}
