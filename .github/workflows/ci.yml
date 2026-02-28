@@ -82,7 +82,6 @@ jobs:
           npm --workspace apps/web run eval:floorplan:gate -- --input=${PWD}/apps/web/.eval/floorplan/summary.json --minSuccessRate=0.9 --minExteriorLoopClosure=0.95 --minOpeningAttach=0.92 --maxRecoverableRate=0.2 --maxUnknownScaleRate=0.2
 
   api:
-    if: ${{ hashFiles('apps/api/package.json') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,5 +90,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm --workspace apps/api run typecheck --if-present
-      - run: npm --workspace apps/api run test --if-present
+      - name: Detect api workspace
+        id: api_guard
+        run: |
+          if [ -f "apps/api/package.json" ]; then
+            echo "has_api=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_api=false" >> "$GITHUB_OUTPUT"
+            echo "apps/api workspace not found. Skipping api job steps."
+          fi
+      - if: steps.api_guard.outputs.has_api == 'true'
+        run: npm --workspace apps/api run typecheck --if-present
+      - if: steps.api_guard.outputs.has_api == 'true'
+        run: npm --workspace apps/api run test --if-present
