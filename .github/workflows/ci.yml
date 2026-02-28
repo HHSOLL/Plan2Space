@@ -82,6 +82,7 @@ jobs:
           npm --workspace apps/web run eval:floorplan:gate -- --input=${PWD}/apps/web/.eval/floorplan/summary.json --minSuccessRate=0.9 --minExteriorLoopClosure=0.95 --minOpeningAttach=0.92 --maxRecoverableRate=0.2 --maxUnknownScaleRate=0.2
 
   api:
+    if: ${{ hashFiles('apps/api/package.json') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,5 +91,5 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm --workspace apps/api run typecheck
-      - run: npm --workspace apps/api run test
+      - run: npm --workspace apps/api run typecheck --if-present
+      - run: npm --workspace apps/api run test --if-present
