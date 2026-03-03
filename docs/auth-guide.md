@@ -16,12 +16,27 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 1) Supabase 프로젝트 생성
 2) Authentication → URL Configuration
-   - Site URL: `http://127.0.0.1:3100` (프로덕션 URL 추가)
+   - Site URL: **현재 실제 로그인 시작 도메인**으로 설정
+     - 로컬 개발 기본값: `http://127.0.0.1:3100`
+     - Vercel 운영 예시: `https://plan2space.vercel.app`
    - Redirect URLs:
      - `http://127.0.0.1:3100/auth/callback`
      - `https://<your-domain>/auth/callback`
+     - (선택) `https://<your-domain>/*`
+     - (선택) Vercel Preview를 쓸 경우 해당 Preview 도메인 `/auth/callback`도 추가
 3) Authentication → Providers
    - Google / Kakao 활성화 후 Client ID/Secret 입력
+
+### Vercel만 배포한 상태에서 localhost로 튀는 경우 (즉시 해결)
+
+- 증상: Vercel 도메인에서 로그인했는데 `localhost:3000` 또는 로컬로 리다이렉트됨
+- 원인: Supabase `Site URL` / `Redirect URLs`가 로컬 값으로 남아 fallback 발생
+- 조치:
+  1) `Site URL`을 운영 도메인으로 변경 (예: `https://plan2space.vercel.app`)
+  2) `Redirect URLs`에 운영 콜백 추가
+     - `https://plan2space.vercel.app/auth/callback`
+  3) 저장 후 브라우저 쿠키 삭제 또는 시크릿 창에서 재로그인
+  4) 로그인 시작한 도메인과 콜백 도메인이 일치하는지 확인
 
 ## Google OAuth 설정
 
@@ -38,6 +53,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 - Redirect URI:
   - `https://<your-supabase-project>.supabase.co/auth/v1/callback`
 - Kakao에서 받은 Client ID/Secret을 Supabase Provider 설정에 입력
+- Kakao Redirect URI에는 `localhost`가 아니라 **Supabase 콜백 URL**을 사용합니다.
 
 ## 콜백 라우트
 
