@@ -13,6 +13,8 @@
   - Architecture/Scope: `plan2space-project-core`
   - UX/Visual: `plan2space-studio-ux`
   - Blueprint AI: `plan2space-blueprint-ai`
+- 기능/버그/리팩터링 작업은 항상 **전용 브랜치**에서 진행하고, 검증 후 `main`에 병합합니다.
+  - 여러 기능을 동시에 진행할 경우 기능별로 브랜치를 분리합니다.
 - 코드/구조 변경 후 문서를 반드시 동기화합니다.
   - 제약 변경: `docs/master-guide.md`
   - 단계/완료조건 변경: `docs/implementation-plan.md`

@@ -60,7 +60,13 @@ npm --workspace apps/web run lint
 npm --workspace apps/web run build
 ```
 
-## 7) Definition of Done
+## 7) Git Branch Policy (필수)
+- 기능/버그/리팩터링 단위로 **항상 새 브랜치**를 생성하고 작업한다.
+- 새 브랜치에서 구현 후 품질 게이트(`type-check`, `lint`, `build`)를 통과시킨 뒤에만 `main`에 병합한다.
+- 여러 기능을 동시에 진행할 때는 기능별로 브랜치를 분리한다.
+- 병합이 끝난 브랜치는 로컬/원격에서 삭제해 저장소를 정리한다.
+
+## 8) Definition of Done
 - 기능/리팩터링 구현 완료
 - 품질 게이트 통과
 - 관련 문서 갱신 완료
