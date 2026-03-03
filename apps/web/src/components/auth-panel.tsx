@@ -27,10 +27,7 @@ export function AuthPanel({ className }: { className?: string }) {
 
   const buildRedirectUrl = () => {
     if (typeof window === "undefined") return undefined;
-    const nextParam = new URLSearchParams(window.location.search).get("next");
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}` || "/studio";
-    const next = nextParam && nextParam.startsWith("/") ? nextParam : currentPath;
-    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    return `${window.location.origin}/auth/callback`;
   };
 
   const handleSocialLogin = async (provider: "google" | "kakao") => {

@@ -41,9 +41,7 @@ export function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
 
     const buildRedirectUrl = () => {
         if (typeof window === "undefined") return undefined;
-        const currentPath =
-            `${window.location.pathname}${window.location.search}${window.location.hash}` || "/studio";
-        return `${window.location.origin}/auth/callback?next=${encodeURIComponent(currentPath)}`;
+        return `${window.location.origin}/auth/callback`;
     };
 
     const handleSocialLogin = async (provider: "google" | "kakao") => {
