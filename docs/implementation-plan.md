@@ -10,10 +10,11 @@
 - `parse-floorplan` 실패 시에도 2D 편집기로 복구 가능.
 - `parse-floorplan` 실패는 `HTTP 422 + recoverable=true`로 명시되어야 함(성공 위장 금지).
 - provider 후보 스코어링이 동작하고, 최고점 후보가 선택되어야 함(첫 성공 종료 금지).
-- debug 응답에 `candidates[]`, `selectedProvider`, `selectedScore`가 표시되어야 함.
+- debug 응답에 `candidates[]`, `selectedProvider`, `selectedPassId`, `selectedPreprocessProfile`, `selectedScore`가 표시되어야 함.
 - `candidates[]`에는 `scoreBreakdown(topology/opening/scale/penalty)`와 확장 metrics가 포함되어야 함.
-- `providerErrors`로 에러 원인이 명확히 표시됨.
+- `providerErrors`와 `providerStatus[]`로 에러 원인이 명확히 표시됨.
 - 전처리 튜닝 파라미터로 워터마크/컬러 도면 대응.
+- 다중 전처리 pass(`balanced`, `lineart`) 후보 평가가 항상 수행되어야 함.
 - `apps/web/scripts/eval-floorplan.ts`로 fixture 회귀 비교(JSON/CSV)가 가능해야 함.
 - `apps/web/scripts/eval-floorplan-gate.ts`로 CI 임계치(success/loop/attach/422/unknown-scale)를 자동 판정할 수 있어야 함.
 - `useSearchParams`/CSR 훅 사용으로 인한 빌드 타임 prerender 오류가 없어야 함.
@@ -30,6 +31,7 @@
 - 스케일 미보정 상태(`source=unknown` 또는 `confidence<0.6`)에서는 3D 진입(Top/Walk)이 차단되어야 함.
 - recoverable 배너의 고정 액션(`Copy Errors`, `Try AI Again`, `Start Manual`)이 제공되어야 함.
 - 편집 후 결과가 3D로 정확히 반영.
+- 핵심 플로우(`/studio` → `NewProjectModal` → `/project/[id]`)가 360/768/1024px에서 가로 스크롤 없이 동작.
 
 추가 진행:
 - `mode="catalog"` + `catalogQuery` 요청 계약 도입.
@@ -68,3 +70,16 @@
 - 기능/버그/리팩터링은 새 브랜치에서 작업하고 검증 완료 후 `main`에 병합해야 함.
 - 다기능 동시 개발 시 기능별 브랜치를 분리해야 함.
 - 작업 종료 시 문서 Added/Updated/Removed 항목을 동기화해야 함.
+
+## 2026-03-05 변경 동기화
+Added:
+- 업로드 분석의 항상 multi-pass(`balanced`, `lineart`) 평가 기준.
+- provider 구성 진단(`providerStatus`) 및 미구성 코드(`PROVIDER_NOT_CONFIGURED`) 검증 기준.
+- 핵심 플로우 모바일 폭(360/768/1024) UX 완료 조건.
+
+Updated:
+- debug 필수 필드에 `selectedPassId`, `selectedPreprocessProfile` 포함.
+- provider 오류 검증 기준을 `providerErrors` 단독에서 `providerErrors + providerStatus`로 확장.
+
+Removed/Deprecated:
+- 단일 전처리 pass만 고려하는 과거 기준.

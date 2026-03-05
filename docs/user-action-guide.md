@@ -9,7 +9,8 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-FLOORPLAN_PROVIDER_ORDER=anthropic
+FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
+FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-...
 OPENAI_API_KEY=
@@ -18,8 +19,18 @@ OPENAI_MODEL=gpt-4o-mini
 FLOORPLAN_PREPROCESS_DOWNSCALE=0.35
 FLOORPLAN_PREPROCESS_CLAHE=3
 FLOORPLAN_PREPROCESS_STRUCTURAL_BLUR=0.6
+FLOORPLAN_PREPROCESS_LINEART_THRESHOLD=218
+FLOORPLAN_PREPROCESS_LINEART_MEDIAN=2
+FLOORPLAN_PREPROCESS_LINEART_BLUR=0.15
+FLOORPLAN_PREPROCESS_LINEART_BG_BLUR=8
+FLOORPLAN_PREPROCESS_LINEART_CONTRAST=1.45
+FLOORPLAN_PREPROCESS_LINEART_BRIGHTNESS=-20
+FLOORPLAN_PREPROCESS_LINEART_DOWNSCALE=0.5
+FLOORPLAN_PREPROCESS_LINEART_CLAHE=5
+FLOORPLAN_PREPROCESS_LINEART_STRUCTURAL_BLUR=1
 FLOORPLAN_MIN_WALL_THICKNESS=6
 FLOORPLAN_ORPHAN_MAX_LENGTH=60
+FLOORPLAN_OPENING_MIN_CONFIDENCE=0.45
 FLOORPLAN_CACHE_DHASH_THRESHOLD=0
 FLOORPLAN_CACHE_SIZE_TOLERANCE_RATIO=0.02
 FLOORPLAN_MIN_ACCEPT_SCORE=25
@@ -66,9 +77,24 @@ TRIPOSR_STATUS_URL=
 - 2D 보정 단계에서 스케일 측정(두 점 클릭 → mm 입력)과 Auto door 스케일 보정이 가능한가
 - 스케일 미보정(`source=unknown` 또는 `confidence<0.6`) 상태에서 Top/Walk 3D 진입이 차단되는가
 - AI 실패(422 recoverable) 시 2D 편집기가 열리고 provider 에러 복사가 가능한가
+- provider 미구성 시 `errorCode=PROVIDER_NOT_CONFIGURED`와 설정 누락 키가 표시되는가
 - AI 실패(422 recoverable) 배너에 `Copy Errors`, `Try AI Again`, `Start Manual` 3개 액션이 보이는가
 - Walk mode에서 벽 관통이 불가능한가
 - Post FX/조명이 과하지 않고 안정적인가
+- 390/768/1024 폭에서 핵심 플로우 버튼(업로드/보정/3D 진입)이 겹치지 않는가
 
 ## 6) 키 관리
 API 키가 외부에 노출되지 않도록 공유 시에는 마스킹된 로그만 전달합니다.
+
+## 7) 2026-03-05 변경 동기화
+Added:
+- lineart 전처리 환경 변수 세트.
+- provider 미구성 검수 항목(`PROVIDER_NOT_CONFIGURED`).
+- 핵심 플로우 모바일 폭(390/768/1024) QA 항목.
+
+Updated:
+- 기본 provider 순서 값을 `anthropic,openai,snaptrude`로 갱신.
+- provider timeout/저신뢰 opening 필터 변수 추가.
+
+Removed/Deprecated:
+- `FLOORPLAN_PROVIDER_ORDER=anthropic` 단독 권장값.

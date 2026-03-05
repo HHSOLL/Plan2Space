@@ -65,8 +65,12 @@ UI 상태와 씬 데이터는 반드시 분리하며, 렌더 루프에 불필요
 상세는 `docs/3d-visual-engine.md`와 `docs/3d-engine.md`를 따릅니다.
 
 ## 품질/성능 가드레일
+- 핵심 플로우(`/studio` → `NewProjectModal` → `/project/[id]`)는 360~1024px 폭에서 가로 스크롤 없이 동작해야 함.
 - 도면 분석 실패는 `HTTP 422 + recoverable=true`로 명시하며, 성공(200)으로 위장하지 않음.
 - 도면 분석 실패 시에도 2D 보정으로 복구 가능해야 함.
+- provider 구성 상태를 사전 판별하고 `providerStatus[]`로 reason을 전달해야 함.
+- 기본 provider 순서는 `anthropic,openai,snaptrude`.
+- upload 분석은 다중 전처리 pass(`balanced`, `lineart`) 기반 후보 스코어링을 수행해야 함.
 - provider는 첫 성공 즉시 채택하지 않고 후보 스코어링으로 최고점 결과를 선택.
 - 후보 스코어링은 `topology/opening/scale/penalty` breakdown을 포함해 debug에서 추적 가능해야 함.
 - `metadata.scaleInfo(value/source/confidence/evidence)`를 계약으로 유지하고 저장/복원 시 보존.
@@ -90,3 +94,15 @@ UI 상태와 씬 데이터는 반드시 분리하며, 렌더 루프에 불필요
 - `docs/3d-engine.md`
 - `docs/implementation-plan.md`
 - `docs/user-action-guide.md`
+
+## 2026-03-05 변경 동기화
+Added:
+- 핵심 플로우 모바일 품질 기준(360~1024px).
+- provider 사전 구성 판별과 `providerStatus[]` 전달 규칙.
+
+Updated:
+- 기본 provider 순서(`anthropic,openai,snaptrude`) 명시.
+- upload 분석의 multi-pass 후보 스코어링 기준 반영.
+
+Removed/Deprecated:
+- snaptrude 우선 기본 순서 가정.

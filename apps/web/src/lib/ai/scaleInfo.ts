@@ -38,10 +38,10 @@ export function parseScaleInfo(input: unknown, fallbackValue: number): ScaleInfo
     return createUnknownScaleInfo(fallbackValue);
   }
   const raw = input as Record<string, unknown>;
-  const source = isScaleSource(raw.source) ? raw.source : "unknown";
+  let source = isScaleSource(raw.source) ? raw.source : "unknown";
   const valueCandidate = Number(raw.value);
   const value = Number.isFinite(valueCandidate) && valueCandidate > 0 ? valueCandidate : fallbackValue;
-  const confidence = clampConfidence(raw.confidence, source === "unknown" ? 0 : 0.6);
+  let confidence = clampConfidence(raw.confidence, source === "unknown" ? 0 : 0.6);
   const evidenceRaw =
     raw.evidence && typeof raw.evidence === "object" && !Array.isArray(raw.evidence)
       ? (raw.evidence as Record<string, unknown>)
@@ -77,6 +77,17 @@ export function parseScaleInfo(input: unknown, fallbackValue: number): ScaleInfo
           ...(notes ? { notes } : {})
         }
       : undefined;
+
+  const hasStrongDimensionEvidence = Boolean(
+    evidence &&
+    Number.isFinite(evidence.mmValue) &&
+    Number.isFinite(evidence.pxDistance) &&
+    (Boolean(evidence.ocrText) || (Array.isArray(evidence.p1) && Array.isArray(evidence.p2)))
+  );
+  if (source === "unknown" && hasStrongDimensionEvidence) {
+    source = "ocr_dimension";
+    confidence = Math.max(confidence, 0.65);
+  }
 
   return {
     value,

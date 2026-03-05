@@ -323,6 +323,8 @@ type ScaleCandidate = {
 
 type Candidate = {
   provider: string;
+  passId: string;
+  preprocessProfile: PreprocessProfile;
   raw: unknown | null;
   normalized: Topology | null;
   refined: Topology | null;
@@ -344,6 +346,8 @@ type ProviderStatus = {
   status: "enabled" | "skipped";
   reason: string | null;
 };
+
+type PreprocessProfile = "balanced" | "lineart";
 
 const FLOORPLAN_TOOL = {
   name: "floorplan_topology",
@@ -490,6 +494,7 @@ const SNAP_TOLERANCE = Number(process.env.FLOORPLAN_SNAP_TOLERANCE ?? 4);
 const MERGE_GAP_TOLERANCE = Number(process.env.FLOORPLAN_MERGE_GAP_TOLERANCE ?? 6);
 const MERGE_ALIGN_TOLERANCE = Number(process.env.FLOORPLAN_MERGE_ALIGN_TOLERANCE ?? 2);
 const OPENING_ATTACH_DISTANCE = Number(process.env.FLOORPLAN_OPENING_ATTACH_DISTANCE ?? 20);
+const OPENING_MIN_CONFIDENCE = Math.max(0, Math.min(1, getEnvNumber("FLOORPLAN_OPENING_MIN_CONFIDENCE", 0.45)));
 const MIN_ACCEPT_SCORE = Number.isFinite(Number(process.env.FLOORPLAN_MIN_ACCEPT_SCORE))
   ? Number(process.env.FLOORPLAN_MIN_ACCEPT_SCORE)
   : 25;
@@ -531,6 +536,7 @@ const TEMPLATE_MIN_IMAGE_SCORE = getEnvNumber("FLOORPLAN_TEMPLATE_MIN_IMAGE_SCOR
 type PreprocessResult = {
   processed: string | null;
   structural: string | null;
+  profile: PreprocessProfile;
 };
 function getModelCandidates() {
   const envValue = process.env.ANTHROPIC_MODEL;
@@ -618,23 +624,33 @@ function formatProviderError(provider: string, error: unknown) {
   return `${provider}: ${message}`;
 }
 
-async function preprocessImage(base64: string): Promise<PreprocessResult> {
+async function preprocessImage(base64: string, profile: PreprocessProfile): Promise<PreprocessResult> {
   try {
     // Remove data URL prefix if present for Buffer conversion
     const cleanBase64 = base64.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(cleanBase64, "base64");
 
+    const resolveProfileNumber = (key: string, balancedDefault: number, lineArtDefault: number) => {
+      if (profile === "lineart") {
+        return getEnvNumber(
+          `FLOORPLAN_PREPROCESS_LINEART_${key}`,
+          getEnvNumber(`FLOORPLAN_PREPROCESS_${key}`, lineArtDefault)
+        );
+      }
+      return getEnvNumber(`FLOORPLAN_PREPROCESS_${key}`, balancedDefault);
+    };
+
     const clampNumber = (value: number, min: number, max: number) =>
       Number.isFinite(value) ? Math.min(Math.max(value, min), max) : min;
-    const threshold = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_THRESHOLD ?? 200), 0, 255);
-    const median = Math.round(clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_MEDIAN ?? 3), 0, 5));
-    const blur = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_BLUR ?? 0.3), 0, 2);
-    const backgroundBlur = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_BG_BLUR ?? 12), 0, 20);
-    const contrast = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_CONTRAST ?? 1.25), 0.5, 2);
-    const brightness = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_BRIGHTNESS ?? -15), -50, 50);
-    const downscale = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_DOWNSCALE ?? 0.35), 0.1, 1);
-    const claheSlope = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_CLAHE ?? 3), 0, 100);
-    const structuralBlur = clampNumber(Number(process.env.FLOORPLAN_PREPROCESS_STRUCTURAL_BLUR ?? 0.6), 0, 2);
+    const threshold = clampNumber(resolveProfileNumber("THRESHOLD", 200, 218), 0, 255);
+    const median = Math.round(clampNumber(resolveProfileNumber("MEDIAN", 3, 2), 0, 5));
+    const blur = clampNumber(resolveProfileNumber("BLUR", 0.3, 0.15), 0, 2);
+    const backgroundBlur = clampNumber(resolveProfileNumber("BG_BLUR", 12, 8), 0, 20);
+    const contrast = clampNumber(resolveProfileNumber("CONTRAST", 1.25, 1.45), 0.5, 2);
+    const brightness = clampNumber(resolveProfileNumber("BRIGHTNESS", -15, -20), -50, 50);
+    const downscale = clampNumber(resolveProfileNumber("DOWNSCALE", 0.35, 0.5), 0.1, 1);
+    const claheSlope = clampNumber(resolveProfileNumber("CLAHE", 3, 5), 0, 100);
+    const structuralBlur = clampNumber(resolveProfileNumber("STRUCTURAL_BLUR", 0.6, 1), 0, 2);
 
     // Process image: Grayscale -> Background suppression -> Denoise -> Contrast -> Threshold
     // Background suppression helps reduce watermarks and colored fills.
@@ -684,13 +700,15 @@ async function preprocessImage(base64: string): Promise<PreprocessResult> {
 
     return {
       processed: processedBuffer.toString("base64"),
-      structural: structuralBuffer.toString("base64")
+      structural: structuralBuffer.toString("base64"),
+      profile
     };
   } catch (error) {
-    console.warn("Image preprocessing failed, falling back to original:", error);
+    console.warn(`Image preprocessing failed (${profile}), falling back to original:`, error);
     return {
       processed: base64.replace(/^data:image\/\w+;base64,/, ""),
-      structural: null
+      structural: null,
+      profile
     };
   }
 }
@@ -1036,10 +1054,10 @@ function buildScaleInfo(params: {
   const dimensionChecks = coerceFiniteNumber(analysisRaw.dimensionChecks ?? metadataRaw.dimensionChecks) ?? 0;
 
   const fallbackSource: ScaleSource = dimensionChecks > 0 ? "ocr_dimension" : "unknown";
-  const source = providedSource ?? fallbackSource;
+  let source: ScaleSource = providedSource ?? fallbackSource;
 
   const defaultConfidence = source === "unknown" ? 0 : source === "ocr_dimension" ? 0.7 : 0.6;
-  const confidence = toConfidence(
+  let confidence = toConfidence(
     metadataRaw.scaleConfidence ?? metadataRaw.scale_confidence ?? metadataRaw.confidence ?? raw.confidence,
     defaultConfidence
   );
@@ -1104,6 +1122,15 @@ function buildScaleInfo(params: {
           ...(notes ? { notes } : {})
         }
       : undefined;
+
+  const hasStrongDimensionEvidence =
+    mmValue !== null &&
+    pxDistance !== null &&
+    (Boolean(ocrText) || (Boolean(p1) && Boolean(p2)));
+  if (source === "unknown" && hasStrongDimensionEvidence) {
+    source = "ocr_dimension";
+    confidence = Math.max(confidence, 0.65);
+  }
 
   return {
     value: scale,
@@ -1833,9 +1860,17 @@ function validateTopology(topology: Topology) {
       };
     })
     .filter((opening): opening is Topology["openings"][number] => Boolean(opening));
+  const filteredOpenings = processedOpenings.filter((opening) => {
+    const confidence = Math.min(
+      toConfidence(opening.detectConfidence, 0.7),
+      toConfidence(opening.attachConfidence, 0.65),
+      toConfidence(opening.typeConfidence, 0.7)
+    );
+    return confidence >= OPENING_MIN_CONFIDENCE || Boolean(opening.isEntrance);
+  });
 
-  if (!processedOpenings.some((opening) => opening.isEntrance)) {
-    const doorCandidates = processedOpenings.filter((opening) => doorTypes.has(opening.type));
+  if (!filteredOpenings.some((opening) => opening.isEntrance)) {
+    const doorCandidates = filteredOpenings.filter((opening) => doorTypes.has(opening.type));
     const exteriorDoors = doorCandidates.filter((opening) => {
       const wall = wallMap.get(opening.wallId);
       return wall?.type === "exterior" || wall?.isPartOfBalcony;
@@ -1853,7 +1888,7 @@ function validateTopology(topology: Topology) {
     imageWidth: topology.metadata?.imageWidth ?? 0,
     imageHeight: topology.metadata?.imageHeight ?? 0,
     walls: typedWalls,
-    openings: processedOpenings
+    openings: filteredOpenings
   });
 
   return {
@@ -1862,7 +1897,7 @@ function validateTopology(topology: Topology) {
     scaleInfo: metadata.scaleInfo,
     metadata,
     walls: typedWalls,
-    openings: processedOpenings
+    openings: filteredOpenings
   };
 }
 
@@ -2423,6 +2458,8 @@ function scoreCandidate(candidate: Candidate): CandidateScoreBreakdown {
 function buildCandidateDebug(candidate: Candidate) {
   return {
     provider: candidate.provider,
+    passId: candidate.passId,
+    preprocessProfile: candidate.preprocessProfile,
     score: candidate.score,
     scoreBreakdown: candidate.scoreBreakdown,
     metrics: candidate.metrics,
@@ -2517,9 +2554,15 @@ If tools are not available, output JSON only with no extra text.
   `.trim();
 }
 
-function createEmptyCandidate(provider: string): Candidate {
+function createEmptyCandidate(
+  provider: string,
+  passId = "pass1",
+  preprocessProfile: PreprocessProfile = "balanced"
+): Candidate {
   return {
     provider,
+    passId,
+    preprocessProfile,
     raw: null,
     normalized: null,
     refined: null,
@@ -2768,13 +2811,29 @@ export async function POST(request: NextRequest) {
     const candidates: Candidate[] = [];
     const templateCandidates: TemplateCandidate[] = [];
 
-    // Preprocess image for AI models
-    let preprocessedData: PreprocessResult | null = null;
-    try {
-      preprocessedData = await preprocessImage(data);
-    } catch (e) {
-      console.warn("Preprocessing failed:", e);
-      preprocessedData = { processed: data, structural: null };
+    // Always run multi-pass preprocessing and score all viable candidates.
+    const preprocessPassProfiles: PreprocessProfile[] = ["balanced", "lineart"];
+    const preprocessPasses: Array<{ passId: string; profile: PreprocessProfile; data: PreprocessResult }> = [];
+    for (const [index, profile] of preprocessPassProfiles.entries()) {
+      const passId = `pass${index + 1}`;
+      try {
+        const preprocessed = await preprocessImage(data, profile);
+        preprocessPasses.push({ passId, profile, data: preprocessed });
+      } catch (error) {
+        console.warn(`[parse-floorplan] preprocessing pass failed (${passId}/${profile})`, error);
+        preprocessPasses.push({
+          passId,
+          profile,
+          data: { processed: data, structural: null, profile }
+        });
+      }
+    }
+    if (preprocessPasses.length === 0) {
+      preprocessPasses.push({
+        passId: "pass1",
+        profile: "balanced",
+        data: { processed: data, structural: null, profile: "balanced" }
+      });
     }
 
     if (imageHash) {
@@ -2806,49 +2865,57 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let shouldStopAll = false;
     for (const provider of enabledProviders) {
-      const startedAt = Date.now();
-      const candidate = createEmptyCandidate(provider);
-      try {
-        const name = provider.toLowerCase();
-        let raw: unknown | null = null;
-        if (name === "snaptrude") {
-          raw = await runSnaptrudeProvider(data, mimeType);
-        } else if (name === "anthropic") {
-          raw = await runAnthropicProvider(data, preprocessedData, mimeType);
-        } else if (name === "openai") {
-          raw = await runOpenAIProvider(data, preprocessedData, mimeType);
-        } else {
-          candidate.validated.errors.push(`${provider}: unknown provider`);
-        }
-        candidate.raw = raw;
-
-        if (!raw) {
-          if (candidate.validated.errors.length === 0) {
-            candidate.validated.errors.push(`${provider}: provider unavailable (empty response)`);
+      const name = provider.toLowerCase();
+      const passes = name === "snaptrude" ? preprocessPasses.slice(0, 1) : preprocessPasses;
+      for (const pass of passes) {
+        const startedAt = Date.now();
+        const candidate = createEmptyCandidate(provider, pass.passId, pass.profile);
+        try {
+          let raw: unknown | null = null;
+          if (name === "snaptrude") {
+            raw = await runSnaptrudeProvider(data, mimeType);
+          } else if (name === "anthropic") {
+            raw = await runAnthropicProvider(data, pass.data, mimeType);
+          } else if (name === "openai") {
+            raw = await runOpenAIProvider(data, pass.data, mimeType);
+          } else {
+            candidate.validated.errors.push(`${provider}: unknown provider`);
           }
-          continue;
-        }
-        processCandidateRaw(candidate, raw, imageWidth, imageHeight);
-      } catch (error) {
-        candidate.validated.errors.push(formatProviderError(provider, error));
-      } finally {
-        candidate.timingMs = Date.now() - startedAt;
-        if (!Number.isFinite(candidate.score)) {
-          candidate.scoreBreakdown = scoreCandidate(candidate);
-          candidate.score = candidate.scoreBreakdown.total;
-        }
-        if (
-          candidate.metrics.wallCount === 0 &&
-          candidate.metrics.openingCount === 0 &&
-          (candidate.normalized || candidate.refined || candidate.cleaned)
-        ) {
-          candidate.metrics = computeCandidateMetrics(candidate.cleaned ?? candidate.refined ?? candidate.normalized);
-        }
-        candidates.push(candidate);
-      }
+          candidate.raw = raw;
 
-      if (candidate.validated.success && candidate.score >= EARLY_STOP_SCORE) {
+          if (!raw) {
+            if (candidate.validated.errors.length === 0) {
+              candidate.validated.errors.push(`${provider}: provider unavailable (empty response)`);
+            }
+            continue;
+          }
+          processCandidateRaw(candidate, raw, imageWidth, imageHeight);
+        } catch (error) {
+          candidate.validated.errors.push(formatProviderError(provider, error));
+        } finally {
+          candidate.timingMs = Date.now() - startedAt;
+          if (!Number.isFinite(candidate.score)) {
+            candidate.scoreBreakdown = scoreCandidate(candidate);
+            candidate.score = candidate.scoreBreakdown.total;
+          }
+          if (
+            candidate.metrics.wallCount === 0 &&
+            candidate.metrics.openingCount === 0 &&
+            (candidate.normalized || candidate.refined || candidate.cleaned)
+          ) {
+            candidate.metrics = computeCandidateMetrics(candidate.cleaned ?? candidate.refined ?? candidate.normalized);
+          }
+          candidates.push(candidate);
+        }
+
+        if (candidate.validated.success && candidate.score >= EARLY_STOP_SCORE) {
+          shouldStopAll = true;
+          break;
+        }
+      }
+      if (shouldStopAll) {
         break;
       }
     }
@@ -2872,6 +2939,8 @@ export async function POST(request: NextRequest) {
             templateCandidates: templateCandidates.map(toTemplateDebugCandidate),
             candidates: candidates.map(buildCandidateDebug),
             selectedProvider: selected?.provider ?? null,
+            selectedPassId: selected?.passId ?? null,
+            selectedPreprocessProfile: selected?.preprocessProfile ?? null,
             selectedScore: selected?.score ?? null,
             scaleCandidates: selected?.scaleCandidates ?? []
           }
@@ -2927,6 +2996,8 @@ export async function POST(request: NextRequest) {
           templateCandidates: templateCandidates.map(toTemplateDebugCandidate),
           candidates: candidates.map(buildCandidateDebug),
           selectedProvider: selected.provider,
+          selectedPassId: selected.passId,
+          selectedPreprocessProfile: selected.preprocessProfile,
           selectedScore: selected.score,
           scaleCandidates: selected.scaleCandidates
         }
@@ -2938,7 +3009,9 @@ export async function POST(request: NextRequest) {
         cacheHit: false,
         selection: {
           sourceModule: selected.provider === "template" ? "template" : "cv",
-          selectedScore: selected.score
+          selectedScore: selected.score,
+          selectedPassId: selected.passId,
+          preprocessProfile: selected.preprocessProfile
         },
         providerStatus,
         providerErrors,
