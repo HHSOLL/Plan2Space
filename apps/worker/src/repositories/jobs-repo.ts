@@ -1,0 +1,98 @@
+import { supabaseService } from "../services/supabase";
+
+export type JobRow = {
+  id: string;
+  type: string;
+  floorplan_id: string | null;
+  payload: Record<string, unknown>;
+  status: string;
+  attempts: number;
+  max_attempts: number;
+};
+
+export async function claimNextJobs(workerId: string, limit: number): Promise<JobRow[]> {
+  const { data, error } = await supabaseService.rpc("claim_jobs", {
+    p_worker_id: workerId,
+    p_limit: limit,
+    p_type: "FLOORPLAN_PIPELINE"
+  });
+
+  if (error) throw error;
+  return (data ?? []) as JobRow[];
+}
+
+export async function markJobSucceeded(jobId: string) {
+  const { error } = await supabaseService
+    .from("jobs")
+    .update({
+      status: "succeeded",
+      progress: 100,
+      locked_at: null,
+      locked_by: null,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", jobId);
+
+  if (error) throw error;
+}
+
+export async function markJobFailed(jobId: string, payload: {
+  errorCode?: string;
+  error?: string;
+  recoverable?: boolean;
+  providerStatus?: unknown[];
+  providerErrors?: string[];
+  details?: string;
+}) {
+  const { error } = await supabaseService
+    .from("jobs")
+    .update({
+      status: "failed",
+      error_code: payload.errorCode ?? null,
+      error: payload.error ?? null,
+      recoverable: payload.recoverable ?? null,
+      provider_status: payload.providerStatus ?? null,
+      provider_errors: payload.providerErrors ?? null,
+      details: payload.details ?? null,
+      locked_at: null,
+      locked_by: null,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", jobId);
+
+  if (error) throw error;
+}
+
+export async function markJobRetrying(jobId: string, attempts: number) {
+  const delaySeconds = Math.min(Math.pow(2, attempts) * 5, 900);
+  const runAt = new Date(Date.now() + delaySeconds * 1000).toISOString();
+
+  const { error } = await supabaseService
+    .from("jobs")
+    .update({
+      status: "retrying",
+      run_at: runAt,
+      locked_at: null,
+      locked_by: null,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", jobId);
+
+  if (error) throw error;
+}
+
+export async function markJobDeadLetter(jobId: string, errorMessage: string, errorCode = "MAX_RETRIES_EXCEEDED") {
+  const { error } = await supabaseService
+    .from("jobs")
+    .update({
+      status: "dead_letter",
+      error_code: errorCode,
+      error: errorMessage,
+      locked_at: null,
+      locked_by: null,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", jobId);
+
+  if (error) throw error;
+}

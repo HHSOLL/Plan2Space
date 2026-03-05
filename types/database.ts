@@ -383,6 +383,177 @@ export interface Database {
         };
         Relationships: [];
       };
+      floorplans: {
+        Row: {
+          id: UUID;
+          project_id: UUID;
+          object_path: string;
+          original_file_name: string | null;
+          mime_type: string | null;
+          width: number | null;
+          height: number | null;
+          status: string;
+          error_code: string | null;
+          error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: UUID;
+          project_id: UUID;
+          object_path: string;
+          original_file_name?: string | null;
+          mime_type?: string | null;
+          width?: number | null;
+          height?: number | null;
+          status?: string;
+          error_code?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: UUID;
+          project_id?: UUID;
+          object_path?: string;
+          original_file_name?: string | null;
+          mime_type?: string | null;
+          width?: number | null;
+          height?: number | null;
+          status?: string;
+          error_code?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "floorplans_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      jobs: {
+        Row: {
+          id: UUID;
+          type: string;
+          floorplan_id: UUID | null;
+          payload: Json;
+          status: string;
+          progress: number;
+          attempts: number;
+          max_attempts: number;
+          run_at: string;
+          locked_at: string | null;
+          locked_by: string | null;
+          recoverable: boolean | null;
+          provider_status: Json | null;
+          provider_errors: Json | null;
+          details: string | null;
+          error_code: string | null;
+          error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: UUID;
+          type: string;
+          floorplan_id?: UUID | null;
+          payload?: Json;
+          status?: string;
+          progress?: number;
+          attempts?: number;
+          max_attempts?: number;
+          run_at?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          recoverable?: boolean | null;
+          provider_status?: Json | null;
+          provider_errors?: Json | null;
+          details?: string | null;
+          error_code?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: UUID;
+          type?: string;
+          floorplan_id?: UUID | null;
+          payload?: Json;
+          status?: string;
+          progress?: number;
+          attempts?: number;
+          max_attempts?: number;
+          run_at?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          recoverable?: boolean | null;
+          provider_status?: Json | null;
+          provider_errors?: Json | null;
+          details?: string | null;
+          error_code?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jobs_floorplan_id_fkey";
+            columns: ["floorplan_id"];
+            isOneToOne: false;
+            referencedRelation: "floorplans";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      floorplan_results: {
+        Row: {
+          id: UUID;
+          floorplan_id: UUID;
+          wall_coordinates: Json;
+          room_polygons: Json;
+          scale: number;
+          scene_json: Json;
+          diagnostics: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: UUID;
+          floorplan_id: UUID;
+          wall_coordinates?: Json;
+          room_polygons?: Json;
+          scale: number;
+          scene_json?: Json;
+          diagnostics?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: UUID;
+          floorplan_id?: UUID;
+          wall_coordinates?: Json;
+          room_polygons?: Json;
+          scale?: number;
+          scene_json?: Json;
+          diagnostics?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "floorplan_results_floorplan_id_fkey";
+            columns: ["floorplan_id"];
+            isOneToOne: true;
+            referencedRelation: "floorplans";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -395,6 +566,14 @@ export interface Database {
           p_snapshot_path?: string | null;
         };
         Returns: Database["public"]["Tables"]["project_versions"]["Row"];
+      };
+      claim_jobs: {
+        Args: {
+          p_worker_id: string;
+          p_limit?: number;
+          p_type?: string;
+        };
+        Returns: Database["public"]["Tables"]["jobs"]["Row"][];
       };
     };
     Enums: Record<string, never>;

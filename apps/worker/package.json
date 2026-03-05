@@ -1,0 +1,21 @@
+{
+  "name": "apps-worker",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "start": "tsx src/worker.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@plan2space/floorplan-core": "0.0.0",
+    "@supabase/supabase-js": "^2.45.3",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "typescript": "^5.0.0"
+  }
+}

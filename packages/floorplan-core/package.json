@@ -1,0 +1,14 @@
+{
+  "name": "@plan2space/floorplan-core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "sharp": "^0.33.3",
+    "zod": "^4.2.1"
+  }
+}
