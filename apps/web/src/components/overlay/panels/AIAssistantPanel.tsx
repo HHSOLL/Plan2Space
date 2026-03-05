@@ -201,12 +201,12 @@ export default function AIAssistantPanel() {
 
   return (
     <>
-      <div className="fixed right-10 bottom-24 z-[110] pointer-events-auto">
+      <div className="fixed right-4 sm:right-10 bottom-4 sm:bottom-24 z-[110] pointer-events-auto">
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           aria-pressed={isOpen}
-          className="flex items-center gap-3 rounded-full border border-white/10 bg-white/10 px-5 py-3 text-[10px] font-bold uppercase tracking-[0.3em] text-white/70 backdrop-blur-lg transition-all hover:text-white hover:bg-white/20"
+          className="flex items-center gap-2 sm:gap-3 rounded-full border border-white/10 bg-white/10 px-4 sm:px-5 py-2.5 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-white/70 backdrop-blur-lg transition-all hover:text-white hover:bg-white/20"
         >
           <Sparkles className="h-4 w-4" />
           AI Panel
@@ -219,7 +219,7 @@ export default function AIAssistantPanel() {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            className="fixed right-10 bottom-36 z-[120] w-[360px] max-h-[70vh] overflow-hidden rounded-[28px] bg-white/90 text-black shadow-2xl backdrop-blur-2xl border border-white/30 pointer-events-auto"
+            className="fixed left-3 right-3 sm:left-auto sm:right-10 bottom-16 sm:bottom-36 z-[120] sm:w-[360px] max-h-[74vh] sm:max-h-[70vh] overflow-hidden rounded-[20px] sm:rounded-[28px] bg-white/90 text-black shadow-2xl backdrop-blur-2xl border border-white/30 pointer-events-auto"
           >
             <div className="flex items-center justify-between border-b border-black/10 px-6 py-4">
               <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/50">

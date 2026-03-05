@@ -26,11 +26,11 @@ export default function StudioPage() {
   }, [loadProjects]);
 
   return (
-    <div className="relative min-h-screen bg-[#fdfdfc] text-[#1a1a1a] overflow-x-hidden pt-32 selection:bg-black/5">
-      <div className="max-w-7xl mx-auto px-12">
+    <div className="relative min-h-screen bg-[#fdfdfc] text-[#1a1a1a] overflow-x-hidden pt-24 md:pt-32 selection:bg-black/5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20 pb-12 border-b border-[#e5e5e0]">
-          <div className="space-y-6">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12 mb-12 md:mb-20 pb-8 md:pb-12 border-b border-[#e5e5e0]">
+          <div className="space-y-4 md:space-y-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -42,7 +42,7 @@ export default function StudioPage() {
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-6xl font-cormorant font-light tracking-tight"
+              className="text-4xl sm:text-5xl lg:text-6xl font-cormorant font-light tracking-tight"
             >
               PLAN2SPACE STUDIO
             </motion.h1>
@@ -53,7 +53,7 @@ export default function StudioPage() {
             animate={{ opacity: 1 }}
             whileHover={{ scale: 1.02 }}
             onClick={() => setIsModalOpen(true)}
-            className="px-12 py-5 bg-black text-white text-[10px] font-bold tracking-[0.3em] uppercase hover:bg-stone-800 transition-all shadow-sm"
+            className="w-full md:w-auto px-8 md:px-12 py-4 md:py-5 bg-black text-white text-[10px] font-bold tracking-[0.25em] md:tracking-[0.3em] uppercase hover:bg-stone-800 transition-all shadow-sm"
           >
             New Project
           </motion.button>

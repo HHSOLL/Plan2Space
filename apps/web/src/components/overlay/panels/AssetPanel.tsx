@@ -270,42 +270,42 @@ export default function AssetPanel() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-12 pointer-events-none bg-white/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-12 pointer-events-none bg-white/40 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            className="relative w-full max-w-5xl h-full max-h-[80vh] bg-white rounded-sm overflow-hidden pointer-events-auto border border-[#e5e5e0] shadow-2xl flex flex-col"
+            className="relative w-full sm:max-w-5xl h-[88vh] sm:h-full sm:max-h-[80vh] bg-white rounded-t-3xl sm:rounded-sm overflow-hidden pointer-events-auto border border-[#e5e5e0] shadow-2xl flex flex-col"
           >
             {/* Header */}
-            <div className="p-12 flex items-center justify-between border-b border-[#e5e5e0]">
+            <div className="p-4 sm:p-12 flex items-center justify-between border-b border-[#e5e5e0] gap-3">
               <div className="flex items-center gap-6">
-                <div className="p-4 bg-[#f3f3f1] rounded-full">
+                <div className="p-3 sm:p-4 bg-[#f3f3f1] rounded-full">
                   <Package className="w-6 h-6 text-black/40" />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-4xl font-cormorant font-light">Asset Catalog</h2>
+                  <h2 className="text-2xl sm:text-4xl font-cormorant font-light">Asset Catalog</h2>
                   <p className="text-[9px] text-[#999999] font-bold uppercase tracking-[0.4em]">Select components for spatial integration</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={applyPreset}
-                  className="px-4 py-3 border border-[#e5e5e0] text-[9px] font-bold uppercase tracking-[0.3em] text-[#999999] hover:text-black hover:border-black transition-all flex items-center gap-2"
+                  className="hidden sm:inline-flex px-4 py-3 border border-[#e5e5e0] text-[9px] font-bold uppercase tracking-[0.3em] text-[#999999] hover:text-black hover:border-black transition-all items-center gap-2"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   Preset
                 </button>
                 <button
                   onClick={() => setIsGeneratorOpen(true)}
-                  className="px-4 py-3 border border-[#e5e5e0] text-[9px] font-bold uppercase tracking-[0.3em] text-[#999999] hover:text-black hover:border-black transition-all flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 border border-[#e5e5e0] text-[9px] font-bold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-[#999999] hover:text-black hover:border-black transition-all inline-flex items-center gap-2"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   Generate
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-4 hover:bg-black/5 rounded-full transition-colors group"
+                  className="p-2 sm:p-4 hover:bg-black/5 rounded-full transition-colors group"
                 >
                   <X className="w-6 h-6 text-[#999999] group-hover:text-black" />
                 </button>
@@ -313,8 +313,8 @@ export default function AssetPanel() {
             </div>
 
             {/* Catalog Grid */}
-            <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-12 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-12">
                 {catalog.map((item) => (
                   <motion.div
                     key={item.id}
@@ -326,7 +326,7 @@ export default function AssetPanel() {
                         {item.category}
                       </div>
                     </div>
-                    <div className="p-8 space-y-8 flex-1 flex flex-col justify-between border-t border-[#e5e5e0]">
+                    <div className="p-5 sm:p-8 space-y-5 sm:space-y-8 flex-1 flex flex-col justify-between border-t border-[#e5e5e0]">
                       <div className="space-y-2">
                         <h3 className="text-xl font-cormorant font-light text-black">{item.label}</h3>
                         <p className="text-[10px] text-[#999999] font-medium uppercase tracking-[0.1em] line-clamp-2 leading-relaxed">
@@ -360,12 +360,12 @@ export default function AssetPanel() {
             </div>
 
             {/* Footer */}
-            <div className="p-8 bg-[#fdfdfc] border-t border-[#e5e5e0] flex items-center justify-between">
+            <div className="p-4 sm:p-8 bg-[#fdfdfc] border-t border-[#e5e5e0] flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 text-[9px] text-[#999999] font-bold uppercase tracking-[0.3em]">
                 <Search className="w-3 h-3" />
                 Index <span className="text-black mx-1">/</span> Search Library
               </div>
-              <div className="text-[9px] text-[#999999] font-bold uppercase tracking-[0.3em]">
+              <div className="hidden sm:block text-[9px] text-[#999999] font-bold uppercase tracking-[0.3em]">
                 {catalog.length} Components Available
               </div>
             </div>
@@ -376,13 +376,13 @@ export default function AssetPanel() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-white/70 backdrop-blur-md flex items-center justify-center p-10"
+                  className="absolute inset-0 bg-white/70 backdrop-blur-md flex items-end sm:items-center justify-center p-3 sm:p-10"
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 20, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                    className="w-full max-w-2xl bg-white rounded-sm border border-[#e5e5e0] shadow-2xl overflow-hidden"
+                    className="w-full max-w-2xl bg-white rounded-t-2xl sm:rounded-sm border border-[#e5e5e0] shadow-2xl overflow-hidden"
                   >
                     <div className="p-8 flex items-center justify-between border-b border-[#e5e5e0]">
                       <div>
@@ -454,9 +454,9 @@ export default function AssetPanel() {
 
       {/* Trigger Hint */}
       {!isOpen && (
-        <div className="fixed bottom-12 right-12 z-[90] flex items-center gap-4">
-          <div className="w-12 h-12 flex items-center justify-center bg-white border border-[#e5e5e0] rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">i</div>
-          <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-[#999999]">Inventory</span>
+        <div className="fixed bottom-4 sm:bottom-12 right-4 sm:right-12 z-[90] flex items-center gap-3 sm:gap-4">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center bg-white border border-[#e5e5e0] rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">i</div>
+          <span className="hidden sm:block text-[9px] font-bold uppercase tracking-[0.4em] text-[#999999]">Inventory</span>
         </div>
       )}
     </AnimatePresence>

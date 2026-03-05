@@ -548,30 +548,30 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/60 backdrop-blur-md">
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-white/60 backdrop-blur-md">
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.98 }}
-                        className={`relative w-full bg-white rounded-sm border border-[#e5e5e0] shadow-2xl ${step === "edit" ? "max-w-6xl p-6 md:p-8 h-[85vh]" : "max-w-xl p-12 md:p-16"}`}
+                        className={`relative w-full bg-white rounded-t-2xl sm:rounded-sm border border-[#e5e5e0] shadow-2xl ${step === "edit" ? "max-w-6xl p-4 sm:p-6 md:p-8 h-[92vh] sm:h-[88vh] md:h-[85vh]" : "max-w-xl p-6 sm:p-10 md:p-16 max-h-[92vh] overflow-y-auto"}`}
                     >
                         <button
                             onClick={onClose}
-                            className="absolute top-8 right-8 p-3 hover:bg-black/5 rounded-full transition-colors"
+                            className="absolute top-4 right-4 sm:top-8 sm:right-8 p-2 sm:p-3 hover:bg-black/5 rounded-full transition-colors"
                         >
                             <X className="w-5 h-5 text-[#999999]" />
                         </button>
 
                         {step === "upload" && (
-                            <div className="space-y-12">
+                            <div className="space-y-8 sm:space-y-12">
                                 <div className="space-y-4">
-                                    <h2 className="text-4xl font-cormorant font-light tracking-tight">Initialize Studio</h2>
+                                    <h2 className="text-3xl sm:text-4xl font-cormorant font-light tracking-tight">Initialize Studio</h2>
                                     <p className="text-[10px] text-[#999999] font-bold uppercase tracking-widest leading-relaxed">
                                         Upload your architectural drawing for spatial analysis.
                                     </p>
                                 </div>
 
-                                <div className="space-y-8">
+                                <div className="space-y-6 sm:space-y-8">
                                     <div className="space-y-4">
                                         <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#999999]">Project Identity</label>
                                         <input
@@ -668,27 +668,27 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
 
                         {step === "edit" && image && (
                             <div className="flex h-full flex-col gap-6">
-                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                     <div className="space-y-1">
-                                        <h2 className="text-3xl font-cormorant font-light tracking-tight">2D Plan Correction</h2>
+                                        <h2 className="text-2xl sm:text-3xl font-cormorant font-light tracking-tight">2D Plan Correction</h2>
                                         <p className="text-[10px] text-[#999999] font-bold uppercase tracking-widest">
                                             Adjust AI-detected walls before creating the project.
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex w-full lg:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                                         <input
                                             type="text"
                                             required
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                             placeholder="Project name"
-                                            className="min-w-[240px] bg-[#f9f9f7] border border-[#e5e5e0] rounded-sm py-3 px-4 text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:border-black transition-all"
+                                            className="w-full sm:min-w-[240px] bg-[#f9f9f7] border border-[#e5e5e0] rounded-sm py-3 px-4 text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:border-black transition-all"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleConfirm}
                                             disabled={isAnalyzing}
-                                            className="px-6 py-3 bg-black text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-stone-800 transition-all disabled:opacity-50"
+                                            className="w-full sm:w-auto px-6 py-3 bg-black text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-stone-800 transition-all disabled:opacity-50"
                                         >
                                             {isAnalyzing ? "CREATING..." : "CREATE PROJECT"}
                                         </button>
@@ -710,11 +710,11 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                                                     Continue by drawing walls manually and calibrating scale in the editor.
                                                 </p>
                                             </div>
-                                            <div className="flex flex-wrap items-center gap-2">
+                                            <div className="flex w-full sm:w-auto flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={handleCopyRecoveryErrors}
-                                                    className="inline-flex items-center gap-2 rounded-sm border border-amber-400 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-900 hover:bg-amber-100 transition-colors"
+                                                    className="inline-flex justify-center items-center gap-2 rounded-sm border border-amber-400 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-900 hover:bg-amber-100 transition-colors"
                                                 >
                                                     <Copy className="h-3.5 w-3.5" />
                                                     Copy Errors
@@ -722,14 +722,14 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                                                 <button
                                                     type="button"
                                                     onClick={handleRetryAnalysis}
-                                                    className="inline-flex items-center rounded-sm border border-amber-400 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-900 hover:bg-amber-100 transition-colors"
+                                                    className="inline-flex justify-center items-center rounded-sm border border-amber-400 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-900 hover:bg-amber-100 transition-colors"
                                                 >
                                                     Try AI Again
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={handleStartManual}
-                                                    className="inline-flex items-center rounded-sm border border-amber-400 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-900 hover:bg-amber-100 transition-colors"
+                                                    className="inline-flex justify-center items-center rounded-sm border border-amber-400 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-900 hover:bg-amber-100 transition-colors"
                                                 >
                                                     Start Manual
                                                 </button>

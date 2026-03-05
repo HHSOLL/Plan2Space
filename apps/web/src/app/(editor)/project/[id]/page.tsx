@@ -591,11 +591,11 @@ export default function ProjectEditorPage() {
       {!isSceneVisible && <LandingHeroCanvas onAction={() => { }} />}
 
       {/* Glass Navigation Header */}
-      <div className="fixed top-8 inset-x-8 z-[100] flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-6 pointer-events-auto">
+      <div className="fixed top-3 sm:top-8 inset-x-3 sm:inset-x-8 z-[100] flex items-start sm:items-center justify-between pointer-events-none gap-2">
+        <div className="flex items-center gap-2 sm:gap-6 pointer-events-auto min-w-0">
           <button
             onClick={() => router.push("/studio")}
-            className="p-4 glass-dark rounded-[24px] hover:bg-white/10 transition-all group shadow-2xl border border-white/5 active:scale-95"
+            className="p-2.5 sm:p-4 glass-dark rounded-[16px] sm:rounded-[24px] hover:bg-white/10 transition-all group shadow-2xl border border-white/5 active:scale-95"
           >
             <ChevronLeft className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
           </button>
@@ -603,17 +603,17 @@ export default function ProjectEditorPage() {
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col"
+            className="flex flex-col min-w-0"
           >
-            <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em] mb-1">Architecture Studio</span>
-            <h1 className="text-lg font-outfit font-medium tracking-tight text-white leading-none">
+            <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.25em] sm:tracking-[0.4em] mb-1 truncate">Architecture Studio</span>
+            <h1 className="text-sm sm:text-lg font-outfit font-medium tracking-tight text-white leading-none truncate max-w-[44vw] sm:max-w-none">
               {currentProject?.name || (isSceneVisible ? "System Simulation" : "Topology Analysis")}
             </h1>
           </motion.div>
         </div>
 
-        <div className="flex items-center gap-4 pointer-events-auto">
-          <div className="flex p-1.5 glass-dark rounded-[24px] border border-white/5 shadow-2xl">
+        <div className="flex items-center gap-2 sm:gap-4 pointer-events-auto">
+          <div className="flex p-1 glass-dark rounded-[16px] sm:rounded-[24px] border border-white/5 shadow-2xl overflow-x-auto max-w-[58vw] sm:max-w-none">
             {[
               { id: "2d-edit", icon: Edit3, label: "2D Plan" },
               { id: "top", icon: Box, label: "3D Edit" },
@@ -622,30 +622,32 @@ export default function ProjectEditorPage() {
               <button
                 key={mode.id}
                 onClick={() => requestViewMode(mode.id as EditorViewMode)}
-                className={`flex items-center gap-2.5 px-6 py-3 rounded-[18px] text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${viewMode === mode.id
+                className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-[12px] sm:rounded-[18px] text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${viewMode === mode.id
                   ? "bg-white text-black shadow-lg scale-100"
                   : "text-white/40 hover:text-white hover:bg-white/5 scale-95"
                   }`}
               >
                 <mode.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{mode.label}</span>
+                <span className="hidden md:inline">{mode.label}</span>
               </button>
             ))}
           </div>
 
           <button
             onClick={() => setIsShareOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 rounded-[18px] text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 hover:text-white hover:bg-white/10 transition-all"
+            className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-[12px] sm:rounded-[18px] text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/60 hover:text-white hover:bg-white/10 transition-all"
           >
             <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Share</span>
+            <span>Share</span>
           </button>
-          <SaveButton projectId={projectId} />
+          <div className="hidden sm:block">
+            <SaveButton projectId={projectId} />
+          </div>
         </div>
       </div>
 
       {/* Primary Workspace */}
-      <div className="relative w-full h-screen overflow-hidden pt-12 pb-12 px-12">
+      <div className="relative w-full h-screen overflow-hidden pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-6 lg:px-12">
         <AnimatePresence mode="popLayout" initial={false}>
           {/* Step 1: Upload */}
           {!imageSrc && !isAnalyzing && (
@@ -654,11 +656,11 @@ export default function ProjectEditorPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="w-full h-full flex items-center justify-center p-20"
+              className="w-full h-full flex items-center justify-center p-3 sm:p-10 lg:p-20"
             >
               <div
                 onClick={() => inputRef.current?.click()}
-                className="group relative w-full max-w-4xl h-full flex flex-col items-center justify-center gap-8 rounded-[60px] border border-white/10 glass-dark hover:border-white/20 cursor-pointer transition-all duration-700 shadow-3xl"
+                className="group relative w-full max-w-4xl h-full flex flex-col items-center justify-center gap-6 sm:gap-8 rounded-[24px] sm:rounded-[60px] border border-white/10 glass-dark hover:border-white/20 cursor-pointer transition-all duration-700 shadow-3xl px-3 sm:px-0"
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-white/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -667,13 +669,13 @@ export default function ProjectEditorPage() {
                   </div>
                 </div>
                 <div className="text-center space-y-4 max-w-md">
-                  <h2 className="text-4xl font-outfit font-light tracking-tight">Deploy Blueprint</h2>
-                  <p className="text-white/30 text-base font-light font-outfit leading-relaxed">
+                  <h2 className="text-2xl sm:text-4xl font-outfit font-light tracking-tight">Deploy Blueprint</h2>
+                  <p className="text-white/40 sm:text-white/30 text-sm sm:text-base font-light font-outfit leading-relaxed">
                     Upload your architectural floorplan. Claude 3.5 will automatically extract structural topology.
                   </p>
                 </div>
                 <div
-                  className="w-full max-w-2xl rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md"
+                  className="w-full max-w-2xl rounded-2xl border border-white/10 bg-black/30 p-4 sm:p-5 backdrop-blur-md"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-white/55">
@@ -755,7 +757,7 @@ export default function ProjectEditorPage() {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full h-full glass-dark overflow-hidden rounded-[40px] shadow-3xl border border-white/10 p-4"
+              className="w-full h-full glass-dark overflow-hidden rounded-[24px] sm:rounded-[40px] shadow-3xl border border-white/10 p-2 sm:p-4"
             >
               <div className="flex h-full flex-col gap-4">
                 {analysisRecovery && (
@@ -773,11 +775,11 @@ export default function ProjectEditorPage() {
                           Walls/openings are cleared. Draw walls and calibrate scale to continue.
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex w-full sm:w-auto flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
                         <button
                           type="button"
                           onClick={handleCopyRecoveryErrors}
-                          className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
+                          className="inline-flex justify-center items-center gap-2 rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Copy Errors
@@ -785,14 +787,14 @@ export default function ProjectEditorPage() {
                         <button
                           type="button"
                           onClick={handleRetryRecovery}
-                          className="inline-flex items-center rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
+                          className="inline-flex justify-center items-center rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
                         >
                           Try AI Again
                         </button>
                         <button
                           type="button"
                           onClick={handleStartManualRecovery}
-                          className="inline-flex items-center rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
+                          className="inline-flex justify-center items-center rounded-xl border border-amber-300/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-300/10 transition-colors"
                         >
                           Start Manual
                         </button>
@@ -814,7 +816,7 @@ export default function ProjectEditorPage() {
               initial={{ opacity: 0, scale: 1.1 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full h-full rounded-[48px] overflow-hidden bg-[#050505] shadow-3xl border border-white/5 border-b-0"
+              className="w-full h-full rounded-[20px] sm:rounded-[48px] overflow-hidden bg-[#050505] shadow-3xl border border-white/5 border-b-0"
             >
               <Canvas
                 shadows
@@ -874,12 +876,14 @@ export default function ProjectEditorPage() {
       </div>
 
       {/* Status Bar */}
-      <div className="fixed bottom-12 inset-x-12 z-[100] flex items-center justify-between pointer-events-none">
-        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full px-6 py-3 flex items-center gap-4 pointer-events-auto">
+      <div className="fixed bottom-4 sm:bottom-12 inset-x-3 sm:inset-x-12 z-[100] flex items-center justify-between pointer-events-none gap-2">
+        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full px-3 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 pointer-events-auto">
           <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-          <span className="text-[10px] font-bold text-white/60 tracking-[0.2em] uppercase">Studio Online</span>
-          <div className="w-px h-4 bg-white/10" />
-          <AssetCountBadge />
+          <span className="text-[9px] sm:text-[10px] font-bold text-white/60 tracking-[0.15em] sm:tracking-[0.2em] uppercase">Studio Online</span>
+          <div className="hidden sm:block w-px h-4 bg-white/10" />
+          <div className="hidden sm:block">
+            <AssetCountBadge />
+          </div>
         </div>
 
         <div className="flex items-center gap-3 pointer-events-auto">
@@ -889,7 +893,7 @@ export default function ProjectEditorPage() {
               setOpenings([]);
               router.push("/studio");
             }}
-            className="p-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full hover:bg-red-500/10 hover:border-red-500/20 group transition-all"
+            className="p-3 sm:p-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full hover:bg-red-500/10 hover:border-red-500/20 group transition-all"
           >
             <RotateCcw className="w-5 h-5 text-white/30 group-hover:text-red-500 transition-colors" />
           </button>

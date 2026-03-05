@@ -488,16 +488,16 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
 
   return (
     <div className="flex flex-col h-full bg-[#0a0a0b] text-white">
-      <div className="flex items-center justify-between p-6 glass-dark border-b border-white/5">
-        <div className="flex items-center gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3 sm:p-4 lg:p-6 glass-dark border-b border-white/5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 lg:gap-6 min-w-0">
           <div className="space-y-1">
             <h3 className="text-lg font-outfit font-medium">Verify Floorplan</h3>
             <p className="text-[10px] text-white/40 uppercase tracking-[0.2em]">
               Adjust walls and openings before 3D generation
             </p>
           </div>
-          <div className="w-[1px] h-8 bg-white/10" />
-          <div className="flex gap-2">
+          <div className="hidden sm:block w-[1px] h-8 bg-white/10" />
+          <div className="flex gap-2 overflow-x-auto pb-1">
             <button
               type="button"
               onClick={() => {
@@ -505,7 +505,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setPendingWallStart(null);
               }}
               title="Select"
-              className={`p-3 rounded-xl transition-colors group ${activeTool === "select" ? "bg-white/10" : "hover:bg-white/5"}`}
+              className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "select" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <MousePointer2 className="w-4 h-4 text-white/40 group-hover:text-white" />
             </button>
@@ -516,7 +516,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setPendingWallStart(null);
               }}
               title="Add wall"
-              className={`p-3 rounded-xl transition-colors group ${activeTool === "add-wall" ? "bg-white/10" : "hover:bg-white/5"}`}
+              className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "add-wall" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <Plus className="w-4 h-4 text-white/40 group-hover:text-white" />
             </button>
@@ -527,7 +527,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setPendingWallStart(null);
               }}
               title="Add opening (door/window)"
-              className={`p-3 rounded-xl transition-colors group ${activeTool === "add-opening" ? "bg-white/10" : "hover:bg-white/5"}`}
+              className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "add-opening" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <DoorOpen className="w-4 h-4 text-white/40 group-hover:text-white" />
             </button>
@@ -538,7 +538,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setPendingWallStart(null);
               }}
               title="Measure and set scale"
-              className={`p-3 rounded-xl transition-colors group ${activeTool === "measure" ? "bg-white/10" : "hover:bg-white/5"}`}
+              className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "measure" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <Ruler className="w-4 h-4 text-white/40 group-hover:text-white" />
             </button>
@@ -552,7 +552,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setOpenings(openings.filter((opening) => wallIds.has(opening.wallId)));
               }}
               title="Delete last wall"
-              className="p-3 rounded-xl hover:bg-white/5 transition-colors group"
+              className="p-2.5 sm:p-3 rounded-xl hover:bg-white/5 transition-colors group shrink-0"
             >
               <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-300" />
             </button>
@@ -565,25 +565,25 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setActiveTool("select");
               }}
               title="Clear all"
-              className="p-3 rounded-xl hover:bg-white/5 transition-colors group"
+              className="p-2.5 sm:p-3 rounded-xl hover:bg-white/5 transition-colors group shrink-0"
             >
               <RotateCcw className="w-4 h-4 text-white/40 group-hover:text-white" />
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col items-end gap-2">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">
+        <div className="flex w-full lg:w-auto items-stretch sm:items-center gap-3 sm:gap-4 flex-col sm:flex-row">
+          <div className="flex flex-col sm:items-end gap-2">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-right">
               Scale: {sceneScale.toFixed(4)} m/px ({(sceneScale * 1000).toFixed(1)} mm/px)
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
                 <input
                   type="number"
                   min="1"
                   value={measureInput}
                   onChange={(event) => setMeasureInput(event.target.value)}
-                  className="w-[120px] bg-transparent text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80 outline-none"
+                  className="w-24 sm:w-[120px] bg-transparent text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80 outline-none"
                   placeholder="Length (mm)"
                 />
                 <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">mm</span>
@@ -604,13 +604,13 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
               </button>
             </div>
             {scaleMessage ? (
-              <div className="text-[10px] uppercase tracking-[0.2em] text-white/40">{scaleMessage}</div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-white/40 sm:text-right">{scaleMessage}</div>
             ) : null}
           </div>
           {showConfirmButton && (
             <button
               onClick={onConfirm}
-              className="flex items-center gap-2 px-6 py-3 bg-white text-[#0a0a0b] font-bold text-xs uppercase tracking-[0.2em] rounded-xl hover:scale-105 transition-all"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-[#0a0a0b] font-bold text-xs uppercase tracking-[0.2em] rounded-xl hover:scale-105 transition-all"
             >
               <Check className="w-4 h-4" />
               {confirmLabel ?? "Confirm 3D Generation"}
@@ -698,7 +698,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
           </Layer>
         </Stage>
 
-        <div className="absolute bottom-8 right-8 p-4 glass-dark rounded-2xl pointer-events-none">
+        <div className="absolute bottom-3 left-3 right-3 sm:bottom-8 sm:right-8 sm:left-auto sm:w-auto p-3 sm:p-4 glass-dark rounded-2xl pointer-events-none">
           <div className="flex items-center gap-3 text-[10px] text-white/60 tracking-widest uppercase">
             <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
             {activeTool === "add-wall" && "Click two points to add a wall"}
@@ -713,7 +713,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
             </div>
           )}
         </div>
-        <div className="absolute bottom-8 left-8 p-4 glass-dark rounded-2xl pointer-events-none">
+        <div className="absolute bottom-20 left-3 right-3 sm:bottom-8 sm:left-8 sm:right-auto p-3 sm:p-4 glass-dark rounded-2xl pointer-events-none">
           <div className="text-[10px] uppercase tracking-[0.2em] text-white/70">Confidence</div>
           <div className="mt-2 flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-white/60">
             <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />High</span>
