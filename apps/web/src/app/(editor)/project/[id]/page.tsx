@@ -35,11 +35,22 @@ import { WebGPURenderer } from "three/webgpu";
 import InteractiveDoors from "../../../../components/canvas/features/InteractiveDoors";
 import InteractiveLights from "../../../../components/canvas/features/InteractiveLights";
 import { createUnknownScaleInfo, getScaleGateMessage, parseScaleInfo } from "../../../../lib/ai/scaleInfo";
+import { createFloorplanPipelineJob, fetchFloorplanResult, fetchLatestProjectScene } from "../../../../features/floorplan/upload";
+import { pollJobUntilTerminal } from "../../../../features/floorplan/job-polling";
+import { mapFloorplanResultToScene } from "../../../../features/floorplan/result-mapper";
 
 type AnalysisRecovery = {
   message: string;
   providerErrors: string[];
   errorCode?: string | null;
+};
+
+type RecoverablePayload = {
+  recoverable?: boolean;
+  errorCode?: string;
+  details?: string;
+  error?: string;
+  providerErrors?: string[];
 };
 
 export default function ProjectEditorPage() {
@@ -60,10 +71,10 @@ export default function ProjectEditorPage() {
   const setScale = useSceneStore((state) => state.setScale);
   const setScene = useSceneStore((state) => state.setScene);
   const resetScene = useSceneStore((state) => state.resetScene);
-  const { currentProject, selectProject, loadProjects } = useProjectStore();
+  const { currentProject, loadProject } = useProjectStore();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const hasAutoAnalyzedRef = useRef(false);
+  const lastUploadedFileRef = useRef<File | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisRecovery, setAnalysisRecovery] = useState<AnalysisRecovery | null>(null);
@@ -74,16 +85,76 @@ export default function ProjectEditorPage() {
   const [catalogTypeName, setCatalogTypeName] = useState("");
   const [catalogRegion, setCatalogRegion] = useState("");
 
-  // Load project data on mount
+  // Load project + latest scene data on mount
   useEffect(() => {
     const init = async () => {
-      await loadProjects();
-      selectProject(projectId);
+      resetScene();
+      setAnalysisRecovery(null);
+      setImageSrc(null);
+
+      const project = await loadProject(projectId);
+      if (project?.thumbnail) {
+        setImageSrc(project.thumbnail);
+      }
+
+      try {
+        const latestScene = await fetchLatestProjectScene(projectId);
+        if (latestScene.result) {
+          const mapped = mapFloorplanResultToScene({
+            floorplanId: latestScene.result.floorplanId,
+            wallCoordinates: latestScene.result.wallCoordinates,
+            roomPolygons: latestScene.result.roomPolygons,
+            scale: latestScene.result.scale,
+            sceneJson: latestScene.result.sceneJson,
+            diagnostics: latestScene.result.diagnostics
+          });
+
+          setScene({
+            scale: mapped.scale,
+            scaleInfo: parseScaleInfo(mapped.scaleInfo, mapped.scale),
+            walls: mapped.walls,
+            openings: mapped.openings
+          });
+          const entrance = mapped.openings.find((opening) => opening.isEntrance);
+          if (entrance?.id) {
+            useSceneStore.setState({ entranceId: entrance.id });
+          }
+          setViewMode("top");
+          setAnalysisRecovery(null);
+        } else {
+          const metadata = project?.metadata;
+          const floorPlan =
+            metadata && typeof metadata === "object" && !Array.isArray(metadata)
+              ? (metadata as { floorPlan?: { scale?: number; scaleInfo?: unknown; walls?: unknown[]; openings?: unknown[] } }).floorPlan
+              : undefined;
+
+          if (floorPlan && Array.isArray(floorPlan.walls) && floorPlan.walls.length > 0) {
+            const nextScale = typeof floorPlan.scale === "number" && floorPlan.scale > 0 ? floorPlan.scale : 1;
+            const nextScaleInfo = parseScaleInfo(floorPlan.scaleInfo, nextScale);
+            setScene({
+              scale: nextScale,
+              scaleInfo: nextScaleInfo,
+              walls: floorPlan.walls as any,
+              openings: Array.isArray(floorPlan.openings) ? (floorPlan.openings as any) : []
+            });
+            const entrance = Array.isArray(floorPlan.openings)
+              ? (floorPlan.openings as Array<{ id?: string; isEntrance?: boolean }>).find((opening) => opening.isEntrance)
+              : undefined;
+            if (entrance?.id) {
+              useSceneStore.setState({ entranceId: entrance.id });
+            }
+            setViewMode("top");
+          }
+        }
+      } catch (error) {
+        console.warn("[project-editor] latest scene load failed:", error);
+      }
+
       setIsInitialLoad(false);
       setReadOnly(false);
     };
-    init();
-  }, [projectId, loadProjects, selectProject, setReadOnly]);
+    void init();
+  }, [loadProject, projectId, resetScene, setReadOnly, setScene, setViewMode]);
 
   useEffect(() => {
     const supportsWebGPU = typeof navigator !== "undefined" && Boolean((navigator as any).gpu);
@@ -121,50 +192,6 @@ export default function ProjectEditorPage() {
     };
   }, [preferWebGPU, setIsWebGPUReady]);
 
-  // Sync project thumbnail and topology to scene
-  useEffect(() => {
-    hasAutoAnalyzedRef.current = false;
-    if (!currentProject) {
-      resetScene();
-      setImageSrc(null);
-      return;
-    }
-
-    const metadata = currentProject.metadata;
-    const floorPlan =
-      metadata && typeof metadata === "object" && !Array.isArray(metadata)
-        ? (metadata as { floorPlan?: { scale?: number; scaleInfo?: unknown; walls?: any[]; openings?: any[] } }).floorPlan
-        : undefined;
-
-    if (floorPlan && Array.isArray(floorPlan.walls) && floorPlan.walls.length > 0) {
-      const nextScale = typeof floorPlan.scale === "number" && floorPlan.scale > 0 ? floorPlan.scale : 1;
-      const nextScaleInfo = parseScaleInfo(floorPlan.scaleInfo, nextScale);
-      setScene({
-        scale: nextScale,
-        scaleInfo: nextScaleInfo,
-        walls: floorPlan.walls as any,
-        openings: Array.isArray(floorPlan.openings) ? (floorPlan.openings as any) : []
-      });
-      const entrance = Array.isArray(floorPlan.openings)
-        ? (floorPlan.openings as Array<{ id?: string; isEntrance?: boolean }>).find((o) => o.isEntrance)
-        : undefined;
-      if (entrance?.id) {
-        useSceneStore.setState({ entranceId: entrance.id });
-      }
-      setAnalysisRecovery(null);
-      setViewMode("top");
-    } else {
-      resetScene();
-      setAnalysisRecovery(null);
-    }
-
-    if (currentProject.thumbnail) {
-      setImageSrc(currentProject.thumbnail);
-    } else {
-      setImageSrc(null);
-    }
-  }, [currentProject, resetScene, setScene, setViewMode]);
-
   const readFileAsDataUrl = (file: File) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -172,11 +199,6 @@ export default function ProjectEditorPage() {
       reader.onerror = () => reject(new Error("Failed to read file"));
       reader.readAsDataURL(file);
     });
-
-  const getMimeTypeFromDataUrl = (dataUrl: string) => {
-    const match = dataUrl.match(/^data:(image\/(?:png|jpeg));base64,/);
-    return match?.[1];
-  };
 
   const createPlaceholderFloorplanDataUrl = useCallback(() => {
     if (typeof document === "undefined") return null;
@@ -210,144 +232,68 @@ export default function ProjectEditorPage() {
   }, []);
 
   const runAnalysis = useCallback(
-    async (dataUrl: string, mimeType?: string) => {
+    async (file: File) => {
       setIsAnalyzing(true);
       setViewMode("2d-edit");
       setAnalysisRecovery(null);
       try {
+        const dataUrl = await readFileAsDataUrl(file);
         setImageSrc(dataUrl);
+        lastUploadedFileRef.current = file;
 
-        // Mock delay for premium feel
-        await new Promise(r => setTimeout(r, 2000));
-
-        const response = await fetch("/api/ai/parse-floorplan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "upload", base64: dataUrl, mimeType })
+        const { jobId, floorplanId } = await createFloorplanPipelineJob(projectId, file);
+        const job = await pollJobUntilTerminal(jobId, {
+          intervalMs: 1200,
+          timeoutMs: 300000
         });
 
-        const data = await response.json().catch(() => null);
-        if (!data || typeof data !== "object" || Array.isArray(data)) {
-          throw new Error("Invalid analysis response.");
+        if (job.status !== "succeeded") {
+          const details = job.details || job.error || "AI analysis failed.";
+          setWalls([]);
+          setOpenings([]);
+          setScale(1, createUnknownScaleInfo(1, details));
+          setAnalysisRecovery({
+            message: details,
+            providerErrors: Array.isArray(job.providerErrors) ? job.providerErrors : [],
+            errorCode: job.errorCode ?? null
+          });
+          setViewMode("2d-edit");
+          toast.error("AI analysis failed. Continue in manual 2D correction mode.");
+          return;
         }
 
-        const payload = data as {
-          walls?: any[];
-          openings?: any[];
-          scale?: number;
-          scaleInfo?: unknown;
-          metadata?: {
-            scale?: number;
-            scaleInfo?: unknown;
-          };
-          warning?: string;
-          cacheHit?: boolean;
-          cacheDistance?: number;
-          source?: string;
-          recoverable?: boolean;
-          errorCode?: string;
-          details?: string;
-          error?: string;
-          errors?: string[];
-          providerErrors?: string[];
-          providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
-          candidates?: Array<{ provider?: string; errors?: string[] }>;
-          providerOrder?: string[];
-          forceProvider?: string | null;
-        };
+        const result = await fetchFloorplanResult(floorplanId);
+        const mapped = mapFloorplanResultToScene(result);
+        setWalls(mapped.walls);
+        setOpenings(mapped.openings);
 
-        const debugErrors = Array.isArray(payload.errors)
-          ? payload.errors
-          : Array.isArray(payload.providerErrors)
-            ? payload.providerErrors
-            : [];
-        if (!response.ok) {
-          const details = payload.details || payload.error || "AI analysis failed.";
-          if (response.status === 422 && payload.recoverable) {
-            setWalls([]);
-            setOpenings([]);
-            setScale(1, createUnknownScaleInfo(1, details));
-            setAnalysisRecovery({
-              message: details,
-              providerErrors: debugErrors,
-              errorCode: payload.errorCode ?? null
-            });
-            setViewMode("2d-edit");
-            toast.error("AI analysis failed. Continue in manual 2D correction mode.");
-            return;
-          }
-          throw new Error(details);
-        }
-
-        if (debugErrors.length > 0) {
-          const details = debugErrors.join(" | ");
-          console.error("[parse-floorplan] provider errors:", details);
-          if (payload.providerOrder || payload.forceProvider) {
-            console.error("[parse-floorplan] provider meta:", {
-              providerOrder: payload.providerOrder,
-              forceProvider: payload.forceProvider
-            });
-          }
-        }
-        if (payload.warning) {
-          toast.error(payload.warning);
-        }
-        setAnalysisRecovery(null);
-        if (payload.cacheHit) {
-          toast.success("Loaded cached analysis.");
-        }
-
-        const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
-        const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
-        const normalizedWalls = nextWalls.map((wall: any) => ({
-          id: wall.id,
-          start: wall.start,
-          end: wall.end,
-          thickness: wall.thickness,
-          height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
-          type: wall.type,
-          isPartOfBalcony: wall.isPartOfBalcony,
-          confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
-        }));
-        setWalls(normalizedWalls as any);
-        const processedOpenings = nextOpenings.map((o: any) => ({
-          id: o.id,
-          wallId: o.wallId,
-          type: o.type as "door" | "window",
-          offset: o.offset,
-          width: o.width,
-          height: o.height,
-          isEntrance: o.isEntrance,
-          detectConfidence: typeof o.detectConfidence === "number" ? o.detectConfidence : undefined,
-          attachConfidence: typeof o.attachConfidence === "number" ? o.attachConfidence : undefined,
-          typeConfidence: typeof o.typeConfidence === "number" ? o.typeConfidence : undefined
-        }));
-        setOpenings(processedOpenings);
-
-        const entrance = processedOpenings.find((o: any) => o.isEntrance);
+        const entrance = mapped.openings.find((opening) => opening.isEntrance);
         if (entrance) {
           useSceneStore.setState({ entranceId: entrance.id });
         }
 
-        const normalizedScale =
-          typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
-            ? payload.metadata.scale
-            : typeof payload.scale === "number" && payload.scale > 0
-              ? payload.scale
-              : 1;
-        const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
+        const normalizedScale = typeof mapped.scale === "number" && mapped.scale > 0 ? mapped.scale : 1;
+        const nextScaleInfo = parseScaleInfo(mapped.scaleInfo, normalizedScale);
         setScale(normalizedScale, nextScaleInfo);
-        if (!payload.warning && !payload.cacheHit) {
-          toast.success("Design blueprint analyzed successfully.");
-        }
+        setAnalysisRecovery(null);
+        await loadProject(projectId);
+        toast.success("Design blueprint analyzed successfully.");
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Low confidence in analysis. Entering manual adjustment mode.";
+        const payload =
+          err && typeof err === "object" && "payload" in err
+            ? ((err as { payload?: unknown }).payload as RecoverablePayload | undefined)
+            : undefined;
+        const message =
+          payload?.details ||
+          payload?.error ||
+          (err instanceof Error ? err.message : "Low confidence in analysis. Entering manual adjustment mode.");
         setWalls([]);
         setOpenings([]);
         setScale(1, createUnknownScaleInfo(1, message));
         setAnalysisRecovery({
           message,
-          providerErrors: []
+          providerErrors: Array.isArray(payload?.providerErrors) ? payload.providerErrors : [],
+          errorCode: payload?.errorCode ?? null
         });
         setViewMode("2d-edit");
         toast.error(message);
@@ -355,7 +301,7 @@ export default function ProjectEditorPage() {
         setIsAnalyzing(false);
       }
     },
-    [setWalls, setOpenings, setScale, setViewMode]
+    [loadProject, projectId, setOpenings, setScale, setViewMode, setWalls]
   );
 
   const runCatalogAnalysis = useCallback(
@@ -368,112 +314,20 @@ export default function ProjectEditorPage() {
       setViewMode("2d-edit");
       setAnalysisRecovery(null);
       try {
-        const response = await fetch("/api/ai/parse-floorplan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mode: "catalog",
-            catalogQuery: {
-              apartmentName: query.apartmentName.trim(),
-              typeName: query.typeName.trim(),
-              region: query.region?.trim() || undefined
-            }
-          })
-        });
-
-        const data = await response.json().catch(() => null);
-        if (!data || typeof data !== "object" || Array.isArray(data)) {
-          throw new Error("Invalid catalog analysis response.");
-        }
-
-        const payload = data as {
-          walls?: any[];
-          openings?: any[];
-          scale?: number;
-          scaleInfo?: unknown;
-          metadata?: {
-            scale?: number;
-            scaleInfo?: unknown;
-          };
-          recoverable?: boolean;
-          errorCode?: string;
-          details?: string;
-          error?: string;
-          errors?: string[];
-          providerErrors?: string[];
-          providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
-        };
-        const debugErrors = Array.isArray(payload.errors)
-          ? payload.errors
-          : Array.isArray(payload.providerErrors)
-            ? payload.providerErrors
-            : [];
-
         const placeholder = createPlaceholderFloorplanDataUrl();
         if (placeholder) {
           setImageSrc(placeholder);
         }
-
-        if (!response.ok) {
-          const details = payload.details || payload.error || "Template lookup failed.";
-          if (response.status === 422 && payload.recoverable) {
-            setWalls([]);
-            setOpenings([]);
-            setScale(1, createUnknownScaleInfo(1, details));
-            setAnalysisRecovery({
-              message: details,
-              providerErrors: debugErrors,
-              errorCode: payload.errorCode ?? null
-            });
-            setViewMode("2d-edit");
-            toast.error("Template lookup failed. Continue in manual 2D correction mode.");
-            return;
-          }
-          throw new Error(details);
-        }
-
-        const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
-        const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
-        const normalizedWalls = nextWalls.map((wall: any) => ({
-          id: wall.id,
-          start: wall.start,
-          end: wall.end,
-          thickness: wall.thickness,
-          height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
-          type: wall.type,
-          isPartOfBalcony: wall.isPartOfBalcony,
-          confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
-        }));
-        const processedOpenings = nextOpenings.map((opening: any) => ({
-          id: opening.id,
-          wallId: opening.wallId,
-          type: opening.type as "door" | "window",
-          offset: opening.offset,
-          width: opening.width,
-          height: opening.height,
-          isEntrance: opening.isEntrance,
-          detectConfidence: typeof opening.detectConfidence === "number" ? opening.detectConfidence : undefined,
-          attachConfidence: typeof opening.attachConfidence === "number" ? opening.attachConfidence : undefined,
-          typeConfidence: typeof opening.typeConfidence === "number" ? opening.typeConfidence : undefined
-        }));
-        setWalls(normalizedWalls as any);
-        setOpenings(processedOpenings);
-
-        const entrance = processedOpenings.find((opening) => opening.isEntrance);
-        if (entrance?.id) {
-          useSceneStore.setState({ entranceId: entrance.id });
-        }
-
-        const normalizedScale =
-          typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
-            ? payload.metadata.scale
-            : typeof payload.scale === "number" && payload.scale > 0
-              ? payload.scale
-              : 1;
-        const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
-        setScale(normalizedScale, nextScaleInfo);
-        setAnalysisRecovery(null);
-        toast.success("Template matched. Review and confirm in 2D.");
+        const details = "Template catalog lookup is disabled during Railway cutover. Upload a floorplan image instead.";
+        setWalls([]);
+        setOpenings([]);
+        setScale(1, createUnknownScaleInfo(1, details));
+        setAnalysisRecovery({
+          message: details,
+          providerErrors: [],
+          errorCode: "CATALOG_NOT_AVAILABLE"
+        });
+        toast.error(details);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Template lookup failed.";
         setWalls([]);
@@ -494,18 +348,10 @@ export default function ProjectEditorPage() {
 
   const analyzeFloorplan = useCallback(
     async (file: File) => {
-      const dataUrl = await readFileAsDataUrl(file);
-      await runAnalysis(dataUrl, file.type);
+      await runAnalysis(file);
     },
     [runAnalysis]
   );
-
-  useEffect(() => {
-    if (!imageSrc || isAnalyzing || walls.length > 0 || hasAutoAnalyzedRef.current) return;
-    if (!imageSrc.startsWith("data:image/")) return;
-    hasAutoAnalyzedRef.current = true;
-    void runAnalysis(imageSrc, getMimeTypeFromDataUrl(imageSrc));
-  }, [imageSrc, isAnalyzing, runAnalysis, walls.length]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -559,12 +405,12 @@ export default function ProjectEditorPage() {
   }, [analysisRecovery]);
 
   const handleRetryRecovery = useCallback(() => {
-    if (!imageSrc || !imageSrc.startsWith("data:image/")) {
+    if (!lastUploadedFileRef.current) {
       toast.error("Re-upload the original image to retry AI analysis.");
       return;
     }
-    void runAnalysis(imageSrc, getMimeTypeFromDataUrl(imageSrc));
-  }, [imageSrc, runAnalysis]);
+    void runAnalysis(lastUploadedFileRef.current);
+  }, [runAnalysis]);
 
   const handleStartManualRecovery = useCallback(() => {
     setWalls([]);
