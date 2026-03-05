@@ -338,6 +338,13 @@ type Candidate = {
   timingMs: number;
 };
 
+type ProviderStatus = {
+  provider: string;
+  configured: boolean;
+  status: "enabled" | "skipped";
+  reason: string | null;
+};
+
 const FLOORPLAN_TOOL = {
   name: "floorplan_topology",
   description: "Return the parsed floor plan topology as structured JSON.",
@@ -474,11 +481,11 @@ const ORPHAN_MAX_LENGTH = Number(process.env.FLOORPLAN_ORPHAN_MAX_LENGTH ?? 60);
 const DEFAULT_WALL_THICKNESS = 12;
 const DEFAULT_DOOR_HEIGHT = 210;
 const DEFAULT_WINDOW_HEIGHT = 120;
-const PROVIDER_ORDER = (process.env.FLOORPLAN_PROVIDER_ORDER ?? "snaptrude,anthropic,openai")
+const PROVIDER_ORDER = (process.env.FLOORPLAN_PROVIDER_ORDER ?? "anthropic,openai,snaptrude")
   .split(",")
   .map((entry) => entry.trim())
   .filter(Boolean);
-const PROVIDER_TIMEOUT_MS = 45000;
+const PROVIDER_TIMEOUT_MS = Math.max(1000, Math.floor(getEnvNumber("FLOORPLAN_PROVIDER_TIMEOUT_MS", 45000)));
 const SNAP_TOLERANCE = Number(process.env.FLOORPLAN_SNAP_TOLERANCE ?? 4);
 const MERGE_GAP_TOLERANCE = Number(process.env.FLOORPLAN_MERGE_GAP_TOLERANCE ?? 6);
 const MERGE_ALIGN_TOLERANCE = Number(process.env.FLOORPLAN_MERGE_ALIGN_TOLERANCE ?? 2);
@@ -548,8 +555,67 @@ function isModelNotFoundError(error: unknown) {
 }
 
 function getProviderOrder(forceProvider?: string) {
-  if (forceProvider) return [forceProvider];
-  return PROVIDER_ORDER.length > 0 ? PROVIDER_ORDER : ["anthropic"];
+  const source = forceProvider ? [forceProvider] : PROVIDER_ORDER.length > 0 ? PROVIDER_ORDER : ["anthropic"];
+  return Array.from(new Set(source.map((entry) => entry.toLowerCase()).filter(Boolean)));
+}
+
+function resolveProviderStatus(provider: string): ProviderStatus {
+  const normalized = provider.toLowerCase();
+  if (normalized === "anthropic") {
+    const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+    const hasModel = getModelCandidates().length > 0;
+    const configured = hasApiKey && hasModel;
+    if (!configured) {
+      return {
+        provider,
+        configured,
+        status: "skipped",
+        reason: !hasApiKey ? "ANTHROPIC_API_KEY is missing." : "ANTHROPIC_MODEL is missing."
+      };
+    }
+    return { provider, configured: true, status: "enabled", reason: null };
+  }
+  if (normalized === "openai") {
+    const configured = Boolean(process.env.OPENAI_API_KEY);
+    return {
+      provider,
+      configured,
+      status: configured ? "enabled" : "skipped",
+      reason: configured ? null : "OPENAI_API_KEY is missing."
+    };
+  }
+  if (normalized === "snaptrude") {
+    const hasUrl = Boolean(process.env.SNAPTRUDE_API_URL);
+    const hasKey = Boolean(process.env.SNAPTRUDE_API_KEY);
+    const configured = hasUrl && hasKey;
+    return {
+      provider,
+      configured,
+      status: configured ? "enabled" : "skipped",
+      reason: configured
+        ? null
+        : !hasUrl
+          ? "SNAPTRUDE_API_URL is missing."
+          : "SNAPTRUDE_API_KEY is missing."
+    };
+  }
+  return {
+    provider,
+    configured: false,
+    status: "skipped",
+    reason: `Unknown provider "${provider}".`
+  };
+}
+
+function formatProviderError(provider: string, error: unknown) {
+  if (error && typeof error === "object" && "name" in error && (error as { name?: string }).name === "AbortError") {
+    return `${provider}: provider timeout after ${PROVIDER_TIMEOUT_MS}ms`;
+  }
+  const message = error instanceof Error ? error.message : "Unknown provider error";
+  if (message.toLowerCase().includes("fetch failed")) {
+    return `${provider}: provider unavailable (network failure)`;
+  }
+  return `${provider}: ${message}`;
 }
 
 async function preprocessImage(base64: string): Promise<PreprocessResult> {
@@ -2697,6 +2763,8 @@ export async function POST(request: NextRequest) {
     }
 
     const providerOrder = getProviderOrder(forceProvider);
+    const providerStatus = providerOrder.map((provider) => resolveProviderStatus(provider));
+    const enabledProviders = providerStatus.filter((entry) => entry.status === "enabled").map((entry) => entry.provider);
     const candidates: Candidate[] = [];
     const templateCandidates: TemplateCandidate[] = [];
 
@@ -2738,15 +2806,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    for (const provider of providerOrder) {
+    for (const provider of enabledProviders) {
       const startedAt = Date.now();
       const candidate = createEmptyCandidate(provider);
       try {
         const name = provider.toLowerCase();
         let raw: unknown | null = null;
-        if (name === "cubicasa") {
-          candidate.validated.errors.push(`${provider}: provider disabled`);
-        } else if (name === "snaptrude") {
+        if (name === "snaptrude") {
           raw = await runSnaptrudeProvider(data, mimeType);
         } else if (name === "anthropic") {
           raw = await runAnthropicProvider(data, preprocessedData, mimeType);
@@ -2759,14 +2825,13 @@ export async function POST(request: NextRequest) {
 
         if (!raw) {
           if (candidate.validated.errors.length === 0) {
-            candidate.validated.errors.push(`${provider}: empty provider response`);
+            candidate.validated.errors.push(`${provider}: provider unavailable (empty response)`);
           }
           continue;
         }
         processCandidateRaw(candidate, raw, imageWidth, imageHeight);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown provider error";
-        candidate.validated.errors.push(`${provider}: ${message}`);
+        candidate.validated.errors.push(formatProviderError(provider, error));
       } finally {
         candidate.timingMs = Date.now() - startedAt;
         if (!Number.isFinite(candidate.score)) {
@@ -2794,11 +2859,14 @@ export async function POST(request: NextRequest) {
     const providerErrors = candidates
       .flatMap((candidate) => candidate.validated.errors)
       .filter((message) => message.trim().length > 0);
+    const skippedReasons = providerStatus
+      .filter((entry) => entry.status === "skipped" && entry.reason)
+      .map((entry) => `${entry.provider}: ${entry.reason}`);
+    const noConfiguredProviders = enabledProviders.length === 0;
 
     if (!selected || !selected.cleaned || selected.score < MIN_ACCEPT_SCORE) {
       const debugInfo = debug
         ? {
-            providerErrors,
             providerOrder,
             forceProvider: forceProvider ?? null,
             templateCandidates: templateCandidates.map(toTemplateDebugCandidate),
@@ -2809,14 +2877,17 @@ export async function POST(request: NextRequest) {
           }
         : {};
       const detail = !selected
-        ? providerErrors[0] ?? "No provider produced a valid topology."
+        ? providerErrors[0] ?? skippedReasons[0] ?? "No provider produced a valid topology."
         : `Best candidate score ${selected.score.toFixed(2)} is below minimum ${MIN_ACCEPT_SCORE}.`;
+      const errorCode = noConfiguredProviders ? "PROVIDER_NOT_CONFIGURED" : "TOPOLOGY_EXTRACTION_FAILED";
       return NextResponse.json(
         {
           error: "Failed to extract a valid floorplan topology from providers.",
-          errorCode: "TOPOLOGY_EXTRACTION_FAILED",
+          errorCode,
           recoverable: true,
           details: detail,
+          providerErrors: providerErrors.length > 0 ? providerErrors : skippedReasons,
+          providerStatus,
           ...debugInfo
         },
         { status: 422, headers: { "Cache-Control": "no-cache" } }
@@ -2851,7 +2922,6 @@ export async function POST(request: NextRequest) {
 
     const debugInfo = debug
       ? {
-          providerErrors,
           providerOrder,
           forceProvider: forceProvider ?? null,
           templateCandidates: templateCandidates.map(toTemplateDebugCandidate),
@@ -2870,6 +2940,8 @@ export async function POST(request: NextRequest) {
           sourceModule: selected.provider === "template" ? "template" : "cv",
           selectedScore: selected.score
         },
+        providerStatus,
+        providerErrors,
         ...debugInfo
       },
       {

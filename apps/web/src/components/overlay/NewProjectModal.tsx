@@ -132,6 +132,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                     error?: string;
                     errors?: string[];
                     providerErrors?: string[];
+                    providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
                     candidates?: Array<{ provider?: string; errors?: string[] }>;
                     providerOrder?: string[];
                     forceProvider?: string | null;
@@ -169,8 +170,8 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                         });
                     }
                 }
-                if (payload.warning || debugErrors.length > 0) {
-                    toast.error(payload.warning ?? debugErrors[0]);
+                if (payload.warning) {
+                    toast.error(payload.warning);
                 }
                 setAnalysisRecovery(null);
 
@@ -277,6 +278,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                 error?: string;
                 errors?: string[];
                 providerErrors?: string[];
+                providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
             };
             const debugErrors = Array.isArray(payload.errors)
                 ? payload.errors
@@ -464,6 +466,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                 error?: string;
                 errors?: string[];
                 providerErrors?: string[];
+                providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
             };
             const debugErrors = Array.isArray(payload.errors)
                 ? payload.errors
