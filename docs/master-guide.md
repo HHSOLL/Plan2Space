@@ -1,108 +1,95 @@
 # Master Guide (Engineering Source of Truth)
 
-이 문서는 Plan2Space의 **엔지니어링 기준 문서**입니다. 코드/문서/아키텍처 변경 시 가장 먼저 갱신해야 합니다.
+이 문서는 Plan2Space의 엔지니어링 단일 기준 문서입니다.
 
 ## Non-Negotiables
-- Semantic parsing → 2D correction → Procedural 3D 파이프라인 유지.
+- Semantic parsing -> 2D correction -> Procedural 3D 파이프라인 유지.
 - Top view / Walk mode 두 모드 카메라 경험 보장.
-- PBR 재질 + HDR 환경광 + 후처리(Post FX)로 고품질 시각 유지.
+- PBR + HDR + Post FX 시각 품질 기준 유지.
+- 무거운 이미지 분석/기하/씬 생성 연산은 Vercel에서 실행하지 않음.
 
 ## 운영 프로토콜 (필수)
-- 작업 시작 전 `AGENTS.md`의 Must Read 문서를 순서대로 확인합니다.
-- 작업 유형에 맞는 스킬을 먼저 선택합니다.
-  - Architecture/Scope: `plan2space-project-core`
-  - UX/Visual: `plan2space-studio-ux`
-  - Blueprint AI: `plan2space-blueprint-ai`
-- 기능/버그/리팩터링 작업은 항상 **전용 브랜치**에서 진행하고, 검증 후 `main`에 병합합니다.
-  - 여러 기능을 동시에 진행할 경우 기능별로 브랜치를 분리합니다.
-- 코드/구조 변경 후 문서를 반드시 동기화합니다.
-  - 제약 변경: `docs/master-guide.md`
-  - 단계/완료조건 변경: `docs/implementation-plan.md`
-  - AI 계약 변경: `docs/ai-pipeline.md`
-  - 시각 품질 변경: `docs/3d-visual-engine.md`
+- 작업 시작 전 `AGENTS.md`의 Must Read 문서를 순서대로 확인한다.
+- 작업 시작 전 스킬을 선택한다.
+  - 아키텍처/범위: `plan2space-project-core`
+  - UX/비주얼: `plan2space-studio-ux`
+  - 도면 AI: `plan2space-blueprint-ai`
+- 기능/버그/리팩터링은 항상 새 브랜치에서 작업하고 품질 게이트 통과 후 `main`에 병합한다.
+- 작업 종료 전 문서 Added/Updated/Removed 동기화를 완료한다.
 
-## 시스템 구성 요약
-- **프레임워크**: Next.js 14 App Router (`apps/web`)
-- **3D 엔진**: React Three Fiber + Drei + Rapier + CSG
-- **AI 파이프라인**: `POST /api/ai/parse-floorplan` → Topology 반환
-- **Template Retrieval**: `apps/web/src/lib/ai/template/retrieval.ts` (catalog text/image hash 매칭)
-- **UI Assistant**: json-render 기반 패널 (씬 스냅샷/퀵 액션)
-- **스토리지/인증**: Supabase (Auth, Storage, RPC)
+## 시스템 아키텍처
+- Frontend: `apps/web` (Vercel, UI 전용)
+- Backend API: `apps/api` (Railway)
+- Worker: `apps/worker` (Railway background worker)
+- Database/Auth/Storage: Supabase
 
-## 핵심 파이프라인
-1) 도면 업로드 → `parse-floorplan` 호출
-2) AI 응답 정규화/검증 → 2D 보정 편집기 노출 (스케일 측정/자동 도어 스케일 포함)
-3) 사용자 확인 → 절차적 3D 생성
-4) 저장/공유 시 Supabase RPC(`create_project_version`)로 버전 저장
+데이터 흐름:
+1. 사용자 업로드
+2. Supabase Storage 저장
+3. Railway API 잡 생성
+4. Railway Worker 처리 (multi-pass + provider scoring)
+5. `floorplan_results` 저장
+6. 프론트엔드 폴링 후 결과 렌더링
 
-카탈로그 파이프라인:
-1) `mode="catalog"` + `catalogQuery(apartmentName/typeName/region?)`
-2) 템플릿 후보 매칭(text/image hash) + topology 품질 게이트
-3) 성공 시 2D 보정으로 진입, 실패 시 `422 recoverable`로 수동 복구
+## 책임 경계
+- `apps/web`:
+  - 업로드/잡 생성 요청/잡 상태 폴링/결과 렌더링
+  - Supabase 로그인 세션(access token) 획득
+- `apps/api`:
+  - 사용자 인증 검증(Supabase JWT)
+  - 프로젝트/도면/잡/결과 도메인 API 제공
+  - signed upload URL 발급
+- `apps/worker`:
+  - 도면 분석, 기하 추출, scene JSON 생성
+  - 잡 상태 전이(queued/running/retrying/succeeded/failed/dead_letter)
 
-세부 흐름은 `docs/ai-pipeline.md`, `docs/floorplan-3d-flow.md`를 따릅니다.
+## 핵심 API 기준 (Railway `/v1`)
+- `POST /v1/projects`
+- `GET /v1/projects`
+- `POST /v1/floorplans/upload-url`
+- `POST /v1/projects/:projectId/floorplans`
+- `GET /v1/jobs/:jobId`
+- `POST /v1/jobs/:jobId/retry`
+- `GET /v1/floorplans/:floorplanId/result`
+- `GET /v1/projects/:projectId/scene/latest`
 
-## 디렉토리 기준
-```
-apps/web/src/app/              Next.js 라우트, API
-apps/web/src/components/       UI/3D 컴포넌트
-apps/web/src/lib/              스토어, AI/캐시, Supabase, geometry
-apps/web/src/types/            타입 계약
-```
+## 프론트엔드 API 기준
+- `NEXT_PUBLIC_RAILWAY_API_URL` 기반으로 Railway API 호출.
+- `Authorization: Bearer <supabase access token>` 헤더 전달.
+- Next.js 내부 도메인/파싱 API(`/api/ai/parse-floorplan`, `/api/projects/*`, `/api/furnitures/*`)는 사용하지 않는다.
 
-## 상태 경계 (Zustand)
-- `useEditorStore`: 뷰 모드/패널/선택 상태 (UI)
-- `useSceneStore`: 벽/개구부/바닥/에셋/스케일 (3D 데이터)
-- `useProjectStore`: 프로젝트 메타 (현재 로컬 저장소 기반)
+## 데이터 테이블 기준
+- `projects` (기존)
+- `floorplans`
+- `jobs`
+- `floorplan_results`
 
-UI 상태와 씬 데이터는 반드시 분리하며, 렌더 루프에 불필요한 상태 변화를 주지 않습니다.
+Queue는 Supabase Postgres(`claim_jobs` + `FOR UPDATE SKIP LOCKED`) 기반으로 운영한다.
 
-## 3D 시각 품질 기준
-- `SceneEnvironment` + HDRI + ContactShadows 활성화
-- `PostEffects`(Bloom/Vignette/Noise) 기본 적용
-- ToneMapping: ACESFilmic + physicallyCorrectLights 적용
-
-상세는 `docs/3d-visual-engine.md`와 `docs/3d-engine.md`를 따릅니다.
-
-## 품질/성능 가드레일
-- 핵심 플로우(`/studio` → `NewProjectModal` → `/project/[id]`)는 360~1024px 폭에서 가로 스크롤 없이 동작해야 함.
-- 도면 분석 실패는 `HTTP 422 + recoverable=true`로 명시하며, 성공(200)으로 위장하지 않음.
-- 도면 분석 실패 시에도 2D 보정으로 복구 가능해야 함.
-- provider 구성 상태를 사전 판별하고 `providerStatus[]`로 reason을 전달해야 함.
-- 기본 provider 순서는 `anthropic,openai,snaptrude`.
-- upload 분석은 다중 전처리 pass(`balanced`, `lineart`) 기반 후보 스코어링을 수행해야 함.
-- provider는 첫 성공 즉시 채택하지 않고 후보 스코어링으로 최고점 결과를 선택.
-- 후보 스코어링은 `topology/opening/scale/penalty` breakdown을 포함해 debug에서 추적 가능해야 함.
-- `metadata.scaleInfo(value/source/confidence/evidence)`를 계약으로 유지하고 저장/복원 시 보존.
-- 스케일 보정 없이 3D 생성(Top/Walk 진입)이 진행되지 않도록 게이팅.
-  - `source=unknown` 또는 `confidence<0.6`이면 3D 진입 차단.
-- 2D 편집기에서 wall/opening confidence(초록/노랑/빨강)를 시각화하고, 저신뢰 요소를 우선 수정하도록 안내.
-- Walk 모드에서 벽 관통 금지(물리 충돌 유지).
-- 물리 콜라이더에서 window는 통로로 제거하지 않고, door만 통로 처리.
-- Post FX는 성능 부담이 큰 옵션(SSAO/DoF 등)을 기본 비활성으로 유지.
-- `apps/web/scripts/eval-floorplan.ts` + `apps/web/scripts/eval-floorplan-gate.ts` 결과를 회귀 지표로 사용.
-
-기본 품질 게이트:
+## 품질 게이트
 - `npm --workspace apps/web run type-check`
 - `npm --workspace apps/web run lint`
 - `npm --workspace apps/web run build`
+- `npm --workspace apps/api run typecheck`
+- `npm --workspace apps/worker run typecheck`
 
 ## 관련 문서
 - `docs/ai-pipeline.md`
-- `docs/floorplan-3d-flow.md`
 - `docs/3d-visual-engine.md`
-- `docs/3d-engine.md`
 - `docs/implementation-plan.md`
 - `docs/user-action-guide.md`
+- `docs/deployment.md`
 
-## 2026-03-05 변경 동기화
+## 2026-03-05 변경 동기화 (Railway Immediate Cutover)
 Added:
-- 핵심 플로우 모바일 품질 기준(360~1024px).
-- provider 사전 구성 판별과 `providerStatus[]` 전달 규칙.
+- Vercel UI / Railway API / Railway Worker / Supabase 분리 아키텍처.
+- 잡 큐 기반 파이프라인과 `floorplans/jobs/floorplan_results` 기준.
+- Web/API/Worker 공통 품질 게이트.
 
 Updated:
-- 기본 provider 순서(`anthropic,openai,snaptrude`) 명시.
-- upload 분석의 multi-pass 후보 스코어링 기준 반영.
+- 프론트엔드 데이터 경계를 Railway API 호출 중심으로 변경.
+- provider 실행 위치를 Next route에서 Railway worker로 이동.
 
 Removed/Deprecated:
-- snaptrude 우선 기본 순서 가정.
+- Vercel `parse-floorplan` 직접 처리 모델.
+- Next.js 도메인 API(`/api/projects/*`, `/api/furnitures/*`) 중심 아키텍처.

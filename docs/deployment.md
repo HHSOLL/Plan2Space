@@ -1,77 +1,88 @@
-# Deployment (Vercel)
+# Deployment Guide (Vercel + Railway + Supabase)
 
-## 권장 설정 (Monorepo)
+## 1) Architecture
+- Frontend: Vercel (`apps/web`)
+- API: Railway (`apps/api`)
+- Worker: Railway (`apps/worker`)
+- DB/Auth/Storage: Supabase
 
-### 옵션 A: Root Directory = `apps/web`
+무거운 분석/기하/scene 생성은 Railway Worker에서만 수행한다.
+
+## 2) Vercel 설정 (`apps/web`)
+- Root Directory: `apps/web`
+- Install Command: `npm install`
 - Build Command: `npm run build`
-- Output Directory: `.next`
-- Install Command: `npm install`
 
-### 옵션 B: Root Directory = Repo Root
-- Build Command: `npm --workspace apps/web run build`
-- Output Directory: `apps/web/.next`
-- Install Command: `npm install`
-
-## 필수 환경 변수
-
+필수 env:
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_RAILWAY_API_URL=
+NEXT_PUBLIC_APP_URL=
 ```
 
-## 권장 환경 변수
+주의:
+- `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `SNAPTRUDE_API_KEY`를 Vercel에 두지 않는다.
 
+## 3) Railway API 배포 (`apps/api`)
+- Start: `npm --workspace apps/api run start`
+- Health: `GET /v1/health`
+
+필수 env:
 ```
+API_PORT=4000
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+CORS_ORIGINS=
+FLOORPLAN_UPLOAD_BUCKET=floor-plans
+```
+
+## 4) Railway Worker 배포 (`apps/worker`)
+- Start: `npm --workspace apps/worker run start`
+
+필수 env:
+```
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+WORKER_CONCURRENCY=2
+WORKER_POLL_INTERVAL_MS=1000
 FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
 FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
-FLOORPLAN_CACHE_BUCKET=floorplan-cache
-FLOORPLAN_PREPROCESS_THRESHOLD=200
-FLOORPLAN_PREPROCESS_MEDIAN=3
-FLOORPLAN_PREPROCESS_BLUR=0.3
-FLOORPLAN_PREPROCESS_BG_BLUR=12
-FLOORPLAN_PREPROCESS_CONTRAST=1.25
-FLOORPLAN_PREPROCESS_BRIGHTNESS=-15
-FLOORPLAN_PREPROCESS_LINEART_THRESHOLD=218
-FLOORPLAN_PREPROCESS_LINEART_MEDIAN=2
-FLOORPLAN_PREPROCESS_LINEART_BLUR=0.15
-FLOORPLAN_PREPROCESS_LINEART_BG_BLUR=8
-FLOORPLAN_PREPROCESS_LINEART_CONTRAST=1.45
-FLOORPLAN_PREPROCESS_LINEART_BRIGHTNESS=-20
-FLOORPLAN_PREPROCESS_LINEART_DOWNSCALE=0.5
-FLOORPLAN_PREPROCESS_LINEART_CLAHE=5
-FLOORPLAN_PREPROCESS_LINEART_STRUCTURAL_BLUR=1
-FLOORPLAN_SNAP_TOLERANCE=4
-FLOORPLAN_MERGE_GAP_TOLERANCE=6
-FLOORPLAN_MERGE_ALIGN_TOLERANCE=2
-FLOORPLAN_OPENING_ATTACH_DISTANCE=20
-FLOORPLAN_OPENING_MIN_CONFIDENCE=0.45
-
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
 SNAPTRUDE_API_URL=
 SNAPTRUDE_API_KEY=
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o-mini
-ASSET_STORAGE_BUCKET=assets-glb
-TRIPOSR_API_URL=
-TRIPOSR_API_KEY=
-TRIPOSR_STATUS_URL=
-NEXT_PUBLIC_DRACO_DECODER_PATH=
 ```
 
-## 배포 후 체크리스트
+## 5) Supabase 준비
+1. 마이그레이션 적용:
+   - `supabase/migrations/20260305_railway_floorplan_queue.sql`
+2. Storage bucket 확인:
+   - `floor-plans`
+3. RLS/함수 확인:
+   - `claim_jobs` (service_role execute 허용)
 
-- `/auth/callback` 리다이렉트 동작 확인
-- Google/Kakao 로그인 성공 및 세션 유지 확인
-- 도면 업로드 → 분석 → 3D 생성 정상 동작 확인
+## 6) 배포 후 검증
+1. 로그인 후 프로젝트 생성
+2. 도면 업로드 -> job 생성
+3. `jobs` 상태가 `queued/running/succeeded`로 진행
+4. `floorplan_results` 생성 확인
+5. 프론트에서 결과 렌더링(2D/3D) 확인
 
-## 변경 동기화 (2026-03-05)
+## 7) CI 기준
+- `web`: type-check + lint + build
+- `api`: typecheck + test
+- `worker`: typecheck + test
+- legacy `parse-floorplan` eval gate는 Railway cutover에서는 기본 비활성
+
+## 8) 2026-03-05 변경 동기화 (Railway Immediate Cutover)
 Added:
-- provider timeout/lineart/저신뢰 opening 필터 환경 변수.
+- Railway API/Worker 배포 절차 및 env 계약.
+- Supabase queue 스키마 적용 절차.
 
 Updated:
-- 기본 provider 순서를 `anthropic,openai,snaptrude`로 조정.
+- 배포 토폴로지를 Vercel 단일 실행에서 분산 구조로 전환.
 
 Removed/Deprecated:
-- `snaptrude,anthropic,openai` 기본 순서 가정.
+- Vercel에서 provider 키를 사용해 직접 도면 분석하는 방식.
