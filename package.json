@@ -7,7 +7,10 @@
   ],
   "scripts": {
     "dev:web": "npm --workspace apps/web run dev",
+    "dev:api": "npm --workspace apps/api run dev",
+    "dev:worker": "npm --workspace apps/worker run dev",
     "type-check": "npm --workspace apps/web run type-check",
+    "type-check:all": "npm --workspace apps/web run type-check && npm --workspace apps/api run typecheck && npm --workspace apps/worker run typecheck",
     "assets:download": "node scripts/assets-download.mjs",
     "assets:draco": "node scripts/draco-compress.mjs"
   },

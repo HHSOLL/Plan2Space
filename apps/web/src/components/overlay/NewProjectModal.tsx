@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { FloorplanEditor } from "../editor/FloorplanEditor";
 import { createUnknownScaleInfo, getScaleGateMessage, parseScaleInfo } from "../../lib/ai/scaleInfo";
+import { createFloorplanPipelineJob, fetchFloorplanResult } from "../../features/floorplan/upload";
+import { pollJobUntilTerminal } from "../../features/floorplan/job-polling";
+import { mapFloorplanResultToScene } from "../../features/floorplan/result-mapper";
 
 interface NewProjectModalProps {
     isOpen: boolean;
@@ -23,6 +26,14 @@ type AnalysisRecovery = {
     errorCode?: string | null;
 };
 
+type RecoverablePayload = {
+    recoverable?: boolean;
+    errorCode?: string;
+    details?: string;
+    error?: string;
+    providerErrors?: string[];
+};
+
 export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalProps) {
     const router = useRouter();
     const [name, setName] = useState("");
@@ -33,8 +44,11 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
     const [catalogApartmentName, setCatalogApartmentName] = useState("");
     const [catalogTypeName, setCatalogTypeName] = useState("");
     const [catalogRegion, setCatalogRegion] = useState("");
+    const [draftProjectId, setDraftProjectId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { createProject } = useProjectStore();
+    const lastUploadedFileRef = useRef<File | null>(null);
+    const hasCommittedRef = useRef(false);
+    const { createProject, updateProject, deleteProject } = useProjectStore();
     const {
         walls,
         openings,
@@ -60,7 +74,38 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         setCatalogApartmentName("");
         setCatalogTypeName("");
         setCatalogRegion("");
+        setDraftProjectId(null);
+        lastUploadedFileRef.current = null;
+        hasCommittedRef.current = false;
     }, [isOpen, resetScene]);
+
+    const readFileAsDataUrl = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error("Failed to read file."));
+            reader.readAsDataURL(file);
+        });
+
+    const resolveErrorPayload = (error: unknown): RecoverablePayload | null => {
+        if (!error || typeof error !== "object" || !("payload" in error)) return null;
+        const payload = (error as { payload?: unknown }).payload;
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+        return payload as RecoverablePayload;
+    };
+
+    const ensureDraftProject = async () => {
+        if (draftProjectId) return draftProjectId;
+        if (!name.trim()) {
+            throw new Error("Project name is required before analysis.");
+        }
+        const draft = await createProject({
+            name: name.trim(),
+            description: "AI topology verified"
+        });
+        setDraftProjectId(draft.id);
+        return draft.id;
+    };
 
     const createPlaceholderFloorplanDataUrl = () => {
         if (typeof document === "undefined") return null;
@@ -93,144 +138,83 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         return canvas.toDataURL("image/png");
     };
 
+    const applyResultToEditor = (result: Awaited<ReturnType<typeof fetchFloorplanResult>>) => {
+        const mapped = mapFloorplanResultToScene(result);
+        setWalls(mapped.walls);
+        setOpenings(mapped.openings);
+        const normalizedScale = typeof mapped.scale === "number" && mapped.scale > 0 ? mapped.scale : 1;
+        const nextScaleInfo = parseScaleInfo(mapped.scaleInfo, normalizedScale);
+        setScale(normalizedScale, nextScaleInfo);
+
+        const entrance = mapped.openings.find((opening) => opening.isEntrance);
+        if (entrance?.id) {
+            useSceneStore.setState({ entranceId: entrance.id });
+        }
+    };
+
+    const runPipelineAnalysis = async (file: File) => {
+        if (!file.type.startsWith("image/")) {
+            throw new Error("Image upload only (PNG/JPEG).");
+        }
+
+        const preview = await readFileAsDataUrl(file);
+        setImage(preview);
+        lastUploadedFileRef.current = file;
+
+        const projectId = await ensureDraftProject();
+        const { jobId, floorplanId } = await createFloorplanPipelineJob(projectId, file);
+        const job = await pollJobUntilTerminal(jobId, {
+            intervalMs: 1200,
+            timeoutMs: 300000
+        });
+
+        if (job.status !== "succeeded") {
+            const details = job.details || job.error || "AI analysis failed.";
+            setWalls([]);
+            setOpenings([]);
+            setScale(1, createUnknownScaleInfo(1, details));
+            setAnalysisRecovery({
+                message: details,
+                providerErrors: Array.isArray(job.providerErrors) ? job.providerErrors : [],
+                errorCode: job.errorCode ?? null
+            });
+            setStep("edit");
+            throw new Error(details);
+        }
+
+        const result = await fetchFloorplanResult(floorplanId);
+        applyResultToEditor(result);
+        setAnalysisRecovery(null);
+        setStep("edit");
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (!file.type.startsWith("image/")) {
-            toast.error("Image upload only (PNG/JPEG).");
-            return;
-        }
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const dataUrl = reader.result as string;
-            setImage(dataUrl);
-            setIsAnalyzing(true);
-            try {
-                const response = await fetch("/api/ai/parse-floorplan", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ mode: "upload", base64: dataUrl, mimeType: file.type })
-                });
-                const data = await response.json().catch(() => null);
-                if (!data || typeof data !== "object" || Array.isArray(data)) {
-                    throw new Error("Invalid analysis response.");
-                }
-                const payload = data as {
-                    walls?: any[];
-                    openings?: any[];
-                    scale?: number;
-                    scaleInfo?: unknown;
-                    metadata?: {
-                        scale?: number;
-                        scaleInfo?: unknown;
-                    };
-                    warning?: string;
-                    recoverable?: boolean;
-                    errorCode?: string;
-                    details?: string;
-                    error?: string;
-                    errors?: string[];
-                    providerErrors?: string[];
-                    providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
-                    candidates?: Array<{ provider?: string; errors?: string[] }>;
-                    providerOrder?: string[];
-                    forceProvider?: string | null;
-                };
-                const debugErrors = Array.isArray(payload.errors)
-                    ? payload.errors
-                    : Array.isArray(payload.providerErrors)
-                        ? payload.providerErrors
-                        : [];
-                if (!response.ok) {
-                    const details = payload?.details || payload?.error || "AI analysis failed.";
-                    if (response.status === 422 && payload?.recoverable) {
-                        setWalls([]);
-                        setOpenings([]);
-                        setScale(1, createUnknownScaleInfo(1, details));
-                        setAnalysisRecovery({
-                            message: details,
-                            providerErrors: debugErrors,
-                            errorCode: payload.errorCode ?? null
-                        });
-                        setStep("edit");
-                        toast.error("AI analysis failed. Continue in 2D manual correction mode.");
-                        return;
-                    }
-                    throw new Error(details);
-                }
-
-                if (debugErrors.length > 0) {
-                    const details = debugErrors.join(" | ");
-                    console.error("[parse-floorplan] provider errors:", details);
-                    if (payload.providerOrder || payload.forceProvider) {
-                        console.error("[parse-floorplan] provider meta:", {
-                            providerOrder: payload.providerOrder,
-                            forceProvider: payload.forceProvider
-                        });
-                    }
-                }
-                if (payload.warning) {
-                    toast.error(payload.warning);
-                }
-                setAnalysisRecovery(null);
-
-                const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
-                const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
-                const normalizedWalls = nextWalls.map((wall: any) => ({
-                    id: wall.id,
-                    start: wall.start,
-                    end: wall.end,
-                    thickness: wall.thickness,
-                    height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
-                    type: wall.type,
-                    isPartOfBalcony: wall.isPartOfBalcony,
-                    confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
-                }));
-                setWalls(normalizedWalls as any);
-                setOpenings(
-                    nextOpenings.map((opening: any) => ({
-                        id: opening.id,
-                        wallId: opening.wallId,
-                        type: opening.type,
-                        offset: opening.offset,
-                        width: opening.width,
-                        height: opening.height,
-                        isEntrance: opening.isEntrance,
-                        detectConfidence: typeof opening.detectConfidence === "number" ? opening.detectConfidence : undefined,
-                        attachConfidence: typeof opening.attachConfidence === "number" ? opening.attachConfidence : undefined,
-                        typeConfidence: typeof opening.typeConfidence === "number" ? opening.typeConfidence : undefined
-                    }))
-                );
-                const entrance = nextOpenings.find((opening: any) => opening.isEntrance);
-                if (entrance?.id) {
-                    useSceneStore.setState({ entranceId: entrance.id });
-                }
-                const normalizedScale =
-                    typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
-                        ? payload.metadata.scale
-                        : typeof payload.scale === "number" && payload.scale > 0
-                            ? payload.scale
-                            : 1;
-                const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
-                setScale(normalizedScale, nextScaleInfo);
-                setStep("edit");
-            } catch (error) {
-                const message = error instanceof Error ? error.message : "AI analysis failed.";
-                setWalls([]);
-                setOpenings([]);
-                setScale(1, createUnknownScaleInfo(1, message));
-                setAnalysisRecovery({
-                    message,
-                    providerErrors: []
-                });
+        setIsAnalyzing(true);
+        try {
+            await runPipelineAnalysis(file);
+        } catch (error) {
+            const payload = resolveErrorPayload(error);
+            const message = payload?.details || payload?.error || (error instanceof Error ? error.message : "AI analysis failed.");
+            if (message === "Project name is required before analysis.") {
                 toast.error(message);
-                setStep("edit");
-            } finally {
-                setIsAnalyzing(false);
+                return;
             }
-        };
-        reader.readAsDataURL(file);
+            setWalls([]);
+            setOpenings([]);
+            setScale(1, createUnknownScaleInfo(1, message));
+            setAnalysisRecovery({
+                message,
+                providerErrors: Array.isArray(payload?.providerErrors) ? payload.providerErrors : [],
+                errorCode: payload?.errorCode ?? null
+            });
+            setStep("edit");
+            toast.error(message);
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     const handleCatalogLookup = async () => {
@@ -246,105 +230,16 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         setStep("edit");
         setAnalysisRecovery(null);
         try {
-            const response = await fetch("/api/ai/parse-floorplan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    mode: "catalog",
-                    catalogQuery: {
-                        apartmentName: catalogApartmentName.trim(),
-                        typeName: catalogTypeName.trim(),
-                        region: catalogRegion.trim() || undefined
-                    }
-                })
+            const details = "Template catalog lookup is disabled during Railway cutover. Upload a floorplan image instead.";
+            setWalls([]);
+            setOpenings([]);
+            setScale(1, createUnknownScaleInfo(1, details));
+            setAnalysisRecovery({
+                message: details,
+                providerErrors: [],
+                errorCode: "CATALOG_NOT_AVAILABLE"
             });
-
-            const data = await response.json().catch(() => null);
-            if (!data || typeof data !== "object" || Array.isArray(data)) {
-                throw new Error("Invalid catalog analysis response.");
-            }
-            const payload = data as {
-                walls?: any[];
-                openings?: any[];
-                scale?: number;
-                scaleInfo?: unknown;
-                metadata?: {
-                    scale?: number;
-                    scaleInfo?: unknown;
-                };
-                recoverable?: boolean;
-                errorCode?: string;
-                details?: string;
-                error?: string;
-                errors?: string[];
-                providerErrors?: string[];
-                providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
-            };
-            const debugErrors = Array.isArray(payload.errors)
-                ? payload.errors
-                : Array.isArray(payload.providerErrors)
-                    ? payload.providerErrors
-                    : [];
-
-            if (!response.ok) {
-                const details = payload.details || payload.error || "Template lookup failed.";
-                if (response.status === 422 && payload.recoverable) {
-                    setWalls([]);
-                    setOpenings([]);
-                    setScale(1, createUnknownScaleInfo(1, details));
-                    setAnalysisRecovery({
-                        message: details,
-                        providerErrors: debugErrors,
-                        errorCode: payload.errorCode ?? null
-                    });
-                    toast.error("Template lookup failed. Continue in manual 2D correction mode.");
-                    return;
-                }
-                throw new Error(details);
-            }
-
-            const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
-            const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
-            setWalls(
-                nextWalls.map((wall: any) => ({
-                    id: wall.id,
-                    start: wall.start,
-                    end: wall.end,
-                    thickness: wall.thickness,
-                    height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
-                    type: wall.type,
-                    isPartOfBalcony: wall.isPartOfBalcony,
-                    confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
-                })) as any
-            );
-            setOpenings(
-                nextOpenings.map((opening: any) => ({
-                    id: opening.id,
-                    wallId: opening.wallId,
-                    type: opening.type,
-                    offset: opening.offset,
-                    width: opening.width,
-                    height: opening.height,
-                    isEntrance: opening.isEntrance,
-                    detectConfidence: typeof opening.detectConfidence === "number" ? opening.detectConfidence : undefined,
-                    attachConfidence: typeof opening.attachConfidence === "number" ? opening.attachConfidence : undefined,
-                    typeConfidence: typeof opening.typeConfidence === "number" ? opening.typeConfidence : undefined
-                }))
-            );
-            const entrance = nextOpenings.find((opening: any) => opening.isEntrance);
-            if (entrance?.id) {
-                useSceneStore.setState({ entranceId: entrance.id });
-            }
-            const normalizedScale =
-                typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
-                    ? payload.metadata.scale
-                    : typeof payload.scale === "number" && payload.scale > 0
-                        ? payload.scale
-                        : 1;
-            const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
-            setScale(normalizedScale, nextScaleInfo);
-            setAnalysisRecovery(null);
-            toast.success("Template matched. Review and create the project.");
+            toast.error(details);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Template lookup failed.";
             setWalls([]);
@@ -376,21 +271,13 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         }
         setIsAnalyzing(true);
         try {
-            const project = await createProject({
+            const projectId = draftProjectId ?? (await ensureDraftProject());
+            await updateProject(projectId, {
                 name: name.trim(),
-                thumbnail: image || undefined,
-                description: "AI topology verified",
-                metadata: {
-                    floorPlan: {
-                        scale,
-                        scaleInfo,
-                        walls,
-                        openings
-                    }
-                }
+                description: "AI topology verified"
             });
             try {
-                await saveProject(project.id, {
+                await saveProject(projectId, {
                     topology: {
                         scale,
                         scaleInfo,
@@ -410,9 +297,10 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                 const message = error instanceof Error ? error.message : "Cloud save failed.";
                 toast.error(message);
             }
+            hasCommittedRef.current = true;
             onCreated?.();
             onClose();
-            router.push(`/project/${project.id}`);
+            router.push(`/project/${projectId}`);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to create project.";
             toast.error(message);
@@ -437,102 +325,23 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
     };
 
     const handleRetryAnalysis = async () => {
-        if (!image || !image.startsWith("data:image/")) {
+        if (!lastUploadedFileRef.current) {
             toast.error("Re-upload the source image to retry analysis.");
             return;
         }
-        const mimeMatch = image.match(/^data:(image\/(?:png|jpeg));base64,/);
-        const mimeType = mimeMatch?.[1];
         setIsAnalyzing(true);
         try {
-            const response = await fetch("/api/ai/parse-floorplan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mode: "upload", base64: image, mimeType })
-            });
-            const data = await response.json().catch(() => null);
-            if (!data || typeof data !== "object" || Array.isArray(data)) {
-                throw new Error("Invalid analysis response.");
-            }
-            const payload = data as {
-                walls?: any[];
-                openings?: any[];
-                scale?: number;
-                scaleInfo?: unknown;
-                metadata?: { scale?: number; scaleInfo?: unknown };
-                recoverable?: boolean;
-                errorCode?: string;
-                details?: string;
-                error?: string;
-                errors?: string[];
-                providerErrors?: string[];
-                providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
-            };
-            const debugErrors = Array.isArray(payload.errors)
-                ? payload.errors
-                : Array.isArray(payload.providerErrors)
-                    ? payload.providerErrors
-                    : [];
-            if (!response.ok) {
-                const details = payload.details || payload.error || "AI analysis failed.";
-                if (response.status === 422 && payload.recoverable) {
-                    setWalls([]);
-                    setOpenings([]);
-                    setScale(1, createUnknownScaleInfo(1, details));
-                    setAnalysisRecovery({
-                        message: details,
-                        providerErrors: debugErrors,
-                        errorCode: payload.errorCode ?? null
-                    });
-                    toast.error("AI analysis failed. Continue in manual 2D correction mode.");
-                    return;
-                }
-                throw new Error(details);
-            }
-            const nextWalls = Array.isArray(payload.walls) ? payload.walls : [];
-            const nextOpenings = Array.isArray(payload.openings) ? payload.openings : [];
-            setWalls(
-                nextWalls.map((wall: any) => ({
-                    id: wall.id,
-                    start: wall.start,
-                    end: wall.end,
-                    thickness: wall.thickness,
-                    height: typeof wall.height === "number" && wall.height > 0 ? wall.height : 2.8,
-                    type: wall.type,
-                    isPartOfBalcony: wall.isPartOfBalcony,
-                    confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
-                })) as any
-            );
-            setOpenings(
-                nextOpenings.map((opening: any) => ({
-                    id: opening.id,
-                    wallId: opening.wallId,
-                    type: opening.type,
-                    offset: opening.offset,
-                    width: opening.width,
-                    height: opening.height,
-                    isEntrance: opening.isEntrance,
-                    detectConfidence: typeof opening.detectConfidence === "number" ? opening.detectConfidence : undefined,
-                    attachConfidence: typeof opening.attachConfidence === "number" ? opening.attachConfidence : undefined,
-                    typeConfidence: typeof opening.typeConfidence === "number" ? opening.typeConfidence : undefined
-                }))
-            );
-            const entrance = nextOpenings.find((opening: any) => opening.isEntrance);
-            if (entrance?.id) {
-                useSceneStore.setState({ entranceId: entrance.id });
-            }
-            const normalizedScale =
-                typeof payload.metadata?.scale === "number" && payload.metadata.scale > 0
-                    ? payload.metadata.scale
-                    : typeof payload.scale === "number" && payload.scale > 0
-                        ? payload.scale
-                        : 1;
-            const nextScaleInfo = parseScaleInfo(payload.metadata?.scaleInfo ?? payload.scaleInfo, normalizedScale);
-            setScale(normalizedScale, nextScaleInfo);
+            await runPipelineAnalysis(lastUploadedFileRef.current);
             setAnalysisRecovery(null);
             toast.success("AI analysis retried successfully.");
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to retry AI analysis.";
+            const payload = resolveErrorPayload(error);
+            const message = payload?.details || payload?.error || (error instanceof Error ? error.message : "Failed to retry AI analysis.");
+            setAnalysisRecovery({
+                message,
+                providerErrors: Array.isArray(payload?.providerErrors) ? payload.providerErrors : [],
+                errorCode: payload?.errorCode ?? null
+            });
             toast.error(message);
         } finally {
             setIsAnalyzing(false);
@@ -548,6 +357,17 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         toast.message("Manual correction mode enabled.");
     };
 
+    const handleClose = async () => {
+        if (draftProjectId && !hasCommittedRef.current) {
+            try {
+                await deleteProject(draftProjectId);
+            } catch (error) {
+                console.warn("[new-project-modal] failed to clean up draft project", error);
+            }
+        }
+        onClose();
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -559,7 +379,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                         className={`relative w-full bg-white rounded-t-2xl sm:rounded-sm border border-[#e5e5e0] shadow-2xl ${step === "edit" ? "max-w-6xl p-4 sm:p-6 md:p-8 h-[92vh] sm:h-[88vh] md:h-[85vh]" : "max-w-xl p-6 sm:p-10 md:p-16 max-h-[92vh] overflow-y-auto"}`}
                     >
                         <button
-                            onClick={onClose}
+                            onClick={() => void handleClose()}
                             className="absolute top-4 right-4 sm:top-8 sm:right-8 p-2 sm:p-3 hover:bg-black/5 rounded-full transition-colors"
                         >
                             <X className="w-5 h-5 text-[#999999]" />

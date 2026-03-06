@@ -15,10 +15,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm --workspace apps/web run type-check
       - run: npm --workspace apps/web run lint
       - run: npm --workspace apps/web run build
         env:
           NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+          NEXT_PUBLIC_RAILWAY_API_URL: http://localhost:4000
 
   floorplan-eval:
     runs-on: ubuntu-latest
@@ -34,6 +36,7 @@ jobs:
       FLOORPLAN_CACHE_SIZE_TOLERANCE_RATIO: 0.02
       FLOORPLAN_MIN_WALL_THICKNESS: 6
       FLOORPLAN_ORPHAN_MAX_LENGTH: 60
+      RAILWAY_PIPELINE_EVAL_ENABLED: ${{ vars.RAILWAY_PIPELINE_EVAL_ENABLED }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +47,11 @@ jobs:
       - name: Skip gate when fixtures or provider keys are missing
         id: gate_guard
         run: |
+          if [ "${RAILWAY_PIPELINE_EVAL_ENABLED}" != "true" ]; then
+            echo "run_gate=false" >> "$GITHUB_OUTPUT"
+            echo "Railway cutover active. Legacy Next.js parse-floorplan eval gate is disabled."
+            exit 0
+          fi
           if [ ! -d "apps/web/fixtures/floorplans" ]; then
             echo "run_gate=false" >> "$GITHUB_OUTPUT"
             echo "No fixtures at apps/web/fixtures/floorplans. Skipping floorplan eval gate."
@@ -103,3 +111,26 @@ jobs:
         run: npm --workspace apps/api run typecheck --if-present
       - if: steps.api_guard.outputs.has_api == 'true'
         run: npm --workspace apps/api run test --if-present
+
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Detect worker workspace
+        id: worker_guard
+        run: |
+          if [ -f "apps/worker/package.json" ]; then
+            echo "has_worker=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_worker=false" >> "$GITHUB_OUTPUT"
+            echo "apps/worker workspace not found. Skipping worker job steps."
+          fi
+      - if: steps.worker_guard.outputs.has_worker == 'true'
+        run: npm --workspace apps/worker run typecheck --if-present
+      - if: steps.worker_guard.outputs.has_worker == 'true'
+        run: npm --workspace apps/worker run test --if-present

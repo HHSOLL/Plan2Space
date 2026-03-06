@@ -1,0 +1,16 @@
+{
+  "name": "@plan2space/contracts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./projects": "./src/projects.ts",
+    "./floorplans": "./src/floorplans.ts",
+    "./jobs": "./src/jobs.ts",
+    "./scenes": "./src/scenes.ts"
+  },
+  "dependencies": {
+    "zod": "^4.2.1"
+  }
+}
