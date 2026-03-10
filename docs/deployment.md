@@ -27,6 +27,8 @@ NEXT_PUBLIC_APP_URL=
 ## 3) Railway API 배포 (`apps/api`)
 - Start: `npm --workspace apps/api run start`
 - Health: `GET /v1/health`
+- 포트: Railway의 `PORT`를 우선 사용하고, 로컬에서는 `API_PORT`로 폴백
+- Docker base image: `node:22-bookworm-slim` (`sharp`/`libvips` 호환성 확보)
 
 필수 env:
 ```
@@ -40,6 +42,7 @@ FLOORPLAN_UPLOAD_BUCKET=floor-plans
 
 ## 4) Railway Worker 배포 (`apps/worker`)
 - Start: `npm --workspace apps/worker run start`
+- Docker base image: `node:22-bookworm-slim` (`sharp`/`libvips` 호환성 확보)
 
 필수 env:
 ```
@@ -83,6 +86,8 @@ Added:
 
 Updated:
 - 배포 토폴로지를 Vercel 단일 실행에서 분산 구조로 전환.
+- Railway API가 플랫폼 주입 `PORT`를 우선 사용하도록 반영.
+- Railway API/Worker Docker base를 `alpine`에서 `bookworm-slim`으로 변경.
 
 Removed/Deprecated:
 - Vercel에서 provider 키를 사용해 직접 도면 분석하는 방식.

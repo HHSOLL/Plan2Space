@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const EnvSchema = z.object({
+  PORT: z.coerce.number().optional(),
   API_PORT: z.coerce.number().default(4000),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
@@ -9,5 +10,11 @@ const EnvSchema = z.object({
   FLOORPLAN_UPLOAD_BUCKET: z.string().default("floor-plans")
 });
 
-export const env = EnvSchema.parse(process.env);
+const parsedEnv = EnvSchema.parse(process.env);
+
+export const env = {
+  ...parsedEnv,
+  API_PORT: parsedEnv.PORT ?? parsedEnv.API_PORT
+};
+
 export const corsOrigins = env.CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean);
