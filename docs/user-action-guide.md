@@ -23,6 +23,9 @@ CORS_ORIGINS=
 FLOORPLAN_UPLOAD_BUCKET=floor-plans
 ```
 
+참고:
+- Railway 런타임에서는 `PORT`가 자동 주입되며, API는 이를 우선 사용합니다.
+
 ### Railway Worker (`apps/worker`)
 ```
 SUPABASE_URL=

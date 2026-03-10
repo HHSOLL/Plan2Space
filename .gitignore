@@ -8,4 +8,5 @@ dist
 coverage
 .codex
 apps/web/.cache
+apps/web/.vercel
 vercel-labs
