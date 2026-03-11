@@ -36,9 +36,13 @@ API_PORT=4000
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-CORS_ORIGINS=
+CORS_ORIGINS=http://localhost:3100,http://127.0.0.1:3100,https://plan2space.vercel.app,https://plan2-space-web-*.vercel.app,https://plan2space-*.vercel.app
 FLOORPLAN_UPLOAD_BUCKET=floor-plans
 ```
+
+주의:
+- `CORS_ORIGINS`는 쉼표 구분 exact origin + `*` 와일드카드를 함께 지원한다.
+- Preview 도메인은 `https://plan2-space-web-*.vercel.app`, `https://plan2space-*.vercel.app`처럼 Plan2Space 프로젝트 패턴만 좁혀서 허용한다.
 
 ## 4) Railway Worker 배포 (`apps/worker`)
 - Start: `npm --workspace apps/worker run start`
@@ -91,3 +95,14 @@ Updated:
 
 Removed/Deprecated:
 - Vercel에서 provider 키를 사용해 직접 도면 분석하는 방식.
+
+## 9) 2026-03-11 변경 동기화 (Preview Runtime Alignment)
+Added:
+- Railway API `CORS_ORIGINS`에 와일드카드 패턴 지원 규약 추가.
+- Vercel preview 배포용 Plan2Space 도메인 패턴 예시 추가.
+
+Updated:
+- Preview/production이 동일한 Railway API를 사용하도록 Vercel env 운영 기준 명시.
+
+Removed/Deprecated:
+- Railway API CORS를 exact origin만으로 관리하는 운영 방식.

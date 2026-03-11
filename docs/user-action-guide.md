@@ -19,12 +19,14 @@ API_PORT=4000
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-CORS_ORIGINS=
+CORS_ORIGINS=http://localhost:3100,http://127.0.0.1:3100,https://plan2space.vercel.app,https://plan2-space-web-*.vercel.app,https://plan2space-*.vercel.app
 FLOORPLAN_UPLOAD_BUCKET=floor-plans
 ```
 
 참고:
 - Railway 런타임에서는 `PORT`가 자동 주입되며, API는 이를 우선 사용합니다.
+- `CORS_ORIGINS`는 exact origin과 `*` 와일드카드를 함께 사용할 수 있습니다.
+- Vercel preview는 `https://plan2-space-web-*.vercel.app`, `https://plan2space-*.vercel.app` 패턴으로 맞춥니다.
 
 ### Railway Worker (`apps/worker`)
 ```
@@ -55,6 +57,7 @@ SNAPTRUDE_API_KEY=
 ## 3) OAuth/도메인 점검
 - Supabase Auth URL 설정에 실제 배포 도메인만 등록
 - Railway API CORS에 Vercel 프로덕션/프리뷰 도메인 포함
+- Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
 
 ## 4) 운영 확인 시나리오
 1. 도면 업로드
@@ -84,3 +87,14 @@ Updated:
 
 Removed/Deprecated:
 - Vercel에 provider 키를 두는 방식.
+
+## 9) 2026-03-11 변경 동기화 (Preview Runtime Alignment)
+Added:
+- Vercel preview 도메인 패턴 운영 규칙.
+- Railway API CORS 와일드카드 사용 규칙.
+
+Updated:
+- `NEXT_PUBLIC_RAILWAY_API_URL`를 Preview까지 동일하게 맞추는 절차 명시.
+
+Removed/Deprecated:
+- Preview 도메인을 exact URL만으로 수동 관리하는 방식.
