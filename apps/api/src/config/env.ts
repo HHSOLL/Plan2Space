@@ -17,4 +17,46 @@ export const env = {
   API_PORT: parsedEnv.PORT ?? parsedEnv.API_PORT
 };
 
-export const corsOrigins = env.CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean);
+type CorsOriginRule = {
+  raw: string;
+  regex?: RegExp;
+};
+
+function normalizeOriginValue(value: string) {
+  return value.trim().replace(/\/+$/, "");
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildCorsOriginRule(origin: string): CorsOriginRule {
+  const raw = normalizeOriginValue(origin);
+  if (!raw.includes("*")) {
+    return { raw };
+  }
+
+  const regex = new RegExp(
+    `^${raw.split("*").map((segment) => escapeRegex(segment)).join(".*")}$`
+  );
+  return { raw, regex };
+}
+
+export const corsOriginRules = env.CORS_ORIGINS.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+  .map(buildCorsOriginRule);
+
+export function isCorsOriginAllowed(origin?: string) {
+  if (!origin) {
+    return true;
+  }
+
+  const normalizedOrigin = normalizeOriginValue(origin);
+  return corsOriginRules.some((rule) => {
+    if (rule.regex) {
+      return rule.regex.test(normalizedOrigin);
+    }
+    return rule.raw === normalizedOrigin;
+  });
+}

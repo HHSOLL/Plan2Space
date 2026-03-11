@@ -1,6 +1,6 @@
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
-import { corsOrigins } from "./config/env";
+import { isCorsOriginAllowed } from "./config/env";
 import { requireAuth } from "./middleware/auth";
 import { ApiError } from "./services/errors";
 import { floorplansRouter } from "./routes/floorplans";
@@ -15,11 +15,11 @@ export function createApp() {
   app.use(
     cors({
       origin(origin, callback) {
-        if (!origin || corsOrigins.includes(origin)) {
+        if (isCorsOriginAllowed(origin)) {
           callback(null, true);
           return;
         }
-        callback(new Error(`Origin not allowed: ${origin}`));
+        callback(null, false);
       },
       credentials: true
     })

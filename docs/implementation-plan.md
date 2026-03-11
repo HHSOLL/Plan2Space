@@ -59,3 +59,14 @@ Updated:
 
 Removed/Deprecated:
 - Vercel 기반 동기 분석 경로를 완료 기준에서 제거.
+
+## 2026-03-11 변경 동기화 (Preview Runtime Alignment)
+Added:
+- Preview 배포도 production과 동일한 Railway API를 사용하도록 운영 완료 기준 추가.
+- Railway API CORS에 preview 도메인 패턴 허용 규칙 추가.
+
+Updated:
+- 운영 검증 범위에 preview 환경 변수/CORS 정합성 확인을 포함.
+
+Removed/Deprecated:
+- preview 배포를 production 설정과 분리해 수동 복구하는 운영 방식.
