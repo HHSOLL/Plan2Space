@@ -36,12 +36,19 @@ Base: Railway API `/v1`
 7. `floorplan_results` upsert.
 8. `jobs`, `floorplans` 상태 업데이트.
 
+정규화 규칙:
+- wall: axis 정렬 스냅 -> 중복 제거 -> 짧은 noise wall 제거 -> axis-aligned segment 병합
+- opening: wall 중심점이 아니라 wall 선분에 투영해 재부착
+- opening: low-confidence / far-from-wall 후보 제거, 같은 wall 내 중첩 opening 정리
+- scale: `unknown` 이어도 evidence completeness가 높으면 `ocr_dimension`으로 승격
+
 ## 3) Provider 정책
 - 기본 순서: `anthropic,openai,snaptrude`
 - worker에서 provider 구성 상태를 사전 판별.
 - 미구성 provider는 호출하지 않고 `providerStatus[]`에 reason 기록.
 - upload 분석은 항상 multi-pass(`balanced`, `lineart`) 후보를 누적 평가.
 - 첫 성공 즉시 종료하지 않고 최고점 후보를 선택.
+- 후보 선택 시 wall count만 보지 않고 axis alignment, orphan/self-intersection, opening overlap, scale evidence completeness까지 반영.
 
 주요 env:
 - `FLOORPLAN_PROVIDER_ORDER`
@@ -80,6 +87,14 @@ Recoverable failure는 `422` + 아래 필드를 유지한다.
 - provider 상태/오류
 - 후보별 점수 및 선택 결과
 - pass/profile 정보
+- 후보별 구조 품질 메트릭:
+  - `axisAlignedRatio`
+  - `orphanWallCount`
+  - `selfIntersectionCount`
+  - `openingOverlapCount`
+  - `openingOutOfWallRangeCount`
+  - `exteriorLoopClosed`
+  - `scaleEvidenceCompleteness`
 
 ## 7) Deprecated
 - Next.js `/api/ai/parse-floorplan` 직접 분석 경로는 폐기(410 반환).
@@ -94,3 +109,15 @@ Updated:
 
 Removed/Deprecated:
 - Vercel 런타임에서 provider 호출/기하 생성 수행.
+
+## 9) 2026-03-11 변경 동기화 (Normalization Accuracy Pass)
+Added:
+- deterministic wall/opening cleanup 및 선분 기반 opening reattachment 규칙.
+- 후보 디버그 메트릭에 구조 품질/scale evidence completeness 추가.
+
+Updated:
+- multi-pass 후보 선택을 단순 wall/opening count에서 구조 품질 중심 스코어링으로 강화.
+- `unknown` scale의 승격 기준을 evidence completeness 기반으로 강화.
+
+Removed/Deprecated:
+- 중심점 nearest-wall 방식의 opening 부착.

@@ -70,3 +70,14 @@ Updated:
 
 Removed/Deprecated:
 - preview 배포를 production 설정과 분리해 수동 복구하는 운영 방식.
+
+## 2026-03-11 변경 동기화 (Floorplan Normalization Accuracy Pass)
+Added:
+- Phase 2에 deterministic normalization 회귀 테스트(`apps/worker`) 추가.
+- wall dedupe/merge, opening reattachment, scale evidence scoring 보강 완료 기준 추가.
+
+Updated:
+- 정확도 개선 작업을 provider 교체뿐 아니라 후처리/스코어링 계층까지 포함하도록 확장.
+
+Removed/Deprecated:
+- wall/opening raw count 위주의 후보 선택 방식.

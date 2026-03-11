@@ -7,6 +7,7 @@
 - Top view / Walk mode 두 모드 카메라 경험 보장.
 - PBR + HDR + Post FX 시각 품질 기준 유지.
 - 무거운 이미지 분석/기하/씬 생성 연산은 Vercel에서 실행하지 않음.
+- Worker 후보 선택 전 wall/opening/scale 정규화로 노이즈를 줄인 뒤 스코어링한다.
 
 ## 운영 프로토콜 (필수)
 - 작업 시작 전 `AGENTS.md`의 Must Read 문서를 순서대로 확인한다.
@@ -93,3 +94,13 @@ Updated:
 Removed/Deprecated:
 - Vercel `parse-floorplan` 직접 처리 모델.
 - Next.js 도메인 API(`/api/projects/*`, `/api/furnitures/*`) 중심 아키텍처.
+
+## 2026-03-11 변경 동기화 (Floorplan Normalization Accuracy Pass)
+Added:
+- Worker 후보 선택 전 deterministic wall/opening/scale 정규화 규칙.
+
+Updated:
+- 정확도 개선 범위를 provider 호출 자체보다 정규화/재부착/스코어링 강화로 확장.
+
+Removed/Deprecated:
+- opening을 중심점 근사로만 벽에 부착하는 단순 규칙.
