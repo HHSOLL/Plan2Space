@@ -112,10 +112,22 @@ export type CandidateDebug = {
   metrics: {
     wallCount: number;
     openingCount: number;
+    axisAlignedRatio: number;
+    orphanWallCount: number;
+    selfIntersectionCount: number;
     exteriorDetected: boolean;
     openingsAttachedRatio: number;
+    wallThicknessOutlierRate: number;
+    openingOverlapCount: number;
+    openingOutOfWallRangeCount: number;
+    exteriorAreaSanity: boolean;
+    openingTypeConfidenceMean: number;
+    loopCountPenalty: number;
     scaleConfidence: number;
+    scaleEvidenceCompleteness: number;
     scaleSource: ScaleSource;
+    exteriorLoopClosed: boolean;
+    entranceDetected: boolean;
   };
   errors: string[];
   timingMs: number;
@@ -318,7 +330,307 @@ function distance(a: Vec2, b: Vec2) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function normalizeScaleInfo(rawScaleInfo: unknown, scale: number): ScaleInfo {
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function median(values: number[]) {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+  }
+  return sorted[middle] ?? 0;
+}
+
+function orderVec2(a: Vec2, b: Vec2): [Vec2, Vec2] {
+  if (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) {
+    return [a, b];
+  }
+  return [b, a];
+}
+
+function arePointsNear(a: Vec2, b: Vec2, tolerance = 12) {
+  return distance(a, b) <= tolerance;
+}
+
+function isAxisAlignedWall(wall: Pick<TopologyWall, "start" | "end" | "length">) {
+  const dx = Math.abs(wall.end[0] - wall.start[0]);
+  const dy = Math.abs(wall.end[1] - wall.start[1]);
+  const tolerance = Math.max(6, wall.length * 0.08);
+  return dx <= tolerance || dy <= tolerance;
+}
+
+function getWallOrientation(wall: Pick<TopologyWall, "start" | "end" | "length">) {
+  if (!isAxisAlignedWall(wall)) return "diagonal" as const;
+  const dx = Math.abs(wall.end[0] - wall.start[0]);
+  const dy = Math.abs(wall.end[1] - wall.start[1]);
+  return dx >= dy ? ("horizontal" as const) : ("vertical" as const);
+}
+
+function snapWallToAxis(wall: TopologyWall): TopologyWall {
+  let start = [...wall.start] as Vec2;
+  let end = [...wall.end] as Vec2;
+  const tolerance = Math.max(6, wall.length * 0.08);
+  const dx = Math.abs(end[0] - start[0]);
+  const dy = Math.abs(end[1] - start[1]);
+
+  if (dx <= tolerance) {
+    const avgX = (start[0] + end[0]) / 2;
+    start = [avgX, start[1]];
+    end = [avgX, end[1]];
+  } else if (dy <= tolerance) {
+    const avgY = (start[1] + end[1]) / 2;
+    start = [start[0], avgY];
+    end = [end[0], avgY];
+  }
+
+  const [orderedStart, orderedEnd] = orderVec2(start, end);
+  return {
+    ...wall,
+    start: orderedStart,
+    end: orderedEnd,
+    length: distance(orderedStart, orderedEnd)
+  };
+}
+
+function pointToSegmentProjection(point: Vec2, wall: Pick<TopologyWall, "start" | "end" | "length">) {
+  const [ax, ay] = wall.start;
+  const [bx, by] = wall.end;
+  const abx = bx - ax;
+  const aby = by - ay;
+  const abLengthSquared = abx * abx + aby * aby;
+  if (abLengthSquared === 0) {
+    return {
+      distance: distance(point, wall.start),
+      offset: 0,
+      t: 0,
+      projected: wall.start
+    };
+  }
+
+  const apx = point[0] - ax;
+  const apy = point[1] - ay;
+  const rawT = (apx * abx + apy * aby) / abLengthSquared;
+  const t = clamp(rawT, 0, 1);
+  const projected: Vec2 = [ax + abx * t, ay + aby * t];
+  return {
+    distance: distance(point, projected),
+    offset: wall.length * t,
+    t,
+    projected
+  };
+}
+
+function haveSameEndpoints(a: TopologyWall, b: TopologyWall, tolerance = 12) {
+  return (
+    (arePointsNear(a.start, b.start, tolerance) && arePointsNear(a.end, b.end, tolerance)) ||
+    (arePointsNear(a.start, b.end, tolerance) && arePointsNear(a.end, b.start, tolerance))
+  );
+}
+
+function dedupeWalls(walls: TopologyWall[]) {
+  const deduped: TopologyWall[] = [];
+  for (const wall of walls) {
+    const duplicateIndex = deduped.findIndex(
+      (existing) =>
+        existing.type === wall.type &&
+        Math.abs(existing.thickness - wall.thickness) <= 12 &&
+        haveSameEndpoints(existing, wall)
+    );
+
+    if (duplicateIndex >= 0) {
+      const existing = deduped[duplicateIndex];
+      deduped[duplicateIndex] = {
+        ...existing,
+        thickness: Math.max(existing.thickness, wall.thickness),
+        confidence: Math.max(existing.confidence ?? 0, wall.confidence ?? 0)
+      };
+      continue;
+    }
+
+    deduped.push(wall);
+  }
+  return deduped;
+}
+
+function canMergeWalls(a: TopologyWall, b: TopologyWall) {
+  if (a.type !== b.type) return false;
+  if (a.isPartOfBalcony !== b.isPartOfBalcony) return false;
+  if (Math.abs(a.thickness - b.thickness) > 12) return false;
+
+  const orientationA = getWallOrientation(a);
+  const orientationB = getWallOrientation(b);
+  if (orientationA === "diagonal" || orientationA !== orientationB) return false;
+
+  if (orientationA === "horizontal") {
+    if (Math.abs(a.start[1] - b.start[1]) > 10) return false;
+    const aMin = Math.min(a.start[0], a.end[0]);
+    const aMax = Math.max(a.start[0], a.end[0]);
+    const bMin = Math.min(b.start[0], b.end[0]);
+    const bMax = Math.max(b.start[0], b.end[0]);
+    return Math.max(aMin, bMin) <= Math.min(aMax, bMax) + 18;
+  }
+
+  if (Math.abs(a.start[0] - b.start[0]) > 10) return false;
+  const aMin = Math.min(a.start[1], a.end[1]);
+  const aMax = Math.max(a.start[1], a.end[1]);
+  const bMin = Math.min(b.start[1], b.end[1]);
+  const bMax = Math.max(b.start[1], b.end[1]);
+  return Math.max(aMin, bMin) <= Math.min(aMax, bMax) + 18;
+}
+
+function mergeWalls(a: TopologyWall, b: TopologyWall): TopologyWall {
+  const orientation = getWallOrientation(a);
+  if (orientation === "horizontal") {
+    const y = (a.start[1] + a.end[1] + b.start[1] + b.end[1]) / 4;
+    const minX = Math.min(a.start[0], a.end[0], b.start[0], b.end[0]);
+    const maxX = Math.max(a.start[0], a.end[0], b.start[0], b.end[0]);
+    const start: Vec2 = [minX, y];
+    const end: Vec2 = [maxX, y];
+    return {
+      ...a,
+      start,
+      end,
+      length: distance(start, end),
+      thickness: Math.max(a.thickness, b.thickness),
+      confidence: Math.max(a.confidence ?? 0, b.confidence ?? 0)
+    };
+  }
+
+  const x = (a.start[0] + a.end[0] + b.start[0] + b.end[0]) / 4;
+  const minY = Math.min(a.start[1], a.end[1], b.start[1], b.end[1]);
+  const maxY = Math.max(a.start[1], a.end[1], b.start[1], b.end[1]);
+  const start: Vec2 = [x, minY];
+  const end: Vec2 = [x, maxY];
+  return {
+    ...a,
+    start,
+    end,
+    length: distance(start, end),
+    thickness: Math.max(a.thickness, b.thickness),
+    confidence: Math.max(a.confidence ?? 0, b.confidence ?? 0)
+  };
+}
+
+function mergeAxisAlignedWalls(walls: TopologyWall[]) {
+  const merged = [...walls];
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    outer: for (let i = 0; i < merged.length; i += 1) {
+      for (let j = i + 1; j < merged.length; j += 1) {
+        if (!canMergeWalls(merged[i]!, merged[j]!)) continue;
+        merged[i] = mergeWalls(merged[i]!, merged[j]!);
+        merged.splice(j, 1);
+        changed = true;
+        break outer;
+      }
+    }
+  }
+
+  return merged.map((wall) => snapWallToAxis(wall));
+}
+
+function sanitizeWalls(walls: TopologyWall[]) {
+  if (walls.length === 0) return [];
+  const snapped = walls.map((wall) => snapWallToAxis(wall));
+  const wallLengths = snapped.map((wall) => wall.length).filter((length) => Number.isFinite(length) && length > 0);
+  const medianLength = median(wallLengths);
+  const minWallLength = snapped.length >= 8 ? clamp(medianLength * 0.12, 12, 56) : 10;
+  const filtered = snapped.filter((wall) => wall.type === "column" || wall.length >= minWallLength);
+  return mergeAxisAlignedWalls(dedupeWalls(filtered));
+}
+
+function getOpeningConfidence(opening: Pick<TopologyOpening, "detectConfidence" | "attachConfidence" | "typeConfidence">) {
+  const values = [opening.detectConfidence, opening.attachConfidence, opening.typeConfidence].filter(
+    (value): value is number => Number.isFinite(value)
+  );
+  if (values.length === 0) return 0.55;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function resolveOpeningAttachment(position: Vec2, walls: TopologyWall[], preferredWallId?: string) {
+  const preferredWall = preferredWallId ? walls.find((wall) => wall.id === preferredWallId) : undefined;
+  const candidates = walls
+    .map((wall) => {
+      const projection = pointToSegmentProjection(position, wall);
+      return {
+        wall,
+        ...projection
+      };
+    })
+    .sort((a, b) => a.distance - b.distance);
+
+  const preferredProjection = preferredWall ? candidates.find((candidate) => candidate.wall.id === preferredWall.id) : undefined;
+  const best = preferredProjection && preferredProjection.distance <= Math.max(20, preferredProjection.wall.thickness * 3.5)
+    ? preferredProjection
+    : candidates[0];
+
+  if (!best) return null;
+  const attachThreshold = Math.max(24, best.wall.thickness * 4, best.wall.length * 0.04);
+  if (best.distance > attachThreshold) {
+    return null;
+  }
+
+  return best;
+}
+
+function filterOverlappingOpenings(openings: TopologyOpening[]) {
+  const grouped = new Map<string, TopologyOpening[]>();
+  for (const opening of openings) {
+    const list = grouped.get(opening.wallId) ?? [];
+    list.push(opening);
+    grouped.set(opening.wallId, list);
+  }
+
+  const kept: TopologyOpening[] = [];
+  for (const list of grouped.values()) {
+    const sorted = [...list].sort((a, b) => a.offset - b.offset);
+    const accepted: TopologyOpening[] = [];
+
+    for (const opening of sorted) {
+      const overlappingIndex = accepted.findIndex((candidate) => {
+        const start = Math.max(candidate.offset, opening.offset);
+        const end = Math.min(candidate.offset + candidate.width, opening.offset + opening.width);
+        return end - start > Math.min(candidate.width, opening.width) * 0.6;
+      });
+
+      if (overlappingIndex < 0) {
+        accepted.push(opening);
+        continue;
+      }
+
+      const existing = accepted[overlappingIndex]!;
+      const winner =
+        getOpeningConfidence(opening) + (opening.isEntrance ? 0.15 : 0) >
+        getOpeningConfidence(existing) + (existing.isEntrance ? 0.15 : 0)
+          ? opening
+          : existing;
+
+      accepted[overlappingIndex] = winner;
+    }
+
+    kept.push(...accepted);
+  }
+
+  return kept;
+}
+
+function countScaleEvidenceCompleteness(scaleInfo: ScaleInfo) {
+  const evidence = scaleInfo.evidence;
+  if (!evidence) return 0;
+  let score = 0;
+  if (Number.isFinite(evidence.mmValue)) score += 0.35;
+  if (Number.isFinite(evidence.pxDistance)) score += 0.35;
+  if (typeof evidence.ocrText === "string" && evidence.ocrText.trim().length > 0) score += 0.15;
+  if (evidence.p1 && evidence.p2) score += 0.15;
+  return clamp(score, 0, 1);
+}
+
+export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number): ScaleInfo {
   const unknown = {
     value: scale,
     source: "unknown" as const,
@@ -356,16 +668,17 @@ function normalizeScaleInfo(rawScaleInfo: unknown, scale: number): ScaleInfo {
     ...(typeof evidence.notes === "string" ? { notes: evidence.notes } : {})
   };
 
-  const hasStrongEvidence = Boolean(
-    normalizedEvidence &&
-      Number.isFinite(normalizedEvidence.mmValue) &&
-      Number.isFinite(normalizedEvidence.pxDistance) &&
-      (normalizedEvidence.ocrText || (normalizedEvidence.p1 && normalizedEvidence.p2))
-  );
+  const evidenceCompleteness = countScaleEvidenceCompleteness({
+    value: scale,
+    source,
+    confidence,
+    ...(Object.keys(normalizedEvidence ?? {}).length > 0 ? { evidence: normalizedEvidence } : {})
+  });
+  const hasStrongEvidence = evidenceCompleteness >= 0.7;
 
   if (source === "unknown" && hasStrongEvidence) {
     source = "ocr_dimension";
-    confidence = Math.max(confidence, 0.65);
+    confidence = Math.max(confidence, 0.7);
   }
 
   return {
@@ -392,13 +705,14 @@ function unwrapTopologyPayload(input: unknown): Record<string, unknown> {
   return current as Record<string, unknown>;
 }
 
-function normalizeTopology(raw: unknown): NormalizedTopology {
+export function normalizeTopology(raw: unknown): NormalizedTopology {
   const payload = unwrapTopologyPayload(raw);
 
   const wallSourceRaw = payload.walls ?? payload.wallSegments ?? payload.lines ?? payload.segments ?? [];
   const wallSource = Array.isArray(wallSourceRaw) ? wallSourceRaw : [];
 
-  const walls = wallSource
+  const walls = sanitizeWalls(
+    wallSource
     .map<TopologyWall | null>((item, index) => {
       if (!item || typeof item !== "object" || Array.isArray(item)) return null;
       const record = item as Record<string, unknown>;
@@ -420,7 +734,8 @@ function normalizeTopology(raw: unknown): NormalizedTopology {
         ...(Number.isFinite(Number(record.confidence)) ? { confidence: Number(record.confidence) } : {})
       };
     })
-    .filter((wall): wall is TopologyWall => wall !== null);
+    .filter((wall): wall is TopologyWall => wall !== null)
+  );
 
   const openingsFromArray = (source: unknown, forcedType?: TopologyOpening["type"]): TopologyOpening[] => {
     const list = Array.isArray(source) ? source : [];
@@ -442,32 +757,24 @@ function normalizeTopology(raw: unknown): NormalizedTopology {
             ? (openingTypeRaw as TopologyOpening["type"])
             : "door";
 
-        if (!wallId && walls.length > 0) {
-          const nearest = walls
-            .map((wall) => {
-              const cx = (wall.start[0] + wall.end[0]) / 2;
-              const cy = (wall.start[1] + wall.end[1]) / 2;
-              return {
-                wall,
-                d: Math.hypot(position[0] - cx, position[1] - cy)
-              };
-            })
-            .sort((a, b) => a.d - b.d)[0];
-          wallId = nearest?.wall.id ?? walls[0].id;
-        }
-
-        const parentWall = walls.find((wall) => wall.id === wallId) ?? walls[0];
-        if (!parentWall) return null;
-        const offset = Number.isFinite(Number(record.offset))
-          ? Number(record.offset)
-          : Math.max(0, Math.min(parentWall.length, distance(parentWall.start, position)));
+        const attachment = resolveOpeningAttachment(position, walls, wallId || undefined);
+        if (!attachment) return null;
+        const parentWall = attachment.wall;
+        wallId = parentWall.id;
+        const inferredOffset = attachment.offset;
+        const openingWidth = Math.max(20, toNumber(record.width, openingType === "window" ? 120 : 90));
+        const normalizedOffset = Number.isFinite(Number(record.offset)) ? Number(record.offset) : inferredOffset;
+        const offset = clamp(normalizedOffset, 0, Math.max(0, parentWall.length - Math.min(openingWidth, parentWall.length)));
+        const attachConfidence = Number.isFinite(Number(record.attachConfidence))
+          ? clamp(Number(record.attachConfidence), 0, 1)
+          : clamp(1 - attachment.distance / Math.max(24, parentWall.thickness * 4), 0.25, 0.95);
 
         return {
           id: typeof record.id === "string" && record.id.length > 0 ? record.id : `o${index + 1}`,
           wallId: parentWall.id,
           type: openingType,
           position,
-          width: Math.max(20, toNumber(record.width, openingType === "window" ? 120 : 90)),
+          width: Math.min(openingWidth, Math.max(20, parentWall.length * 0.8 || openingWidth)),
           offset,
           ...(Number.isFinite(Number(record.height))
             ? { height: Math.max(40, Number(record.height)) }
@@ -476,22 +783,21 @@ function normalizeTopology(raw: unknown): NormalizedTopology {
           ...(Number.isFinite(Number(record.detectConfidence))
             ? { detectConfidence: Number(record.detectConfidence) }
             : {}),
-          ...(Number.isFinite(Number(record.attachConfidence))
-            ? { attachConfidence: Number(record.attachConfidence) }
-            : {}),
+          attachConfidence,
           ...(Number.isFinite(Number(record.typeConfidence))
             ? { typeConfidence: Number(record.typeConfidence) }
             : {})
         };
       })
-      .filter((opening): opening is TopologyOpening => opening !== null);
+      .filter((opening): opening is TopologyOpening => opening !== null)
+      .filter((opening) => getOpeningConfidence(opening) >= 0.25 || opening.isEntrance === true);
   };
 
-  const openings = [
+  const openings = filterOverlappingOpenings([
     ...openingsFromArray(payload.openings),
     ...openingsFromArray(payload.doors, "door"),
     ...openingsFromArray(payload.windows, "window")
-  ];
+  ]);
 
   const scale = Math.max(0.0001, toNumber(payload.scale ?? (payload.metadata as Record<string, unknown> | undefined)?.scale, 1));
   const scaleInfo = normalizeScaleInfo(payload.scaleInfo ?? (payload.metadata as Record<string, unknown> | undefined)?.scaleInfo, scale);
@@ -511,7 +817,71 @@ function normalizeTopology(raw: unknown): NormalizedTopology {
   };
 }
 
-function scoreCandidate(candidate: {
+function countNodeDegrees(walls: TopologyWall[]) {
+  const nodes: Vec2[] = [];
+  const degrees = new Map<number, number>();
+
+  const findNodeIndex = (point: Vec2) => {
+    const existingIndex = nodes.findIndex((node) => arePointsNear(node, point));
+    if (existingIndex >= 0) return existingIndex;
+    nodes.push(point);
+    return nodes.length - 1;
+  };
+
+  for (const wall of walls) {
+    const startIndex = findNodeIndex(wall.start);
+    const endIndex = findNodeIndex(wall.end);
+    degrees.set(startIndex, (degrees.get(startIndex) ?? 0) + 1);
+    degrees.set(endIndex, (degrees.get(endIndex) ?? 0) + 1);
+  }
+
+  return {
+    getDegree(point: Vec2) {
+      const nodeIndex = nodes.findIndex((node) => arePointsNear(node, point));
+      return nodeIndex >= 0 ? degrees.get(nodeIndex) ?? 0 : 0;
+    }
+  };
+}
+
+function orientation(a: Vec2, b: Vec2, c: Vec2) {
+  const value = (b[1] - a[1]) * (c[0] - b[0]) - (b[0] - a[0]) * (c[1] - b[1]);
+  if (Math.abs(value) < 1e-6) return 0;
+  return value > 0 ? 1 : 2;
+}
+
+function onSegment(a: Vec2, b: Vec2, c: Vec2) {
+  return (
+    b[0] <= Math.max(a[0], c[0]) + 1e-6 &&
+    b[0] >= Math.min(a[0], c[0]) - 1e-6 &&
+    b[1] <= Math.max(a[1], c[1]) + 1e-6 &&
+    b[1] >= Math.min(a[1], c[1]) - 1e-6
+  );
+}
+
+function segmentsIntersect(a: TopologyWall, b: TopologyWall) {
+  if (
+    arePointsNear(a.start, b.start) ||
+    arePointsNear(a.start, b.end) ||
+    arePointsNear(a.end, b.start) ||
+    arePointsNear(a.end, b.end)
+  ) {
+    return false;
+  }
+
+  const o1 = orientation(a.start, a.end, b.start);
+  const o2 = orientation(a.start, a.end, b.end);
+  const o3 = orientation(b.start, b.end, a.start);
+  const o4 = orientation(b.start, b.end, a.end);
+
+  if (o1 !== o2 && o3 !== o4) return true;
+  if (o1 === 0 && onSegment(a.start, b.start, a.end)) return true;
+  if (o2 === 0 && onSegment(a.start, b.end, a.end)) return true;
+  if (o3 === 0 && onSegment(b.start, a.start, b.end)) return true;
+  if (o4 === 0 && onSegment(b.start, a.end, b.end)) return true;
+  return false;
+}
+
+export function scoreCandidate(candidate: {
   walls: TopologyWall[];
   openings: TopologyOpening[];
   scaleInfo: ScaleInfo;
@@ -522,18 +892,96 @@ function scoreCandidate(candidate: {
 } {
   const wallCount = candidate.walls.length;
   const openingCount = candidate.openings.length;
-  const exteriorDetected = candidate.walls.some((wall) => wall.type === "exterior");
+  const exteriorWalls = candidate.walls.filter((wall) => wall.type === "exterior");
+  const exteriorDetected = exteriorWalls.length > 0;
   const attachedOpenings = candidate.openings.filter((opening) => candidate.walls.some((wall) => wall.id === opening.wallId));
   const openingsAttachedRatio = openingCount === 0 ? 1 : attachedOpenings.length / openingCount;
+  const axisAlignedRatio = wallCount === 0 ? 0 : candidate.walls.filter((wall) => isAxisAlignedWall(wall)).length / wallCount;
+  const nodeDegrees = countNodeDegrees(candidate.walls);
+  const orphanWallCount = candidate.walls.filter(
+    (wall) => nodeDegrees.getDegree(wall.start) <= 1 && nodeDegrees.getDegree(wall.end) <= 1
+  ).length;
+  let selfIntersectionCount = 0;
+  for (let i = 0; i < candidate.walls.length; i += 1) {
+    for (let j = i + 1; j < candidate.walls.length; j += 1) {
+      if (segmentsIntersect(candidate.walls[i]!, candidate.walls[j]!)) {
+        selfIntersectionCount += 1;
+      }
+    }
+  }
 
-  const topologyScore = Math.min(60, wallCount * 2.5 + (exteriorDetected ? 10 : 0));
-  const openingScore = Math.min(20, openingCount * 2 + openingsAttachedRatio * 5);
-  const scaleScore = Math.min(20, Math.max(0, candidate.scaleInfo.confidence * 20));
+  const thicknessMedian = median(candidate.walls.map((wall) => wall.thickness));
+  const wallThicknessOutlierRate =
+    wallCount === 0 || thicknessMedian === 0
+      ? 0
+      : candidate.walls.filter((wall) => wall.thickness > thicknessMedian * 3 || wall.thickness < thicknessMedian * 0.33).length / wallCount;
+
+  let openingOverlapCount = 0;
+  for (let i = 0; i < candidate.openings.length; i += 1) {
+    for (let j = i + 1; j < candidate.openings.length; j += 1) {
+      const a = candidate.openings[i]!;
+      const b = candidate.openings[j]!;
+      if (a.wallId !== b.wallId) continue;
+      const start = Math.max(a.offset, b.offset);
+      const end = Math.min(a.offset + a.width, b.offset + b.width);
+      if (end - start > Math.min(a.width, b.width) * 0.5) openingOverlapCount += 1;
+    }
+  }
+
+  const openingOutOfWallRangeCount = candidate.openings.filter((opening) => {
+    const wall = candidate.walls.find((entry) => entry.id === opening.wallId);
+    if (!wall) return true;
+    return opening.offset < 0 || opening.offset + opening.width > wall.length + 4;
+  }).length;
+
+  const exteriorDegrees = countNodeDegrees(exteriorWalls);
+  const loopCountPenalty = exteriorWalls.filter(
+    (wall) => exteriorDegrees.getDegree(wall.start) < 2 || exteriorDegrees.getDegree(wall.end) < 2
+  ).length;
+  const exteriorLoopClosed = exteriorDetected && loopCountPenalty === 0;
+
+  const exteriorAreaSanity =
+    exteriorWalls.length >= 4 &&
+    (() => {
+      const xs = exteriorWalls.flatMap((wall) => [wall.start[0], wall.end[0]]);
+      const ys = exteriorWalls.flatMap((wall) => [wall.start[1], wall.end[1]]);
+      const width = Math.max(...xs) - Math.min(...xs);
+      const height = Math.max(...ys) - Math.min(...ys);
+      return width > 40 && height > 40 && width / Math.max(height, 1) < 8 && height / Math.max(width, 1) < 8;
+    })();
+
+  const openingTypeConfidenceMean =
+    openingCount === 0 ? 0.5 : candidate.openings.reduce((sum, opening) => sum + getOpeningConfidence(opening), 0) / openingCount;
+  const scaleEvidenceCompleteness = countScaleEvidenceCompleteness(candidate.scaleInfo);
+  const entranceDetected = candidate.openings.some((opening) => opening.isEntrance === true);
+
+  const topologyScore = Math.min(
+    65,
+    wallCount * 1.8 +
+      axisAlignedRatio * 12 +
+      (exteriorDetected ? 6 : 0) +
+      (exteriorLoopClosed ? 10 : 0) +
+      (exteriorAreaSanity ? 5 : 0) +
+      Math.max(0, 10 - orphanWallCount * 2) +
+      Math.max(0, 8 - selfIntersectionCount * 3)
+  );
+  const openingScore = Math.min(
+    20,
+    openingCount * 1.5 + openingsAttachedRatio * 6 + openingTypeConfidenceMean * 4 + (entranceDetected ? 2 : 0)
+  );
+  const scaleScore = Math.min(15, candidate.scaleInfo.confidence * 9 + scaleEvidenceCompleteness * 6);
 
   let penalty = 0;
   if (wallCount < 4) penalty += 20;
   if (openingsAttachedRatio < 0.6) penalty += 8;
+  if (axisAlignedRatio < 0.55) penalty += 8;
   if (candidate.scaleInfo.source === "unknown") penalty += 4;
+  penalty += orphanWallCount * 1.5;
+  penalty += selfIntersectionCount * 4;
+  penalty += openingOverlapCount * 3;
+  penalty += openingOutOfWallRangeCount * 4;
+  penalty += wallThicknessOutlierRate * 10;
+  penalty += loopCountPenalty * 2;
 
   const total = Math.max(0, topologyScore + openingScore + scaleScore - penalty);
 
@@ -549,10 +997,22 @@ function scoreCandidate(candidate: {
     metrics: {
       wallCount,
       openingCount,
+      axisAlignedRatio,
+      orphanWallCount,
+      selfIntersectionCount,
       exteriorDetected,
       openingsAttachedRatio,
+      wallThicknessOutlierRate,
+      openingOverlapCount,
+      openingOutOfWallRangeCount,
+      exteriorAreaSanity,
+      openingTypeConfidenceMean,
+      loopCountPenalty,
       scaleConfidence: candidate.scaleInfo.confidence,
-      scaleSource: candidate.scaleInfo.source
+      scaleEvidenceCompleteness,
+      scaleSource: candidate.scaleInfo.source,
+      exteriorLoopClosed,
+      entranceDetected
     }
   };
 }
@@ -872,10 +1332,22 @@ export async function analyzeFloorplanUpload(request: AnalyzeUploadRequest): Pro
             metrics: {
               wallCount: 0,
               openingCount: 0,
+              axisAlignedRatio: 0,
+              orphanWallCount: 0,
+              selfIntersectionCount: 0,
               exteriorDetected: false,
               openingsAttachedRatio: 0,
+              wallThicknessOutlierRate: 0,
+              openingOverlapCount: 0,
+              openingOutOfWallRangeCount: 0,
+              exteriorAreaSanity: false,
+              openingTypeConfidenceMean: 0,
+              loopCountPenalty: 0,
               scaleConfidence: 0,
-              scaleSource: "unknown"
+              scaleEvidenceCompleteness: 0,
+              scaleSource: "unknown",
+              exteriorLoopClosed: false,
+              entranceDetected: false
             },
             errors: [run.error],
             elapsedMs: run.elapsedMs

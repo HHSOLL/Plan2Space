@@ -71,6 +71,7 @@ SNAPTRUDE_API_KEY=
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
 - recoverable 실패 시 2D 보정 전환
 - 복구 배너 액션(`Copy Errors`, `Try AI Again`, `Start Manual`) 동작
+- diagnostics에서 `axisAlignedRatio`, `orphanWallCount`, `selfIntersectionCount`, `scaleEvidenceCompleteness`를 함께 확인
 
 ## 6) 모바일 QA
 - 390/768/1024 폭에서 핵심 조작(업로드/보정/3D 진입) 가능 여부 점검
@@ -101,3 +102,13 @@ Updated:
 
 Removed/Deprecated:
 - Preview 도메인을 exact URL만으로 수동 관리하는 방식.
+
+## 10) 2026-03-11 변경 동기화 (Floorplan Normalization Accuracy Pass)
+Added:
+- recoverable 분석 시 구조 품질 diagnostics 확인 항목.
+
+Updated:
+- 정확도 QA를 provider 성공 여부뿐 아니라 구조 품질 메트릭까지 포함하도록 확장.
+
+Removed/Deprecated:
+- wall/opening 개수만으로 정확도를 판단하는 QA 방식.

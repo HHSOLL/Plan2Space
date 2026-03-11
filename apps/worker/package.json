@@ -7,7 +7,7 @@
     "dev": "tsx watch src/worker.ts",
     "start": "tsx src/worker.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --test"
+    "test": "node --import tsx --test"
   },
   "dependencies": {
     "@plan2space/floorplan-core": "0.0.0",
