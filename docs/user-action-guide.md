@@ -64,6 +64,8 @@ SNAPTRUDE_API_KEY=
 2. 잡 생성 확인(`jobs` 상태: queued/running)
 3. 완료 후 `floorplan_results` 생성 확인
 4. 프론트에서 결과 폴링 후 2D/3D 진입 확인
+5. preview 배포 검증:
+   - `npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --expected=https://api-production-473bd.up.railway.app`
 
 ## 5) 실패 복구 QA
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
@@ -92,6 +94,7 @@ Removed/Deprecated:
 Added:
 - Vercel preview 도메인 패턴 운영 규칙.
 - Railway API CORS 와일드카드 사용 규칙.
+- preview 번들 Railway API 연결 여부를 확인하는 smoke 검증 절차.
 
 Updated:
 - `NEXT_PUBLIC_RAILWAY_API_URL`를 Preview까지 동일하게 맞추는 절차 명시.

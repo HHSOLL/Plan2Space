@@ -76,6 +76,8 @@ SNAPTRUDE_API_KEY=
 3. `jobs` 상태가 `queued/running/succeeded`로 진행
 4. `floorplan_results` 생성 확인
 5. 프론트에서 결과 렌더링(2D/3D) 확인
+6. preview/prod 번들에 Railway API URL이 포함되는지 확인:
+   - `npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-url> --expected=https://api-production-473bd.up.railway.app`
 
 ## 7) CI 기준
 - `web`: type-check + lint + build
@@ -100,6 +102,7 @@ Removed/Deprecated:
 Added:
 - Railway API `CORS_ORIGINS`에 와일드카드 패턴 지원 규약 추가.
 - Vercel preview 배포용 Plan2Space 도메인 패턴 예시 추가.
+- preview 런타임 번들 검증용 smoke 스크립트 추가.
 
 Updated:
 - Preview/production이 동일한 Railway API를 사용하도록 Vercel env 운영 기준 명시.
