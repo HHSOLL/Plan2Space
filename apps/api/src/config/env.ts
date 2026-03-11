@@ -17,12 +17,12 @@ export const env = {
   API_PORT: parsedEnv.PORT ?? parsedEnv.API_PORT
 };
 
-type CorsOriginRule = {
+export type CorsOriginRule = {
   raw: string;
   regex?: RegExp;
 };
 
-function normalizeOriginValue(value: string) {
+export function normalizeOriginValue(value: string) {
   return value.trim().replace(/\/+$/, "");
 }
 
@@ -30,7 +30,7 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function buildCorsOriginRule(origin: string): CorsOriginRule {
+export function buildCorsOriginRule(origin: string): CorsOriginRule {
   const raw = normalizeOriginValue(origin);
   if (!raw.includes("*")) {
     return { raw };
@@ -42,18 +42,23 @@ function buildCorsOriginRule(origin: string): CorsOriginRule {
   return { raw, regex };
 }
 
-export const corsOriginRules = env.CORS_ORIGINS.split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean)
-  .map(buildCorsOriginRule);
+export function parseCorsOriginRules(origins: string) {
+  return origins
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .map(buildCorsOriginRule);
+}
 
-export function isCorsOriginAllowed(origin?: string) {
+export const corsOriginRules = parseCorsOriginRules(env.CORS_ORIGINS);
+
+export function isCorsOriginAllowed(origin: string | undefined, rules = corsOriginRules) {
   if (!origin) {
     return true;
   }
 
   const normalizedOrigin = normalizeOriginValue(origin);
-  return corsOriginRules.some((rule) => {
+  return rules.some((rule) => {
     if (rule.regex) {
       return rule.regex.test(normalizedOrigin);
     }
