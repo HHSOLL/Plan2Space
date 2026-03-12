@@ -34,6 +34,9 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 WORKER_CONCURRENCY=2
 WORKER_POLL_INTERVAL_MS=1000
+ASSET_STORAGE_BUCKET=assets-glb
+ASSET_GENERATION_POLL_INTERVAL_MS=2000
+ASSET_GENERATION_MAX_POLLS=45
 
 FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
 FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
@@ -41,15 +44,23 @@ ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 SNAPTRUDE_API_URL=
 SNAPTRUDE_API_KEY=
+TRIPOSR_API_URL=
+TRIPOSR_API_KEY=
+TRIPOSR_STATUS_URL=
+MESHY_API_URL=
+MESHY_API_KEY=
+MESHY_STATUS_URL=
 ```
 
 중요:
 - AI/provider 키는 Vercel이 아니라 Railway Worker에만 둡니다.
+- asset generation provider 키도 Railway Worker에만 둡니다.
 
 ## 2) Supabase 적용 작업
 - `supabase/migrations/20260305_railway_floorplan_queue.sql` 실행
 - `supabase/migrations/20260311_v4_intake_revision_foundation.sql` 실행
 - `supabase/migrations/20260312120000_v4_finalize_intake_session_resolution_state_fix.sql` 실행
+- `supabase/migrations/20260312143000_asset_generation_jobs_result.sql` 실행
 - 신규 테이블 확인:
   - `floorplans`
   - `jobs`
@@ -78,6 +89,8 @@ SNAPTRUDE_API_KEY=
    - `npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --expected=https://api-production-473bd.up.railway.app`
 9. 실환경 intake E2E 검증:
    - `npm --workspace apps/web run e2e:intake -- --api=https://api-production-473bd.up.railway.app`
+10. custom asset generation 경로 검증:
+   - `/v1/assets/generate` 호출 후 `GET /v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
 
 ## 5) 실패 복구 QA
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
@@ -151,3 +164,14 @@ Updated:
 
 Removed/Deprecated:
 - finalize 성공 여부만 보고 resolution state 정합성을 생략하는 검수 방식.
+
+## 13) 2026-03-12 변경 동기화 (Asset Generation Worker Migration)
+Added:
+- `ASSET_STORAGE_BUCKET`, `TRIPOSR_*`, `MESHY_*`, asset generation poll env를 worker 설정 항목으로 추가.
+- `jobs.result.asset` 기반 custom asset 완료 검수 항목 추가.
+
+Updated:
+- custom asset 생성 운영 경로를 Next route가 아니라 Railway API/worker 기준으로 변경.
+
+Removed/Deprecated:
+- Vercel `/api/assets/generate`에 provider 키를 두고 직접 호출하는 운영 방식.

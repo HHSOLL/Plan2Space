@@ -127,3 +127,14 @@ Updated:
 Removed/Deprecated:
 - 정적 floorplan template manifest와 서버 로컬 floorplan cache 실험 코드.
 - 삭제된 Next.js 내부 API route를 기준으로 한 웹 타입 생성물 의존.
+
+## 2026-03-12 변경 동기화 (Asset Generation Worker Migration)
+Added:
+- Phase 1 운영 기준에 `jobs.result`와 `POST /v1/assets/generate` 기반 custom asset 비동기 경로를 추가.
+- worker가 `ASSET_GENERATION` 잡을 처리하고 `assets-glb` 저장 및 `assets` row 생성을 완료 조건에 포함.
+
+Updated:
+- Vercel의 마지막 heavy path였던 custom asset 생성 경로를 Railway worker로 이동.
+
+Removed/Deprecated:
+- Next app route에서 provider 호출/GLB 다운로드/Storage 업로드를 수행하는 asset generation 경로.

@@ -13,6 +13,7 @@ export type JobStatusResponse = {
   providerErrors?: string[];
   providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
   details?: string | null;
+  result?: Record<string, unknown> | null;
 };
 
 function delay(ms: number) {
@@ -29,9 +30,13 @@ export async function retryJob(jobId: string) {
   });
 }
 
-export async function pollJobUntilTerminal(jobId: string, options: { intervalMs?: number; timeoutMs?: number } = {}) {
+export async function pollJobUntilTerminal(
+  jobId: string,
+  options: { intervalMs?: number; timeoutMs?: number; timeoutMessage?: string } = {}
+) {
   const intervalMs = options.intervalMs ?? 1200;
   const timeoutMs = options.timeoutMs ?? 240000;
+  const timeoutMessage = options.timeoutMessage ?? "Job processing timed out.";
   const startedAt = Date.now();
 
   while (true) {
@@ -41,12 +46,12 @@ export async function pollJobUntilTerminal(jobId: string, options: { intervalMs?
     }
 
     if (Date.now() - startedAt > timeoutMs) {
-      const timeoutError = new Error("Floorplan processing timed out.") as Error & { status?: number; payload?: unknown };
+      const timeoutError = new Error(timeoutMessage) as Error & { status?: number; payload?: unknown };
       timeoutError.status = 504;
       timeoutError.payload = {
         recoverable: true,
         errorCode: "JOB_TIMEOUT",
-        details: "Floorplan processing timed out.",
+        details: timeoutMessage,
         providerStatus: status.providerStatus ?? [],
         providerErrors: status.providerErrors ?? []
       };

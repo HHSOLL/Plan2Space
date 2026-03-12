@@ -1,3 +1,4 @@
+import { assetsRouter } from "./routes/assets";
 import { catalogRouter } from "./routes/catalog";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
@@ -52,6 +53,7 @@ export function createApp() {
   app.use("/v1", healthRouter);
 
   app.use("/v1", requireAuth, projectsRouter);
+  app.use("/v1", requireAuth, assetsRouter);
   app.use("/v1", requireAuth, catalogRouter);
   app.use("/v1", requireAuth, intakeRouter);
   app.use("/v1", requireAuth, floorplansRouter);

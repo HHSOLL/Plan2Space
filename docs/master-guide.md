@@ -41,16 +41,18 @@
   - Supabase 로그인 세션(access token) 획득
 - `apps/api`:
   - 사용자 인증 검증(Supabase JWT)
-  - intake/catalog/project/floorplan/job/result 도메인 API 제공
+  - intake/catalog/project/floorplan/job/result/asset-generation 도메인 API 제공
   - signed upload URL 발급
 - `apps/worker`:
   - 도면 분석, geometry revision 생성, scene JSON 파생 생성
+  - asset generation provider 호출 및 GLB 저장
   - 잡 상태 전이(queued/running/retrying/succeeded/failed/dead_letter)
   - intake 상태 전이(queued/analyzing/review_required/resolved_generated/failed)
 
 ## 핵심 API 기준 (Railway `/v1`)
 - `POST /v1/projects`
 - `GET /v1/projects`
+- `POST /v1/assets/generate`
 - `POST /v1/intake-sessions`
 - `GET /v1/intake-sessions/:id`
 - `POST /v1/intake-sessions/:id/upload-url`
@@ -67,7 +69,7 @@
 ## 프론트엔드 API 기준
 - `NEXT_PUBLIC_RAILWAY_API_URL` 기반으로 Railway API 호출.
 - `Authorization: Bearer <supabase access token>` 헤더 전달.
-- Next.js 내부 도메인/파싱 API(`/api/ai/parse-floorplan`, `/api/projects/*`, `/api/furnitures/*`)는 사용하지 않는다.
+- Next.js 내부 도메인/파싱 API(`/api/ai/parse-floorplan`, `/api/projects/*`, `/api/furnitures/*`, `/api/assets/generate`)는 사용하지 않는다.
 
 ## 데이터 테이블 기준
 - `projects` (기존)
@@ -157,3 +159,15 @@ Removed/Deprecated:
 - 새 프로젝트 생성 시 project-first draft를 먼저 만드는 흐름.
 - walls-only scene payload에만 의존하는 floor/ceiling 렌더링.
 - 더 이상 사용하지 않는 Next.js 내부 도메인 API(`/api/projects/*`, `/api/furnitures/*`, `/api/realtime`, `/api/ai/parse-floorplan`).
+
+## 2026-03-12 변경 동기화 (Asset Generation Worker Migration)
+Added:
+- `POST /v1/assets/generate`와 `jobs.result` 기반 asset generation 비동기 계약.
+- Railway worker가 TripoSR/Meshy 호출, GLB 저장, `assets` row 생성까지 담당하는 경계.
+
+Updated:
+- AssetPanel의 custom asset 생성 경로를 `Vercel route -> Railway API enqueue -> worker process -> /v1/jobs poll`로 전환.
+- asset provider 키와 bucket 설정을 worker 전용 환경 변수로 이동.
+
+Removed/Deprecated:
+- Next.js `/api/assets/generate` 동기/폴링 혼합 처리 경로.

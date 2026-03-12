@@ -11,7 +11,8 @@
     "./intake": "./src/intake.ts",
     "./jobs": "./src/jobs.ts",
     "./revisions": "./src/revisions.ts",
-    "./scenes": "./src/scenes.ts"
+    "./scenes": "./src/scenes.ts",
+    "./assets": "./src/assets.ts"
   },
   "dependencies": {
     "zod": "^4.2.1"

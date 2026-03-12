@@ -1,5 +1,15 @@
-import { claimNextJobs } from "../repositories/jobs-repo";
+import { claimNextJobs, type JobRow } from "../repositories/jobs-repo";
 
-export async function claimNextFloorplanJobs(workerId: string, limit: number) {
-  return claimNextJobs(workerId, limit);
+const JOB_TYPES = ["FLOORPLAN_PIPELINE", "ASSET_GENERATION"] as const;
+
+export async function claimNextAvailableJobs(workerId: string, limit: number) {
+  const jobs: JobRow[] = [];
+
+  for (const type of JOB_TYPES) {
+    if (jobs.length >= limit) break;
+    const claimed = await claimNextJobs(workerId, limit - jobs.length, type);
+    jobs.push(...claimed);
+  }
+
+  return jobs;
 }

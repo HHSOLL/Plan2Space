@@ -21,6 +21,7 @@ export type JobStatusResponse = {
   providerErrors?: string[];
   providerStatus?: Array<{ provider: string; configured: boolean; status: "enabled" | "skipped"; reason: string | null }>;
   details?: string | null;
+  result?: Record<string, unknown> | null;
 };
 
 export type IntakeSessionResponse = {

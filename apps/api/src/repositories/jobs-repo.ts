@@ -36,6 +36,37 @@ export async function createFloorplanJob(payload: {
   return data;
 }
 
+export async function createAssetGenerationJob(payload: {
+  ownerId: string;
+  image: string;
+  fileName?: string;
+  provider?: "triposr" | "meshy";
+}) {
+  const { data, error } = await supabaseService
+    .from("jobs")
+    .insert({
+      type: "ASSET_GENERATION",
+      floorplan_id: null,
+      payload: {
+        ownerId: payload.ownerId,
+        image: payload.image,
+        fileName: payload.fileName ?? null,
+        provider: payload.provider ?? null
+      },
+      status: "queued",
+      attempts: 0,
+      max_attempts: 3,
+      progress: 0,
+      run_at: new Date().toISOString(),
+      result: null
+    })
+    .select("id, status")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getJobById(jobId: string) {
   const { data, error } = await supabaseService
     .from("jobs")
@@ -69,6 +100,7 @@ export async function retryJob(jobId: string) {
       recoverable: null,
       provider_errors: null,
       provider_status: null,
+      result: null,
       updated_at: new Date().toISOString()
     })
     .eq("id", jobId)
@@ -81,7 +113,17 @@ export async function retryJob(jobId: string) {
 
 export async function getJobByIdWithProjectOwner(jobId: string, ownerId: string) {
   const job = await getJobById(jobId);
-  if (!job || !job.floorplan_id) return null;
+  if (!job) return null;
+
+  if (job.type === "ASSET_GENERATION") {
+    const payloadOwnerId =
+      job.payload && typeof job.payload === "object" && !Array.isArray(job.payload) && typeof job.payload.ownerId === "string"
+        ? job.payload.ownerId
+        : null;
+    return payloadOwnerId === ownerId ? job : null;
+  }
+
+  if (!job.floorplan_id) return null;
 
   const { data: floorplan, error: floorplanError } = await supabaseService
     .from("floorplans")

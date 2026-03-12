@@ -1,14 +1,16 @@
-# Asset Guide (TripoSR + GLB 저장)
+# Asset Guide (Railway Worker Asset Generation)
 
-Plan2Space는 이미지 → GLB 생성 요청을 `/api/assets/generate`로 처리합니다.
-TripoSR 또는 Meshy 중 설정된 Provider를 사용하고, 결과 GLB를 Supabase Storage에 저장합니다.
+Plan2Space는 이미지 → GLB 생성을 Railway API/Worker 경로로 처리합니다.
+웹은 `/v1/assets/generate`로 job을 enqueue하고, Railway worker가 TripoSR 또는 Meshy를 호출한 뒤 결과 GLB를 Supabase Storage에 저장합니다.
 
 ## 환경 변수
 
-`apps/web/.env.local`
+`apps/worker`
 
 ```
 ASSET_STORAGE_BUCKET=assets-glb
+ASSET_GENERATION_POLL_INTERVAL_MS=2000
+ASSET_GENERATION_MAX_POLLS=45
 TRIPOSR_API_URL=
 TRIPOSR_API_KEY=
 TRIPOSR_STATUS_URL=
@@ -21,7 +23,7 @@ MESHY_STATUS_URL=
 
 ## API 사용
 
-`POST /api/assets/generate`
+`POST /v1/assets/generate`
 
 ```json
 {
@@ -33,24 +35,41 @@ MESHY_STATUS_URL=
 
 응답 예시:
 
-- 완료 즉시 반환
 ```json
 {
-  "status": "complete",
-  "asset": {
-    "assetId": "...",
-    "assetUrl": "https://.../assets-glb/...",
-    "label": "chair-01"
+  "jobId": "uuid",
+  "status": "queued"
+}
+```
+
+완료 결과는 `GET /v1/jobs/:jobId`의 `result.asset`에서 조회합니다.
+
+```json
+{
+  "id": "uuid",
+  "type": "ASSET_GENERATION",
+  "status": "succeeded",
+  "result": {
+    "asset": {
+      "assetId": "...",
+      "assetUrl": "https://.../assets-glb/...",
+      "label": "chair-01",
+      "description": "Generated via triposr",
+      "category": "Custom"
+    }
   }
 }
 ```
 
-- 비동기 처리
+실패 시:
+
 ```json
 {
-  "status": "processing",
-  "jobId": "triposr:...",
-  "provider": "triposr"
+  "id": "uuid",
+  "type": "ASSET_GENERATION",
+  "status": "failed",
+  "errorCode": "PROVIDER_NOT_CONFIGURED",
+  "error": "No asset generation provider configured."
 }
 ```
 
@@ -63,9 +82,4 @@ MESHY_STATUS_URL=
 
 ## 최적화 (Draco)
 
-대용량 GLB는 로딩 지연이 크므로 Draco 압축을 권장합니다.
-
-```bash
-npm run assets:download
-npm run assets:draco
-```
+대용량 GLB는 로딩 지연이 크므로 worker가 생성한 자산도 후속 Draco 압축 파이프라인을 추가하는 것이 좋습니다. 현재 v1 구현은 provider 결과 GLB를 그대로 저장합니다.

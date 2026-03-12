@@ -5,3 +5,4 @@ export * from "./scenes";
 export * from "./catalog";
 export * from "./intake";
 export * from "./revisions";
+export * from "./assets";

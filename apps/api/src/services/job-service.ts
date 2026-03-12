@@ -13,6 +13,7 @@ export function toJobResponse(job: any) {
     providerErrors: Array.isArray(job.provider_errors) ? job.provider_errors : [],
     providerStatus: Array.isArray(job.provider_status) ? job.provider_status : [],
     details: job.details ?? null,
+    result: job.result ?? null,
     created_at: job.created_at,
     updated_at: job.updated_at
   };
