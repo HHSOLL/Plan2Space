@@ -9,6 +9,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit --incremental false",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs",
+    "e2e:intake": "node --import tsx scripts/e2e-intake-flow.ts",
     "eval:floorplan": "node --import tsx scripts/eval-floorplan.ts",
     "eval:floorplan:gate": "node --import tsx scripts/eval-floorplan-gate.ts"
   },

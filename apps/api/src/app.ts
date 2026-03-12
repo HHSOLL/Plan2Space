@@ -1,3 +1,4 @@
+import { catalogRouter } from "./routes/catalog";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { isCorsOriginAllowed } from "./config/env";
@@ -5,9 +6,31 @@ import { requireAuth } from "./middleware/auth";
 import { ApiError } from "./services/errors";
 import { floorplansRouter } from "./routes/floorplans";
 import { healthRouter } from "./routes/health";
+import { intakeRouter } from "./routes/intake";
 import { jobsRouter } from "./routes/jobs";
 import { projectsRouter } from "./routes/projects";
+import { revisionsRouter } from "./routes/revisions";
 import { scenesRouter } from "./routes/scenes";
+
+function serializeUnknownError(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object") {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "[unserializable error object]";
+    }
+  }
+
+  return String(error);
+}
 
 export function createApp() {
   const app = express();
@@ -29,8 +52,11 @@ export function createApp() {
   app.use("/v1", healthRouter);
 
   app.use("/v1", requireAuth, projectsRouter);
+  app.use("/v1", requireAuth, catalogRouter);
+  app.use("/v1", requireAuth, intakeRouter);
   app.use("/v1", requireAuth, floorplansRouter);
   app.use("/v1", requireAuth, jobsRouter);
+  app.use("/v1", requireAuth, revisionsRouter);
   app.use("/v1", requireAuth, scenesRouter);
 
   app.use((_request, response) => {
@@ -54,7 +80,7 @@ export function createApp() {
       return;
     }
 
-    const message = error instanceof Error ? error.message : String(error);
+    const message = serializeUnknownError(error);
     response.status(500).json({ error: "Internal server error", details: message });
   });
 

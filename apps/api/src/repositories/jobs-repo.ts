@@ -2,7 +2,8 @@ import { supabaseService } from "../services/supabase";
 
 export async function createFloorplanJob(payload: {
   floorplanId: string;
-  projectId: string;
+  projectId?: string | null;
+  intakeSessionId?: string | null;
   objectPath: string;
   mimeType: string;
   width?: number;
@@ -15,7 +16,8 @@ export async function createFloorplanJob(payload: {
       floorplan_id: payload.floorplanId,
       payload: {
         floorplanId: payload.floorplanId,
-        projectId: payload.projectId,
+        projectId: payload.projectId ?? null,
+        intakeSessionId: payload.intakeSessionId ?? null,
         objectPath: payload.objectPath,
         mimeType: payload.mimeType,
         width: payload.width,
@@ -83,20 +85,63 @@ export async function getJobByIdWithProjectOwner(jobId: string, ownerId: string)
 
   const { data: floorplan, error: floorplanError } = await supabaseService
     .from("floorplans")
-    .select("id, project_id")
+    .select("id, project_id, intake_session_id")
     .eq("id", job.floorplan_id)
     .maybeSingle();
   if (floorplanError) throw floorplanError;
   if (!floorplan) return null;
 
-  const { data: project, error: projectError } = await supabaseService
-    .from("projects")
+  if (floorplan.project_id) {
+    const { data: project, error: projectError } = await supabaseService
+      .from("projects")
+      .select("id")
+      .eq("id", floorplan.project_id)
+      .eq("owner_id", ownerId)
+      .maybeSingle();
+    if (projectError) throw projectError;
+    if (!project) return null;
+
+    return job;
+  }
+
+  if (!floorplan.intake_session_id) return null;
+
+  const { data: intakeSession, error: intakeSessionError } = await supabaseService
+    .from("intake_sessions")
     .select("id")
-    .eq("id", floorplan.project_id)
+    .eq("id", floorplan.intake_session_id)
     .eq("owner_id", ownerId)
     .maybeSingle();
-  if (projectError) throw projectError;
-  if (!project) return null;
+  if (intakeSessionError) throw intakeSessionError;
+  if (!intakeSession) return null;
 
   return job;
+}
+
+export async function getJobByIdForOwner(jobId: string, ownerId: string) {
+  return getJobByIdWithProjectOwner(jobId, ownerId);
+}
+
+export async function createMatchEvent(payload: {
+  intakeSessionId: string;
+  candidateRevisionId?: string | null;
+  candidateVariantId?: string | null;
+  decision: "auto_reuse" | "disambiguation_required" | "queued" | "manual_select" | "negative_feedback" | "failed";
+  confidence?: number | null;
+  signals?: Record<string, unknown>;
+  feedback?: Record<string, unknown>;
+}) {
+  const { error } = await supabaseService
+    .from("floorplan_match_events")
+    .insert({
+      intake_session_id: payload.intakeSessionId,
+      candidate_revision_id: payload.candidateRevisionId ?? null,
+      candidate_variant_id: payload.candidateVariantId ?? null,
+      decision: payload.decision,
+      confidence: payload.confidence ?? null,
+      signals: payload.signals ?? {},
+      feedback: payload.feedback ?? {}
+    });
+
+  if (error) throw error;
 }

@@ -1,5 +1,6 @@
 import { createFloorplan, getFloorplanById, getLatestSucceededFloorplan } from "../repositories/floorplans-repo";
-import { createFloorplanJob, getJobByIdWithProjectOwner, retryJob } from "../repositories/jobs-repo";
+import { getIntakeSessionByOwner } from "../repositories/intake-sessions-repo";
+import { createFloorplanJob, getJobByIdForOwner, retryJob } from "../repositories/jobs-repo";
 import { getProjectByOwner } from "../repositories/projects-repo";
 import { getResultByFloorplanId } from "../repositories/results-repo";
 
@@ -36,11 +37,11 @@ export async function registerFloorplanAndEnqueue(ownerId: string, payload: {
 }
 
 export async function getJobForOwner(ownerId: string, jobId: string) {
-  return getJobByIdWithProjectOwner(jobId, ownerId);
+  return getJobByIdForOwner(jobId, ownerId);
 }
 
 export async function retryJobForOwner(ownerId: string, jobId: string) {
-  const job = await getJobByIdWithProjectOwner(jobId, ownerId);
+  const job = await getJobByIdForOwner(jobId, ownerId);
   if (!job) return null;
   return retryJob(jobId);
 }
@@ -48,8 +49,16 @@ export async function retryJobForOwner(ownerId: string, jobId: string) {
 export async function getFloorplanResultForOwner(ownerId: string, floorplanId: string) {
   const floorplan = await getFloorplanById(floorplanId);
   if (!floorplan) return null;
-  const project = await ensureProjectOwnership(ownerId, floorplan.project_id);
-  if (!project) return null;
+
+  if (floorplan.project_id) {
+    const project = await ensureProjectOwnership(ownerId, floorplan.project_id);
+    if (!project) return null;
+  } else if (floorplan.intake_session_id) {
+    const ownerSession = await getIntakeSessionByOwner(floorplan.intake_session_id, ownerId);
+    if (!ownerSession) return null;
+  } else {
+    return null;
+  }
 
   const result = await getResultByFloorplanId(floorplanId);
   if (!result) return { floorplan, result: null };

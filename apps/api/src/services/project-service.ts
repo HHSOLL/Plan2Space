@@ -3,6 +3,7 @@ import {
   deleteProject,
   getProjectByOwner,
   listProjectsByOwner,
+  markProjectReuseInvalidated,
   updateProject
 } from "../repositories/projects-repo";
 
@@ -24,4 +25,8 @@ export async function updateProjectForOwner(ownerId: string, projectId: string, 
 
 export async function deleteProjectForOwner(ownerId: string, projectId: string) {
   return deleteProject(projectId, ownerId);
+}
+
+export async function invalidateReuseForOwner(ownerId: string, projectId: string) {
+  return markProjectReuseInvalidated(projectId, ownerId);
 }
