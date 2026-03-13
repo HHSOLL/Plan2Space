@@ -60,8 +60,19 @@ type ParseResponse = {
   details?: string;
 };
 
+type FixtureManifestEntry = {
+  channel?: string;
+  sourcePolicy?: "partner_licensed" | "user_opt_in" | "manual_private" | "unknown";
+  apartmentName?: string;
+  typeName?: string;
+  region?: string;
+  notes?: string;
+};
+
 type FixtureSummary = {
   fixture: string;
+  channel: string | null;
+  sourcePolicy: string | null;
   status: number;
   selectedProvider: string | null;
   sourceModule: string | null;
@@ -106,12 +117,24 @@ function toCsvRow(columns: Array<string | number | boolean | null | undefined>) 
     .join(",");
 }
 
+async function loadFixtureManifest(fixturesDir: string) {
+  const manifestPath = path.join(fixturesDir, "manifest.json");
+  try {
+    const raw = await fs.readFile(manifestPath, "utf8");
+    const parsed = JSON.parse(raw) as { fixtures?: Record<string, FixtureManifestEntry> };
+    return parsed.fixtures ?? {};
+  } catch {
+    return {};
+  }
+}
+
 async function main() {
   const endpoint = getArg("endpoint", "http://127.0.0.1:3100/api/ai/parse-floorplan");
   const fixturesDir = getArg("fixtures", path.join(process.cwd(), "apps/web/fixtures/floorplans"));
   const outputDir = getArg("out", path.join(process.cwd(), "apps/web/.eval/floorplan"));
   const skipCache = parseBooleanArg("skipCache", true);
   const debug = parseBooleanArg("debug", true);
+  const fixtureManifest = await loadFixtureManifest(fixturesDir);
 
   const entries = await fs.readdir(fixturesDir, { withFileTypes: true });
   const fixtures = entries
@@ -164,6 +187,7 @@ async function main() {
   }> = [];
 
   for (const fixture of fixtures) {
+    const fixtureMetadata = fixtureManifest[fixture] ?? {};
     const fixturePath = path.join(fixturesDir, fixture);
     const fileBuffer = await fs.readFile(fixturePath);
     const mimeType = getMimeType(fixture);
@@ -203,6 +227,8 @@ async function main() {
 
     fixtureSummaries.push({
       fixture,
+      channel: fixtureMetadata.channel ?? null,
+      sourcePolicy: fixtureMetadata.sourcePolicy ?? null,
       status: response.status,
       selectedProvider,
       sourceModule,
@@ -285,6 +311,8 @@ async function main() {
   const summaryCsvLines = [
     toCsvRow([
       "fixture",
+      "channel",
+      "sourcePolicy",
       "status",
       "selectedProvider",
       "sourceModule",
@@ -300,6 +328,8 @@ async function main() {
     ...fixtureSummaries.map((row) =>
       toCsvRow([
         row.fixture,
+        row.channel,
+        row.sourcePolicy,
         row.status,
         row.selectedProvider,
         row.sourceModule,
@@ -385,6 +415,7 @@ async function main() {
     outputDir,
     skipCache,
     debug,
+    fixtureManifest,
     fixtureSummaries,
     candidateRows,
     rawResults
@@ -398,8 +429,24 @@ async function main() {
 
   const successCount = fixtureSummaries.filter((entry) => entry.status === 200).length;
   const recoverableCount = fixtureSummaries.filter((entry) => entry.recoverable).length;
+  const channelSummary = fixtureSummaries.reduce<Record<string, { total: number; success: number; recoverable: number }>>(
+    (summary, fixture) => {
+      const channel = fixture.channel ?? "unspecified";
+      summary[channel] ??= { total: 0, success: 0, recoverable: 0 };
+      summary[channel].total += 1;
+      if (fixture.status === 200) summary[channel].success += 1;
+      if (fixture.recoverable) summary[channel].recoverable += 1;
+      return summary;
+    },
+    {}
+  );
 
   console.log(`[eval-floorplan] fixtures=${fixtures.length} success=${successCount} recoverable=${recoverableCount}`);
+  Object.entries(channelSummary).forEach(([channel, stats]) => {
+    console.log(
+      `[eval-floorplan] channel=${channel} total=${stats.total} success=${stats.success} recoverable=${stats.recoverable}`
+    );
+  });
   console.log(`[eval-floorplan] outputs written to ${outputDir}`);
 }
 

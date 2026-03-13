@@ -152,7 +152,7 @@ export type AnalyzeUploadResult =
       };
     };
 
-type PreprocessProfile = "balanced" | "lineart";
+type PreprocessProfile = "balanced" | "lineart" | "filled_plan";
 
 type ProviderName = "anthropic" | "openai" | "snaptrude";
 
@@ -230,6 +230,10 @@ const PROVIDER_ORDER = (process.env.FLOORPLAN_PROVIDER_ORDER ?? "anthropic,opena
   .filter((value): value is ProviderName => value === "anthropic" || value === "openai" || value === "snaptrude");
 
 const PROVIDER_TIMEOUT_MS = Number(process.env.FLOORPLAN_PROVIDER_TIMEOUT_MS ?? 45000);
+const PREPROCESS_PROFILES = (process.env.FLOORPLAN_PREPROCESS_PROFILES ?? "balanced,lineart,filled_plan")
+  .split(",")
+  .map((value) => value.trim().toLowerCase())
+  .filter((value): value is PreprocessProfile => value === "balanced" || value === "lineart" || value === "filled_plan");
 
 function stripDataUrl(dataUrl: string) {
   const matched = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -1173,6 +1177,16 @@ async function preprocessImage(base64: string, profile: PreprocessProfile) {
           Number(process.env.FLOORPLAN_PREPROCESS_LINEART_BRIGHTNESS ?? -20)
         )
         .threshold(Number(process.env.FLOORPLAN_PREPROCESS_LINEART_THRESHOLD ?? 218))
+    : profile === "filled_plan"
+      ? normalized
+          .median(Math.max(1, Number(process.env.FLOORPLAN_PREPROCESS_FILLED_MEDIAN ?? 5)))
+          .blur(Number(process.env.FLOORPLAN_PREPROCESS_FILLED_BLUR ?? 0.9))
+          .linear(
+            Number(process.env.FLOORPLAN_PREPROCESS_FILLED_CONTRAST ?? 1.6),
+            Number(process.env.FLOORPLAN_PREPROCESS_FILLED_BRIGHTNESS ?? -24)
+          )
+          .sharpen(Number(process.env.FLOORPLAN_PREPROCESS_FILLED_SHARPEN ?? 1.2))
+          .threshold(Number(process.env.FLOORPLAN_PREPROCESS_FILLED_THRESHOLD ?? 188))
     : normalized
         .median(Math.max(1, Number(process.env.FLOORPLAN_PREPROCESS_MEDIAN ?? 3)))
         .blur(Number(process.env.FLOORPLAN_PREPROCESS_BLUR ?? 0.3))
@@ -1264,8 +1278,9 @@ export async function analyzeFloorplanUpload(request: AnalyzeUploadRequest): Pro
     const providerStatus = resolvedProviderOrder.map((provider) => resolveProviderStatus(provider));
     const enabledProviders = providerStatus.filter((entry) => entry.status === "enabled").map((entry) => entry.provider as ProviderName);
 
+    const preprocessProfiles = PREPROCESS_PROFILES.length > 0 ? PREPROCESS_PROFILES : (["balanced", "lineart", "filled_plan"] as PreprocessProfile[]);
     const preprocessPasses: Array<{ passId: string; profile: PreprocessProfile; base64: string; mimeType: string }> = [];
-    for (const [index, profile] of (["balanced", "lineart"] as PreprocessProfile[]).entries()) {
+    for (const [index, profile] of preprocessProfiles.entries()) {
       try {
         const processedBase64 = await preprocessImage(base64, profile);
         preprocessPasses.push({
