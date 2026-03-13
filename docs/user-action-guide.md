@@ -76,6 +76,7 @@ MESHY_STATUS_URL=
 - Supabase Auth URL 설정에 실제 배포 도메인만 등록
 - Railway API CORS에 Vercel 프로덕션/프리뷰 도메인 포함
 - Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
+- 브라우저에서 `Invalid Refresh Token`이 보이면 기존 `sb-*` 쿠키/스토리지를 정리한 뒤 재로그인
 
 ## 4) 운영 확인 시나리오
 1. intake session 생성
