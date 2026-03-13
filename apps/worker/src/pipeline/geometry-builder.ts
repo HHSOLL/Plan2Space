@@ -2,13 +2,32 @@ import type { TopologyOpening, TopologyWall, Vec2 } from "@plan2space/floorplan-
 
 type PointNode = { key: string; x: number; y: number };
 
+export type RoomType =
+  | "living_room"
+  | "bedroom"
+  | "kitchen"
+  | "dining"
+  | "bathroom"
+  | "foyer"
+  | "corridor"
+  | "balcony"
+  | "utility"
+  | "pantry"
+  | "dress_room"
+  | "alpha_room"
+  | "service_area"
+  | "evacuation_space"
+  | "other";
+
+type RoomUsage = "primary" | "secondary" | "service";
+
 type LoopResult = {
   points: Vec2[];
   area: number;
   centroid: Vec2;
 };
 
-type RoomAdjacency = {
+export type RoomAdjacency = {
   id: string;
   fromRoomId: string | null;
   toRoomId: string | null;
@@ -16,11 +35,84 @@ type RoomAdjacency = {
   relation: "door" | "window" | "passage" | "entrance";
 };
 
-type RoomPolygon = {
+export type RoomPolygon = {
   id: string;
   polygon: Vec2[];
   area: number;
   type: "room";
+  roomType: RoomType;
+  label: string;
+  centroid: Vec2;
+  openingIds: string[];
+  connectedRoomIds: string[];
+  estimatedCeilingHeight: number;
+  estimatedUsage: RoomUsage;
+  isExteriorFacing: boolean;
+};
+
+export type FloorZone = {
+  id: string;
+  roomId: string;
+  outline: Vec2[];
+  materialId: string | null;
+  roomType: RoomType;
+};
+
+export type CeilingZone = {
+  id: string;
+  roomId: string;
+  outline: Vec2[];
+  materialId: string | null;
+  roomType: RoomType;
+  height: number;
+};
+
+export type CameraAnchor = {
+  id: string;
+  kind: "entrance" | "room_center" | "overview";
+  roomId: string | null;
+  openingId: string | null;
+  planPosition: Vec2;
+  targetPlanPosition: Vec2;
+  height: number;
+};
+
+export type NavNode = {
+  id: string;
+  roomId: string | null;
+  kind: "entrance" | "room_center";
+  planPosition: Vec2;
+};
+
+export type NavEdge = {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  relation: "door" | "passage" | "entrance";
+  openingId: string;
+};
+
+export type GeometryBuildResult = {
+  wallCoordinates: Array<{
+    id: string;
+    start: Vec2;
+    end: Vec2;
+    thickness: number;
+    type: TopologyWall["type"];
+    length: number;
+    confidence?: number;
+  }>;
+  roomPolygons: RoomPolygon[];
+  exteriorShell: Vec2[];
+  roomAdjacency: RoomAdjacency[];
+  floorZones: FloorZone[];
+  ceilingZones: CeilingZone[];
+  cameraAnchors: CameraAnchor[];
+  navGraph: {
+    nodes: NavNode[];
+    edges: NavEdge[];
+  };
+  scale: number;
 };
 
 function median(values: number[]) {
@@ -234,7 +326,7 @@ function deriveRoomPolygons(loops: LoopResult[]) {
   if (loops.length === 0) {
     return {
       exteriorShell: [] as Vec2[],
-      roomPolygons: [] as RoomPolygon[]
+      roomPolygons: [] as Array<Pick<RoomPolygon, "id" | "polygon" | "area" | "type" | "centroid">>
     };
   }
 
@@ -248,7 +340,8 @@ function deriveRoomPolygons(loops: LoopResult[]) {
       id: `room-${index + 1}`,
       polygon: loop.points,
       area: Math.abs(loop.area),
-      type: "room" as const
+      type: "room" as const,
+      centroid: loop.centroid
     }))
   };
 }
@@ -305,7 +398,548 @@ function buildRoomAdjacency(rooms: RoomPolygon[], walls: TopologyWall[], opening
     .filter((entry): entry is RoomAdjacency => Boolean(entry));
 }
 
-export function buildGeometry(topology: { walls: TopologyWall[]; openings: TopologyOpening[]; scale: number }) {
+function humanizeRoomType(roomType: RoomType) {
+  switch (roomType) {
+    case "living_room":
+      return "Living Room";
+    case "bedroom":
+      return "Bedroom";
+    case "kitchen":
+      return "Kitchen";
+    case "dining":
+      return "Dining";
+    case "bathroom":
+      return "Bathroom";
+    case "foyer":
+      return "Foyer";
+    case "corridor":
+      return "Corridor";
+    case "balcony":
+      return "Balcony";
+    case "utility":
+      return "Utility";
+    case "pantry":
+      return "Pantry";
+    case "dress_room":
+      return "Dress Room";
+    case "alpha_room":
+      return "Alpha Room";
+    case "service_area":
+      return "Service Area";
+    case "evacuation_space":
+      return "Evacuation Space";
+    default:
+      return "Room";
+  }
+}
+
+function buildRoomExposureStats(walls: TopologyWall[], rooms: Array<Pick<RoomPolygon, "id" | "polygon">>) {
+  const exposure = new Map<
+    string,
+    {
+      exteriorWalls: number;
+      balconyWalls: number;
+    }
+  >();
+
+  rooms.forEach((room) => {
+    exposure.set(room.id, {
+      exteriorWalls: 0,
+      balconyWalls: 0
+    });
+  });
+
+  walls.forEach((wall) => {
+    if (wall.type !== "exterior" && wall.type !== "balcony") return;
+
+    const direction = wallDirection(wall);
+    const normal: Vec2 = [-direction.dy, direction.dx];
+    const probe = Math.max(8, wall.thickness * 0.8);
+    const midpoint: Vec2 = [(wall.start[0] + wall.end[0]) / 2, (wall.start[1] + wall.end[1]) / 2];
+    const room =
+      findRoomAtPoint([midpoint[0] + normal[0] * probe, midpoint[1] + normal[1] * probe], rooms as RoomPolygon[]) ??
+      findRoomAtPoint([midpoint[0] - normal[0] * probe, midpoint[1] - normal[1] * probe], rooms as RoomPolygon[]);
+
+    if (!room) return;
+    const current = exposure.get(room.id);
+    if (!current) return;
+    if (wall.type === "balcony") {
+      current.balconyWalls += 1;
+    } else {
+      current.exteriorWalls += 1;
+    }
+  });
+
+  return exposure;
+}
+
+type RoomClassificationFeature = {
+  roomId: string;
+  area: number;
+  areaRatio: number;
+  aspectRatio: number;
+  isElongated: boolean;
+  entranceCount: number;
+  windowCount: number;
+  exteriorWindowCount: number;
+  adjacencyCount: number;
+  connectedRoomIds: Set<string>;
+  openingIds: Set<string>;
+  exteriorWalls: number;
+  balconyWalls: number;
+  isExteriorFacing: boolean;
+};
+
+function getPolygonBounds(points: Vec2[]) {
+  const xs = points.map((point) => point[0]);
+  const ys = points.map((point) => point[1]);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return {
+    minX,
+    maxX,
+    minY,
+    maxY,
+    width: Math.max(1, maxX - minX),
+    height: Math.max(1, maxY - minY)
+  };
+}
+
+export function classifyRooms(
+  baseRooms: Array<Pick<RoomPolygon, "id" | "polygon" | "area" | "type" | "centroid">>,
+  roomAdjacency: RoomAdjacency[],
+  walls: TopologyWall[]
+): RoomPolygon[] {
+  if (baseRooms.length === 0) return [];
+
+  const largestArea = Math.max(...baseRooms.map((room) => room.area));
+  const exposure = buildRoomExposureStats(walls, baseRooms);
+  const stats = new Map<
+    string,
+    {
+      roomId: string;
+      entranceCount: number;
+      windowCount: number;
+      exteriorWindowCount: number;
+      adjacencyCount: number;
+      connectedRoomIds: Set<string>;
+      openingIds: Set<string>;
+      exteriorWalls: number;
+      balconyWalls: number;
+    }
+  >();
+
+  baseRooms.forEach((room) => {
+    const roomExposure = exposure.get(room.id);
+    stats.set(room.id, {
+      roomId: room.id,
+      entranceCount: 0,
+      windowCount: 0,
+      exteriorWindowCount: 0,
+      adjacencyCount: 0,
+      connectedRoomIds: new Set<string>(),
+      openingIds: new Set<string>(),
+      exteriorWalls: roomExposure?.exteriorWalls ?? 0,
+      balconyWalls: roomExposure?.balconyWalls ?? 0
+    });
+  });
+
+  roomAdjacency.forEach((adjacency) => {
+    const roomIds = [adjacency.fromRoomId, adjacency.toRoomId].filter((value): value is string => Boolean(value));
+    roomIds.forEach((roomId) => {
+      const entry = stats.get(roomId);
+      if (!entry) return;
+      entry.openingIds.add(adjacency.openingId);
+      if (adjacency.relation === "entrance") {
+        entry.entranceCount += 1;
+      }
+      if (adjacency.relation === "window" && (adjacency.fromRoomId === null || adjacency.toRoomId === null)) {
+        entry.exteriorWindowCount += 1;
+      }
+      if (adjacency.relation === "window") {
+        entry.windowCount += 1;
+      }
+      const opposite = adjacency.fromRoomId === roomId ? adjacency.toRoomId : adjacency.fromRoomId;
+      if (opposite) {
+        entry.connectedRoomIds.add(opposite);
+      }
+    });
+  });
+
+  stats.forEach((entry) => {
+    entry.adjacencyCount = entry.connectedRoomIds.size;
+  });
+
+  const features = baseRooms.map((room) => {
+    const roomStats = stats.get(room.id)!;
+    const areaRatio = largestArea > 0 ? room.area / largestArea : 0;
+    const bounds = getPolygonBounds(room.polygon);
+    const aspectRatio = bounds.width >= bounds.height ? bounds.width / bounds.height : bounds.height / bounds.width;
+    const isExteriorFacing =
+      roomStats.exteriorWalls > 0 || roomStats.balconyWalls > 0 || roomStats.exteriorWindowCount > 0;
+
+    return {
+      roomId: room.id,
+      area: room.area,
+      areaRatio,
+      aspectRatio,
+      isElongated: aspectRatio >= 2.2,
+      entranceCount: roomStats.entranceCount,
+      windowCount: roomStats.windowCount,
+      exteriorWindowCount: roomStats.exteriorWindowCount,
+      adjacencyCount: roomStats.adjacencyCount,
+      connectedRoomIds: roomStats.connectedRoomIds,
+      openingIds: roomStats.openingIds,
+      exteriorWalls: roomStats.exteriorWalls,
+      balconyWalls: roomStats.balconyWalls,
+      isExteriorFacing
+    } satisfies RoomClassificationFeature;
+  });
+
+  const assignments = new Map<string, RoomType>();
+  const assign = (roomId: string, roomType: RoomType) => {
+    if (!assignments.has(roomId)) {
+      assignments.set(roomId, roomType);
+    }
+  };
+  const getAssignedType = (roomId: string | null | undefined) => (roomId ? assignments.get(roomId) : undefined);
+  const unassigned = () => features.filter((feature) => !assignments.has(feature.roomId));
+
+  features
+    .filter(
+      (feature) =>
+        feature.isExteriorFacing &&
+        feature.balconyWalls >= 1 &&
+        (feature.areaRatio <= 0.32 || feature.isElongated || feature.exteriorWalls === 0)
+    )
+    .sort((left, right) => left.area - right.area)
+    .forEach((feature) => assign(feature.roomId, "balcony"));
+
+  features
+    .filter((feature) => feature.entranceCount > 0 && feature.areaRatio <= 0.35)
+    .sort((left, right) => left.area - right.area)
+    .forEach((feature) => assign(feature.roomId, "foyer"));
+
+  features
+    .filter(
+      (feature) =>
+        feature.areaRatio <= 0.22 &&
+        !feature.isExteriorFacing &&
+        feature.adjacencyCount <= 2 &&
+        feature.entranceCount === 0
+    )
+    .sort((left, right) => left.area - right.area)
+    .forEach((feature) => assign(feature.roomId, "bathroom"));
+
+  features
+    .filter(
+      (feature) =>
+        feature.areaRatio <= 0.36 &&
+        feature.isElongated &&
+        feature.adjacencyCount >= 2 &&
+        feature.entranceCount === 0 &&
+        !feature.isExteriorFacing
+    )
+    .sort((left, right) => right.adjacencyCount - left.adjacencyCount || left.area - right.area)
+    .forEach((feature) => assign(feature.roomId, "corridor"));
+
+  const livingCandidate = unassigned()
+    .sort((left, right) => {
+      const leftScore =
+        left.areaRatio * 12 +
+        left.adjacencyCount * 1.8 +
+        (left.entranceCount > 0 ? 1.5 : 0) +
+        (left.isExteriorFacing ? 1.2 : 0) -
+        (left.isElongated ? 1.5 : 0);
+      const rightScore =
+        right.areaRatio * 12 +
+        right.adjacencyCount * 1.8 +
+        (right.entranceCount > 0 ? 1.5 : 0) +
+        (right.isExteriorFacing ? 1.2 : 0) -
+        (right.isElongated ? 1.5 : 0);
+      return rightScore - leftScore;
+    })[0];
+  if (livingCandidate) {
+    assign(livingCandidate.roomId, "living_room");
+  }
+
+  const livingRoomId = [...assignments.entries()].find(([, roomType]) => roomType === "living_room")?.[0] ?? null;
+  const kitchenCandidate = livingRoomId
+    ? unassigned()
+        .filter(
+          (feature) =>
+            feature.connectedRoomIds.has(livingRoomId) &&
+            feature.areaRatio >= 0.18 &&
+            feature.areaRatio <= 0.75 &&
+            (feature.isExteriorFacing || feature.balconyWalls > 0 || feature.exteriorWalls > 0)
+        )
+        .sort((left, right) => {
+          const leftScore =
+            left.areaRatio * 8 +
+            (left.isExteriorFacing ? 2 : 0) +
+            (left.balconyWalls > 0 ? 1.5 : 0) +
+            left.adjacencyCount -
+            (left.entranceCount > 0 ? 2 : 0);
+          const rightScore =
+            right.areaRatio * 8 +
+            (right.isExteriorFacing ? 2 : 0) +
+            (right.balconyWalls > 0 ? 1.5 : 0) +
+            right.adjacencyCount -
+            (right.entranceCount > 0 ? 2 : 0);
+          return rightScore - leftScore;
+        })[0]
+    : null;
+  if (kitchenCandidate) {
+    assign(kitchenCandidate.roomId, "kitchen");
+  }
+
+  const kitchenRoomId = [...assignments.entries()].find(([, roomType]) => roomType === "kitchen")?.[0] ?? null;
+  if (kitchenRoomId) {
+    unassigned()
+      .filter(
+        (feature) =>
+          feature.connectedRoomIds.has(kitchenRoomId) &&
+          feature.areaRatio <= 0.26 &&
+          feature.isExteriorFacing &&
+          !feature.isElongated &&
+          feature.adjacencyCount <= 1 &&
+          feature.entranceCount === 0
+      )
+      .sort((left, right) => left.area - right.area)
+      .forEach((feature) => assign(feature.roomId, "utility"));
+
+    unassigned()
+      .filter(
+        (feature) =>
+          feature.connectedRoomIds.has(kitchenRoomId) &&
+          feature.areaRatio <= 0.14 &&
+          !feature.isExteriorFacing &&
+          feature.adjacencyCount <= 1
+      )
+      .sort((left, right) => left.area - right.area)
+      .forEach((feature) => assign(feature.roomId, "pantry"));
+  }
+
+  unassigned()
+    .filter(
+      (feature) =>
+        feature.areaRatio >= 0.2 &&
+        feature.areaRatio <= 0.72 &&
+        (feature.isExteriorFacing || feature.adjacencyCount <= 2)
+    )
+    .sort((left, right) => right.area - left.area)
+    .forEach((feature) => assign(feature.roomId, "bedroom"));
+
+  const bedroomIds = [...assignments.entries()]
+    .filter(([, roomType]) => roomType === "bedroom")
+    .map(([roomId]) => roomId);
+
+  unassigned()
+    .filter(
+      (feature) =>
+        feature.areaRatio <= 0.16 &&
+        !feature.isExteriorFacing &&
+        [...feature.connectedRoomIds].some((roomId) => bedroomIds.includes(roomId))
+    )
+    .sort((left, right) => left.area - right.area)
+    .forEach((feature) => assign(feature.roomId, "dress_room"));
+
+  unassigned()
+    .filter((feature) => feature.areaRatio <= 0.18 && feature.isExteriorFacing)
+    .sort((left, right) => left.area - right.area)
+    .forEach((feature) => assign(feature.roomId, "service_area"));
+
+  return baseRooms.map((room) => {
+    const feature = features.find((entry) => entry.roomId === room.id)!;
+    const roomType = assignments.get(room.id) ?? "other";
+    const connectedTypes = [...feature.connectedRoomIds]
+      .map((roomId) => getAssignedType(roomId))
+      .filter((value): value is RoomType => Boolean(value));
+
+    const refinedRoomType =
+      roomType === "other" && connectedTypes.includes("living_room") && feature.areaRatio >= 0.16 && feature.areaRatio <= 0.42
+        ? "dining"
+        : roomType === "other" && connectedTypes.includes("kitchen") && feature.areaRatio <= 0.16 && !feature.isExteriorFacing
+          ? "pantry"
+          : roomType === "other" && connectedTypes.includes("bedroom") && feature.areaRatio <= 0.16
+            ? "dress_room"
+            : roomType;
+
+    const estimatedUsage: RoomUsage = ["living_room", "kitchen", "dining"].includes(refinedRoomType)
+      ? "primary"
+      : ["bathroom", "utility", "service_area"].includes(refinedRoomType)
+        ? "service"
+        : "secondary";
+
+    const estimatedCeilingHeight =
+      refinedRoomType === "bathroom"
+        ? 2.55
+        : refinedRoomType === "balcony"
+          ? 2.45
+          : ["foyer", "corridor", "utility", "service_area"].includes(refinedRoomType)
+            ? 2.65
+            : 2.8;
+
+    return {
+      ...room,
+      roomType: refinedRoomType,
+      label: humanizeRoomType(refinedRoomType),
+      centroid: room.centroid,
+      openingIds: [...feature.openingIds].sort(),
+      connectedRoomIds: [...feature.connectedRoomIds].sort(),
+      estimatedCeilingHeight,
+      estimatedUsage,
+      isExteriorFacing: feature.isExteriorFacing
+    };
+  });
+}
+
+function buildFloorZones(rooms: RoomPolygon[]): FloorZone[] {
+  return rooms.map((room) => ({
+    id: `floor-${room.id}`,
+    roomId: room.id,
+    outline: room.polygon,
+    materialId: null,
+    roomType: room.roomType
+  }));
+}
+
+function buildCeilingZones(rooms: RoomPolygon[]): CeilingZone[] {
+  return rooms.map((room) => ({
+    id: `ceiling-${room.id}`,
+    roomId: room.id,
+    outline: room.polygon,
+    materialId: null,
+    roomType: room.roomType,
+    height: room.estimatedCeilingHeight
+  }));
+}
+
+function lerpPoint(from: Vec2, to: Vec2, ratio: number): Vec2 {
+  return [from[0] + (to[0] - from[0]) * ratio, from[1] + (to[1] - from[1]) * ratio];
+}
+
+function buildCameraAnchors(rooms: RoomPolygon[], roomAdjacency: RoomAdjacency[], openings: TopologyOpening[], exteriorShell: Vec2[]) {
+  const largestRoom = [...rooms].sort((left, right) => right.area - left.area)[0] ?? null;
+  const anchors: CameraAnchor[] = rooms.map((room) => ({
+    id: `anchor-room-${room.id}`,
+    kind: "room_center",
+    roomId: room.id,
+    openingId: null,
+    planPosition: room.centroid,
+    targetPlanPosition: room.centroid,
+    height: Math.min(room.estimatedCeilingHeight * 0.68, 1.65)
+  }));
+
+  const entranceAdjacency = roomAdjacency.find((entry) => entry.relation === "entrance");
+  const entranceOpening =
+    (entranceAdjacency ? openings.find((opening) => opening.id === entranceAdjacency.openingId) : null) ??
+    openings.find((opening) => opening.isEntrance);
+  const entranceRoomId = entranceAdjacency?.fromRoomId ?? entranceAdjacency?.toRoomId ?? null;
+  const entranceRoom = entranceRoomId ? rooms.find((room) => room.id === entranceRoomId) ?? null : null;
+  if (entranceOpening) {
+    const fallbackTarget = entranceRoom?.centroid ?? polygonCentroid(exteriorShell.length >= 3 ? exteriorShell : rooms.map((room) => room.centroid));
+    anchors.unshift({
+      id: "anchor-entrance",
+      kind: "entrance",
+      roomId: entranceRoom?.id ?? null,
+      openingId: entranceOpening.id,
+      planPosition: entranceRoom ? lerpPoint(entranceOpening.position, entranceRoom.centroid, 0.2) : entranceOpening.position,
+      targetPlanPosition: fallbackTarget,
+      height: 1.6
+    });
+  }
+
+  const overviewCenter =
+    largestRoom?.centroid ??
+    (exteriorShell.length >= 3 ? polygonCentroid(exteriorShell) : ([0, 0] as Vec2));
+  anchors.push({
+    id: "anchor-overview",
+    kind: "overview",
+    roomId: largestRoom?.id ?? null,
+    openingId: null,
+    planPosition: overviewCenter,
+    targetPlanPosition: overviewCenter,
+    height: 1.75
+  });
+
+  return anchors;
+}
+
+function buildNavGraph(rooms: RoomPolygon[], roomAdjacency: RoomAdjacency[], cameraAnchors: CameraAnchor[]) {
+  const roomNodes: NavNode[] = rooms.map((room) => ({
+    id: `nav-room-${room.id}`,
+    roomId: room.id,
+    kind: "room_center",
+    planPosition: room.centroid
+  }));
+
+  const entranceAnchor = cameraAnchors.find((anchor) => anchor.kind === "entrance");
+  const entranceNode: NavNode[] = entranceAnchor
+    ? [
+        {
+          id: "nav-entrance",
+          roomId: entranceAnchor.roomId,
+          kind: "entrance",
+          planPosition: entranceAnchor.planPosition
+        }
+      ]
+    : [];
+
+  const roomNodeIds = new Map(roomNodes.map((node) => [node.roomId, node.id] as const));
+  const edges = roomAdjacency.reduce<NavEdge[]>((accumulator, adjacency) => {
+    if (adjacency.relation === "window") {
+      return accumulator;
+    }
+
+    if (adjacency.relation === "entrance" && entranceAnchor) {
+      const roomId = adjacency.fromRoomId ?? adjacency.toRoomId;
+      const roomNodeId = roomId ? roomNodeIds.get(roomId) : null;
+      if (roomNodeId) {
+        accumulator.push({
+          id: `edge-${adjacency.id}`,
+          fromNodeId: "nav-entrance",
+          toNodeId: roomNodeId,
+          relation: "entrance",
+          openingId: adjacency.openingId
+        });
+      }
+      return accumulator;
+    }
+
+    if (!adjacency.fromRoomId || !adjacency.toRoomId) {
+      return accumulator;
+    }
+
+    const fromNodeId = roomNodeIds.get(adjacency.fromRoomId);
+    const toNodeId = roomNodeIds.get(adjacency.toRoomId);
+    if (!fromNodeId || !toNodeId) {
+      return accumulator;
+    }
+
+    accumulator.push({
+      id: `edge-${adjacency.id}`,
+      fromNodeId,
+      toNodeId,
+      relation: adjacency.relation === "passage" ? "passage" : "door",
+      openingId: adjacency.openingId
+    });
+    return accumulator;
+  }, []);
+
+  const dedupedEdges = edges.filter(
+    (edge, index, collection) => collection.findIndex((candidate) => candidate.id === edge.id) === index
+  );
+
+  return {
+    nodes: [...entranceNode, ...roomNodes],
+    edges: dedupedEdges
+  };
+}
+
+export function buildGeometry(topology: { walls: TopologyWall[]; openings: TopologyOpening[]; scale: number }): GeometryBuildResult {
   const wallCoordinates = topology.walls.map((wall) => ({
     id: wall.id,
     start: wall.start,
@@ -318,14 +952,23 @@ export function buildGeometry(topology: { walls: TopologyWall[]; openings: Topol
 
   const { points, adjacency } = buildAdjacencyGraph(topology.walls);
   const loops = dedupeAndFilterLoops(buildLoops(points, adjacency));
-  const { exteriorShell, roomPolygons } = deriveRoomPolygons(loops);
-  const roomAdjacency = buildRoomAdjacency(roomPolygons, topology.walls, topology.openings);
+  const { exteriorShell, roomPolygons: baseRoomPolygons } = deriveRoomPolygons(loops);
+  const roomAdjacency = buildRoomAdjacency(baseRoomPolygons as RoomPolygon[], topology.walls, topology.openings);
+  const roomPolygons = classifyRooms(baseRoomPolygons, roomAdjacency, topology.walls);
+  const floorZones = buildFloorZones(roomPolygons);
+  const ceilingZones = buildCeilingZones(roomPolygons);
+  const cameraAnchors = buildCameraAnchors(roomPolygons, roomAdjacency, topology.openings, exteriorShell);
+  const navGraph = buildNavGraph(roomPolygons, roomAdjacency, cameraAnchors);
 
   return {
     wallCoordinates,
     roomPolygons,
     exteriorShell,
     roomAdjacency,
+    floorZones,
+    ceilingZones,
+    cameraAnchors,
+    navGraph,
     scale: topology.scale
   };
 }

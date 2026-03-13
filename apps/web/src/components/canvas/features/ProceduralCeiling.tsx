@@ -36,6 +36,7 @@ export default function ProceduralCeiling() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const walls = useSceneStore((state) => state.walls);
   const floors = useSceneStore((state) => state.floors);
+  const ceilings = useSceneStore((state) => state.ceilings);
   const scale = useSceneStore((state) => state.scale);
 
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
@@ -43,10 +44,33 @@ export default function ProceduralCeiling() {
   const fallbackShape = useMemo(() => buildFallbackShape(bounds), [bounds]);
   const shape = exterior?.shape ?? fallbackShape;
   const wallHeight = useMemo(() => {
+    if (ceilings.length > 0) {
+      return ceilings.reduce((max, ceiling) => Math.max(max, ceiling.height || DEFAULT_HEIGHT), DEFAULT_HEIGHT);
+    }
     if (walls.length === 0) return DEFAULT_HEIGHT;
     return walls.reduce((max, wall) => Math.max(max, wall.height || DEFAULT_HEIGHT), DEFAULT_HEIGHT);
-  }, [walls]);
+  }, [ceilings, walls]);
   const geometries = useMemo(() => {
+    if (ceilings.length > 0) {
+      return ceilings
+        .map((ceiling) => {
+          if (!Array.isArray(ceiling.outline) || ceiling.outline.length < 3) return null;
+          const floorShape = new THREE.Shape();
+          floorShape.moveTo(ceiling.outline[0]![0] * scale, ceiling.outline[0]![1] * scale);
+          for (let index = 1; index < ceiling.outline.length; index += 1) {
+            floorShape.lineTo(ceiling.outline[index]![0] * scale, ceiling.outline[index]![1] * scale);
+          }
+          floorShape.closePath();
+          const geometry = new THREE.ShapeGeometry(floorShape);
+          geometry.rotateX(Math.PI / 2);
+          return {
+            id: ceiling.id,
+            geometry
+          };
+        })
+        .filter((entry): entry is { id: string; geometry: THREE.ShapeGeometry } => Boolean(entry));
+    }
+
     if (floors.length > 0) {
       return floors
         .map((floor) => {
@@ -70,7 +94,7 @@ export default function ProceduralCeiling() {
     const geo = new THREE.ShapeGeometry(shape);
     geo.rotateX(Math.PI / 2);
     return [{ id: "fallback-ceiling", geometry: geo }];
-  }, [floors, scale, shape]);
+  }, [ceilings, floors, scale, shape]);
 
   useEffect(() => {
     return () => {

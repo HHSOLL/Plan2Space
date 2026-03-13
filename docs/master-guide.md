@@ -10,6 +10,8 @@
 - Worker 후보 선택 전 wall/opening/scale 정규화로 노이즈를 줄인 뒤 스코어링한다.
 - 상용화 기준 canonical truth는 `scene`이 아니라 `geometry revision`이다.
 - 프로젝트는 항상 `source_layout_revision_id`에 pin된다.
+- 상용 수준 3D 맵 생성은 renderer 교체보다 `geometry reconstruction -> scene derived artifacts -> frontend consumption` 순서로 고도화한다.
+- 외부 부동산 서비스 이미지는 자동 수집/재배포하지 않고, 권리 보유 사용자 업로드 또는 허가된 source만 intake에 사용한다.
 
 ## 운영 프로토콜 (필수)
 - 작업 시작 전 `AGENTS.md`의 Must Read 문서를 순서대로 확인한다.
@@ -106,6 +108,7 @@ Queue는 Supabase Postgres(`claim_jobs` + `FOR UPDATE SKIP LOCKED`) 기반으로
 - `docs/specs/intake-job-state-machine-v4.md`
 - `docs/specs/geometry-canonicalization-hash-v4.md`
 - `docs/specs/typed-patch-promotion-withdrawal-v4.md`
+- `docs/specs/3d-map-commercial-roadmap.md`
 
 ## 2026-03-05 변경 동기화 (Railway Immediate Cutover)
 Added:
@@ -172,3 +175,16 @@ Updated:
 
 Removed/Deprecated:
 - Next.js `/api/assets/generate` 동기/폴링 혼합 처리 경로.
+
+## 2026-03-13 변경 동기화 (Commercial 3D Map Derived Scene V2)
+Added:
+- worker가 `rooms`, `floors`, `ceilings`, `navGraph`, `cameraAnchors`를 geometry 기준으로 파생 생성하는 규칙.
+- `docs/specs/3d-map-commercial-roadmap.md`를 3D 맵 상용화 기준 문서로 추가.
+
+Updated:
+- Walk mode 초기 진입점은 wall/door heuristic보다 revision-derived entrance anchor를 우선 사용.
+- 한국 아파트형 컬러 채움 평면도 대응을 위해 worker multi-pass 전처리에 `filled_plan` 프로파일을 포함한다.
+
+Removed/Deprecated:
+- renderer 교체를 3D 맵 상용화의 주된 해결책으로 보는 접근.
+- 외부 listing gallery URL을 서비스가 직접 크롤링해 catalog/benchmark source로 삼는 접근.

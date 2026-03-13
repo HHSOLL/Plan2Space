@@ -185,10 +185,13 @@ export default function ProjectEditorPage() {
         scaleInfo: parseScaleInfo(mapped.scaleInfo, mapped.scale),
         walls: mapped.walls,
         openings: mapped.openings,
-        floors: mapped.floors
+        floors: mapped.floors,
+        ceilings: mapped.ceilings,
+        rooms: mapped.rooms,
+        cameraAnchors: mapped.cameraAnchors,
+        navGraph: mapped.navGraph
       });
-      const entrance = mapped.openings.find((opening) => opening.isEntrance);
-      useSceneStore.setState({ entranceId: entrance?.id ?? null });
+      useSceneStore.setState({ entranceId: mapped.entranceId });
       setAnalysisRecovery(null);
     },
     [setScene]

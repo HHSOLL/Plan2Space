@@ -135,10 +135,10 @@ export async function processFloorplanJob(job: JobRow) {
       geometryHash: revisionArtifacts.geometryHash,
       geometrySchemaVersion: 1,
       repairEngineVersion: "v4-room-repair",
-      sceneBuilderVersion: "scene-v2",
+      sceneBuilderVersion: "scene-v2-commercial",
       derivedSceneJson: sceneJson,
-      derivedNavJson: {},
-      derivedCameraJson: {},
+      derivedNavJson: revisionArtifacts.derivedNavJson,
+      derivedCameraJson: revisionArtifacts.derivedCameraJson,
       derivedFromGeometryHash: revisionArtifacts.geometryHash,
       metadata: {
         floorplanId: payload.floorplanId,
