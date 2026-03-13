@@ -3,16 +3,28 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Check, Loader2, Copy } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useProjectStore } from "../../lib/stores/useProjectStore";
 import { useSceneStore } from "../../lib/stores/useSceneStore";
 import { saveProject } from "../../lib/api/project";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { FloorplanEditor } from "../editor/FloorplanEditor";
 import { createUnknownScaleInfo, getScaleGateMessage, parseScaleInfo } from "../../lib/ai/scaleInfo";
-import { createFloorplanPipelineJob, fetchFloorplanResult } from "../../features/floorplan/upload";
+import {
+    CatalogCandidate,
+    completeIntakeReview,
+    fetchLayoutRevision,
+    finalizeIntakeProject,
+    runCatalogIntakeFlow,
+    runUploadIntakeFlow,
+    selectIntakeCandidate
+} from "../../features/floorplan/upload";
 import { pollJobUntilTerminal } from "../../features/floorplan/job-polling";
-import { mapFloorplanResultToScene } from "../../features/floorplan/result-mapper";
+import {
+    buildSyntheticFloorplanPreview,
+    mapFloorplanResultToScene,
+    mapLayoutRevisionToScene,
+    type MappedSceneResult
+} from "../../features/floorplan/result-mapper";
 
 interface NewProjectModalProps {
     isOpen: boolean;
@@ -44,14 +56,15 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
     const [catalogApartmentName, setCatalogApartmentName] = useState("");
     const [catalogTypeName, setCatalogTypeName] = useState("");
     const [catalogRegion, setCatalogRegion] = useState("");
-    const [draftProjectId, setDraftProjectId] = useState<string | null>(null);
+    const [activeIntakeSessionId, setActiveIntakeSessionId] = useState<string | null>(null);
+    const [reviewRequired, setReviewRequired] = useState(false);
+    const [catalogCandidates, setCatalogCandidates] = useState<CatalogCandidate[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const lastUploadedFileRef = useRef<File | null>(null);
-    const hasCommittedRef = useRef(false);
-    const { createProject, updateProject, deleteProject } = useProjectStore();
     const {
         walls,
         openings,
+        floors,
         assets,
         scale,
         scaleInfo,
@@ -59,6 +72,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         floorMaterialIndex,
         setWalls,
         setOpenings,
+        setFloors,
         setScale,
         resetScene
     } = useSceneStore();
@@ -74,9 +88,10 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         setCatalogApartmentName("");
         setCatalogTypeName("");
         setCatalogRegion("");
-        setDraftProjectId(null);
+        setActiveIntakeSessionId(null);
+        setReviewRequired(false);
+        setCatalogCandidates([]);
         lastUploadedFileRef.current = null;
-        hasCommittedRef.current = false;
     }, [isOpen, resetScene]);
 
     const readFileAsDataUrl = (file: File) =>
@@ -92,19 +107,6 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         const payload = (error as { payload?: unknown }).payload;
         if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
         return payload as RecoverablePayload;
-    };
-
-    const ensureDraftProject = async () => {
-        if (draftProjectId) return draftProjectId;
-        if (!name.trim()) {
-            throw new Error("Project name is required before analysis.");
-        }
-        const draft = await createProject({
-            name: name.trim(),
-            description: "AI topology verified"
-        });
-        setDraftProjectId(draft.id);
-        return draft.id;
     };
 
     const createPlaceholderFloorplanDataUrl = () => {
@@ -138,10 +140,13 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         return canvas.toDataURL("image/png");
     };
 
-    const applyResultToEditor = (result: Awaited<ReturnType<typeof fetchFloorplanResult>>) => {
-        const mapped = mapFloorplanResultToScene(result);
+    const applyMappedScene = (mapped: MappedSceneResult, nextImage?: string | null) => {
+        if (typeof nextImage === "string") {
+            setImage(nextImage);
+        }
         setWalls(mapped.walls);
         setOpenings(mapped.openings);
+        setFloors(mapped.floors);
         const normalizedScale = typeof mapped.scale === "number" && mapped.scale > 0 ? mapped.scale : 1;
         const nextScaleInfo = parseScaleInfo(mapped.scaleInfo, normalizedScale);
         setScale(normalizedScale, nextScaleInfo);
@@ -152,6 +157,15 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         }
     };
 
+    const applyLayoutRevisionToEditor = async (layoutRevisionId: string) => {
+        const revision = await fetchLayoutRevision(layoutRevisionId);
+        const mapped = mapLayoutRevisionToScene(revision);
+        const preview = buildSyntheticFloorplanPreview(mapped) ?? createPlaceholderFloorplanDataUrl();
+        applyMappedScene(mapped, preview);
+        setStep("edit");
+        setAnalysisRecovery(null);
+    };
+
     const runPipelineAnalysis = async (file: File) => {
         if (!file.type.startsWith("image/")) {
             throw new Error("Image upload only (PNG/JPEG).");
@@ -160,30 +174,33 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         const preview = await readFileAsDataUrl(file);
         setImage(preview);
         lastUploadedFileRef.current = file;
+        setCatalogCandidates([]);
 
-        const projectId = await ensureDraftProject();
-        const { jobId, floorplanId } = await createFloorplanPipelineJob(projectId, file);
-        const job = await pollJobUntilTerminal(jobId, {
-            intervalMs: 1200,
-            timeoutMs: 300000
+        const outcome = await runUploadIntakeFlow({
+            file,
+            apartmentName: catalogApartmentName,
+            typeName: catalogTypeName,
+            region: catalogRegion,
+            pollJobUntilTerminal
         });
 
-        if (job.status !== "succeeded") {
-            const details = job.details || job.error || "AI analysis failed.";
-            setWalls([]);
-            setOpenings([]);
-            setScale(1, createUnknownScaleInfo(1, details));
-            setAnalysisRecovery({
-                message: details,
-                providerErrors: Array.isArray(job.providerErrors) ? job.providerErrors : [],
-                errorCode: job.errorCode ?? null
-            });
-            setStep("edit");
-            throw new Error(details);
+        setActiveIntakeSessionId(outcome.session.id);
+
+        if (outcome.kind === "reused") {
+            setReviewRequired(false);
+            await applyLayoutRevisionToEditor(outcome.layoutRevisionId);
+            return;
         }
 
-        const result = await fetchFloorplanResult(floorplanId);
-        applyResultToEditor(result);
+        if (outcome.kind === "disambiguation_required") {
+            setReviewRequired(false);
+            setCatalogCandidates(outcome.candidates);
+            toast.message("Verified layout candidates found. Select one to continue.");
+            return;
+        }
+
+        setReviewRequired(outcome.reviewRequired);
+        applyMappedScene(mapFloorplanResultToScene(outcome.result), preview);
         setAnalysisRecovery(null);
         setStep("edit");
     };
@@ -198,12 +215,9 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         } catch (error) {
             const payload = resolveErrorPayload(error);
             const message = payload?.details || payload?.error || (error instanceof Error ? error.message : "AI analysis failed.");
-            if (message === "Project name is required before analysis.") {
-                toast.error(message);
-                return;
-            }
             setWalls([]);
             setOpenings([]);
+            setFloors([]);
             setScale(1, createUnknownScaleInfo(1, message));
             setAnalysisRecovery({
                 message,
@@ -222,33 +236,64 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
             toast.error("Apartment name and type are required.");
             return;
         }
-        const placeholder = createPlaceholderFloorplanDataUrl();
-        if (placeholder) {
-            setImage(placeholder);
-        }
         setIsAnalyzing(true);
-        setStep("edit");
+        setCatalogCandidates([]);
         setAnalysisRecovery(null);
         try {
-            const details = "Template catalog lookup is disabled during Railway cutover. Upload a floorplan image instead.";
-            setWalls([]);
-            setOpenings([]);
-            setScale(1, createUnknownScaleInfo(1, details));
-            setAnalysisRecovery({
-                message: details,
-                providerErrors: [],
-                errorCode: "CATALOG_NOT_AVAILABLE"
+            const outcome = await runCatalogIntakeFlow({
+                apartmentName: catalogApartmentName,
+                typeName: catalogTypeName,
+                region: catalogRegion
             });
-            toast.error(details);
+
+            setActiveIntakeSessionId(outcome.session.id);
+
+            if (outcome.kind === "reused") {
+                setReviewRequired(false);
+                await applyLayoutRevisionToEditor(outcome.layoutRevisionId);
+                return;
+            }
+
+            setReviewRequired(false);
+            setCatalogCandidates(outcome.candidates);
+            const placeholder = createPlaceholderFloorplanDataUrl();
+            if (placeholder) {
+                setImage(placeholder);
+            }
+            toast.message("Multiple verified layouts matched. Select the right variant.");
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Template lookup failed.";
+            const payload = resolveErrorPayload(error);
+            const message = payload?.details || payload?.error || (error instanceof Error ? error.message : "Template lookup failed.");
             setWalls([]);
             setOpenings([]);
+            setFloors([]);
             setScale(1, createUnknownScaleInfo(1, message));
             setAnalysisRecovery({
                 message,
-                providerErrors: []
+                providerErrors: Array.isArray(payload?.providerErrors) ? payload.providerErrors : [],
+                errorCode: payload?.errorCode ?? null
             });
+            toast.error(message);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleSelectCandidate = async (layoutRevisionId: string) => {
+        if (!activeIntakeSessionId) {
+            toast.error("Candidate selection session expired. Retry the search.");
+            return;
+        }
+
+        setIsAnalyzing(true);
+        try {
+            await selectIntakeCandidate(activeIntakeSessionId, layoutRevisionId);
+            setCatalogCandidates([]);
+            setReviewRequired(false);
+            await applyLayoutRevisionToEditor(layoutRevisionId);
+            toast.success("Verified layout loaded.");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Failed to select layout candidate.";
             toast.error(message);
         } finally {
             setIsAnalyzing(false);
@@ -269,20 +314,35 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
             toast.error(scaleGateMessage);
             return;
         }
+        if (!activeIntakeSessionId) {
+            toast.error("Initialize an intake session by uploading or selecting a verified layout.");
+            return;
+        }
         setIsAnalyzing(true);
         try {
-            const projectId = draftProjectId ?? (await ensureDraftProject());
-            await updateProject(projectId, {
+            let resolvedSessionId = activeIntakeSessionId;
+            if (reviewRequired) {
+                const reviewed = await completeIntakeReview(activeIntakeSessionId);
+                resolvedSessionId = reviewed.id;
+                setActiveIntakeSessionId(reviewed.id);
+                setReviewRequired(false);
+            }
+            const project = await finalizeIntakeProject(resolvedSessionId, {
                 name: name.trim(),
                 description: "AI topology verified"
             });
+            const projectId = typeof project.id === "string" ? project.id : null;
+            if (!projectId) {
+                throw new Error("Finalized project id is missing.");
+            }
             try {
                 await saveProject(projectId, {
                     topology: {
                         scale,
                         scaleInfo,
                         walls,
-                        openings
+                        openings,
+                        floors
                     },
                     assets,
                     materials: {
@@ -297,7 +357,6 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                 const message = error instanceof Error ? error.message : "Cloud save failed.";
                 toast.error(message);
             }
-            hasCommittedRef.current = true;
             onCreated?.();
             onClose();
             router.push(`/project/${projectId}`);
@@ -352,19 +411,13 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         const message = analysisRecovery?.message ?? "Continue in manual 2D correction mode.";
         setWalls([]);
         setOpenings([]);
+        setFloors([]);
         setScale(1, createUnknownScaleInfo(1, message));
         setStep("edit");
         toast.message("Manual correction mode enabled.");
     };
 
     const handleClose = async () => {
-        if (draftProjectId && !hasCommittedRef.current) {
-            try {
-                await deleteProject(draftProjectId);
-            } catch (error) {
-                console.warn("[new-project-modal] failed to clean up draft project", error);
-            }
-        }
         onClose();
     };
 
@@ -477,6 +530,43 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                                                 Find Template
                                             </button>
                                         </div>
+                                        {catalogCandidates.length > 0 && (
+                                            <div className="space-y-2 border-t border-[#e5e5e0] pt-4">
+                                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#8b8b84]">
+                                                    Select Verified Layout
+                                                </p>
+                                                <div className="grid gap-2">
+                                                    {catalogCandidates.map((candidate) => (
+                                                        <button
+                                                            key={candidate.layoutRevisionId ?? `${candidate.apartmentName}-${candidate.typeName}-${candidate.variantLabel ?? ""}`}
+                                                            type="button"
+                                                            onClick={() => void handleSelectCandidate(candidate.layoutRevisionId ?? "")}
+                                                            disabled={isAnalyzing || !candidate.layoutRevisionId}
+                                                            className="flex items-center justify-between rounded-sm border border-[#e5e5e0] bg-white px-4 py-3 text-left transition-colors hover:border-black disabled:opacity-40"
+                                                        >
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-black">
+                                                                    {candidate.apartmentName} {candidate.typeName}
+                                                                </p>
+                                                                <p className="text-[10px] text-[#6b6b64]">
+                                                                    {[candidate.region, candidate.areaLabel, candidate.variantLabel].filter(Boolean).join(" • ")}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#999999]">
+                                                                    Match {(candidate.matchScore * 100).toFixed(0)}%
+                                                                </p>
+                                                                {candidate.verified && (
+                                                                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-600">
+                                                                        Verified
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {isAnalyzing && (
@@ -513,7 +603,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                                             disabled={isAnalyzing}
                                             className="w-full sm:w-auto px-6 py-3 bg-black text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-stone-800 transition-all disabled:opacity-50"
                                         >
-                                            {isAnalyzing ? "CREATING..." : "CREATE PROJECT"}
+                                            {isAnalyzing ? "CREATING..." : reviewRequired ? "REVIEW & CREATE" : "CREATE PROJECT"}
                                         </button>
                                     </div>
                                 </div>

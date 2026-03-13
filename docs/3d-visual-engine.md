@@ -36,3 +36,22 @@
 - 렌더 루프 안에서 API 호출/상태 업데이트 금지
 - 텍스처 해상도는 기본 1K~2K 권장
 - Post FX는 모바일에서 최소화
+
+## Geometry Consumption Rules
+- `apps/web/src/components/canvas/features/ProceduralFloor.tsx`
+  - revision/result에서 내려온 `floors[]`를 우선 렌더링한다.
+  - `floors[]`가 없을 때만 exterior polygon heuristic으로 폴백한다.
+- `apps/web/src/components/canvas/features/ProceduralCeiling.tsx`
+  - floor polygon과 동일한 규칙으로 천장을 생성한다.
+- `apps/web/src/features/floorplan/result-mapper.ts`
+  - `layout_revisions.geometry_json`과 `derived_scene_json`를 scene store로 매핑할 때 room/floor 정보를 유지한다.
+
+## 2026-03-12 변경 동기화 (Revision-Derived Floors)
+Added:
+- revision-derived `floors[]` 기반 바닥/천장 렌더링 우선 규칙.
+
+Updated:
+- floor/ceiling 생성 기준을 exterior loop heuristic 단독에서 `revision floors -> exterior fallback` 순서로 변경.
+
+Removed/Deprecated:
+- wall 외곽선만으로 floor/ceiling을 항상 재구성하는 단일 경로.

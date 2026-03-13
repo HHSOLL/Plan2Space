@@ -10,3 +10,5 @@ coverage
 apps/web/.cache
 apps/web/.vercel
 vercel-labs
+.vercel
+supabase/.temp

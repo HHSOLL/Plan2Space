@@ -5,10 +5,14 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./catalog": "./src/catalog.ts",
     "./projects": "./src/projects.ts",
     "./floorplans": "./src/floorplans.ts",
+    "./intake": "./src/intake.ts",
     "./jobs": "./src/jobs.ts",
-    "./scenes": "./src/scenes.ts"
+    "./revisions": "./src/revisions.ts",
+    "./scenes": "./src/scenes.ts",
+    "./assets": "./src/assets.ts"
   },
   "dependencies": {
     "zod": "^4.2.1"

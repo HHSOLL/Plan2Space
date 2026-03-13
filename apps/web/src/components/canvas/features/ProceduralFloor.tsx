@@ -40,6 +40,7 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 export default function ProceduralFloor() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const walls = useSceneStore((state) => state.walls);
+  const floors = useSceneStore((state) => state.floors);
   const scale = useSceneStore((state) => state.scale);
   const floorMaterialIndex = useSceneStore((state) => state.floorMaterialIndex);
   const setFloorMaterialIndex = useSceneStore((state) => state.setFloorMaterialIndex);
@@ -76,14 +77,37 @@ export default function ProceduralFloor() {
   const width = Math.max(1, shapeBounds.maxX - shapeBounds.minX);
   const depth = Math.max(1, shapeBounds.maxY - shapeBounds.minY);
 
-  const geometry = useMemo(() => {
+  const geometries = useMemo(() => {
+    if (floors.length > 0) {
+      return floors
+        .map((floor) => {
+          if (!Array.isArray(floor.outline) || floor.outline.length < 3) return null;
+          const floorShape = new THREE.Shape();
+          floorShape.moveTo(floor.outline[0]![0] * scale, floor.outline[0]![1] * scale);
+          for (let index = 1; index < floor.outline.length; index += 1) {
+            floorShape.lineTo(floor.outline[index]![0] * scale, floor.outline[index]![1] * scale);
+          }
+          floorShape.closePath();
+          const geometry = new THREE.ShapeGeometry(floorShape);
+          geometry.rotateX(Math.PI / 2);
+          if (geometry.attributes.uv) {
+            geometry.setAttribute("uv2", geometry.attributes.uv.clone());
+          }
+          return {
+            id: floor.id,
+            geometry
+          };
+        })
+        .filter((entry): entry is { id: string; geometry: THREE.ShapeGeometry } => Boolean(entry));
+    }
+
     const geo = new THREE.ShapeGeometry(shape);
     geo.rotateX(Math.PI / 2);
     if (geo.attributes.uv) {
       geo.setAttribute("uv2", geo.attributes.uv.clone());
     }
-    return geo;
-  }, [shape]);
+    return [{ id: "fallback-floor", geometry: geo }];
+  }, [floors, scale, shape]);
 
   const textureSources = useMemo(() => {
     const pickTexture = (id: string) => manifest.find((entry) => entry.id === id)?.maps ?? {};
@@ -166,8 +190,10 @@ export default function ProceduralFloor() {
   }, [textures]);
 
   useEffect(() => {
-    return () => geometry.dispose();
-  }, [geometry]);
+    return () => {
+      geometries.forEach((entry) => entry.geometry.dispose());
+    };
+  }, [geometries]);
 
   useEffect(() => {
     return () => {
@@ -178,16 +204,17 @@ export default function ProceduralFloor() {
   const activeMaterial = materials[floorMaterialIndex % materials.length];
 
   return (
-    <mesh
-      name="floor"
-      geometry={geometry}
-      receiveShadow
+    <group
       onPointerDown={() => {
         if (viewMode !== "top") return;
         setFloorMaterialIndex((floorMaterialIndex + 1) % materials.length);
       }}
     >
-      <primitive object={activeMaterial} attach="material" />
-    </mesh>
+      {geometries.map((entry) => (
+        <mesh key={entry.id} name={`floor:${entry.id}`} geometry={entry.geometry} receiveShadow>
+          <primitive object={activeMaterial} attach="material" />
+        </mesh>
+      ))}
+    </group>
   );
 }

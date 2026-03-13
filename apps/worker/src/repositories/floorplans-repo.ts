@@ -17,7 +17,7 @@ export async function updateFloorplanStatus(floorplanId: string, status: string,
 export async function getFloorplanById(floorplanId: string) {
   const { data, error } = await supabaseService
     .from("floorplans")
-    .select("id, project_id, object_path, mime_type")
+    .select("id, project_id, intake_session_id, object_path, mime_type")
     .eq("id", floorplanId)
     .maybeSingle();
 

@@ -1,6 +1,7 @@
 import os from "node:os";
 import { env } from "./config/env";
-import { claimNextFloorplanJobs } from "./queue/claim-next-job";
+import { claimNextAvailableJobs } from "./queue/claim-next-job";
+import { processAssetGenerationJob } from "./processors/asset-generation-processor";
 import { processFloorplanJob } from "./processors/floorplan-processor";
 
 const workerId = `${os.hostname()}-${process.pid}-${crypto.randomUUID().slice(0, 8)}`;
@@ -13,7 +14,12 @@ function sleep(ms: number) {
 }
 
 function launch(job: any) {
-  const task = processFloorplanJob(job)
+  const processor =
+    job.type === "ASSET_GENERATION"
+      ? processAssetGenerationJob(job)
+      : processFloorplanJob(job);
+
+  const task = processor
     .catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[worker] job ${job.id} failed with unhandled error: ${message}`);
@@ -32,7 +38,7 @@ async function runLoop() {
     try {
       const capacity = Math.max(0, env.WORKER_CONCURRENCY - inFlight.size);
       if (capacity > 0) {
-        const jobs = await claimNextFloorplanJobs(workerId, capacity);
+        const jobs = await claimNextAvailableJobs(workerId, capacity);
         if (jobs.length > 0) {
           jobs.forEach((job) => launch(job));
           continue;

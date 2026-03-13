@@ -1,7 +1,7 @@
 "use client";
 
 import { backendFetch } from "../backend/client";
-import type { Opening, ScaleInfo, SceneAsset, Wall } from "../stores/useSceneStore";
+import type { Floor, Opening, ScaleInfo, SceneAsset, Wall } from "../stores/useSceneStore";
 
 type SaveProjectPayload = {
   topology: {
@@ -9,6 +9,7 @@ type SaveProjectPayload = {
     scaleInfo?: ScaleInfo;
     walls: Wall[];
     openings: Opening[];
+    floors?: Floor[];
   };
   assets: SceneAsset[];
   materials: {

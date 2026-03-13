@@ -34,6 +34,9 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 WORKER_CONCURRENCY=2
 WORKER_POLL_INTERVAL_MS=1000
+ASSET_STORAGE_BUCKET=assets-glb
+ASSET_GENERATION_POLL_INTERVAL_MS=2000
+ASSET_GENERATION_MAX_POLLS=45
 
 FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
 FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
@@ -41,18 +44,33 @@ ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 SNAPTRUDE_API_URL=
 SNAPTRUDE_API_KEY=
+TRIPOSR_API_URL=
+TRIPOSR_API_KEY=
+TRIPOSR_STATUS_URL=
+MESHY_API_URL=
+MESHY_API_KEY=
+MESHY_STATUS_URL=
 ```
 
 중요:
 - AI/provider 키는 Vercel이 아니라 Railway Worker에만 둡니다.
+- asset generation provider 키도 Railway Worker에만 둡니다.
 
 ## 2) Supabase 적용 작업
 - `supabase/migrations/20260305_railway_floorplan_queue.sql` 실행
+- `supabase/migrations/20260311_v4_intake_revision_foundation.sql` 실행
+- `supabase/migrations/20260312120000_v4_finalize_intake_session_resolution_state_fix.sql` 실행
+- `supabase/migrations/20260312143000_asset_generation_jobs_result.sql` 실행
 - 신규 테이블 확인:
   - `floorplans`
   - `jobs`
   - `floorplan_results`
+  - `intake_sessions`
+  - `layout_revisions`
+  - `revision_source_links`
 - `claim_jobs` 함수/권한(service_role) 적용 확인
+- `finalize_intake_session` RPC 적용 확인
+- `finalize_intake_session` RPC가 `resolved_reuse -> reused`, `resolved_generated -> generated`를 유지하는지 확인
 
 ## 3) OAuth/도메인 점검
 - Supabase Auth URL 설정에 실제 배포 도메인만 등록
@@ -60,18 +78,27 @@ SNAPTRUDE_API_KEY=
 - Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
 
 ## 4) 운영 확인 시나리오
-1. 도면 업로드
-2. 잡 생성 확인(`jobs` 상태: queued/running)
-3. 완료 후 `floorplan_results` 생성 확인
-4. 프론트에서 결과 폴링 후 2D/3D 진입 확인
-5. preview 배포 검증:
+1. intake session 생성
+2. 도면 업로드 또는 catalog search
+3. resolution 결과 확인(`resolved_reuse | disambiguation_required | queued`)
+4. 잡 생성 확인(`jobs` 상태: queued/running)
+5. 완료 후 `floorplan_results`와 `layout_revisions` 생성 확인
+6. `review_required` 또는 `resolved_generated` 상태 확인
+7. finalize 후 project가 `source_layout_revision_id`를 가지는지 확인
+8. preview 배포 검증:
    - `npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --expected=https://api-production-473bd.up.railway.app`
+9. 실환경 intake E2E 검증:
+   - `npm --workspace apps/web run e2e:intake -- --api=https://api-production-473bd.up.railway.app`
+10. custom asset generation 경로 검증:
+   - `/v1/assets/generate` 호출 후 `GET /v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
 
 ## 5) 실패 복구 QA
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
 - recoverable 실패 시 2D 보정 전환
 - 복구 배너 액션(`Copy Errors`, `Try AI Again`, `Start Manual`) 동작
 - diagnostics에서 `axisAlignedRatio`, `orphanWallCount`, `selfIntersectionCount`, `scaleEvidenceCompleteness`를 함께 확인
+- generated 결과가 low-confidence이면 `review_required`로 남는지 확인
+- auto-reuse가 잘못되면 `reuse_invalidated` 후 remediation intake가 생성되는지 확인
 
 ## 6) 모바일 QA
 - 390/768/1024 폭에서 핵심 조작(업로드/보정/3D 진입) 가능 여부 점검
@@ -112,3 +139,39 @@ Updated:
 
 Removed/Deprecated:
 - wall/opening 개수만으로 정확도를 판단하는 QA 방식.
+
+## 11) 2026-03-11 변경 동기화 (Commercialization Foundation V4)
+Added:
+- `intake_sessions`, `layout_revisions`, `revision_source_links`, `finalize_intake_session` 운영 확인 항목.
+- project finalize 전 resolution/review 상태 확인 절차.
+- wrong reuse remediation(`reuse_invalidated`) QA 항목.
+
+Updated:
+- 운영 확인 시나리오를 project-first 업로드가 아니라 intake-first 흐름으로 변경.
+
+Removed/Deprecated:
+- 업로드 직후 바로 project를 생성하는 수동 운영 가정.
+
+## 12) 2026-03-12 변경 동기화 (Intake Finalize + Revision Floors)
+Added:
+- finalize RPC 보정 마이그레이션 2종과 상태 복원 확인 절차.
+- revision 기반 `rooms/floors`가 저장되는지 확인하는 운영 체크.
+- 원격 E2E에서 `project.source_layout_revision_id`, `project.resolution_state`, `revision.room_graph_hash`, `revision.derived_scene_json.floors` 확인 항목.
+
+Updated:
+- intake 운영 점검을 `resolve -> review_required/resolved_generated -> finalize`의 exact-once 시나리오까지 포함하도록 확장.
+- Supabase migration history 기준을 `20260305`, `20260311`, `20260312120000`로 정리.
+
+Removed/Deprecated:
+- finalize 성공 여부만 보고 resolution state 정합성을 생략하는 검수 방식.
+
+## 13) 2026-03-12 변경 동기화 (Asset Generation Worker Migration)
+Added:
+- `ASSET_STORAGE_BUCKET`, `TRIPOSR_*`, `MESHY_*`, asset generation poll env를 worker 설정 항목으로 추가.
+- `jobs.result.asset` 기반 custom asset 완료 검수 항목 추가.
+
+Updated:
+- custom asset 생성 운영 경로를 Next route가 아니라 Railway API/worker 기준으로 변경.
+
+Removed/Deprecated:
+- Vercel `/api/assets/generate`에 provider 키를 두고 직접 호출하는 운영 방식.

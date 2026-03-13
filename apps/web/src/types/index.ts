@@ -19,5 +19,3 @@ export interface AuthErrorResponse {
 
 export type { AuthUser } from "./auth";
 export type { Furniture } from "./furniture";
-export type { Project } from "./project";
-export type { RealtimeEvent } from "./realtime";

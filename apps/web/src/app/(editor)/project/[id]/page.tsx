@@ -35,9 +35,21 @@ import { WebGPURenderer } from "three/webgpu";
 import InteractiveDoors from "../../../../components/canvas/features/InteractiveDoors";
 import InteractiveLights from "../../../../components/canvas/features/InteractiveLights";
 import { createUnknownScaleInfo, getScaleGateMessage, parseScaleInfo } from "../../../../lib/ai/scaleInfo";
-import { createFloorplanPipelineJob, fetchFloorplanResult, fetchLatestProjectScene } from "../../../../features/floorplan/upload";
+import {
+  CatalogCandidate,
+  fetchLayoutRevision,
+  fetchLatestProjectScene,
+  runCatalogIntakeFlow,
+  runUploadIntakeFlow,
+  selectIntakeCandidate
+} from "../../../../features/floorplan/upload";
 import { pollJobUntilTerminal } from "../../../../features/floorplan/job-polling";
-import { mapFloorplanResultToScene } from "../../../../features/floorplan/result-mapper";
+import {
+  buildSyntheticFloorplanPreview,
+  mapFloorplanResultToScene,
+  mapLayoutRevisionToScene,
+  type MappedSceneResult
+} from "../../../../features/floorplan/result-mapper";
 
 type AnalysisRecovery = {
   message: string;
@@ -68,6 +80,7 @@ export default function ProjectEditorPage() {
   const scaleInfo = useSceneStore((state) => state.scaleInfo);
   const setWalls = useSceneStore((state) => state.setWalls);
   const setOpenings = useSceneStore((state) => state.setOpenings);
+  const setFloors = useSceneStore((state) => state.setFloors);
   const setScale = useSceneStore((state) => state.setScale);
   const setScene = useSceneStore((state) => state.setScene);
   const resetScene = useSceneStore((state) => state.resetScene);
@@ -84,77 +97,8 @@ export default function ProjectEditorPage() {
   const [catalogApartmentName, setCatalogApartmentName] = useState("");
   const [catalogTypeName, setCatalogTypeName] = useState("");
   const [catalogRegion, setCatalogRegion] = useState("");
-
-  // Load project + latest scene data on mount
-  useEffect(() => {
-    const init = async () => {
-      resetScene();
-      setAnalysisRecovery(null);
-      setImageSrc(null);
-
-      const project = await loadProject(projectId);
-      if (project?.thumbnail) {
-        setImageSrc(project.thumbnail);
-      }
-
-      try {
-        const latestScene = await fetchLatestProjectScene(projectId);
-        if (latestScene.result) {
-          const mapped = mapFloorplanResultToScene({
-            floorplanId: latestScene.result.floorplanId,
-            wallCoordinates: latestScene.result.wallCoordinates,
-            roomPolygons: latestScene.result.roomPolygons,
-            scale: latestScene.result.scale,
-            sceneJson: latestScene.result.sceneJson,
-            diagnostics: latestScene.result.diagnostics
-          });
-
-          setScene({
-            scale: mapped.scale,
-            scaleInfo: parseScaleInfo(mapped.scaleInfo, mapped.scale),
-            walls: mapped.walls,
-            openings: mapped.openings
-          });
-          const entrance = mapped.openings.find((opening) => opening.isEntrance);
-          if (entrance?.id) {
-            useSceneStore.setState({ entranceId: entrance.id });
-          }
-          setViewMode("top");
-          setAnalysisRecovery(null);
-        } else {
-          const metadata = project?.metadata;
-          const floorPlan =
-            metadata && typeof metadata === "object" && !Array.isArray(metadata)
-              ? (metadata as { floorPlan?: { scale?: number; scaleInfo?: unknown; walls?: unknown[]; openings?: unknown[] } }).floorPlan
-              : undefined;
-
-          if (floorPlan && Array.isArray(floorPlan.walls) && floorPlan.walls.length > 0) {
-            const nextScale = typeof floorPlan.scale === "number" && floorPlan.scale > 0 ? floorPlan.scale : 1;
-            const nextScaleInfo = parseScaleInfo(floorPlan.scaleInfo, nextScale);
-            setScene({
-              scale: nextScale,
-              scaleInfo: nextScaleInfo,
-              walls: floorPlan.walls as any,
-              openings: Array.isArray(floorPlan.openings) ? (floorPlan.openings as any) : []
-            });
-            const entrance = Array.isArray(floorPlan.openings)
-              ? (floorPlan.openings as Array<{ id?: string; isEntrance?: boolean }>).find((opening) => opening.isEntrance)
-              : undefined;
-            if (entrance?.id) {
-              useSceneStore.setState({ entranceId: entrance.id });
-            }
-            setViewMode("top");
-          }
-        }
-      } catch (error) {
-        console.warn("[project-editor] latest scene load failed:", error);
-      }
-
-      setIsInitialLoad(false);
-      setReadOnly(false);
-    };
-    void init();
-  }, [loadProject, projectId, resetScene, setReadOnly, setScene, setViewMode]);
+  const [catalogCandidates, setCatalogCandidates] = useState<CatalogCandidate[]>([]);
+  const [activeIntakeSessionId, setActiveIntakeSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const supportsWebGPU = typeof navigator !== "undefined" && Boolean((navigator as any).gpu);
@@ -231,53 +175,140 @@ export default function ProjectEditorPage() {
     return canvas.toDataURL("image/png");
   }, []);
 
+  const applyMappedScene = useCallback(
+    (mapped: MappedSceneResult, nextImage?: string | null) => {
+      if (typeof nextImage === "string") {
+        setImageSrc(nextImage);
+      }
+      setScene({
+        scale: mapped.scale,
+        scaleInfo: parseScaleInfo(mapped.scaleInfo, mapped.scale),
+        walls: mapped.walls,
+        openings: mapped.openings,
+        floors: mapped.floors
+      });
+      const entrance = mapped.openings.find((opening) => opening.isEntrance);
+      useSceneStore.setState({ entranceId: entrance?.id ?? null });
+      setAnalysisRecovery(null);
+    },
+    [setScene]
+  );
+
+  const applyRevisionToEditor = useCallback(
+    async (layoutRevisionId: string) => {
+      const revision = await fetchLayoutRevision(layoutRevisionId);
+      const mapped = mapLayoutRevisionToScene(revision);
+      const preview = buildSyntheticFloorplanPreview(mapped) ?? createPlaceholderFloorplanDataUrl();
+      applyMappedScene(mapped, preview);
+      setViewMode("2d-edit");
+    },
+    [applyMappedScene, createPlaceholderFloorplanDataUrl, setViewMode]
+  );
+
+  // Load project + latest scene data on mount
+  useEffect(() => {
+    const init = async () => {
+      resetScene();
+      setAnalysisRecovery(null);
+      setImageSrc(null);
+
+      const project = await loadProject(projectId);
+      if (project?.thumbnail) {
+        setImageSrc(project.thumbnail);
+      }
+
+      try {
+        const latestScene = await fetchLatestProjectScene(projectId);
+        if (latestScene.result) {
+          const mapped = mapFloorplanResultToScene({
+            floorplanId: latestScene.result.floorplanId,
+            wallCoordinates: latestScene.result.wallCoordinates,
+            roomPolygons: latestScene.result.roomPolygons,
+            scale: latestScene.result.scale,
+            sceneJson: latestScene.result.sceneJson,
+            diagnostics: latestScene.result.diagnostics
+          });
+          applyMappedScene(mapped);
+          setViewMode("top");
+        } else if (project?.source_layout_revision_id) {
+          await applyRevisionToEditor(project.source_layout_revision_id);
+          setViewMode("top");
+        } else {
+          const metadata = project?.metadata;
+          const floorPlan =
+            metadata && typeof metadata === "object" && !Array.isArray(metadata)
+              ? (metadata as { floorPlan?: { scale?: number; scaleInfo?: unknown; walls?: unknown[]; openings?: unknown[]; floors?: unknown[] } }).floorPlan
+              : undefined;
+
+          if (floorPlan && Array.isArray(floorPlan.walls) && floorPlan.walls.length > 0) {
+            const nextScale = typeof floorPlan.scale === "number" && floorPlan.scale > 0 ? floorPlan.scale : 1;
+            const nextScaleInfo = parseScaleInfo(floorPlan.scaleInfo, nextScale);
+            setScene({
+              scale: nextScale,
+              scaleInfo: nextScaleInfo,
+              walls: floorPlan.walls as any,
+              openings: Array.isArray(floorPlan.openings) ? (floorPlan.openings as any) : [],
+              floors: Array.isArray(floorPlan.floors) ? (floorPlan.floors as any) : []
+            });
+            const entrance = Array.isArray(floorPlan.openings)
+              ? (floorPlan.openings as Array<{ id?: string; isEntrance?: boolean }>).find((opening) => opening.isEntrance)
+              : undefined;
+            if (entrance?.id) {
+              useSceneStore.setState({ entranceId: entrance.id });
+            }
+            setViewMode("top");
+          }
+        }
+      } catch (error) {
+        console.warn("[project-editor] latest scene load failed:", error);
+      }
+
+      setIsInitialLoad(false);
+      setReadOnly(false);
+    };
+    void init();
+  }, [applyMappedScene, applyRevisionToEditor, loadProject, projectId, resetScene, setReadOnly, setScene, setViewMode]);
+
   const runAnalysis = useCallback(
     async (file: File) => {
       setIsAnalyzing(true);
       setViewMode("2d-edit");
       setAnalysisRecovery(null);
+      setCatalogCandidates([]);
       try {
         const dataUrl = await readFileAsDataUrl(file);
         setImageSrc(dataUrl);
         lastUploadedFileRef.current = file;
 
-        const { jobId, floorplanId } = await createFloorplanPipelineJob(projectId, file);
-        const job = await pollJobUntilTerminal(jobId, {
-          intervalMs: 1200,
-          timeoutMs: 300000
+        const outcome = await runUploadIntakeFlow({
+          file,
+          apartmentName: catalogApartmentName,
+          typeName: catalogTypeName,
+          region: catalogRegion,
+          inputKind: "remediation",
+          remediationProjectId: projectId,
+          pollJobUntilTerminal
         });
 
-        if (job.status !== "succeeded") {
-          const details = job.details || job.error || "AI analysis failed.";
-          setWalls([]);
-          setOpenings([]);
-          setScale(1, createUnknownScaleInfo(1, details));
-          setAnalysisRecovery({
-            message: details,
-            providerErrors: Array.isArray(job.providerErrors) ? job.providerErrors : [],
-            errorCode: job.errorCode ?? null
-          });
-          setViewMode("2d-edit");
-          toast.error("AI analysis failed. Continue in manual 2D correction mode.");
+        setActiveIntakeSessionId(outcome.session.id);
+
+        if (outcome.kind === "reused") {
+          await applyRevisionToEditor(outcome.layoutRevisionId);
+          await loadProject(projectId);
+          toast.success("Verified layout reused successfully.");
           return;
         }
 
-        const result = await fetchFloorplanResult(floorplanId);
-        const mapped = mapFloorplanResultToScene(result);
-        setWalls(mapped.walls);
-        setOpenings(mapped.openings);
-
-        const entrance = mapped.openings.find((opening) => opening.isEntrance);
-        if (entrance) {
-          useSceneStore.setState({ entranceId: entrance.id });
+        if (outcome.kind === "disambiguation_required") {
+          setCatalogCandidates(outcome.candidates);
+          setImageSrc(null);
+          toast.message("Multiple verified layouts matched. Select one to continue.");
+          return;
         }
 
-        const normalizedScale = typeof mapped.scale === "number" && mapped.scale > 0 ? mapped.scale : 1;
-        const nextScaleInfo = parseScaleInfo(mapped.scaleInfo, normalizedScale);
-        setScale(normalizedScale, nextScaleInfo);
-        setAnalysisRecovery(null);
+        applyMappedScene(mapFloorplanResultToScene(outcome.result), dataUrl);
         await loadProject(projectId);
-        toast.success("Design blueprint analyzed successfully.");
+        toast.success(outcome.reviewRequired ? "Low-confidence result loaded for review." : "Design blueprint analyzed successfully.");
       } catch (err) {
         const payload =
           err && typeof err === "object" && "payload" in err
@@ -289,6 +320,7 @@ export default function ProjectEditorPage() {
           (err instanceof Error ? err.message : "Low confidence in analysis. Entering manual adjustment mode.");
         setWalls([]);
         setOpenings([]);
+        setFloors([]);
         setScale(1, createUnknownScaleInfo(1, message));
         setAnalysisRecovery({
           message,
@@ -301,7 +333,20 @@ export default function ProjectEditorPage() {
         setIsAnalyzing(false);
       }
     },
-    [loadProject, projectId, setOpenings, setScale, setViewMode, setWalls]
+    [
+      applyMappedScene,
+      applyRevisionToEditor,
+      catalogApartmentName,
+      catalogRegion,
+      catalogTypeName,
+      loadProject,
+      projectId,
+      setFloors,
+      setOpenings,
+      setScale,
+      setViewMode,
+      setWalls
+    ]
   );
 
   const runCatalogAnalysis = useCallback(
@@ -311,39 +356,71 @@ export default function ProjectEditorPage() {
         return;
       }
       setIsAnalyzing(true);
-      setViewMode("2d-edit");
+      setCatalogCandidates([]);
       setAnalysisRecovery(null);
       try {
-        const placeholder = createPlaceholderFloorplanDataUrl();
-        if (placeholder) {
-          setImageSrc(placeholder);
-        }
-        const details = "Template catalog lookup is disabled during Railway cutover. Upload a floorplan image instead.";
-        setWalls([]);
-        setOpenings([]);
-        setScale(1, createUnknownScaleInfo(1, details));
-        setAnalysisRecovery({
-          message: details,
-          providerErrors: [],
-          errorCode: "CATALOG_NOT_AVAILABLE"
+        const outcome = await runCatalogIntakeFlow({
+          apartmentName: query.apartmentName,
+          typeName: query.typeName,
+          region: query.region,
+          inputKind: "remediation",
+          remediationProjectId: projectId
         });
-        toast.error(details);
+
+        setActiveIntakeSessionId(outcome.session.id);
+
+        if (outcome.kind === "reused") {
+          await applyRevisionToEditor(outcome.layoutRevisionId);
+          toast.success("Verified layout loaded.");
+          return;
+        }
+
+        setCatalogCandidates(outcome.candidates);
+        toast.message("Multiple verified layouts matched. Select one to continue.");
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Template lookup failed.";
+        const payload =
+          error && typeof error === "object" && "payload" in error
+            ? ((error as { payload?: unknown }).payload as RecoverablePayload | undefined)
+            : undefined;
+        const message = payload?.details || payload?.error || (error instanceof Error ? error.message : "Template lookup failed.");
         setWalls([]);
         setOpenings([]);
+        setFloors([]);
         setScale(1, createUnknownScaleInfo(1, message));
         setAnalysisRecovery({
           message,
-          providerErrors: []
+          providerErrors: Array.isArray(payload?.providerErrors) ? payload.providerErrors : [],
+          errorCode: payload?.errorCode ?? null
         });
-        setViewMode("2d-edit");
         toast.error(message);
       } finally {
         setIsAnalyzing(false);
       }
     },
-    [createPlaceholderFloorplanDataUrl, setImageSrc, setOpenings, setScale, setViewMode, setWalls]
+    [applyRevisionToEditor, projectId, setFloors, setOpenings, setScale, setWalls]
+  );
+
+  const handleSelectCatalogCandidate = useCallback(
+    async (layoutRevisionId: string) => {
+      if (!activeIntakeSessionId) {
+        toast.error("Candidate selection session expired. Retry the search.");
+        return;
+      }
+
+      setIsAnalyzing(true);
+      try {
+        await selectIntakeCandidate(activeIntakeSessionId, layoutRevisionId);
+        setCatalogCandidates([]);
+        await applyRevisionToEditor(layoutRevisionId);
+        toast.success("Verified layout loaded.");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to select layout candidate.";
+        toast.error(message);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    },
+    [activeIntakeSessionId, applyRevisionToEditor]
   );
 
   const analyzeFloorplan = useCallback(
@@ -415,11 +492,12 @@ export default function ProjectEditorPage() {
   const handleStartManualRecovery = useCallback(() => {
     setWalls([]);
     setOpenings([]);
+    setFloors([]);
     const reason = analysisRecovery?.message ?? "Continue in manual 2D correction mode.";
     setScale(1, createUnknownScaleInfo(1, reason));
     setViewMode("2d-edit");
     toast.message("Manual correction mode enabled.");
-  }, [analysisRecovery?.message, setOpenings, setScale, setViewMode, setWalls]);
+  }, [analysisRecovery?.message, setFloors, setOpenings, setScale, setViewMode, setWalls]);
 
   const isSceneVisible = viewMode === "top" || viewMode === "walk";
 
@@ -498,7 +576,7 @@ export default function ProjectEditorPage() {
       <div className="relative w-full h-screen overflow-hidden pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-6 lg:px-12">
         <AnimatePresence mode="popLayout" initial={false}>
           {/* Step 1: Upload */}
-          {!imageSrc && !isAnalyzing && (
+          {(!imageSrc || catalogCandidates.length > 0) && !isAnalyzing && (
             <motion.div
               key="upload_state"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -565,6 +643,38 @@ export default function ProjectEditorPage() {
                       Find Template
                     </button>
                   </div>
+                  {catalogCandidates.length > 0 && (
+                    <div className="mt-4 grid gap-2">
+                      {catalogCandidates.map((candidate) => (
+                        <button
+                          key={candidate.layoutRevisionId ?? `${candidate.apartmentName}-${candidate.typeName}-${candidate.variantLabel ?? ""}`}
+                          type="button"
+                          onClick={() => void handleSelectCatalogCandidate(candidate.layoutRevisionId ?? "")}
+                          disabled={isAnalyzing || !candidate.layoutRevisionId}
+                          className="flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left transition hover:border-white/35 disabled:opacity-40"
+                        >
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                              {candidate.apartmentName} {candidate.typeName}
+                            </p>
+                            <p className="text-[11px] text-white/55">
+                              {[candidate.region, candidate.areaLabel, candidate.variantLabel].filter(Boolean).join(" • ")}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/60">
+                              Match {(candidate.matchScore * 100).toFixed(0)}%
+                            </p>
+                            {candidate.verified && (
+                              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+                                Verified
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <input ref={inputRef} type="file" className="hidden" onChange={handleFileChange} />
               </div>
@@ -739,6 +849,7 @@ export default function ProjectEditorPage() {
             onClick={() => {
               setWalls([]);
               setOpenings([]);
+              setFloors([]);
               router.push("/studio");
             }}
             className="p-3 sm:p-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full hover:bg-red-500/10 hover:border-red-500/20 group transition-all"

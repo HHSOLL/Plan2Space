@@ -24,7 +24,8 @@ export function SaveButton({ projectId, message, className }: SaveButtonProps) {
           scale: sceneStore.scale,
           scaleInfo: sceneStore.scaleInfo,
           walls: sceneStore.walls,
-          openings: sceneStore.openings
+          openings: sceneStore.openings,
+          floors: sceneStore.floors
         },
         assets: sceneStore.assets,
         materials: {

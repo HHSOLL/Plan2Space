@@ -453,6 +453,7 @@ export interface Database {
           provider_status: Json | null;
           provider_errors: Json | null;
           details: string | null;
+          result: Json | null;
           error_code: string | null;
           error: string | null;
           created_at: string;
@@ -474,6 +475,7 @@ export interface Database {
           provider_status?: Json | null;
           provider_errors?: Json | null;
           details?: string | null;
+          result?: Json | null;
           error_code?: string | null;
           error?: string | null;
           created_at?: string;
@@ -495,6 +497,7 @@ export interface Database {
           provider_status?: Json | null;
           provider_errors?: Json | null;
           details?: string | null;
+          result?: Json | null;
           error_code?: string | null;
           error?: string | null;
           created_at?: string;

@@ -8,25 +8,27 @@ export type JobRow = {
   status: string;
   attempts: number;
   max_attempts: number;
+  result?: Record<string, unknown> | null;
 };
 
-export async function claimNextJobs(workerId: string, limit: number): Promise<JobRow[]> {
+export async function claimNextJobs(workerId: string, limit: number, type: string): Promise<JobRow[]> {
   const { data, error } = await supabaseService.rpc("claim_jobs", {
     p_worker_id: workerId,
     p_limit: limit,
-    p_type: "FLOORPLAN_PIPELINE"
+    p_type: type
   });
 
   if (error) throw error;
   return (data ?? []) as JobRow[];
 }
 
-export async function markJobSucceeded(jobId: string) {
+export async function markJobSucceeded(jobId: string, result: Record<string, unknown> | null = null) {
   const { error } = await supabaseService
     .from("jobs")
     .update({
       status: "succeeded",
       progress: 100,
+      result,
       locked_at: null,
       locked_by: null,
       updated_at: new Date().toISOString()
@@ -54,6 +56,7 @@ export async function markJobFailed(jobId: string, payload: {
       provider_status: payload.providerStatus ?? null,
       provider_errors: payload.providerErrors ?? null,
       details: payload.details ?? null,
+      result: null,
       locked_at: null,
       locked_by: null,
       updated_at: new Date().toISOString()
@@ -72,6 +75,7 @@ export async function markJobRetrying(jobId: string, attempts: number) {
     .update({
       status: "retrying",
       run_at: runAt,
+      result: null,
       locked_at: null,
       locked_by: null,
       updated_at: new Date().toISOString()
@@ -88,6 +92,7 @@ export async function markJobDeadLetter(jobId: string, errorMessage: string, err
       status: "dead_letter",
       error_code: errorCode,
       error: errorMessage,
+      result: null,
       locked_at: null,
       locked_by: null,
       updated_at: new Date().toISOString()

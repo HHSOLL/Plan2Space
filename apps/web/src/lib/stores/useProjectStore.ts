@@ -12,6 +12,9 @@ export interface Project {
   created_at: string;
   updated_at: string;
   metadata?: Record<string, unknown>;
+  source_layout_revision_id?: string | null;
+  resolution_state?: "reused" | "generated" | "reuse_invalidated" | null;
+  created_from_intake_session_id?: string | null;
 }
 
 type ProjectState = {
@@ -21,13 +24,6 @@ type ProjectState = {
   error: string | null;
   loadProjects: () => Promise<void>;
   loadProject: (projectId: string) => Promise<Project | null>;
-  createProject: (data: {
-    name: string;
-    description?: string | null;
-    thumbnail?: string;
-    metadata?: Record<string, unknown>;
-  }) => Promise<Project>;
-  updateProject: (id: string, data: { name?: string; description?: string | null }) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   selectProject: (projectId: string | null) => void;
 };
@@ -89,54 +85,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         error: error instanceof Error ? error.message : "Failed to load project"
       });
       return null;
-    }
-  },
-
-  createProject: async (payload) => {
-    set({ isLoading: true, error: null });
-    try {
-      const project = await backendFetch<Project>("/v1/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: payload.name,
-          description: payload.description ?? null
-        })
-      });
-
-      set((state) => ({
-        projects: [project, ...state.projects],
-        currentProject: project,
-        isLoading: false,
-        error: null
-      }));
-
-      return project;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to create project";
-      set({ isLoading: false, error: message });
-      throw new Error(message);
-    }
-  },
-
-  updateProject: async (id, payload) => {
-    set({ isLoading: true, error: null });
-    try {
-      const project = await backendFetch<Project>(`/v1/projects/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload)
-      });
-
-      set((state) => ({
-        projects: state.projects.map((item) => (item.id === id ? project : item)),
-        currentProject: state.currentProject?.id === id ? project : state.currentProject,
-        isLoading: false,
-        error: null
-      }));
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : "Failed to update project"
-      });
     }
   },
 

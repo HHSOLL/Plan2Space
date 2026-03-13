@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { enqueueAssetGeneration, type AssetGenerationProvider, type GeneratedAsset } from "../../../features/assets/generate";
+import { pollJobUntilTerminal } from "../../../features/floorplan/job-polling";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Package, ArrowRight, Sparkles, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
@@ -88,7 +89,7 @@ export default function AssetPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatorFile, setGeneratorFile] = useState<File | null>(null);
   const [generatorPreview, setGeneratorPreview] = useState<string | null>(null);
-  const [provider, setProvider] = useState<"triposr" | "meshy">("triposr");
+  const [provider, setProvider] = useState<AssetGenerationProvider>("triposr");
   const addFurniture = useSceneStore((state) => state.addFurniture);
   const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
   const walls = useSceneStore((state) => state.walls);
@@ -199,42 +200,27 @@ export default function AssetPanel() {
     setIsGenerating(true);
     try {
       const dataUrl = await fileToDataUrl(generatorFile);
-      const response = await fetch("/api/assets/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: dataUrl,
-          fileName: generatorFile.name,
-          provider
-        })
+      const enqueued = await enqueueAssetGeneration({
+        image: dataUrl,
+        fileName: generatorFile.name,
+        provider
       });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data) {
-        throw new Error(data?.error ?? "Asset generation failed.");
+      const job = await pollJobUntilTerminal(enqueued.jobId, {
+        intervalMs: 2000,
+        timeoutMs: 180000,
+        timeoutMessage: "Asset generation timed out."
+      });
+      if (job.status !== "succeeded") {
+        throw new Error(job.error ?? job.details ?? "Asset generation failed.");
       }
 
-      let result = data;
-      if (data.status === "processing" && data.jobId) {
-        for (let attempt = 0; attempt < 6; attempt += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          const poll = await fetch(`/api/assets/generate?jobId=${encodeURIComponent(data.jobId)}`);
-          const pollData = await poll.json().catch(() => null);
-          if (pollData?.status === "complete") {
-            result = pollData;
-            break;
-          }
-          if (pollData?.status !== "processing") {
-            throw new Error(pollData?.error ?? "Asset generation failed.");
-          }
-        }
+      const asset = job.result && typeof job.result === "object" && "asset" in job.result
+        ? (job.result.asset as GeneratedAsset)
+        : null;
+      if (!asset?.assetUrl) {
+        throw new Error("Generated asset metadata is missing.");
       }
 
-      if (result?.status !== "complete") {
-        throw new Error("Generation timed out. Try again.");
-      }
-
-      const asset = result.asset as { assetUrl: string; label: string; description: string; category: string };
       const item: CatalogItem = {
         id: asset.assetUrl ?? createId(),
         label: asset.label ?? "Generated Asset",
@@ -426,7 +412,7 @@ export default function AssetPanel() {
                         <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#999999]">Provider</div>
                         <select
                           value={provider}
-                          onChange={(event) => setProvider(event.target.value as "triposr" | "meshy")}
+                          onChange={(event) => setProvider(event.target.value as AssetGenerationProvider)}
                           className="w-full border border-[#e5e5e0] bg-white px-4 py-3 text-xs uppercase tracking-[0.2em]"
                         >
                           <option value="triposr">TripoSR</option>

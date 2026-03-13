@@ -4,12 +4,14 @@ import {
   createProjectForOwner,
   deleteProjectForOwner,
   getProject,
+  invalidateReuseForOwner,
   listProjects,
   updateProjectForOwner
 } from "../services/project-service";
 import { ApiError } from "../services/errors";
 import { supabaseService } from "../services/supabase";
 import { env } from "../config/env";
+import { createIntakeSessionForOwner } from "../services/intake-service";
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1),
@@ -27,7 +29,8 @@ const SaveVersionSchema = z.object({
     scale: z.number(),
     scaleInfo: z.record(z.string(), z.unknown()).optional(),
     walls: z.array(z.record(z.string(), z.unknown())),
-    openings: z.array(z.record(z.string(), z.unknown()))
+    openings: z.array(z.record(z.string(), z.unknown())),
+    floors: z.array(z.record(z.string(), z.unknown())).optional()
   }),
   assets: z.array(z.record(z.string(), z.unknown())).default([]),
   materials: z.object({
@@ -55,6 +58,7 @@ function buildFloorPlan(topology: z.infer<typeof SaveVersionSchema>["topology"])
   const scale = topology.scale;
   const walls = topology.walls as Array<Record<string, any>>;
   const openings = topology.openings as Array<Record<string, any>>;
+  const floors = Array.isArray(topology.floors) ? (topology.floors as Array<Record<string, any>>) : [];
   const wallHeight = walls.reduce((max, wall) => Math.max(max, Number(wall.height) || DEFAULT_WALL_HEIGHT), DEFAULT_WALL_HEIGHT);
   const wallThickness = walls.length > 0 ? Math.max(0.02, Number(walls[0]?.thickness ?? 0.2) * scale) : 0.2;
 
@@ -95,7 +99,17 @@ function buildFloorPlan(topology: z.infer<typeof SaveVersionSchema>["topology"])
             scaleInfo: topology.scaleInfo
           }
         : undefined
-    }
+    },
+    floors: floors.map((floor) => ({
+      id: floor.id,
+      outline: Array.isArray(floor.outline)
+        ? floor.outline.map((point: unknown) => [
+            Number((point as [number, number])?.[0] ?? 0) * scale,
+            Number((point as [number, number])?.[1] ?? 0) * scale
+          ])
+        : [],
+      materialId: typeof floor.materialId === "string" ? floor.materialId : null
+    }))
   };
 }
 
@@ -188,6 +202,28 @@ projectsRouter.delete("/projects/:projectId", async (request, response, next) =>
     const deleted = await deleteProjectForOwner(ownerId, request.params.projectId);
     if (!deleted) throw new ApiError(404, "Project not found.");
     response.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+projectsRouter.post("/projects/:projectId/reuse-invalidated", async (request, response, next) => {
+  try {
+    const ownerId = request.user?.id;
+    if (!ownerId) throw new ApiError(401, "Unauthorized");
+
+    const project = await invalidateReuseForOwner(ownerId, request.params.projectId);
+    if (!project) throw new ApiError(404, "Project not found.");
+
+    const remediationSession = await createIntakeSessionForOwner(ownerId, {
+      inputKind: "remediation",
+      remediationProjectId: project.id
+    });
+
+    response.status(200).json({
+      project,
+      remediationSession
+    });
   } catch (error) {
     next(error);
   }

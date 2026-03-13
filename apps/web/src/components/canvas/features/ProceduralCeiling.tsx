@@ -35,6 +35,7 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 export default function ProceduralCeiling() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const walls = useSceneStore((state) => state.walls);
+  const floors = useSceneStore((state) => state.floors);
   const scale = useSceneStore((state) => state.scale);
 
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
@@ -45,25 +46,45 @@ export default function ProceduralCeiling() {
     if (walls.length === 0) return DEFAULT_HEIGHT;
     return walls.reduce((max, wall) => Math.max(max, wall.height || DEFAULT_HEIGHT), DEFAULT_HEIGHT);
   }, [walls]);
-  const geometry = useMemo(() => {
+  const geometries = useMemo(() => {
+    if (floors.length > 0) {
+      return floors
+        .map((floor) => {
+          if (!Array.isArray(floor.outline) || floor.outline.length < 3) return null;
+          const floorShape = new THREE.Shape();
+          floorShape.moveTo(floor.outline[0]![0] * scale, floor.outline[0]![1] * scale);
+          for (let index = 1; index < floor.outline.length; index += 1) {
+            floorShape.lineTo(floor.outline[index]![0] * scale, floor.outline[index]![1] * scale);
+          }
+          floorShape.closePath();
+          const geometry = new THREE.ShapeGeometry(floorShape);
+          geometry.rotateX(Math.PI / 2);
+          return {
+            id: floor.id,
+            geometry
+          };
+        })
+        .filter((entry): entry is { id: string; geometry: THREE.ShapeGeometry } => Boolean(entry));
+    }
+
     const geo = new THREE.ShapeGeometry(shape);
     geo.rotateX(Math.PI / 2);
-    return geo;
-  }, [shape]);
+    return [{ id: "fallback-ceiling", geometry: geo }];
+  }, [floors, scale, shape]);
 
   useEffect(() => {
-    return () => geometry.dispose();
-  }, [geometry]);
+    return () => {
+      geometries.forEach((entry) => entry.geometry.dispose());
+    };
+  }, [geometries]);
 
   return (
-    <mesh
-      geometry={geometry}
-      position={[0, wallHeight, 0]}
-      visible={viewMode === "walk"}
-      castShadow
-      receiveShadow
-    >
-      <meshStandardMaterial color="#1f1f1f" roughness={0.9} side={THREE.DoubleSide} />
-    </mesh>
+    <group position={[0, wallHeight, 0]} visible={viewMode === "walk"}>
+      {geometries.map((entry) => (
+        <mesh key={entry.id} geometry={entry.geometry} castShadow receiveShadow>
+          <meshStandardMaterial color="#1f1f1f" roughness={0.9} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+    </group>
   );
 }
