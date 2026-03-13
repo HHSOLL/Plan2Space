@@ -12,6 +12,19 @@ function withAuthStatus(url: URL, status: "success" | "error") {
   return next;
 }
 
+function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
+  request.cookies
+    .getAll()
+    .filter((cookie) => cookie.name.startsWith("sb-"))
+    .forEach((cookie) => {
+      response.cookies.set(cookie.name, "", {
+        expires: new Date(0),
+        maxAge: 0,
+        path: "/"
+      });
+    });
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -20,7 +33,9 @@ export async function GET(request: NextRequest) {
   const errorParam = url.searchParams.get("error");
 
   if (errorParam) {
-    return NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    clearSupabaseCookies(request, errorResponse);
+    return errorResponse;
   }
 
   if (!code) {
@@ -31,7 +46,9 @@ export async function GET(request: NextRequest) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    clearSupabaseCookies(request, errorResponse);
+    return errorResponse;
   }
 
   const response = NextResponse.redirect(redirectUrl);
@@ -46,7 +63,9 @@ export async function GET(request: NextRequest) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    clearSupabaseCookies(request, errorResponse);
+    return errorResponse;
   }
 
   const successUrl = withAuthStatus(redirectUrl, "success");

@@ -39,6 +39,7 @@
 - `apps/web`:
   - 업로드/잡 생성 요청/잡 상태 폴링/결과 렌더링
   - Supabase 로그인 세션(access token) 획득
+  - recoverable auth 오류(`Invalid Refresh Token` 등) 발생 시 브라우저 세션을 정리하고 재로그인을 유도
 - `apps/api`:
   - 사용자 인증 검증(Supabase JWT)
   - intake/catalog/project/floorplan/job/result/asset-generation 도메인 API 제공

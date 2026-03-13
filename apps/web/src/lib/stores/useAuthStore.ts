@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
 import type { AuthUser } from "../../types";
+import { clearInvalidBrowserSession, isRecoverableSessionError } from "../auth/session-recovery";
 import { getSupabaseClient } from "../supabase/client";
 
 type AuthState = {
@@ -52,8 +53,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     set({ isLoading: true });
-    supabase.auth.getSession().then(({ data, error }) => {
+    supabase.auth.getSession().then(async ({ data, error }) => {
       if (error) {
+        if (isRecoverableSessionError(error)) {
+          await clearInvalidBrowserSession(supabase);
+          set({
+            session: null,
+            user: null,
+            isLoading: false,
+            error: "세션이 만료되었습니다. 다시 로그인해주세요."
+          });
+          return;
+        }
+
         set({ error: error.message });
       }
       set({

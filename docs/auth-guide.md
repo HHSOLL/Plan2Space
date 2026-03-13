@@ -63,6 +63,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
   2) `exchangeCodeForSession` 실행
   3) 쿠키 동기화 후 `?auth=success` 리다이렉트
   4) `Providers`에서 토스트 표시
+  5) 콜백 실패 시 기존 `sb-*` 인증 쿠키를 정리하고 `?auth=error`로 복귀
 
 ## 흔한 오류 & 해결
 
@@ -78,3 +79,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 rm -rf apps/web/.next
 npm run dev:web
 ```
+
+### "Invalid Refresh Token: Refresh Token Not Found"
+
+- 증상:
+  - 콘솔에 `AuthApiError: Invalid Refresh Token`
+  - 로그인 후에도 세션이 올라오지 않음
+- 원인:
+  - 브라우저에 남아 있는 오래된 `sb-*` 세션 쿠키/스토리지가 현재 Supabase 세션과 불일치
+- 현재 동작:
+  - 클라이언트 초기화 시 recoverable refresh-token 오류를 감지하면 로컬 세션을 자동 정리
+  - `/auth/callback`에서 세션 교환 실패 시 기존 `sb-*` 쿠키를 즉시 삭제
+- 수동 확인 방법:
+  1) 시크릿 창에서 재로그인
+  2) 일반 창이라면 `Application/Storage`의 Supabase 관련 쿠키와 스토리지를 삭제 후 재시도
+  3) 동일 증상이 반복되면 Supabase Auth URL 설정과 provider redirect URI를 다시 확인
