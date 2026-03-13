@@ -26,6 +26,8 @@ type ParseResponse = {
 type EvalSummary = {
   fixtureSummaries: Array<{
     fixture: string;
+    channel?: string | null;
+    sourcePolicy?: string | null;
     status: number;
     recoverable?: boolean;
   }>;
@@ -71,6 +73,8 @@ async function main() {
   const maxRecoverableRate = parseNumberArg("maxRecoverableRate", 0.2);
   const maxUnknownScaleRate = parseNumberArg("maxUnknownScaleRate", 0.2);
   const maxMedianScoreDrop = parseNumberArg("maxMedianScoreDrop", 0.1);
+  const minChannelSuccessRate = parseNumberArg("minChannelSuccessRate", 0);
+  const maxChannelRecoverableRate = parseNumberArg("maxChannelRecoverableRate", 1);
 
   const raw = await fs.readFile(inputPath, "utf8");
   const summary = JSON.parse(raw) as EvalSummary;
@@ -116,6 +120,18 @@ async function main() {
     .map((entry) => entry.body?.selectedScore)
     .filter((score): score is number => Number.isFinite(score));
   const currentMedianScore = median(selectedScores);
+
+  const channelGroups = summary.fixtureSummaries.reduce<Record<string, { total: number; success: number; recoverable: number }>>(
+    (groups, entry) => {
+      const channel = entry.channel ?? "unspecified";
+      groups[channel] ??= { total: 0, success: 0, recoverable: 0 };
+      groups[channel].total += 1;
+      if (entry.status === 200) groups[channel].success += 1;
+      if (entry.status === 422 || entry.recoverable) groups[channel].recoverable += 1;
+      return groups;
+    },
+    {}
+  );
 
   let baselineMedianScore: number | null = null;
   let scoreDropRatio = 0;
@@ -180,9 +196,29 @@ async function main() {
     console.log(`[${status}] ${check.name}: ${check.value} (expected ${check.expected})`);
   });
 
+  Object.entries(channelGroups).forEach(([channel, stats]) => {
+    const channelSuccessRate = stats.total > 0 ? stats.success / stats.total : 0;
+    const channelRecoverableRate = stats.total > 0 ? stats.recoverable / stats.total : 0;
+    console.log(
+      `[eval-floorplan-gate] channel=${channel} success=${percentage(channelSuccessRate)} recoverable=${percentage(channelRecoverableRate)}`
+    );
+  });
+
   const failedChecks = checks.filter((check) => !check.passed);
-  if (failedChecks.length > 0) {
-    const failedNames = failedChecks.map((check) => check.name).join(", ");
+  const failedChannelChecks = Object.entries(channelGroups).flatMap(([channel, stats]) => {
+    const channelSuccessRate = stats.total > 0 ? stats.success / stats.total : 0;
+    const channelRecoverableRate = stats.total > 0 ? stats.recoverable / stats.total : 0;
+    const failures: string[] = [];
+    if (minChannelSuccessRate > 0 && channelSuccessRate < minChannelSuccessRate) {
+      failures.push(`channel:${channel}:success_rate`);
+    }
+    if (maxChannelRecoverableRate < 1 && channelRecoverableRate > maxChannelRecoverableRate) {
+      failures.push(`channel:${channel}:recoverable_rate`);
+    }
+    return failures;
+  });
+  if (failedChecks.length > 0 || failedChannelChecks.length > 0) {
+    const failedNames = [...failedChecks.map((check) => check.name), ...failedChannelChecks].join(", ");
     throw new Error(`Eval gate failed: ${failedNames}`);
   }
 }

@@ -87,7 +87,7 @@ jobs:
             exit 1
           fi
           npm --workspace apps/web run eval:floorplan -- --endpoint=http://127.0.0.1:3100/api/ai/parse-floorplan
-          npm --workspace apps/web run eval:floorplan:gate -- --input=${PWD}/apps/web/.eval/floorplan/summary.json --minSuccessRate=0.9 --minExteriorLoopClosure=0.95 --minOpeningAttach=0.92 --maxRecoverableRate=0.2 --maxUnknownScaleRate=0.2
+          npm --workspace apps/web run eval:floorplan:gate -- --input=${PWD}/apps/web/.eval/floorplan/summary.json --minSuccessRate=0.9 --minExteriorLoopClosure=0.95 --minOpeningAttach=0.92 --maxRecoverableRate=0.2 --maxUnknownScaleRate=0.2 --minChannelSuccessRate=0.75 --maxChannelRecoverableRate=0.35
 
   api:
     runs-on: ubuntu-latest

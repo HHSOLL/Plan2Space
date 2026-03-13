@@ -42,9 +42,12 @@
   - revision/result에서 내려온 `floors[]`를 우선 렌더링한다.
   - `floors[]`가 없을 때만 exterior polygon heuristic으로 폴백한다.
 - `apps/web/src/components/canvas/features/ProceduralCeiling.tsx`
-  - floor polygon과 동일한 규칙으로 천장을 생성한다.
+  - revision/result에서 내려온 `ceilings[]`를 우선 렌더링한다.
+  - `ceilings[]`가 없을 때만 `floors[] -> exterior polygon heuristic` 순서로 폴백한다.
 - `apps/web/src/features/floorplan/result-mapper.ts`
-  - `layout_revisions.geometry_json`과 `derived_scene_json`를 scene store로 매핑할 때 room/floor 정보를 유지한다.
+  - `layout_revisions.geometry_json`과 `derived_scene_json`를 scene store로 매핑할 때 room/floor/ceiling/camera/nav 정보를 유지한다.
+- `apps/web/src/components/canvas/core/CameraRig.tsx`
+  - Walk mode 시작점은 entrance anchor -> overview anchor -> room center anchor -> opening heuristic 순서로 결정한다.
 
 ## 2026-03-12 변경 동기화 (Revision-Derived Floors)
 Added:
@@ -55,3 +58,13 @@ Updated:
 
 Removed/Deprecated:
 - wall 외곽선만으로 floor/ceiling을 항상 재구성하는 단일 경로.
+
+## 2026-03-13 변경 동기화 (Derived Ceiling + Camera Anchors)
+Added:
+- derived `ceilings[]`, `cameraAnchors`, `navGraph` 소비 규칙.
+
+Updated:
+- Walk mode spawn 기준을 opening heuristic 단독에서 anchor 우선 경로로 상향.
+
+Removed/Deprecated:
+- wall/opening만으로 walk spawn과 천장을 전부 추론하는 접근.

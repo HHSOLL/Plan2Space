@@ -70,6 +70,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         scaleInfo,
         wallMaterialIndex,
         floorMaterialIndex,
+        setScene,
         setWalls,
         setOpenings,
         setFloors,
@@ -144,17 +145,20 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
         if (typeof nextImage === "string") {
             setImage(nextImage);
         }
-        setWalls(mapped.walls);
-        setOpenings(mapped.openings);
-        setFloors(mapped.floors);
         const normalizedScale = typeof mapped.scale === "number" && mapped.scale > 0 ? mapped.scale : 1;
         const nextScaleInfo = parseScaleInfo(mapped.scaleInfo, normalizedScale);
-        setScale(normalizedScale, nextScaleInfo);
-
-        const entrance = mapped.openings.find((opening) => opening.isEntrance);
-        if (entrance?.id) {
-            useSceneStore.setState({ entranceId: entrance.id });
-        }
+        setScene({
+            walls: mapped.walls,
+            openings: mapped.openings,
+            floors: mapped.floors,
+            ceilings: mapped.ceilings,
+            rooms: mapped.rooms,
+            cameraAnchors: mapped.cameraAnchors,
+            navGraph: mapped.navGraph,
+            scale: normalizedScale,
+            scaleInfo: nextScaleInfo
+        });
+        useSceneStore.setState({ entranceId: mapped.entranceId });
     };
 
     const applyLayoutRevisionToEditor = async (layoutRevisionId: string) => {
@@ -494,6 +498,10 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
                                                 onChange={handleImageUpload}
                                             />
                                         </div>
+                                        <p className="text-[10px] leading-relaxed text-[#6b6b64]">
+                                            Upload only images you have the right to use. External listing URLs are not fetched automatically; use a manual
+                                            file upload for gallery captures or screenshots.
+                                        </p>
                                     </div>
 
                                     <div className="space-y-4 rounded-sm border border-[#e5e5e0] bg-[#fafaf8] p-4">

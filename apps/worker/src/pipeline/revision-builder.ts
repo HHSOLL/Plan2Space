@@ -1,22 +1,6 @@
 import { createHash } from "node:crypto";
 import type { TopologyPayload, Vec2 } from "@plan2space/floorplan-core";
-
-type GeometryBuildResult = {
-  roomPolygons: Array<{
-    id: string;
-    polygon: Vec2[];
-    area: number;
-    type: string;
-  }>;
-  exteriorShell: Vec2[];
-  roomAdjacency: Array<{
-    id: string;
-    fromRoomId: string | null;
-    toRoomId: string | null;
-    openingId: string;
-    relation: string;
-  }>;
-};
+import type { GeometryBuildResult } from "./geometry-builder";
 
 type GeometrySnapshot = {
   schemaVersion: number;
@@ -57,8 +41,15 @@ type GeometrySnapshot = {
   rooms: Array<{
     id: string;
     roomType: string;
+    label: string;
     polygonMm: Array<[number, number]>;
     areaSqMm: number;
+    centroidMm: [number, number];
+    openingIds: string[];
+    connectedRoomIds: string[];
+    estimatedCeilingHeightMm: number;
+    estimatedUsage: string;
+    isExteriorFacing: boolean;
   }>;
   entrance:
     | {
@@ -163,9 +154,16 @@ export function buildRevisionArtifacts(topology: TopologyPayload, geometry: Geom
     })),
     rooms: geometry.roomPolygons.map((room) => ({
       id: room.id,
-      roomType: "other",
+      roomType: room.roomType,
+      label: room.label,
       polygonMm: room.polygon.map((point) => toMillimeterVec(point, topology.metadata.scale)),
-      areaSqMm: Math.round(room.area * topology.metadata.scale * 1000 * topology.metadata.scale * 1000)
+      areaSqMm: Math.round(room.area * topology.metadata.scale * 1000 * topology.metadata.scale * 1000),
+      centroidMm: toMillimeterVec(room.centroid, topology.metadata.scale),
+      openingIds: room.openingIds,
+      connectedRoomIds: room.connectedRoomIds,
+      estimatedCeilingHeightMm: Math.round(room.estimatedCeilingHeight * 1000),
+      estimatedUsage: room.estimatedUsage,
+      isExteriorFacing: room.isExteriorFacing
     })),
     entrance: deriveEntrance(topology),
     exteriorShell: geometry.exteriorShell.map((point) => toMillimeterVec(point, topology.metadata.scale)),
@@ -206,7 +204,9 @@ export function buildRevisionArtifacts(topology: TopologyPayload, geometry: Geom
     rooms: geometryJson.rooms.map((room) => ({
       id: room.id,
       roomType: room.roomType,
-      polygonMm: room.polygonMm
+      polygonMm: room.polygonMm,
+      openingIds: room.openingIds,
+      connectedRoomIds: room.connectedRoomIds
     })),
     roomAdjacency: geometryJson.roomAdjacency,
     entrance: geometryJson.entrance
@@ -217,6 +217,32 @@ export function buildRevisionArtifacts(topology: TopologyPayload, geometry: Geom
     geometryJson,
     topologyHash: stableHash(topologyProjection),
     roomGraphHash: stableHash(roomGraphProjection),
-    geometryHash
+    geometryHash,
+    derivedNavJson: {
+      nodes: geometry.navGraph.nodes.map((node) => ({
+        id: node.id,
+        roomId: node.roomId,
+        kind: node.kind,
+        planPositionMm: toMillimeterVec(node.planPosition, topology.metadata.scale)
+      })),
+      edges: geometry.navGraph.edges.map((edge) => ({
+        id: edge.id,
+        fromNodeId: edge.fromNodeId,
+        toNodeId: edge.toNodeId,
+        relation: edge.relation,
+        openingId: edge.openingId
+      }))
+    },
+    derivedCameraJson: {
+      anchors: geometry.cameraAnchors.map((anchor) => ({
+        id: anchor.id,
+        kind: anchor.kind,
+        roomId: anchor.roomId,
+        openingId: anchor.openingId,
+        planPositionMm: toMillimeterVec(anchor.planPosition, topology.metadata.scale),
+        targetPlanPositionMm: toMillimeterVec(anchor.targetPlanPosition, topology.metadata.scale),
+        heightMm: Math.round(anchor.height * 1000)
+      }))
+    }
   };
 }

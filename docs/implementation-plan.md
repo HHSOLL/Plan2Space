@@ -6,6 +6,7 @@
 완료 조건:
 - launch slice `12개 단지 whitelist` 확정.
 - benchmark split에 `complex holdout + input channel slice` 반영.
+- fixture source policy를 `partner_licensed | user_opt_in | manual_private`로 고정하고 외부 listing 자동 수집을 금지.
 - 최소 ops surface(`verify/reject`, `duplicate merge`, `alias edit`, `blocked`, `review queue`) 정의.
 - privacy/provenance/withdrawal 정책 문서 확정.
 
@@ -34,6 +35,8 @@
 - scale source가 근거 있을 때 `unknown` 과다 발생 방지.
 - debug/diagnostics로 pass/profile 선택 근거 추적 가능.
 - geometry repair + room reconstruction 기반으로 revision 품질 향상.
+- revision-derived `rooms`, `floors`, `ceilings`, `navGraph`, `cameraAnchors`가 worker에서 생성되고 web scene state가 이를 보존한다.
+- 한국 아파트형 컬러 채움 이미지에 대해 `filled_plan` 전처리 패스와 channel-level eval gate가 적용된다.
 
 ## Phase 4: 시각/경험 완성 (예정)
 목표: 로딩/랜딩/인증/대시보드 UX와 3D 품질 완성.
@@ -138,3 +141,16 @@ Updated:
 
 Removed/Deprecated:
 - Next app route에서 provider 호출/GLB 다운로드/Storage 업로드를 수행하는 asset generation 경로.
+
+## 2026-03-13 변경 동기화 (Commercial 3D Map Foundation)
+Added:
+- `docs/specs/3d-map-commercial-roadmap.md` 기준의 상용 3D 맵 생성 우선순위(`geometry reconstruction -> room semantics -> scene v2 -> frontend consumption`)를 추가.
+- Phase 3 완료 조건에 `ceilings`, `cameraAnchors`, `navGraph` 보존을 추가.
+
+Updated:
+- 상용 수준 3D 맵 생성의 핵심 작업을 renderer 교체가 아니라 worker reconstruction/scene consumption 강화로 명시.
+- benchmark 기준을 fixture 전체 평균뿐 아니라 input channel별 success/recoverable rate로 확장.
+
+Removed/Deprecated:
+- Babylon.js 또는 렌더러 교체를 현재 Phase 선행조건으로 보는 계획.
+- 외부 listing gallery 이미지를 서비스가 직접 수집해 benchmark/catalog를 채우는 계획.

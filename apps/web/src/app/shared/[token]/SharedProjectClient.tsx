@@ -75,6 +75,10 @@ export function SharedProjectClient({
       walls,
       openings,
       floors: [],
+      ceilings: [],
+      rooms: [],
+      cameraAnchors: [],
+      navGraph: { nodes: [], edges: [] },
       assets,
       scale: 1
     });

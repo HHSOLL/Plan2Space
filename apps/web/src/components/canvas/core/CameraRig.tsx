@@ -146,7 +146,7 @@ function WalkRig({
 export default function CameraRig() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
-  const { walls, openings, entranceId, scale } = useSceneStore();
+  const { walls, openings, entranceId, scale, cameraAnchors } = useSceneStore();
   const [isTouch, setIsTouch] = useState(false);
 
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);
@@ -158,6 +158,18 @@ export default function CameraRig() {
   const zoom = Math.max(30, 120 / radius);
 
   const initialPosition = useMemo((): [number, number, number] => {
+    const preferredAnchor =
+      cameraAnchors.find((anchor) => anchor.kind === "entrance") ??
+      cameraAnchors.find((anchor) => anchor.kind === "overview") ??
+      cameraAnchors.find((anchor) => anchor.kind === "room_center");
+    if (preferredAnchor) {
+      return [
+        preferredAnchor.planPosition[0] * scale,
+        Math.max(BODY_Y, preferredAnchor.height),
+        preferredAnchor.planPosition[1] * scale
+      ];
+    }
+
     const entrance =
       (entranceId ? openings.find((o) => o.id === entranceId) : null) ??
       openings.find((o) => o.type === "door");
@@ -176,7 +188,7 @@ export default function CameraRig() {
       }
     }
     return [centerX, BODY_Y, centerZ + radius * 0.4];
-  }, [entranceId, openings, walls, scale, centerX, centerZ, radius]);
+  }, [cameraAnchors, entranceId, openings, walls, scale, centerX, centerZ, radius]);
 
   useEffect(() => {
     const supportsTouch = typeof window !== "undefined" &&

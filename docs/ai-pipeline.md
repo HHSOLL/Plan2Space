@@ -27,6 +27,7 @@ Base: Railway API `/v1`
 
 ## 2) 파이프라인 단계
 1. 프론트엔드가 업로드 또는 catalog 검색으로 `intake_session` 생성.
+   - 외부 부동산 서비스 이미지는 URL 자동 fetch가 아니라 권리 보유 사용자의 파일 업로드만 intake 입력으로 받는다.
 2. API가 exact reuse 또는 catalog match를 먼저 시도.
 3. reuse가 없으면 `floorplans` + `jobs` 레코드 생성.
 4. Worker가 `claim_jobs`로 잡 점유.
@@ -46,20 +47,23 @@ geometry-first 규칙:
 - canonical truth는 `layout_revisions.geometry_json`
 - `derived_scene_json`, `derived_nav_json`, `derived_camera_json`는 파생 산출물
 - `topology_hash`, `room_graph_hash`, `geometry_hash`를 함께 저장
+- worker는 derived scene에 최소 `rooms`, `floors`, `ceilings`, `navGraph`, `cameraAnchors`를 포함한다.
 
 ## 3) Provider 정책
 - 기본 순서: `anthropic,openai,snaptrude`
 - worker에서 provider 구성 상태를 사전 판별.
 - 미구성 provider는 호출하지 않고 `providerStatus[]`에 reason 기록.
-- upload 분석은 항상 multi-pass(`balanced`, `lineart`) 후보를 누적 평가.
+- upload 분석은 항상 multi-pass(`balanced`, `lineart`, `filled_plan`) 후보를 누적 평가.
 - 첫 성공 즉시 종료하지 않고 최고점 후보를 선택.
 - 후보 선택 시 wall count만 보지 않고 axis alignment, orphan/self-intersection, opening overlap, scale evidence completeness까지 반영.
+- `filled_plan` 프로파일은 네이버부동산형 컬러 채움/텍스처 평면도 같은 한국 아파트 gallery 입력을 위한 기본 상용 패스다.
 
 주요 env:
 - `FLOORPLAN_PROVIDER_ORDER`
 - `FLOORPLAN_PROVIDER_TIMEOUT_MS`
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `SNAPTRUDE_API_URL`, `SNAPTRUDE_API_KEY`
 - 전처리 관련 `FLOORPLAN_PREPROCESS_*`
+- benchmark fixture source policy는 `partner_licensed`, `user_opt_in`, `manual_private`만 허용한다.
 
 ## 4) 실패/복구 계약
 Recoverable failure는 `422` + 아래 필드를 유지한다.
@@ -175,3 +179,16 @@ Updated:
 
 Removed/Deprecated:
 - 정적 template/cache 기반 floorplan reuse 실험 코드 경로.
+
+## 13) 2026-03-13 변경 동기화 (Commercial Scene V2 Derivation)
+Added:
+- worker geometry 단계에서 room taxonomy, estimated ceiling height, connected room IDs를 revision에 저장하는 규약.
+- derived artifact로 `ceilings[]`, `navGraph`, `cameraAnchors`를 생성하는 scene v2 기준.
+
+Updated:
+- frontend는 revision/result를 읽을 때 scene v2 정보를 버리지 않고 store에 보존해야 한다.
+- 한국 아파트형 입력 채널 대응을 위해 `filled_plan` 전처리 프로파일을 기본 multi-pass에 추가한다.
+
+Removed/Deprecated:
+- `rooms/floors`만 만들고 ceiling/nav/camera는 프론트에서 전부 추론하는 접근.
+- 외부 listing gallery 이미지를 worker가 URL로 직접 수집하는 intake 방식.

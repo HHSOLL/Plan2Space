@@ -40,6 +40,7 @@ ASSET_GENERATION_MAX_POLLS=45
 
 FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
 FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
+FLOORPLAN_PREPROCESS_PROFILES=balanced,lineart,filled_plan
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 SNAPTRUDE_API_URL=
@@ -55,6 +56,7 @@ MESHY_STATUS_URL=
 중요:
 - AI/provider 키는 Vercel이 아니라 Railway Worker에만 둡니다.
 - asset generation provider 키도 Railway Worker에만 둡니다.
+- 외부 부동산 서비스 도면 이미지는 URL 자동 수집이 아니라 사용 권한이 있는 파일 업로드로만 넣습니다.
 
 ## 2) Supabase 적용 작업
 - `supabase/migrations/20260305_railway_floorplan_queue.sql` 실행
@@ -92,6 +94,10 @@ MESHY_STATUS_URL=
    - `npm --workspace apps/web run e2e:intake -- --api=https://api-production-473bd.up.railway.app`
 10. custom asset generation 경로 검증:
    - `/v1/assets/generate` 호출 후 `GET /v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
+11. benchmark fixture 검수:
+   - `apps/web/fixtures/floorplans/manifest.json`에 `channel`, `sourcePolicy`를 기록
+   - `sourcePolicy`는 `partner_licensed`, `user_opt_in`, `manual_private`만 허용
+   - 외부 listing gallery 이미지를 서비스가 자동 저장/수집한 fixture는 등록하지 않음
 
 ## 5) 실패 복구 QA
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
@@ -176,3 +182,14 @@ Updated:
 
 Removed/Deprecated:
 - Vercel `/api/assets/generate`에 provider 키를 두고 직접 호출하는 운영 방식.
+
+## 14) 2026-03-13 변경 동기화 (Korean Apartment Input Policy + Filled Plan Eval)
+Added:
+- `FLOORPLAN_PREPROCESS_PROFILES=balanced,lineart,filled_plan` 운영 규칙.
+- fixture `manifest.json`에 `channel`, `sourcePolicy`를 기록하는 benchmark 검수 절차.
+
+Updated:
+- 외부 부동산 서비스 이미지는 URL 직접 intake가 아니라 권리 보유 파일 업로드 기준으로 운영하도록 명시.
+
+Removed/Deprecated:
+- 외부 listing gallery URL을 fixture/catalog source로 자동 수집하는 운영 방식.

@@ -32,6 +32,23 @@ export type Wall = {
   isPartOfBalcony?: boolean;
 };
 
+export type RoomType =
+  | "living_room"
+  | "bedroom"
+  | "kitchen"
+  | "dining"
+  | "bathroom"
+  | "foyer"
+  | "corridor"
+  | "balcony"
+  | "utility"
+  | "pantry"
+  | "dress_room"
+  | "alpha_room"
+  | "service_area"
+  | "evacuation_space"
+  | "other";
+
 export type Opening = {
   id: string;
   wallId: string;
@@ -51,6 +68,62 @@ export type Floor = {
   id: string;
   outline: Vector2[];
   materialId: string | null;
+  roomId?: string | null;
+  roomType?: RoomType;
+  label?: string;
+};
+
+export type Ceiling = {
+  id: string;
+  outline: Vector2[];
+  materialId: string | null;
+  roomId?: string | null;
+  roomType?: RoomType;
+  height: number;
+};
+
+export type RoomZone = {
+  id: string;
+  roomType: RoomType;
+  label: string;
+  polygon: Vector2[];
+  area: number;
+  center: Vector2;
+  openingIds: string[];
+  connectedRoomIds: string[];
+  estimatedCeilingHeight: number;
+  estimatedUsage: "primary" | "secondary" | "service";
+  isExteriorFacing: boolean;
+};
+
+export type CameraAnchor = {
+  id: string;
+  kind: "entrance" | "room_center" | "overview";
+  roomId: string | null;
+  openingId: string | null;
+  planPosition: Vector2;
+  targetPlanPosition: Vector2;
+  height: number;
+};
+
+export type NavGraphNode = {
+  id: string;
+  roomId: string | null;
+  kind: "entrance" | "room_center";
+  planPosition: Vector2;
+};
+
+export type NavGraphEdge = {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  relation: "door" | "passage" | "entrance";
+  openingId: string;
+};
+
+export type NavGraph = {
+  nodes: NavGraphNode[];
+  edges: NavGraphEdge[];
 };
 
 export type SceneAsset = {
@@ -91,6 +164,10 @@ export type ProjectSnapshot = {
   walls: Wall[];
   openings: Opening[];
   floors: Floor[];
+  ceilings: Ceiling[];
+  rooms: RoomZone[];
+  cameraAnchors: CameraAnchor[];
+  navGraph: NavGraph;
   assets: SceneAsset[];
 };
 
@@ -105,6 +182,10 @@ type SceneDataState = {
   walls: Wall[];
   openings: Opening[];
   floors: Floor[];
+  ceilings: Ceiling[];
+  rooms: RoomZone[];
+  cameraAnchors: CameraAnchor[];
+  navGraph: NavGraph;
   assets: SceneAsset[];
   materials: Record<string, MaterialRef>;
   wallMaterialIndex: number;
@@ -121,6 +202,10 @@ type SceneState = SceneDataState & {
   setWalls: (walls: Wall[]) => void;
   setOpenings: (openings: Opening[]) => void;
   setFloors: (floors: Floor[]) => void;
+  setCeilings: (ceilings: Ceiling[]) => void;
+  setRooms: (rooms: RoomZone[]) => void;
+  setCameraAnchors: (cameraAnchors: CameraAnchor[]) => void;
+  setNavGraph: (navGraph: NavGraph) => void;
   setAssets: (assets: SceneAsset[]) => void;
   setScale: (scale: number, scaleInfo?: ScaleInfo) => void;
   setScaleInfo: (scaleInfo: ScaleInfo) => void;
@@ -156,6 +241,13 @@ const initialSceneState: SceneDataState = {
   walls: [],
   openings: [],
   floors: [],
+  ceilings: [],
+  rooms: [],
+  cameraAnchors: [],
+  navGraph: {
+    nodes: [],
+    edges: []
+  },
   assets: [],
   materials: {},
   wallMaterialIndex: 0,
@@ -183,6 +275,10 @@ export const useSceneStore = create<SceneState>((set) => ({
   setWalls: (walls) => set({ walls }),
   setOpenings: (openings) => set({ openings }),
   setFloors: (floors) => set({ floors }),
+  setCeilings: (ceilings) => set({ ceilings }),
+  setRooms: (rooms) => set({ rooms }),
+  setCameraAnchors: (cameraAnchors) => set({ cameraAnchors }),
+  setNavGraph: (navGraph) => set({ navGraph }),
   setAssets: (assets) => set({ assets }),
   setScale: (scale, scaleInfo) =>
     set((state) => ({
@@ -256,6 +352,10 @@ export const useSceneStore = create<SceneState>((set) => ({
         walls: state.walls,
         openings: state.openings,
         floors: state.floors,
+        ceilings: state.ceilings,
+        rooms: state.rooms,
+        cameraAnchors: state.cameraAnchors,
+        navGraph: state.navGraph,
         assets: state.assets
       };
       const newSnapshots = state.versionHistory.snapshots.slice(0, state.versionHistory.currentIndex + 1);
@@ -279,6 +379,10 @@ export const useSceneStore = create<SceneState>((set) => ({
         walls: prev.walls,
         openings: prev.openings,
         floors: prev.floors,
+        ceilings: prev.ceilings,
+        rooms: prev.rooms,
+        cameraAnchors: prev.cameraAnchors,
+        navGraph: prev.navGraph,
         assets: prev.assets,
         versionHistory: { ...state.versionHistory, currentIndex: currentIndex - 1 }
       };
@@ -294,6 +398,10 @@ export const useSceneStore = create<SceneState>((set) => ({
         walls: next.walls,
         openings: next.openings,
         floors: next.floors,
+        ceilings: next.ceilings,
+        rooms: next.rooms,
+        cameraAnchors: next.cameraAnchors,
+        navGraph: next.navGraph,
         assets: next.assets,
         versionHistory: { ...state.versionHistory, currentIndex: currentIndex + 1 }
       };
@@ -309,6 +417,10 @@ export const useSceneStore = create<SceneState>((set) => ({
         walls: snapshot.walls,
         openings: snapshot.openings,
         floors: snapshot.floors,
+        ceilings: snapshot.ceilings,
+        rooms: snapshot.rooms,
+        cameraAnchors: snapshot.cameraAnchors,
+        navGraph: snapshot.navGraph,
         assets: snapshot.assets,
         versionHistory: { ...state.versionHistory, currentIndex: index }
       };
