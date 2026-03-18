@@ -1,4 +1,4 @@
-import type { TopologyOpening, TopologyWall, Vec2 } from "@plan2space/floorplan-core";
+import type { RoomHint, SemanticAnnotations, TopologyOpening, TopologyWall, Vec2 } from "@plan2space/floorplan-core";
 
 type PointNode = { key: string; x: number; y: number };
 
@@ -48,6 +48,8 @@ export type RoomPolygon = {
   estimatedCeilingHeight: number;
   estimatedUsage: RoomUsage;
   isExteriorFacing: boolean;
+  labelSource?: "heuristic" | "annotation";
+  matchedHintId?: string | null;
 };
 
 export type FloorZone = {
@@ -346,6 +348,38 @@ function deriveRoomPolygons(loops: LoopResult[]) {
   };
 }
 
+function deriveRoomPolygonsFromHints(roomHints: RoomHint[], exteriorShell: Vec2[]) {
+  return roomHints
+    .filter((hint) => Array.isArray(hint.polygon) && hint.polygon.length >= 3)
+    .filter((hint) => {
+      if (!hint.polygon || hint.polygon.length < 3) return false;
+      if (exteriorShell.length < 3) return true;
+      return pointInPolygon(hint.position, exteriorShell) || hint.polygon.some((point) => pointInPolygon(point, exteriorShell));
+    })
+    .map((hint, index) => {
+      const polygon = hint.polygon!;
+      const area = Math.abs(polygonArea(polygon));
+      return {
+        id: `room-${index + 1}`,
+        polygon,
+        area,
+        type: "room" as const,
+        centroid: polygonCentroid(polygon)
+      };
+    })
+    .filter((room) => room.area >= 400);
+}
+
+export function selectBaseRoomPolygons(
+  loopRoomPolygons: Array<{ id: string; polygon: Vec2[]; area: number; type: "room"; centroid: Vec2 }>,
+  hintedRoomPolygons: Array<{ id: string; polygon: Vec2[]; area: number; type: "room"; centroid: Vec2 }>
+) {
+  if (hintedRoomPolygons.length === 0) return loopRoomPolygons;
+  if (loopRoomPolygons.length === 0) return hintedRoomPolygons;
+  if (loopRoomPolygons.length === 1) return hintedRoomPolygons;
+  return loopRoomPolygons;
+}
+
 function wallDirection(wall: TopologyWall) {
   const dx = wall.end[0] - wall.start[0];
   const dy = wall.end[1] - wall.start[1];
@@ -507,10 +541,51 @@ function getPolygonBounds(points: Vec2[]) {
   };
 }
 
+function centroidDistance(a: Vec2, b: Vec2) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+}
+
+function matchRoomHintsToRooms(
+  baseRooms: Array<Pick<RoomPolygon, "id" | "polygon" | "area" | "centroid">>,
+  roomHints: RoomHint[]
+) {
+  const matches = new Map<string, RoomHint>();
+  const usedHintIds = new Set<string>();
+
+  const sortedRooms = [...baseRooms].sort((left, right) => right.area - left.area);
+  for (const room of sortedRooms) {
+    const candidate = roomHints
+      .filter((hint) => !usedHintIds.has(hint.id))
+      .map((hint) => {
+        const insideRoom = pointInPolygon(hint.position, room.polygon);
+        const centroidDrift = centroidDistance(hint.position, room.centroid) / Math.max(12, Math.sqrt(room.area));
+        const polygonOverlap =
+          hint.polygon && hint.polygon.length >= 3
+            ? room.polygon.filter((point) => pointInPolygon(point, hint.polygon!)).length / room.polygon.length
+            : 0;
+        const score =
+          (insideRoom ? 7 : 0) +
+          polygonOverlap * 5 +
+          (hint.roomType !== "other" ? 1.5 : 0) +
+          hint.confidence * 2 -
+          centroidDrift;
+        return { hint, score };
+      })
+      .sort((left, right) => right.score - left.score)[0];
+
+    if (!candidate || candidate.score < 0.75) continue;
+    matches.set(room.id, candidate.hint);
+    usedHintIds.add(candidate.hint.id);
+  }
+
+  return matches;
+}
+
 export function classifyRooms(
   baseRooms: Array<Pick<RoomPolygon, "id" | "polygon" | "area" | "type" | "centroid">>,
   roomAdjacency: RoomAdjacency[],
-  walls: TopologyWall[]
+  walls: TopologyWall[],
+  roomHints: RoomHint[] = []
 ): RoomPolygon[] {
   if (baseRooms.length === 0) return [];
 
@@ -599,6 +674,7 @@ export function classifyRooms(
   });
 
   const assignments = new Map<string, RoomType>();
+  const matchedHints = matchRoomHintsToRooms(baseRooms, roomHints);
   const assign = (roomId: string, roomType: RoomType) => {
     if (!assignments.has(roomId)) {
       assignments.set(roomId, roomType);
@@ -606,6 +682,12 @@ export function classifyRooms(
   };
   const getAssignedType = (roomId: string | null | undefined) => (roomId ? assignments.get(roomId) : undefined);
   const unassigned = () => features.filter((feature) => !assignments.has(feature.roomId));
+
+  matchedHints.forEach((hint, roomId) => {
+    if (hint.roomType !== "other") {
+      assign(roomId, hint.roomType as RoomType);
+    }
+  });
 
   features
     .filter(
@@ -766,6 +848,7 @@ export function classifyRooms(
           : roomType === "other" && connectedTypes.includes("bedroom") && feature.areaRatio <= 0.16
             ? "dress_room"
             : roomType;
+    const matchedHint = matchedHints.get(room.id);
 
     const estimatedUsage: RoomUsage = ["living_room", "kitchen", "dining"].includes(refinedRoomType)
       ? "primary"
@@ -785,13 +868,15 @@ export function classifyRooms(
     return {
       ...room,
       roomType: refinedRoomType,
-      label: humanizeRoomType(refinedRoomType),
+      label: matchedHint?.label?.trim() ? matchedHint.label.trim() : humanizeRoomType(refinedRoomType),
       centroid: room.centroid,
       openingIds: [...feature.openingIds].sort(),
       connectedRoomIds: [...feature.connectedRoomIds].sort(),
       estimatedCeilingHeight,
       estimatedUsage,
-      isExteriorFacing: feature.isExteriorFacing
+      isExteriorFacing: feature.isExteriorFacing,
+      labelSource: matchedHint ? "annotation" : "heuristic",
+      matchedHintId: matchedHint?.id ?? null
     };
   });
 }
@@ -939,7 +1024,12 @@ function buildNavGraph(rooms: RoomPolygon[], roomAdjacency: RoomAdjacency[], cam
   };
 }
 
-export function buildGeometry(topology: { walls: TopologyWall[]; openings: TopologyOpening[]; scale: number }): GeometryBuildResult {
+export function buildGeometry(topology: {
+  walls: TopologyWall[];
+  openings: TopologyOpening[];
+  scale: number;
+  semanticAnnotations?: SemanticAnnotations;
+}): GeometryBuildResult {
   const wallCoordinates = topology.walls.map((wall) => ({
     id: wall.id,
     start: wall.start,
@@ -952,9 +1042,11 @@ export function buildGeometry(topology: { walls: TopologyWall[]; openings: Topol
 
   const { points, adjacency } = buildAdjacencyGraph(topology.walls);
   const loops = dedupeAndFilterLoops(buildLoops(points, adjacency));
-  const { exteriorShell, roomPolygons: baseRoomPolygons } = deriveRoomPolygons(loops);
+  const { exteriorShell, roomPolygons: loopRoomPolygons } = deriveRoomPolygons(loops);
+  const hintedRoomPolygons = deriveRoomPolygonsFromHints(topology.semanticAnnotations?.roomHints ?? [], exteriorShell);
+  const baseRoomPolygons = selectBaseRoomPolygons(loopRoomPolygons, hintedRoomPolygons);
   const roomAdjacency = buildRoomAdjacency(baseRoomPolygons as RoomPolygon[], topology.walls, topology.openings);
-  const roomPolygons = classifyRooms(baseRoomPolygons, roomAdjacency, topology.walls);
+  const roomPolygons = classifyRooms(baseRoomPolygons, roomAdjacency, topology.walls, topology.semanticAnnotations?.roomHints ?? []);
   const floorZones = buildFloorZones(roomPolygons);
   const ceilingZones = buildCeilingZones(roomPolygons);
   const cameraAnchors = buildCameraAnchors(roomPolygons, roomAdjacency, topology.openings, exteriorShell);

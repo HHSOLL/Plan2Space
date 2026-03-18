@@ -118,7 +118,8 @@ export async function processFloorplanJob(job: JobRow) {
     const geometry = buildGeometry({
       walls: topology.walls,
       openings: topology.openings,
-      scale: topology.metadata.scale
+      scale: topology.metadata.scale,
+      semanticAnnotations: topology.semanticAnnotations
     });
 
     const sceneJson = buildSceneJson(topology, geometry);

@@ -50,6 +50,8 @@ type GeometrySnapshot = {
     estimatedCeilingHeightMm: number;
     estimatedUsage: string;
     isExteriorFacing: boolean;
+    labelSource: string;
+    matchedHintId: string | null;
   }>;
   entrance:
     | {
@@ -163,7 +165,9 @@ export function buildRevisionArtifacts(topology: TopologyPayload, geometry: Geom
       connectedRoomIds: room.connectedRoomIds,
       estimatedCeilingHeightMm: Math.round(room.estimatedCeilingHeight * 1000),
       estimatedUsage: room.estimatedUsage,
-      isExteriorFacing: room.isExteriorFacing
+      isExteriorFacing: room.isExteriorFacing,
+      labelSource: room.labelSource ?? "heuristic",
+      matchedHintId: room.matchedHintId ?? null
     })),
     entrance: deriveEntrance(topology),
     exteriorShell: geometry.exteriorShell.map((point) => toMillimeterVec(point, topology.metadata.scale)),
@@ -177,6 +181,7 @@ export function buildRevisionArtifacts(topology: TopologyPayload, geometry: Geom
     evidenceRefs: {
       source: topology.source,
       scaleInfo: topology.metadata.scaleInfo,
+      semanticAnnotations: topology.semanticAnnotations,
       selection: topology.selection,
       selectedProvider: topology.selectedProvider ?? null,
       selectedPassId: topology.selectedPassId ?? null

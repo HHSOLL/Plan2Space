@@ -154,3 +154,14 @@ Updated:
 Removed/Deprecated:
 - Babylon.js 또는 렌더러 교체를 현재 Phase 선행조건으로 보는 계획.
 - 외부 listing gallery 이미지를 서비스가 직접 수집해 benchmark/catalog를 채우는 계획.
+
+## 2026-03-13 변경 동기화 (Semantic Annotation Accuracy Pass)
+Added:
+- Phase 3 완료 조건에 `roomHints`, `dimensionAnnotations`를 이용한 room reconstruction/scale 보정 경로를 추가.
+- 한국 아파트형 fixture 평가에서 room label 존재 케이스의 room type 분류 정확도와 dimension-derived scale 회귀 테스트를 포함한다.
+
+Updated:
+- room reconstruction 고도화 범위를 wall loop heuristic 개선만이 아니라 semantic annotation fallback까지 포함하도록 확장.
+
+Removed/Deprecated:
+- geometry reconstruction을 wall graph 단독 입력으로만 개선하려는 계획.

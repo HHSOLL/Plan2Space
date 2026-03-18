@@ -20,6 +20,7 @@ export function normalizeAndValidateTopology(payload: TopologyPayload): Topology
     ...payload,
     walls: normalized.walls,
     openings: normalized.openings,
+    semanticAnnotations: normalized.semanticAnnotations,
     metadata: {
       ...payload.metadata,
       scale: normalized.scale,

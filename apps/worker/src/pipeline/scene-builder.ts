@@ -23,7 +23,9 @@ function serializeRoom(room: RoomPolygon) {
     connectedRoomIds: room.connectedRoomIds,
     estimatedCeilingHeight: room.estimatedCeilingHeight,
     estimatedUsage: room.estimatedUsage,
-    isExteriorFacing: room.isExteriorFacing
+    isExteriorFacing: room.isExteriorFacing,
+    labelSource: room.labelSource ?? "heuristic",
+    matchedHintId: room.matchedHintId ?? null
   };
 }
 
