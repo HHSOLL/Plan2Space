@@ -98,6 +98,10 @@ MESHY_STATUS_URL=
    - `apps/web/fixtures/floorplans/manifest.json`에 `channel`, `sourcePolicy`를 기록
    - `sourcePolicy`는 `partner_licensed`, `user_opt_in`, `manual_private`만 허용
    - 외부 listing gallery 이미지를 서비스가 자동 저장/수집한 fixture는 등록하지 않음
+12. semantic annotation QA:
+   - room label 또는 치수 표기가 실제로 있는 fixture에서는 generated revision의 `geometry_json.evidenceRefs.semanticAnnotations.roomHints`와 `dimensionAnnotations`가 비어 있지 않은지 확인
+   - semantic annotation이 존재하는 표본에서 `geometry_json.rooms[].labelSource`가 `annotation`으로 승격되는 케이스를 확인
+   - 한글 치수 표기가 있는 fixture에서 `scale.source=ocr_dimension`으로 복원되는지 확인
 
 ## 5) 실패 복구 QA
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
@@ -193,3 +197,13 @@ Updated:
 
 Removed/Deprecated:
 - 외부 listing gallery URL을 fixture/catalog source로 자동 수집하는 운영 방식.
+
+## 15) 2026-03-13 변경 동기화 (Semantic Room Hints + OCR Dimension)
+Added:
+- semantic annotation QA(`roomHints`, `dimensionAnnotations`, `labelSource`) 절차.
+
+Updated:
+- 한국 아파트형 입력 검수는 벽/문 추출뿐 아니라 한글 room label과 치수 annotation 보존 여부까지 포함한다.
+
+Removed/Deprecated:
+- room semantics를 최종 3D 결과 화면만 보고 추정하는 QA 방식.

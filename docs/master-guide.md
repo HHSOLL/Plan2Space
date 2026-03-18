@@ -188,3 +188,15 @@ Updated:
 Removed/Deprecated:
 - renderer 교체를 3D 맵 상용화의 주된 해결책으로 보는 접근.
 - 외부 listing gallery URL을 서비스가 직접 크롤링해 catalog/benchmark source로 삼는 접근.
+
+## 2026-03-13 변경 동기화 (Semantic Room Hints + OCR Dimension Upgrade)
+Added:
+- provider 출력 계약에 `semanticAnnotations.roomHints`, `semanticAnnotations.dimensionAnnotations`를 추가.
+- worker room reconstruction이 wall loop 외에 semantic room hint polygon을 fallback 입력으로 사용할 수 있도록 확장.
+
+Updated:
+- scale 보정은 `scaleInfo.evidence` 단일 값뿐 아니라 다중 dimension annotation 합의값을 우선 반영한다.
+- room type/label 결정은 형상 휴리스틱만이 아니라 한글/영문 room label annotation을 우선 priors로 사용한다.
+
+Removed/Deprecated:
+- room semantics를 area/exposure/adjacency 휴리스틱만으로 결정하는 해석.

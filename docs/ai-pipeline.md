@@ -48,6 +48,7 @@ geometry-first 규칙:
 - `derived_scene_json`, `derived_nav_json`, `derived_camera_json`는 파생 산출물
 - `topology_hash`, `room_graph_hash`, `geometry_hash`를 함께 저장
 - worker는 derived scene에 최소 `rooms`, `floors`, `ceilings`, `navGraph`, `cameraAnchors`를 포함한다.
+- provider 출력은 선택적으로 `semanticAnnotations.roomHints`, `semanticAnnotations.dimensionAnnotations`를 포함할 수 있으며, worker는 이를 room reconstruction/scale 보정 priors로 사용한다.
 
 ## 3) Provider 정책
 - 기본 순서: `anthropic,openai,snaptrude`
@@ -57,6 +58,7 @@ geometry-first 규칙:
 - 첫 성공 즉시 종료하지 않고 최고점 후보를 선택.
 - 후보 선택 시 wall count만 보지 않고 axis alignment, orphan/self-intersection, opening overlap, scale evidence completeness까지 반영.
 - `filled_plan` 프로파일은 네이버부동산형 컬러 채움/텍스처 평면도 같은 한국 아파트 gallery 입력을 위한 기본 상용 패스다.
+- room label과 dimension OCR은 별도 OCR 엔진을 선행하지 않고 현재 vision provider의 structured output으로 먼저 수집한다.
 
 주요 env:
 - `FLOORPLAN_PROVIDER_ORDER`
@@ -192,3 +194,15 @@ Updated:
 Removed/Deprecated:
 - `rooms/floors`만 만들고 ceiling/nav/camera는 프론트에서 전부 추론하는 접근.
 - 외부 listing gallery 이미지를 worker가 URL로 직접 수집하는 intake 방식.
+
+## 14) 2026-03-13 변경 동기화 (Semantic Room Hints + OCR Dimension)
+Added:
+- provider JSON 스키마에 `roomHints[]`, `dimensionAnnotations[]` 선택 필드를 추가.
+- `normalizeTopology`가 한글 room label을 `living_room`, `kitchen`, `balcony`, `utility` 등 taxonomy로 정규화하는 규칙.
+
+Updated:
+- `normalizeScaleInfo`는 raw `scaleInfo`가 약하거나 누락돼도 dimension annotation 기반으로 `ocr_dimension` scale을 재구성한다.
+- room reconstruction은 wall loop가 부족할 때 semantic room hint polygon을 fallback base room으로 사용할 수 있다.
+
+Removed/Deprecated:
+- `scaleInfo`만 존재하면 충분하다고 보는 단일 scale 추정 경로.

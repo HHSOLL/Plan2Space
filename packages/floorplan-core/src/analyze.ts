@@ -20,6 +20,51 @@ export type ScaleInfo = {
   };
 };
 
+export type SemanticRoomType =
+  | "living_room"
+  | "bedroom"
+  | "kitchen"
+  | "dining"
+  | "bathroom"
+  | "foyer"
+  | "corridor"
+  | "balcony"
+  | "utility"
+  | "pantry"
+  | "dress_room"
+  | "alpha_room"
+  | "service_area"
+  | "evacuation_space"
+  | "other";
+
+export type RoomHint = {
+  id: string;
+  label: string;
+  normalizedLabel: string;
+  roomType: SemanticRoomType;
+  position: Vec2;
+  polygon?: Vec2[];
+  confidence: number;
+  source: "ocr" | "provider";
+};
+
+export type DimensionAnnotation = {
+  id: string;
+  text: string;
+  mmValue?: number;
+  p1?: Vec2;
+  p2?: Vec2;
+  pxDistance?: number;
+  confidence: number;
+  orientation?: "horizontal" | "vertical" | "diagonal";
+  source: "ocr" | "provider";
+};
+
+export type SemanticAnnotations = {
+  roomHints: RoomHint[];
+  dimensionAnnotations: DimensionAnnotation[];
+};
+
 export type TopologyWall = {
   id: string;
   start: Vec2;
@@ -66,6 +111,7 @@ export type TopologyPayload = {
   };
   walls: TopologyWall[];
   openings: TopologyOpening[];
+  semanticAnnotations: SemanticAnnotations;
   source: string;
   cacheHit: false;
   selection: {
@@ -128,6 +174,9 @@ export type CandidateDebug = {
     scaleSource: ScaleSource;
     exteriorLoopClosed: boolean;
     entranceDetected: boolean;
+    roomHintCount: number;
+    labeledRoomHintCount: number;
+    dimensionAnnotationCount: number;
   };
   errors: string[];
   timingMs: number;
@@ -164,6 +213,7 @@ type Candidate = {
   openings: TopologyOpening[];
   scale: number;
   scaleInfo: ScaleInfo;
+  semanticAnnotations: SemanticAnnotations;
   score: number;
   scoreBreakdown: CandidateDebug["scoreBreakdown"];
   metrics: CandidateDebug["metrics"];
@@ -196,6 +246,45 @@ const OpeningSchema = z.object({
   typeConfidence: z.number().optional()
 });
 
+const RoomHintSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  normalizedLabel: z.string(),
+  roomType: z.enum([
+    "living_room",
+    "bedroom",
+    "kitchen",
+    "dining",
+    "bathroom",
+    "foyer",
+    "corridor",
+    "balcony",
+    "utility",
+    "pantry",
+    "dress_room",
+    "alpha_room",
+    "service_area",
+    "evacuation_space",
+    "other"
+  ]),
+  position: z.tuple([z.number(), z.number()]),
+  polygon: z.array(z.tuple([z.number(), z.number()])).optional(),
+  confidence: z.number(),
+  source: z.enum(["ocr", "provider"])
+});
+
+const DimensionAnnotationSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  mmValue: z.number().optional(),
+  p1: z.tuple([z.number(), z.number()]).optional(),
+  p2: z.tuple([z.number(), z.number()]).optional(),
+  pxDistance: z.number().optional(),
+  confidence: z.number(),
+  orientation: z.enum(["horizontal", "vertical", "diagonal"]).optional(),
+  source: z.enum(["ocr", "provider"])
+});
+
 const NormalizedTopologySchema = z.object({
   walls: z.array(WallSchema).min(1),
   openings: z.array(OpeningSchema),
@@ -214,6 +303,10 @@ const NormalizedTopologySchema = z.object({
         notes: z.string().optional()
       })
       .optional()
+  }),
+  semanticAnnotations: z.object({
+    roomHints: z.array(RoomHintSchema),
+    dimensionAnnotations: z.array(DimensionAnnotationSchema)
   })
 });
 
@@ -222,6 +315,7 @@ type NormalizedTopology = {
   openings: TopologyOpening[];
   scale: number;
   scaleInfo: ScaleInfo;
+  semanticAnnotations: SemanticAnnotations;
 };
 
 const PROVIDER_ORDER = (process.env.FLOORPLAN_PROVIDER_ORDER ?? "anthropic,openai,snaptrude")
@@ -328,6 +422,12 @@ function asVec2(value: unknown): Vec2 | null {
   return null;
 }
 
+function asPolygon(value: unknown): Vec2[] | null {
+  if (!Array.isArray(value)) return null;
+  const points = value.map((point) => asVec2(point)).filter((point): point is Vec2 => Boolean(point));
+  return points.length >= 3 ? points : null;
+}
+
 function distance(a: Vec2, b: Vec2) {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
@@ -336,6 +436,115 @@ function distance(a: Vec2, b: Vec2) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function averagePoint(points: Vec2[]): Vec2 {
+  if (points.length === 0) return [0, 0];
+  const [sumX, sumY] = points.reduce<[number, number]>(
+    (accumulator, point) => [accumulator[0] + point[0], accumulator[1] + point[1]],
+    [0, 0]
+  );
+  return [sumX / points.length, sumY / points.length];
+}
+
+function formatNumberForKey(value: number) {
+  if (!Number.isFinite(value)) return "na";
+  return Number.isInteger(value) ? String(value) : value.toFixed(3).replace(/\.?0+$/, "");
+}
+
+function pointKey(point?: Vec2) {
+  return point ? `${formatNumberForKey(point[0])},${formatNumberForKey(point[1])}` : "na";
+}
+
+function polygonKey(polygon?: Vec2[]) {
+  return polygon && polygon.length > 0 ? polygon.map((point) => pointKey(point)).join(";") : "na";
+}
+
+function normalizeSemanticLabel(text: string) {
+  return text
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[·•ㆍ.\-_/()[\]{}]/g, "")
+    .toLowerCase();
+}
+
+function inferRoomTypeFromLabel(label: string): SemanticRoomType {
+  const normalized = normalizeSemanticLabel(label);
+  if (!normalized) return "other";
+  if (normalized.includes("대피공간") || normalized.includes("evacuation")) return "evacuation_space";
+  if (normalized.includes("알파룸") || normalized.includes("알파")) return "alpha_room";
+  if (normalized.includes("드레스룸") || normalized.includes("드레스") || normalized.includes("dress")) return "dress_room";
+  if (normalized.includes("팬트리") || normalized.includes("pantry")) return "pantry";
+  if (normalized.includes("다용도실") || normalized.includes("세탁실") || normalized.includes("utility")) return "utility";
+  if (normalized.includes("서비스") || normalized.includes("실외기실") || normalized.includes("service")) return "service_area";
+  if (normalized.includes("발코니") || normalized.includes("베란다") || normalized.includes("balcony") || normalized.includes("terrace"))
+    return "balcony";
+  if (normalized.includes("현관") || normalized.includes("foyer") || normalized.includes("entry")) return "foyer";
+  if (normalized.includes("복도") || normalized.includes("corridor") || normalized.includes("hall")) return "corridor";
+  if (
+    normalized.includes("욕실") ||
+    normalized.includes("화장실") ||
+    normalized.includes("bathroom") ||
+    normalized.includes("toilet") ||
+    normalized.includes("wc")
+  ) {
+    return "bathroom";
+  }
+  if (normalized.includes("주방식당") || normalized.includes("kitchendining")) return "kitchen";
+  if (normalized.includes("주방") || normalized.includes("kitchen")) return "kitchen";
+  if (normalized.includes("식당") || normalized.includes("다이닝") || normalized.includes("dining")) return "dining";
+  if (normalized.includes("거실") || normalized.includes("living")) return "living_room";
+  if (
+    normalized.includes("침실") ||
+    normalized.includes("안방") ||
+    normalized.includes("작은방") ||
+    normalized.includes("bedroom") ||
+    /^방\d*$/.test(normalized)
+  ) {
+    return "bedroom";
+  }
+  return "other";
+}
+
+function parseDimensionMmValue(text: string, orientation?: DimensionAnnotation["orientation"]) {
+  const raw = text.trim();
+  if (!raw) return null;
+  if (/[평㎡]/.test(raw) || /m²|m2|sq\.?\s*m|sqm/i.test(raw)) return null;
+
+  const compact = raw.replace(/\s+/g, "");
+  const numericTokens = compact.match(/\d+(?:[.,]\d+)?/g);
+  if (!numericTokens || numericTokens.length === 0) return null;
+
+  let chosen = [...numericTokens].sort((left, right) => right.length - left.length)[0]!;
+  if ((compact.includes("x") || compact.includes("X") || compact.includes("×")) && numericTokens.length >= 2) {
+    if (orientation === "horizontal") {
+      chosen = numericTokens[0]!;
+    } else if (orientation === "vertical") {
+      chosen = numericTokens[1]!;
+    }
+  }
+
+  const normalized = chosen.replace(/,/g, "");
+  const value = Number(normalized);
+  if (!Number.isFinite(value) || value <= 0) return null;
+
+  if (/cm/i.test(compact)) return Math.round(value * 10);
+  if (/mm|㎜/i.test(compact)) return Math.round(value);
+  if (/m/i.test(compact) || normalized.includes(".")) {
+    if (value >= 1 && value <= 50) return Math.round(value * 1000);
+  }
+  if (value >= 100 && value <= 50000) return Math.round(value);
+  return null;
+}
+
+function getDimensionOrientation(p1?: Vec2, p2?: Vec2): DimensionAnnotation["orientation"] | undefined {
+  if (!p1 || !p2) return undefined;
+  const dx = Math.abs(p2[0] - p1[0]);
+  const dy = Math.abs(p2[1] - p1[1]);
+  const tolerance = Math.max(2, Math.max(dx, dy) * 0.06);
+  if (dx <= tolerance) return "vertical";
+  if (dy <= tolerance) return "horizontal";
+  return "diagonal";
 }
 
 function median(values: number[]) {
@@ -634,7 +843,251 @@ function countScaleEvidenceCompleteness(scaleInfo: ScaleInfo) {
   return clamp(score, 0, 1);
 }
 
-export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number): ScaleInfo {
+function dedupeDimensionAnnotations(items: DimensionAnnotation[]) {
+  const byKey = new Map<string, DimensionAnnotation>();
+  for (const item of items) {
+    const key = [
+      normalizeSemanticLabel(item.text),
+      item.mmValue ?? "na",
+      pointKey(item.p1),
+      pointKey(item.p2),
+      item.pxDistance !== undefined ? formatNumberForKey(item.pxDistance) : "na",
+      item.orientation ?? "na"
+    ].join("|");
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, item);
+      continue;
+    }
+
+    const existingSignal =
+      existing.confidence +
+      (existing.mmValue ? 0.2 : 0) +
+      (existing.p1 && existing.p2 ? 0.2 : 0) +
+      (existing.pxDistance ? 0.1 : 0);
+    const nextSignal =
+      item.confidence +
+      (item.mmValue ? 0.2 : 0) +
+      (item.p1 && item.p2 ? 0.2 : 0) +
+      (item.pxDistance ? 0.1 : 0);
+    if (nextSignal > existingSignal) {
+      byKey.set(key, item);
+    }
+  }
+
+  return [...byKey.entries()]
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([_, item], index) => ({
+      ...item,
+      id: `dim${index + 1}`
+    }));
+}
+
+function dedupeRoomHints(items: RoomHint[]) {
+  const byKey = new Map<string, RoomHint>();
+  for (const item of items) {
+    const key = [item.normalizedLabel, item.roomType, pointKey(item.position), polygonKey(item.polygon)].join("|");
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, item);
+      continue;
+    }
+
+    const existingSignal = existing.confidence + (existing.roomType !== "other" ? 0.25 : 0) + (existing.polygon ? 0.25 : 0);
+    const nextSignal = item.confidence + (item.roomType !== "other" ? 0.25 : 0) + (item.polygon ? 0.25 : 0);
+    if (nextSignal > existingSignal) {
+      byKey.set(key, item);
+    }
+  }
+
+  return [...byKey.entries()]
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([_, item], index) => ({
+      ...item,
+      id: `rh${index + 1}`
+    }));
+}
+
+function normalizeSemanticAnnotations(payload: Record<string, unknown>): SemanticAnnotations {
+  const semanticPayload =
+    payload.semanticAnnotations && typeof payload.semanticAnnotations === "object" && !Array.isArray(payload.semanticAnnotations)
+      ? (payload.semanticAnnotations as Record<string, unknown>)
+      : {};
+  const roomHintSources = [
+    semanticPayload.roomHints,
+    semanticPayload.roomLabels,
+    semanticPayload.rooms,
+    payload.roomHints,
+    payload.roomLabels,
+    payload.rooms,
+    (payload.annotations as Record<string, unknown> | undefined)?.roomHints,
+    (payload.annotations as Record<string, unknown> | undefined)?.roomLabels,
+    (payload.annotations as Record<string, unknown> | undefined)?.rooms
+  ];
+  const dimensionSources = [
+    semanticPayload.dimensionAnnotations,
+    semanticPayload.dimensions,
+    payload.dimensionAnnotations,
+    payload.dimensions,
+    (payload.annotations as Record<string, unknown> | undefined)?.dimensionAnnotations,
+    (payload.annotations as Record<string, unknown> | undefined)?.dimensions
+  ];
+
+  const roomHints = dedupeRoomHints(
+    roomHintSources.flatMap((source) => {
+      const list = Array.isArray(source) ? source : [];
+      return list
+        .map<RoomHint | null>((item, index) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+          const record = item as Record<string, unknown>;
+          const polygon = asPolygon(record.polygon ?? record.outline ?? record.points ?? record.vertices);
+          const position =
+            asVec2(record.position ?? record.center ?? [record.x, record.y]) ??
+            (polygon ? averagePoint(polygon) : null);
+          const rawLabel =
+            typeof record.label === "string"
+              ? record.label
+              : typeof record.text === "string"
+                ? record.text
+                : typeof record.name === "string"
+                  ? record.name
+                  : "";
+          const label = rawLabel.trim();
+          if (!position || !label) return null;
+          const normalizedLabel = normalizeSemanticLabel(label);
+          const explicitRoomType = typeof record.roomType === "string" ? record.roomType : "";
+          const genericType = typeof record.type === "string" ? record.type : "";
+          const inferredFromStructuredType = inferRoomTypeFromLabel(explicitRoomType || genericType);
+          const inferredRoomType =
+            inferredFromStructuredType !== "other" ? inferredFromStructuredType : inferRoomTypeFromLabel(label);
+          return {
+            id: typeof record.id === "string" && record.id.length > 0 ? record.id : `rh-source-${index + 1}`,
+            label,
+            normalizedLabel,
+            roomType: inferredRoomType,
+            position,
+            ...(polygon ? { polygon } : {}),
+            confidence: clamp(toNumber(record.confidence, inferredRoomType === "other" ? 0.45 : 0.7), 0, 1),
+            source: (record.source === "ocr" ? "ocr" : "provider") as "ocr" | "provider"
+          };
+        })
+        .filter((item): item is RoomHint => Boolean(item));
+    })
+  );
+
+  const dimensionAnnotations = dedupeDimensionAnnotations(
+    dimensionSources.flatMap((source) => {
+      const list = Array.isArray(source) ? source : [];
+      return list
+        .map<DimensionAnnotation | null>((item, index) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+          const record = item as Record<string, unknown>;
+          const text =
+            typeof record.text === "string"
+              ? record.text
+              : typeof record.label === "string"
+                ? record.label
+                : typeof record.ocrText === "string"
+                  ? record.ocrText
+                  : "";
+          if (!text.trim()) return null;
+
+          const p1 = asVec2(record.p1 ?? record.start ?? record.from ?? record.a);
+          const p2 = asVec2(record.p2 ?? record.end ?? record.to ?? record.b);
+          const orientation =
+            record.orientation === "horizontal" || record.orientation === "vertical" || record.orientation === "diagonal"
+              ? record.orientation
+              : getDimensionOrientation(p1 ?? undefined, p2 ?? undefined);
+          const pxDistance =
+            Number.isFinite(Number(record.pxDistance))
+              ? Number(record.pxDistance)
+              : p1 && p2
+                ? distance(p1, p2)
+                : undefined;
+          const mmValue = Number.isFinite(Number(record.mmValue))
+            ? Number(record.mmValue)
+            : parseDimensionMmValue(text, orientation);
+
+          if (!mmValue && !pxDistance) return null;
+
+          return {
+            id: typeof record.id === "string" && record.id.length > 0 ? record.id : `dim-source-${index + 1}`,
+            text,
+            ...(Number.isFinite(mmValue) ? { mmValue: Number(mmValue) } : {}),
+            ...(p1 ? { p1 } : {}),
+            ...(p2 ? { p2 } : {}),
+            ...(Number.isFinite(pxDistance) ? { pxDistance } : {}),
+            confidence: clamp(toNumber(record.confidence, Number.isFinite(mmValue) && Number.isFinite(pxDistance) ? 0.85 : 0.55), 0, 1),
+            orientation,
+            source: (record.source === "ocr" ? "ocr" : "provider") as "ocr" | "provider"
+          };
+        })
+        .filter((item): item is DimensionAnnotation => Boolean(item));
+    })
+  );
+
+  return {
+    roomHints,
+    dimensionAnnotations
+  };
+}
+
+function deriveScaleInfoFromDimensions(dimensionAnnotations: DimensionAnnotation[]) {
+  const candidates = dimensionAnnotations
+    .map((annotation) => {
+      const mmValue = annotation.mmValue;
+      const pxDistance =
+        annotation.pxDistance ??
+        (annotation.p1 && annotation.p2 ? distance(annotation.p1, annotation.p2) : undefined);
+      if (!Number.isFinite(mmValue) || !Number.isFinite(pxDistance) || !pxDistance || pxDistance <= 0) return null;
+      const metersPerPixel = mmValue / 1000 / pxDistance;
+      if (!Number.isFinite(metersPerPixel) || metersPerPixel <= 0.0001 || metersPerPixel >= 0.5) return null;
+      return {
+        annotation,
+        metersPerPixel,
+        pxDistance
+      };
+    })
+    .filter(
+      (
+        entry
+      ): entry is {
+        annotation: DimensionAnnotation;
+        metersPerPixel: number;
+        pxDistance: number;
+      } => Boolean(entry)
+    )
+    .sort((left, right) => right.annotation.confidence - left.annotation.confidence || right.pxDistance - left.pxDistance);
+
+  if (candidates.length === 0) return null;
+
+  const strongest = candidates[0]!;
+  const cluster = candidates.filter((candidate) => {
+    const drift = Math.abs(candidate.metersPerPixel - strongest.metersPerPixel) / strongest.metersPerPixel;
+    return drift <= 0.14;
+  });
+
+  const totalWeight = cluster.reduce((sum, candidate) => sum + Math.max(0.1, candidate.annotation.confidence), 0);
+  const weightedScale =
+    cluster.reduce((sum, candidate) => sum + candidate.metersPerPixel * Math.max(0.1, candidate.annotation.confidence), 0) /
+    Math.max(totalWeight, 0.1);
+
+  return {
+    value: weightedScale,
+    source: "ocr_dimension" as const,
+    confidence: clamp(0.62 + Math.min(0.28, cluster.length * 0.07) + strongest.annotation.confidence * 0.1, 0, 0.98),
+    evidence: {
+      mmValue: strongest.annotation.mmValue,
+      pxDistance: strongest.pxDistance,
+      ...(strongest.annotation.p1 ? { p1: strongest.annotation.p1 } : {}),
+      ...(strongest.annotation.p2 ? { p2: strongest.annotation.p2 } : {}),
+      ocrText: strongest.annotation.text,
+      notes: `Derived from ${cluster.length} dimension annotation(s).`
+    }
+  };
+}
+
+export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number, dimensionAnnotations: DimensionAnnotation[] = []): ScaleInfo {
   const unknown = {
     value: scale,
     source: "unknown" as const,
@@ -643,12 +1096,10 @@ export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number): ScaleI
       notes: "Scale was not confidently detected."
     }
   };
-
-  if (!rawScaleInfo || typeof rawScaleInfo !== "object" || Array.isArray(rawScaleInfo)) {
-    return unknown;
-  }
-
-  const record = rawScaleInfo as Record<string, unknown>;
+  const record =
+    rawScaleInfo && typeof rawScaleInfo === "object" && !Array.isArray(rawScaleInfo)
+      ? (rawScaleInfo as Record<string, unknown>)
+      : {};
   let source: ScaleSource =
     record.source === "ocr_dimension" ||
     record.source === "door_heuristic" ||
@@ -685,8 +1136,24 @@ export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number): ScaleI
     confidence = Math.max(confidence, 0.7);
   }
 
+  const dimensionDerived = deriveScaleInfoFromDimensions(dimensionAnnotations);
+  const currentValue = toNumber(record.value, scale);
+  if (
+    dimensionDerived &&
+    (source === "unknown" ||
+      confidence < 0.62 ||
+      evidenceCompleteness < 0.55 ||
+      (currentValue > 0 && Math.abs(dimensionDerived.value - currentValue) / currentValue <= 0.16 && dimensionDerived.confidence > confidence))
+  ) {
+    return dimensionDerived;
+  }
+
+  if (Object.keys(record).length === 0) {
+    return unknown;
+  }
+
   return {
-    value: toNumber(record.value, scale),
+    value: currentValue,
     source,
     confidence,
     ...(Object.keys(normalizedEvidence ?? {}).length > 0 ? { evidence: normalizedEvidence } : {})
@@ -711,6 +1178,7 @@ function unwrapTopologyPayload(input: unknown): Record<string, unknown> {
 
 export function normalizeTopology(raw: unknown): NormalizedTopology {
   const payload = unwrapTopologyPayload(raw);
+  const semanticAnnotations = normalizeSemanticAnnotations(payload);
 
   const wallSourceRaw = payload.walls ?? payload.wallSegments ?? payload.lines ?? payload.segments ?? [];
   const wallSource = Array.isArray(wallSourceRaw) ? wallSourceRaw : [];
@@ -803,21 +1271,28 @@ export function normalizeTopology(raw: unknown): NormalizedTopology {
     ...openingsFromArray(payload.windows, "window")
   ]);
 
-  const scale = Math.max(0.0001, toNumber(payload.scale ?? (payload.metadata as Record<string, unknown> | undefined)?.scale, 1));
-  const scaleInfo = normalizeScaleInfo(payload.scaleInfo ?? (payload.metadata as Record<string, unknown> | undefined)?.scaleInfo, scale);
+  const rawScale = Math.max(0.0001, toNumber(payload.scale ?? (payload.metadata as Record<string, unknown> | undefined)?.scale, 1));
+  const scaleInfo = normalizeScaleInfo(
+    payload.scaleInfo ?? (payload.metadata as Record<string, unknown> | undefined)?.scaleInfo,
+    rawScale,
+    semanticAnnotations.dimensionAnnotations
+  );
+  const scale = Math.max(0.0001, scaleInfo.value);
 
   const parsed = NormalizedTopologySchema.parse({
     walls,
     openings,
     scale,
-    scaleInfo
+    scaleInfo,
+    semanticAnnotations
   });
 
   return {
     walls: parsed.walls as TopologyWall[],
     openings: parsed.openings as TopologyOpening[],
     scale: parsed.scale,
-    scaleInfo: parsed.scaleInfo as ScaleInfo
+    scaleInfo: parsed.scaleInfo as ScaleInfo,
+    semanticAnnotations: parsed.semanticAnnotations as SemanticAnnotations
   };
 }
 
@@ -889,6 +1364,7 @@ export function scoreCandidate(candidate: {
   walls: TopologyWall[];
   openings: TopologyOpening[];
   scaleInfo: ScaleInfo;
+  semanticAnnotations?: SemanticAnnotations;
 }): {
   total: number;
   breakdown: CandidateDebug["scoreBreakdown"];
@@ -958,6 +1434,10 @@ export function scoreCandidate(candidate: {
     openingCount === 0 ? 0.5 : candidate.openings.reduce((sum, opening) => sum + getOpeningConfidence(opening), 0) / openingCount;
   const scaleEvidenceCompleteness = countScaleEvidenceCompleteness(candidate.scaleInfo);
   const entranceDetected = candidate.openings.some((opening) => opening.isEntrance === true);
+  const roomHintCount = candidate.semanticAnnotations?.roomHints.length ?? 0;
+  const labeledRoomHintCount =
+    candidate.semanticAnnotations?.roomHints.filter((roomHint) => roomHint.roomType !== "other").length ?? 0;
+  const dimensionAnnotationCount = candidate.semanticAnnotations?.dimensionAnnotations.length ?? 0;
 
   const topologyScore = Math.min(
     65,
@@ -1016,7 +1496,10 @@ export function scoreCandidate(candidate: {
       scaleEvidenceCompleteness,
       scaleSource: candidate.scaleInfo.source,
       exteriorLoopClosed,
-      entranceDetected
+      entranceDetected,
+      roomHintCount,
+      labeledRoomHintCount,
+      dimensionAnnotationCount
     }
   };
 }
@@ -1024,13 +1507,17 @@ export function scoreCandidate(candidate: {
 function makePrompt() {
   return [
     "Analyze this architectural floorplan image and return strict JSON only.",
-    "Focus on structural geometry (walls and openings). Ignore furniture labels and decorative text.",
+    "Focus on structural geometry (walls and openings), room labels, and dimension callouts.",
+    "Ignore furniture labels, branding, and decorative text.",
+    "If Korean room names or dimension numbers are visible, include them in roomHints or dimensionAnnotations.",
     "Output schema:",
     "{",
     "  \"scale\": number,",
     "  \"scaleInfo\": { \"value\": number, \"source\": \"ocr_dimension|door_heuristic|user_measure|unknown\", \"confidence\": number, \"evidence\": { \"mmValue\"?: number, \"pxDistance\"?: number, \"ocrText\"?: string } },",
     "  \"walls\": [{ \"id\": string, \"start\": [number, number], \"end\": [number, number], \"thickness\": number, \"type\": \"exterior|interior\", \"confidence\"?: number }],",
-    "  \"openings\": [{ \"id\": string, \"wallId\": string, \"type\": \"door|window\", \"position\": [number, number], \"width\": number, \"height\": number, \"offset\"?: number, \"isEntrance\"?: boolean, \"detectConfidence\"?: number, \"attachConfidence\"?: number, \"typeConfidence\"?: number }]",
+    "  \"openings\": [{ \"id\": string, \"wallId\": string, \"type\": \"door|window|sliding_door|double_door|passage\", \"position\": [number, number], \"width\": number, \"height\"?: number, \"offset\"?: number, \"isEntrance\"?: boolean, \"detectConfidence\"?: number, \"attachConfidence\"?: number, \"typeConfidence\"?: number }],",
+    "  \"roomHints\"?: [{ \"id\"?: string, \"label\": string, \"roomType\"?: \"living_room|bedroom|kitchen|dining|bathroom|foyer|corridor|balcony|utility|pantry|dress_room|alpha_room|service_area|evacuation_space|other\", \"position\": [number, number], \"polygon\"?: [[number, number], ...], \"confidence\"?: number }],",
+    "  \"dimensionAnnotations\"?: [{ \"id\"?: string, \"text\": string, \"mmValue\"?: number, \"p1\"?: [number, number], \"p2\"?: [number, number], \"pxDistance\"?: number, \"confidence\"?: number, \"orientation\"?: \"horizontal|vertical|diagonal\" }]",
     "}",
     "Do not include markdown fences. JSON only."
   ].join("\n");
@@ -1215,7 +1702,8 @@ async function runProvider(provider: ProviderName, pass: { passId: string; profi
     const scored = scoreCandidate({
       walls: normalized.walls,
       openings: normalized.openings,
-      scaleInfo: normalized.scaleInfo
+      scaleInfo: normalized.scaleInfo,
+      semanticAnnotations: normalized.semanticAnnotations
     });
 
     return {
@@ -1228,6 +1716,7 @@ async function runProvider(provider: ProviderName, pass: { passId: string; profi
         openings: normalized.openings,
         scale: normalized.scale,
         scaleInfo: normalized.scaleInfo,
+        semanticAnnotations: normalized.semanticAnnotations,
         score: scored.total,
         scoreBreakdown: scored.breakdown,
         metrics: scored.metrics,
@@ -1336,6 +1825,10 @@ export async function analyzeFloorplanUpload(request: AnalyzeUploadRequest): Pro
               confidence: 0,
               evidence: { notes: run.error }
             },
+            semanticAnnotations: {
+              roomHints: [],
+              dimensionAnnotations: []
+            },
             score: 0,
             scoreBreakdown: {
               topologyScore: 0,
@@ -1362,7 +1855,10 @@ export async function analyzeFloorplanUpload(request: AnalyzeUploadRequest): Pro
               scaleEvidenceCompleteness: 0,
               scaleSource: "unknown",
               exteriorLoopClosed: false,
-              entranceDetected: false
+              entranceDetected: false,
+              roomHintCount: 0,
+              labeledRoomHintCount: 0,
+              dimensionAnnotationCount: 0
             },
             errors: [run.error],
             elapsedMs: run.elapsedMs
@@ -1414,6 +1910,7 @@ export async function analyzeFloorplanUpload(request: AnalyzeUploadRequest): Pro
       },
       walls: selected.walls,
       openings: selected.openings,
+      semanticAnnotations: selected.semanticAnnotations,
       source: selected.provider,
       cacheHit: false,
       selection: {
