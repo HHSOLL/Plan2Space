@@ -47,6 +47,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
   - `http://127.0.0.1:3100`
   - `https://<your-domain>`
 
+### Google만 실패하고 Kakao는 성공할 때
+
+- 가장 흔한 원인: **로컬 origin 불일치**
+  - 앱은 `http://127.0.0.1:3100` 기준으로 실행/문서화돼 있는데, 브라우저에서 `http://localhost:3100`으로 열면 Google OAuth origin 검증에 실패할 수 있습니다.
+  - Kakao는 Supabase 콜백 기준으로 동작해서 이 문제가 덜 드러날 수 있습니다.
+- 확인 항목:
+  1) 브라우저 주소가 `http://127.0.0.1:3100`인지 확인
+  2) `apps/web/.env.local`의 `NEXT_PUBLIC_APP_URL`이 `http://127.0.0.1:3100`인지 확인
+  3) Google Cloud Console `Authorized JavaScript origins`에 `http://127.0.0.1:3100`와 필요 시 `http://localhost:3100` 둘 다 등록
+  4) Supabase Auth `Site URL` / `Redirect URLs`에도 실제 로그인 시작 도메인을 맞춤
+
+- 현재 앱 동작:
+  - 로컬에서 `localhost`로 진입해도 `NEXT_PUBLIC_APP_URL`이 loopback canonical origin(`127.0.0.1`)으로 설정돼 있으면 그 주소로 정규화한 뒤 OAuth를 시작합니다.
+  - 콜백 실패 시 provider 에러 설명을 `auth_message`로 전달해 토스트에 노출합니다.
+
 ## Kakao OAuth 설정
 
 - Kakao Developers에서 앱 생성

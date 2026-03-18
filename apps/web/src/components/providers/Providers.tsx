@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { resolveBrowserAppOrigin, resolveCanonicalBrowserHref } from "../../lib/auth/browser-origin";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -20,10 +21,16 @@ export function Providers({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+        const canonicalHref = resolveCanonicalBrowserHref(window.location.href);
+        if (canonicalHref) {
+            window.location.replace(canonicalHref);
+            return;
+        }
         const url = new URL(window.location.href);
         const code = url.searchParams.get("code");
         if (code && url.pathname !== "/auth/callback") {
-            const callbackUrl = new URL("/auth/callback", window.location.origin);
+            const callbackBase = resolveBrowserAppOrigin() ?? window.location.origin;
+            const callbackUrl = new URL("/auth/callback", callbackBase);
             callbackUrl.searchParams.set("code", code);
             callbackUrl.searchParams.set("next", "/studio");
             const error = url.searchParams.get("error");
@@ -38,7 +45,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const status = new URLSearchParams(window.location.search).get("auth");
+        const searchParams = new URLSearchParams(window.location.search);
+        const status = searchParams.get("auth");
+        const authMessage = searchParams.get("auth_message");
         if (!status) {
             lastAuthToastRef.current = null;
             return;
@@ -47,12 +56,13 @@ export function Providers({ children }: { children: ReactNode }) {
             if (status === "success") {
                 toast.success("Welcome to Plan2Space Studio");
             } else if (status === "error") {
-                toast.error("로그인에 실패했습니다.");
+                toast.error(authMessage ?? "로그인에 실패했습니다.");
             }
             lastAuthToastRef.current = status;
         }
         const url = new URL(window.location.href);
         url.searchParams.delete("auth");
+        url.searchParams.delete("auth_message");
         router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
     }, [router]);
 

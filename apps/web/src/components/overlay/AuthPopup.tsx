@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useId } from "react";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
+import { buildBrowserAuthRedirectUrl } from "../../lib/auth/browser-origin";
 import { toast } from "sonner";
 
 interface AuthPopupProps {
@@ -39,13 +40,8 @@ export function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isOpen, onClose]);
 
-    const buildRedirectUrl = () => {
-        if (typeof window === "undefined") return undefined;
-        return `${window.location.origin}/auth/callback`;
-    };
-
     const handleSocialLogin = async (provider: "google" | "kakao") => {
-        const redirectTo = buildRedirectUrl();
+        const redirectTo = buildBrowserAuthRedirectUrl();
         await loginWithProvider(provider, redirectTo);
     };
 
