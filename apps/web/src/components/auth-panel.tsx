@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { buildBrowserAuthRedirectUrl } from "../lib/auth/browser-origin";
 import { useAuthStore } from "../lib/stores/useAuthStore";
 
 export function AuthPanel({ className }: { className?: string }) {
@@ -25,13 +26,8 @@ export function AuthPanel({ className }: { className?: string }) {
     toast.success(notice);
   }, [notice]);
 
-  const buildRedirectUrl = () => {
-    if (typeof window === "undefined") return undefined;
-    return `${window.location.origin}/auth/callback`;
-  };
-
   const handleSocialLogin = async (provider: "google" | "kakao") => {
-    const redirectTo = buildRedirectUrl();
+    const redirectTo = buildBrowserAuthRedirectUrl();
     await loginWithProvider(provider, redirectTo);
   };
 

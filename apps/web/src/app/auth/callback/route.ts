@@ -6,9 +6,10 @@ function resolveNext(origin: string, nextParam: string | null) {
   return new URL(safeNext, origin);
 }
 
-function withAuthStatus(url: URL, status: "success" | "error") {
+function withAuthStatus(url: URL, status: "success" | "error", message?: string) {
   const next = new URL(url.toString());
   next.searchParams.set("auth", status);
+  if (message) next.searchParams.set("auth_message", message);
   return next;
 }
 
@@ -31,9 +32,11 @@ export async function GET(request: NextRequest) {
   const nextParam = url.searchParams.get("next");
   const redirectUrl = resolveNext(url.origin, nextParam);
   const errorParam = url.searchParams.get("error");
+  const errorDescription = url.searchParams.get("error_description");
 
   if (errorParam) {
-    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    const errorMessage = errorDescription ?? errorParam;
+    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error", errorMessage));
     clearSupabaseCookies(request, errorResponse);
     return errorResponse;
   }
@@ -46,7 +49,9 @@ export async function GET(request: NextRequest) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    const errorResponse = NextResponse.redirect(
+      withAuthStatus(redirectUrl, "error", "Supabase 환경 변수가 설정되지 않았습니다.")
+    );
     clearSupabaseCookies(request, errorResponse);
     return errorResponse;
   }
@@ -63,7 +68,7 @@ export async function GET(request: NextRequest) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error"));
+    const errorResponse = NextResponse.redirect(withAuthStatus(redirectUrl, "error", error.message));
     clearSupabaseCookies(request, errorResponse);
     return errorResponse;
   }
