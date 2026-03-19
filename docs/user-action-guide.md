@@ -76,8 +76,11 @@ MESHY_STATUS_URL=
 
 ## 3) OAuth/도메인 점검
 - Supabase Auth URL 설정에 실제 배포 도메인만 등록
+- Vercel Production `NEXT_PUBLIC_APP_URL`을 `https://plan2space.vercel.app`로 고정
+- Vercel Preview는 `NEXT_PUBLIC_APP_URL`을 비워 preview host 자체로 OAuth를 시작하게 유지
 - Railway API CORS에 Vercel 프로덕션/프리뷰 도메인 포함
 - Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
+- OAuth는 반드시 `plan2space.vercel.app`에서 시작하고 `/auth/callback`도 같은 host로 돌아오는지 확인
 - 브라우저에서 `Invalid Refresh Token`이 보이면 기존 `sb-*` 쿠키/스토리지를 정리한 뒤 재로그인
 
 ## 4) 운영 확인 시나리오
