@@ -165,3 +165,13 @@ Updated:
 
 Removed/Deprecated:
 - geometry reconstruction을 wall graph 단독 입력으로만 개선하려는 계획.
+
+## 2026-03-19 변경 동기화 (Scale Contract Sanity Pass)
+Added:
+- Phase 3 회귀 기준에 `scaleInfo.evidence`와 최종 `scale(metersPerPixel)` 일치성 검증을 추가.
+
+Updated:
+- 2D -> 3D 진입 실패 분석 범위를 인식 정확도뿐 아니라 scale contract/unit mismatch까지 포함하도록 확장.
+
+Removed/Deprecated:
+- provider raw scale 값이 저장돼 있으면 별도 sanity check 없이 그대로 소비하는 기준.

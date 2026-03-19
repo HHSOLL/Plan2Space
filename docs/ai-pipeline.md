@@ -42,6 +42,8 @@ Base: Railway API `/v1`
 - opening: wall 중심점이 아니라 wall 선분에 투영해 재부착
 - opening: low-confidence / far-from-wall 후보 제거, 같은 wall 내 중첩 opening 정리
 - scale: `unknown` 이어도 evidence completeness가 높으면 `ocr_dimension`으로 승격
+- scale: `scaleInfo.evidence.mmValue/pxDistance`가 있으면 raw `value`보다 evidence 재계산값을 canonical 값으로 우선한다.
+- scale: provider raw `value`가 evidence와 크게 모순되면 evidence 재계산값으로 교정해 `metersPerPixel` 계약을 유지한다.
 
 geometry-first 규칙:
 - canonical truth는 `layout_revisions.geometry_json`
@@ -206,3 +208,13 @@ Updated:
 
 Removed/Deprecated:
 - `scaleInfo`만 존재하면 충분하다고 보는 단일 scale 추정 경로.
+
+## 15) 2026-03-19 변경 동기화 (Scale Evidence Canonicalization)
+Added:
+- `scaleInfo.evidence(mmValue, pxDistance, p1/p2)` 기반 canonical scale 재계산 규칙.
+
+Updated:
+- provider가 `ocr_dimension`을 반환해도 raw `value`가 evidence와 모순되면 worker가 evidence 기준 `metersPerPixel`로 교정한다.
+
+Removed/Deprecated:
+- evidence가 있어도 provider raw `scaleInfo.value`를 그대로 신뢰하는 처리.

@@ -180,9 +180,10 @@ export default function ProjectEditorPage() {
       if (typeof nextImage === "string") {
         setImageSrc(nextImage);
       }
+      const nextScaleInfo = parseScaleInfo(mapped.scaleInfo, mapped.scale);
       setScene({
-        scale: mapped.scale,
-        scaleInfo: parseScaleInfo(mapped.scaleInfo, mapped.scale),
+        scale: nextScaleInfo.value,
+        scaleInfo: nextScaleInfo,
         walls: mapped.walls,
         openings: mapped.openings,
         floors: mapped.floors,
@@ -247,7 +248,7 @@ export default function ProjectEditorPage() {
             const nextScale = typeof floorPlan.scale === "number" && floorPlan.scale > 0 ? floorPlan.scale : 1;
             const nextScaleInfo = parseScaleInfo(floorPlan.scaleInfo, nextScale);
             setScene({
-              scale: nextScale,
+              scale: nextScaleInfo.value,
               scaleInfo: nextScaleInfo,
               walls: floorPlan.walls as any,
               openings: Array.isArray(floorPlan.openings) ? (floorPlan.openings as any) : [],

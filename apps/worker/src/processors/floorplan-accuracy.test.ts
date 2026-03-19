@@ -22,6 +22,25 @@ test("normalizeScaleInfo upgrades unknown source when dimension evidence is stro
   assert.ok(scaleInfo.confidence >= 0.7);
 });
 
+test("normalizeScaleInfo canonicalizes conflicting raw value from evidence", () => {
+  const scaleInfo = normalizeScaleInfo(
+    {
+      value: 3.937,
+      source: "ocr_dimension",
+      confidence: 0.95,
+      evidence: {
+        mmValue: 10160,
+        pxDistance: 520,
+        ocrText: "10160"
+      }
+    },
+    3.937
+  );
+
+  assert.equal(scaleInfo.source, "ocr_dimension");
+  assert.ok(Math.abs(scaleInfo.value - 0.0195384615) < 0.000001);
+});
+
 test("normalizeTopology derives scale and semantic room hints from Korean annotations", () => {
   const normalized = normalizeTopology({
     walls: [

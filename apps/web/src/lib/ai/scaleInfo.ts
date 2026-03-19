@@ -3,6 +3,8 @@ import type { ScaleInfo, ScaleSource, Vector2 } from "../stores/useSceneStore";
 export const MIN_VALID_SCALE = 0.0005;
 export const MAX_VALID_SCALE = 0.2;
 export const MIN_SCALE_CONFIDENCE = 0.6;
+const MIN_EVIDENCE_SCALE = 0.0001;
+const MAX_EVIDENCE_SCALE = 0.5;
 
 function isScaleSource(value: unknown): value is ScaleSource {
   return value === "ocr_dimension" || value === "door_heuristic" || value === "user_measure" || value === "unknown";
@@ -20,6 +22,29 @@ function coerceVector2(value: unknown): Vector2 | undefined {
   const y = Number(value[1]);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return undefined;
   return [x, y];
+}
+
+function deriveScaleValueFromEvidence(evidence: {
+  mmValue?: number;
+  pxDistance?: number;
+  p1?: Vector2;
+  p2?: Vector2;
+} | undefined) {
+  if (!evidence) return null;
+  const mmValue = Number(evidence.mmValue);
+  const pxDistance = Number.isFinite(Number(evidence.pxDistance))
+    ? Number(evidence.pxDistance)
+    : evidence.p1 && evidence.p2
+      ? Math.hypot(evidence.p2[0] - evidence.p1[0], evidence.p2[1] - evidence.p1[1])
+      : NaN;
+  if (!Number.isFinite(mmValue) || !Number.isFinite(pxDistance) || pxDistance <= 0) {
+    return null;
+  }
+  const metersPerPixel = mmValue / 1000 / pxDistance;
+  if (!Number.isFinite(metersPerPixel) || metersPerPixel <= MIN_EVIDENCE_SCALE || metersPerPixel >= MAX_EVIDENCE_SCALE) {
+    return null;
+  }
+  return metersPerPixel;
 }
 
 export function createUnknownScaleInfo(value = 1, notes = "Scale has not been calibrated."): ScaleInfo {
@@ -40,7 +65,7 @@ export function parseScaleInfo(input: unknown, fallbackValue: number): ScaleInfo
   const raw = input as Record<string, unknown>;
   let source = isScaleSource(raw.source) ? raw.source : "unknown";
   const valueCandidate = Number(raw.value);
-  const value = Number.isFinite(valueCandidate) && valueCandidate > 0 ? valueCandidate : fallbackValue;
+  const rawValue = Number.isFinite(valueCandidate) && valueCandidate > 0 ? valueCandidate : fallbackValue;
   let confidence = clampConfidence(raw.confidence, source === "unknown" ? 0 : 0.6);
   const evidenceRaw =
     raw.evidence && typeof raw.evidence === "object" && !Array.isArray(raw.evidence)
@@ -77,6 +102,8 @@ export function parseScaleInfo(input: unknown, fallbackValue: number): ScaleInfo
           ...(notes ? { notes } : {})
         }
       : undefined;
+  const evidenceDerivedValue = deriveScaleValueFromEvidence(evidence);
+  const value = Number.isFinite(evidenceDerivedValue) ? evidenceDerivedValue : rawValue;
 
   const hasStrongDimensionEvidence = Boolean(
     evidence &&
@@ -138,11 +165,11 @@ export function createDoorHeuristicScaleInfo(params: {
 }
 
 export function getScaleGateMessage(scale: number, scaleInfo: ScaleInfo): string | null {
-  if (!Number.isFinite(scale) || scale < MIN_VALID_SCALE || scale > MAX_VALID_SCALE) {
-    return "Scale value is out of range. Measure a known distance before entering 3D.";
-  }
   if (!scaleInfo || scaleInfo.source === "unknown") {
     return "Scale source is unknown. Measure a known distance or confirm scale before entering 3D.";
+  }
+  if (!Number.isFinite(scale) || scale < MIN_VALID_SCALE || scale > MAX_VALID_SCALE) {
+    return "Scale value is out of range. Measure a known distance before entering 3D.";
   }
   if (scaleInfo.confidence < MIN_SCALE_CONFIDENCE) {
     return `Scale confidence is too low (${Math.round(scaleInfo.confidence * 100)}%). Measure a known distance before entering 3D.`;
