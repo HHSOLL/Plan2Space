@@ -105,6 +105,7 @@ MESHY_STATUS_URL=
    - room label 또는 치수 표기가 실제로 있는 fixture에서는 generated revision의 `geometry_json.evidenceRefs.semanticAnnotations.roomHints`와 `dimensionAnnotations`가 비어 있지 않은지 확인
    - semantic annotation이 존재하는 표본에서 `geometry_json.rooms[].labelSource`가 `annotation`으로 승격되는 케이스를 확인
    - 한글 치수 표기가 있는 fixture에서 `scale.source=ocr_dimension`으로 복원되는지 확인
+   - `scene_json.scale`와 `scaleInfo.evidence.mmValue/pxDistance`가 대략 일치하는지 확인 (`10160 / 520px`라면 약 `0.0195 m/px`)
 
 ## 5) 실패 복구 QA
 - provider 미구성 시 `PROVIDER_NOT_CONFIGURED` 노출
@@ -210,3 +211,13 @@ Updated:
 
 Removed/Deprecated:
 - room semantics를 최종 3D 결과 화면만 보고 추정하는 QA 방식.
+
+## 16) 2026-03-19 변경 동기화 (Scale Contract QA)
+Added:
+- 운영 QA에 `scene_json.scale`와 `scaleInfo.evidence` 일치성 확인 절차를 추가.
+
+Updated:
+- 3D 진입 실패 검수는 wall/opening 개수뿐 아니라 `metersPerPixel` 단위 정합성까지 확인하도록 확장.
+
+Removed/Deprecated:
+- 치수 evidence가 있어도 최종 scale 수치를 별도 검산하지 않는 QA 방식.

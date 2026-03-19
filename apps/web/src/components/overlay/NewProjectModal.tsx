@@ -155,7 +155,7 @@ export function NewProjectModal({ isOpen, onClose, onCreated }: NewProjectModalP
             rooms: mapped.rooms,
             cameraAnchors: mapped.cameraAnchors,
             navGraph: mapped.navGraph,
-            scale: normalizedScale,
+            scale: nextScaleInfo.value,
             scaleInfo: nextScaleInfo
         });
         useSceneStore.setState({ entranceId: mapped.entranceId });

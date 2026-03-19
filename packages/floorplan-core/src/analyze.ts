@@ -1087,6 +1087,24 @@ function deriveScaleInfoFromDimensions(dimensionAnnotations: DimensionAnnotation
   };
 }
 
+function deriveScaleValueFromEvidence(evidence: ScaleInfo["evidence"] | undefined) {
+  if (!evidence) return null;
+  const mmValue = Number(evidence.mmValue);
+  const pxDistance = Number.isFinite(Number(evidence.pxDistance))
+    ? Number(evidence.pxDistance)
+    : evidence.p1 && evidence.p2
+      ? distance(evidence.p1, evidence.p2)
+      : NaN;
+  if (!Number.isFinite(mmValue) || !Number.isFinite(pxDistance) || pxDistance <= 0) {
+    return null;
+  }
+  const metersPerPixel = mmValue / 1000 / pxDistance;
+  if (!Number.isFinite(metersPerPixel) || metersPerPixel <= 0.0001 || metersPerPixel >= 0.5) {
+    return null;
+  }
+  return metersPerPixel;
+}
+
 export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number, dimensionAnnotations: DimensionAnnotation[] = []): ScaleInfo {
   const unknown = {
     value: scale,
@@ -1137,7 +1155,8 @@ export function normalizeScaleInfo(rawScaleInfo: unknown, scale: number, dimensi
   }
 
   const dimensionDerived = deriveScaleInfoFromDimensions(dimensionAnnotations);
-  const currentValue = toNumber(record.value, scale);
+  const evidenceDerivedValue = deriveScaleValueFromEvidence(normalizedEvidence);
+  const currentValue = evidenceDerivedValue ?? toNumber(record.value, scale);
   if (
     dimensionDerived &&
     (source === "unknown" ||
