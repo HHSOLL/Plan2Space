@@ -60,7 +60,16 @@ geometry-first 규칙:
 - 첫 성공 즉시 종료하지 않고 최고점 후보를 선택.
 - 후보 선택 시 wall count만 보지 않고 axis alignment, orphan/self-intersection, opening overlap, scale evidence completeness까지 반영.
 - `filled_plan` 프로파일은 네이버부동산형 컬러 채움/텍스처 평면도 같은 한국 아파트 gallery 입력을 위한 기본 상용 패스다.
-- room label과 dimension OCR은 별도 OCR 엔진을 선행하지 않고 현재 vision provider의 structured output으로 먼저 수집한다.
+- room label과 dimension OCR은 PaddleOCR(`korean_PP-OCRv5_mobile_rec`) 외부 lane을 우선 허용하고, 그 결과를 `semanticAnnotations.roomHints/dimensionAnnotations`로 merge한다.
+- 외부 구조 파서 후보는 Roboflow CubiCasa2/3, HF Dedicated Endpoint를 optional candidate로 추가할 수 있다.
+
+정확도 상용화 규칙:
+- blind eval은 Railway intake/job/result 실경로를 사용한다.
+- fixture manifest는 `channel`, `sourcePolicy` 외에 `qualityTags`, `complexityTier`, `gold.*`를 포함한다.
+- blind set은 기본 100장 기준이며 `korean_complex >= 20%`를 유지한다.
+- review gate는 `selectedScore` 단독이 아니라 `conflictScore`, `dimensionConflict`, `scaleConflict`를 함께 본다.
+- `conflictScore = 0.4 * dimension_conflict + 0.25 * scale_conflict + 0.2 * room_hint_conflict + 0.15 * opening_topology_conflict`
+- `conflictScore > 0.3`, `dimension_conflict > 0.35`, `scale_conflict > 0.35`면 `review_required`.
 
 주요 env:
 - `FLOORPLAN_PROVIDER_ORDER`
@@ -113,13 +122,17 @@ Recoverable failure는 `422` + 아래 필드를 유지한다.
 - 후보별 점수 및 선택 결과
 - pass/profile 정보
 - 후보별 구조 품질 메트릭:
-  - `axisAlignedRatio`
-  - `orphanWallCount`
-  - `selfIntersectionCount`
-  - `openingOverlapCount`
-  - `openingOutOfWallRangeCount`
-  - `exteriorLoopClosed`
-  - `scaleEvidenceCompleteness`
+- `axisAlignedRatio`
+- `orphanWallCount`
+- `selfIntersectionCount`
+- `openingOverlapCount`
+- `openingOutOfWallRangeCount`
+- `exteriorLoopClosed`
+- `scaleEvidenceCompleteness`
+- `dimensionConflict`
+- `scaleConflict`
+- `conflictScore`
+- `reviewReasons[]`
 
 ## 7) Deprecated
 - Next.js `/api/ai/parse-floorplan` 직접 분석 경로는 폐기(410 반환).
@@ -218,3 +231,15 @@ Updated:
 
 Removed/Deprecated:
 - evidence가 있어도 provider raw `scaleInfo.value`를 그대로 신뢰하는 처리.
+
+## 16) 2026-03-19 변경 동기화 (Accuracy Commercialization V2)
+Added:
+- PaddleOCR, Roboflow CubiCasa, HF Dedicated Endpoint optional lane.
+- conflict-based review gate와 blind-set commercialization metrics(`roomTypeF1`, `dimensionValueAccuracy`, `scaleAgreement`, `reviewRate`).
+
+Updated:
+- semantic/dimension annotation은 selection과 review gating의 1급 신호로 승격.
+- eval harness는 deprecated Next parse endpoint가 아니라 Railway intake/job/result 흐름을 사용한다.
+
+Removed/Deprecated:
+- vision provider structured output만으로 room/dimension OCR을 끝내는 단일 경로.

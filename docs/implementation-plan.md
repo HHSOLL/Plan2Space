@@ -7,6 +7,7 @@
 - launch slice `12개 단지 whitelist` 확정.
 - benchmark split에 `complex holdout + input channel slice` 반영.
 - fixture source policy를 `partner_licensed | user_opt_in | manual_private`로 고정하고 외부 listing 자동 수집을 금지.
+- blind set `100장` 기준과 `korean_complex >= 20%` 구성을 고정.
 - 최소 ops surface(`verify/reject`, `duplicate merge`, `alias edit`, `blocked`, `review queue`) 정의.
 - privacy/provenance/withdrawal 정책 문서 확정.
 
@@ -37,6 +38,10 @@
 - geometry repair + room reconstruction 기반으로 revision 품질 향상.
 - revision-derived `rooms`, `floors`, `ceilings`, `navGraph`, `cameraAnchors`가 worker에서 생성되고 web scene state가 이를 보존한다.
 - 한국 아파트형 컬러 채움 이미지에 대해 `filled_plan` 전처리 패스와 channel-level eval gate가 적용된다.
+- PaddleOCR 기반 room/dimension OCR lane이 worker에 통합된다.
+- Roboflow CubiCasa / HF Dedicated Endpoint baseline이 env-guarded candidate로 연결된다.
+- `conflict_score > 0.3`, `dimension_conflict > 0.35`, `scale_conflict > 0.35` review gate가 적용된다.
+- commercialization gate가 `roomTypeF1`, `dimensionValueAccuracy`, `scaleAgreement`, `reviewRate`, `medianCorrectionSeconds`를 포함한다.
 
 ## Phase 4: 시각/경험 완성 (예정)
 목표: 로딩/랜딩/인증/대시보드 UX와 3D 품질 완성.
@@ -175,3 +180,14 @@ Updated:
 
 Removed/Deprecated:
 - provider raw scale 값이 저장돼 있으면 별도 sanity check 없이 그대로 소비하는 기준.
+
+## 2026-03-19 변경 동기화 (Accuracy Commercialization V2)
+Added:
+- Phase 0에 blind-set composition rule과 richer fixture manifest 완료 기준을 추가.
+- Phase 3에 OCR lane, external structure parser baseline, conflict-gated review_required 완료 기준을 추가.
+
+Updated:
+- 정확도 상용화 우선순위를 `Eval -> CubiCasa baseline -> PaddleOCR -> conflict gate -> HF fallback` 순으로 고정.
+
+Removed/Deprecated:
+- deprecated Next parse endpoint 기반 eval을 기준선으로 유지하는 완료 조건.

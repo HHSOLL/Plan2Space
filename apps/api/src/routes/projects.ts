@@ -9,7 +9,7 @@ import {
   updateProjectForOwner
 } from "../services/project-service";
 import { ApiError } from "../services/errors";
-import { supabaseService } from "../services/supabase";
+import { createAuthedSupabaseClient, supabaseService } from "../services/supabase";
 import { env } from "../config/env";
 import { createIntakeSessionForOwner } from "../services/intake-service";
 
@@ -273,7 +273,8 @@ projectsRouter.post("/projects/:projectId/versions", async (request, response, n
     const floorPlan = buildFloorPlan(payload.topology);
     const customization = buildCustomization(payload);
 
-    const { data, error } = await supabaseService.rpc("create_project_version", {
+    const authedSupabase = createAuthedSupabaseClient(request.user.accessToken);
+    const { data, error } = await authedSupabase.rpc("create_project_version", {
       p_project_id: request.params.projectId,
       p_message: payload.message ?? "Manual save",
       p_floor_plan: floorPlan,

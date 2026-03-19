@@ -8,6 +8,7 @@
 - PBR + HDR + Post FX 시각 품질 기준 유지.
 - 무거운 이미지 분석/기하/씬 생성 연산은 Vercel에서 실행하지 않음.
 - Worker 후보 선택 전 wall/opening/scale 정규화로 노이즈를 줄인 뒤 스코어링한다.
+- 상용 정확도 기준선은 `Railway worker eval blind set -> conflict-gated review_required -> 2D correction telemetry` 순서로 관리한다.
 - 상용화 기준 canonical truth는 `scene`이 아니라 `geometry revision`이다.
 - 프로젝트는 항상 `source_layout_revision_id`에 pin된다.
 - 상용 수준 3D 맵 생성은 renderer 교체보다 `geometry reconstruction -> scene derived artifacts -> frontend consumption` 순서로 고도화한다.
@@ -200,3 +201,17 @@ Updated:
 
 Removed/Deprecated:
 - room semantics를 area/exposure/adjacency 휴리스틱만으로 결정하는 해석.
+
+## 2026-03-19 변경 동기화 (Accuracy Commercialization V2)
+Added:
+- PaddleOCR 기반 `roomHints/dimensionAnnotations` 외부 OCR lane.
+- Roboflow CubiCasa / HF Dedicated Endpoint를 worker 오케스트레이터가 optional candidate로 흡수하는 외부 추론 경로.
+- `conflict_score > 0.3`, `dimension_conflict > 0.35`, `scale_conflict > 0.35` fail-closed review gate.
+- Railway intake/job/result 실경로를 사용하는 blind-set eval harness와 `korean_complex >= 20%` composition rule.
+
+Updated:
+- semantic/dimension signal을 단순 debug 메트릭에서 candidate score 및 review gate 핵심 신호로 승격.
+- 상용화 정확도 작업의 우선순위를 `3D 확장`보다 `eval -> OCR -> structure parser -> conflict gate` 순으로 고정.
+
+Removed/Deprecated:
+- 폐기된 Next parse endpoint(`/api/ai/parse-floorplan`)를 eval 기본 경로로 사용하는 방식.

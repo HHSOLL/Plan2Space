@@ -22,7 +22,13 @@
 
 ## manifest 규칙
 - 같은 디렉터리에 `manifest.json`을 둡니다.
-- 각 fixture는 반드시 `channel`, `sourcePolicy`를 기록합니다.
+- 각 fixture는 반드시 `channel`, `sourcePolicy`, `qualityTags`, `complexityTier`를 기록합니다.
+- benchmark fixture는 가능하면 `gold.rooms`, `gold.dimensions`, `gold.scale`, `gold.reviewSeconds`, `gold.expectedReviewRequired`를 채웁니다.
 - 파일명은 정규화된 영문/숫자/하이픈 기준으로 유지합니다.
+
+## blind set 구성 규칙
+- blind test는 기본 `100장` 기준으로 운영합니다.
+- 이 중 `20장 이상`은 `발코니 + 다용도실 + 복도 분기`가 많은 `korean_complex` 표본이어야 합니다.
+- `pdf_export`, `watermark/broker capture`, `phone/cropped` 채널이 한 쪽으로 치우치지 않게 분산합니다.
 
 예시는 `manifest.example.json`을 참고합니다.

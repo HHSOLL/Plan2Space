@@ -1,41 +1,32 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-type CandidateMetrics = {
-  exteriorLoopClosed?: boolean;
-  openingsAttachedRatio?: number;
+type FixtureSummary = {
+  fixture: string;
+  channel: string | null;
+  complexityTier: string | null;
+  status: number;
+  selectedProvider: string | null;
+  reviewRequired: boolean;
+  conflictScore: number | null;
+  roomTypeF1: number | null;
+  dimensionValueAccuracy: number | null;
+  scaleAgreement: number | null;
+  correctionSeconds: number | null;
+  scaleSource: string | null;
 };
 
-type CandidateDebug = {
-  provider?: string;
-  score?: number;
-  metrics?: CandidateMetrics;
-};
-
-type ParseResponse = {
-  selectedProvider?: string;
-  selectedScore?: number;
-  candidates?: CandidateDebug[];
-  metadata?: {
-    scaleInfo?: {
-      source?: string;
-    };
-  };
+type CandidateRow = {
+  fixture: string;
+  provider: string;
+  score: number | null;
+  openingsAttachedRatio: number | null;
+  exteriorLoopClosed?: boolean | null;
 };
 
 type EvalSummary = {
-  fixtureSummaries: Array<{
-    fixture: string;
-    channel?: string | null;
-    sourcePolicy?: string | null;
-    status: number;
-    recoverable?: boolean;
-  }>;
-  rawResults: Array<{
-    fixture: string;
-    status: number;
-    body: ParseResponse;
-  }>;
+  fixtureSummaries: FixtureSummary[];
+  candidateRows: CandidateRow[];
 };
 
 function getArg(name: string, fallback: string) {
@@ -60,92 +51,90 @@ function median(values: number[]) {
   return sorted[mid] ?? 0;
 }
 
+function average(values: number[]) {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 function percentage(value: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
 async function main() {
   const inputPath = getArg("input", path.join(process.cwd(), "apps/web/.eval/floorplan/summary.json"));
-  const baselinePath = getArg("baseline", "");
-  const minSuccessRate = parseNumberArg("minSuccessRate", 0.9);
-  const minExteriorLoopClosure = parseNumberArg("minExteriorLoopClosure", 0.95);
-  const minOpeningAttach = parseNumberArg("minOpeningAttach", 0.92);
-  const maxRecoverableRate = parseNumberArg("maxRecoverableRate", 0.2);
-  const maxUnknownScaleRate = parseNumberArg("maxUnknownScaleRate", 0.2);
-  const maxMedianScoreDrop = parseNumberArg("maxMedianScoreDrop", 0.1);
-  const minChannelSuccessRate = parseNumberArg("minChannelSuccessRate", 0);
-  const maxChannelRecoverableRate = parseNumberArg("maxChannelRecoverableRate", 1);
+  const minSuccessRate = parseNumberArg("minSuccessRate", 0.95);
+  const minExteriorLoopClosure = parseNumberArg("minExteriorLoopClosure", 0.98);
+  const minOpeningAttach = parseNumberArg("minOpeningAttach", 0.97);
+  const maxReviewRate = parseNumberArg("maxReviewRate", 0.25);
+  const maxUnknownScaleRate = parseNumberArg("maxUnknownScaleRate", 0.05);
+  const minRoomTypeF1 = parseNumberArg("minRoomTypeF1", 0.88);
+  const minDimensionValueAccuracy = parseNumberArg("minDimensionValueAccuracy", 0.95);
+  const minScaleAgreement = parseNumberArg("minScaleAgreement", 0.95);
+  const maxMedianCorrectionSeconds = parseNumberArg("maxMedianCorrectionSeconds", 60);
+  const minKoreanComplexShare = parseNumberArg("minKoreanComplexShare", 0.2);
+  const minComplexSuccessRate = parseNumberArg("minComplexSuccessRate", 0.9);
 
   const raw = await fs.readFile(inputPath, "utf8");
   const summary = JSON.parse(raw) as EvalSummary;
-
   const total = summary.fixtureSummaries.length;
   if (total === 0) {
     throw new Error(`No fixture summaries found in ${inputPath}`);
   }
 
   const successCount = summary.fixtureSummaries.filter((entry) => entry.status === 200).length;
-  const recoverableCount = summary.fixtureSummaries.filter((entry) => entry.status === 422 || entry.recoverable).length;
   const successRate = successCount / total;
-  const recoverableRate = recoverableCount / total;
+  const reviewRate = summary.fixtureSummaries.filter((entry) => entry.reviewRequired).length / total;
+  const unknownScaleRate = summary.fixtureSummaries.filter((entry) => entry.scaleSource === "unknown").length / total;
+  const koreanComplexFixtures = summary.fixtureSummaries.filter((entry) => entry.complexityTier === "korean_complex");
+  const koreanComplexShare = koreanComplexFixtures.length / total;
+  const complexSuccessRate =
+    koreanComplexFixtures.length > 0
+      ? koreanComplexFixtures.filter((entry) => entry.status === 200).length / koreanComplexFixtures.length
+      : 0;
 
-  const selectedCandidates = summary.rawResults
-    .filter((entry) => entry.status === 200)
-    .map((entry) => {
-      const selectedProvider = entry.body?.selectedProvider;
-      const candidates = Array.isArray(entry.body?.candidates) ? entry.body.candidates : [];
-      if (!selectedProvider) return null;
-      return candidates.find((candidate) => candidate.provider === selectedProvider) ?? null;
+  const selectedCandidates = summary.fixtureSummaries
+    .map((fixture) => {
+      const candidates = summary.candidateRows.filter((candidate) => candidate.fixture === fixture.fixture);
+      if (candidates.length === 0) return null;
+      if (fixture.selectedProvider) {
+        const exact = candidates
+          .filter((candidate) => candidate.provider === fixture.selectedProvider)
+          .sort((left, right) => (right.score ?? 0) - (left.score ?? 0))[0];
+        if (exact) return exact;
+      }
+      return candidates.sort((left, right) => (right.score ?? 0) - (left.score ?? 0))[0] ?? null;
     })
-    .filter((candidate): candidate is CandidateDebug => Boolean(candidate));
+    .filter((candidate): candidate is CandidateRow => Boolean(candidate));
 
   const loopClosedRate =
     selectedCandidates.length > 0
-      ? selectedCandidates.filter((candidate) => candidate.metrics?.exteriorLoopClosed === true).length /
-        selectedCandidates.length
+      ? selectedCandidates.filter((candidate) => candidate.exteriorLoopClosed === true).length / selectedCandidates.length
       : 0;
-
-  const openingAttachValues = selectedCandidates
-    .map((candidate) => candidate.metrics?.openingsAttachedRatio)
-    .filter((value): value is number => Number.isFinite(value));
-  const openingAttachMean =
-    openingAttachValues.length > 0
-      ? openingAttachValues.reduce((sum, value) => sum + value, 0) / openingAttachValues.length
-      : 0;
-
-  const unknownScaleCount = summary.rawResults.filter((entry) => entry.body?.metadata?.scaleInfo?.source === "unknown").length;
-  const unknownScaleRate = unknownScaleCount / total;
-
-  const selectedScores = summary.rawResults
-    .map((entry) => entry.body?.selectedScore)
-    .filter((score): score is number => Number.isFinite(score));
-  const currentMedianScore = median(selectedScores);
-
-  const channelGroups = summary.fixtureSummaries.reduce<Record<string, { total: number; success: number; recoverable: number }>>(
-    (groups, entry) => {
-      const channel = entry.channel ?? "unspecified";
-      groups[channel] ??= { total: 0, success: 0, recoverable: 0 };
-      groups[channel].total += 1;
-      if (entry.status === 200) groups[channel].success += 1;
-      if (entry.status === 422 || entry.recoverable) groups[channel].recoverable += 1;
-      return groups;
-    },
-    {}
+  const openingAttachMean = average(
+    selectedCandidates
+      .map((candidate) => candidate.openingsAttachedRatio)
+      .filter((value): value is number => Number.isFinite(value))
   );
-
-  let baselineMedianScore: number | null = null;
-  let scoreDropRatio = 0;
-  if (baselinePath) {
-    const baselineRaw = await fs.readFile(baselinePath, "utf8");
-    const baselineSummary = JSON.parse(baselineRaw) as EvalSummary;
-    const baselineScores = baselineSummary.rawResults
-      .map((entry) => entry.body?.selectedScore)
-      .filter((score): score is number => Number.isFinite(score));
-    baselineMedianScore = median(baselineScores);
-    if (baselineMedianScore > 0) {
-      scoreDropRatio = (baselineMedianScore - currentMedianScore) / baselineMedianScore;
-    }
-  }
+  const roomTypeF1Mean = average(
+    summary.fixtureSummaries
+      .map((entry) => entry.roomTypeF1)
+      .filter((value): value is number => Number.isFinite(value))
+  );
+  const dimensionAccuracyMean = average(
+    summary.fixtureSummaries
+      .map((entry) => entry.dimensionValueAccuracy)
+      .filter((value): value is number => Number.isFinite(value))
+  );
+  const scaleAgreementMean = average(
+    summary.fixtureSummaries
+      .map((entry) => entry.scaleAgreement)
+      .filter((value): value is number => Number.isFinite(value))
+  );
+  const medianCorrectionSeconds = median(
+    summary.fixtureSummaries
+      .map((entry) => entry.correctionSeconds)
+      .filter((value): value is number => Number.isFinite(value))
+  );
 
   const checks = [
     {
@@ -167,59 +156,69 @@ async function main() {
       expected: `>= ${percentage(minOpeningAttach)}`
     },
     {
-      name: "recoverable_rate",
-      passed: recoverableRate <= maxRecoverableRate,
-      value: percentage(recoverableRate),
-      expected: `<= ${percentage(maxRecoverableRate)}`
+      name: "review_rate",
+      passed: reviewRate <= maxReviewRate,
+      value: percentage(reviewRate),
+      expected: `<= ${percentage(maxReviewRate)}`
     },
     {
       name: "unknown_scale_rate",
       passed: unknownScaleRate <= maxUnknownScaleRate,
       value: percentage(unknownScaleRate),
       expected: `<= ${percentage(maxUnknownScaleRate)}`
+    },
+    {
+      name: "room_type_f1",
+      passed: roomTypeF1Mean >= minRoomTypeF1,
+      value: percentage(roomTypeF1Mean),
+      expected: `>= ${percentage(minRoomTypeF1)}`
+    },
+    {
+      name: "dimension_value_accuracy",
+      passed: dimensionAccuracyMean >= minDimensionValueAccuracy,
+      value: percentage(dimensionAccuracyMean),
+      expected: `>= ${percentage(minDimensionValueAccuracy)}`
+    },
+    {
+      name: "scale_agreement",
+      passed: scaleAgreementMean >= minScaleAgreement,
+      value: percentage(scaleAgreementMean),
+      expected: `>= ${percentage(minScaleAgreement)}`
+    },
+    {
+      name: "median_correction_seconds",
+      passed: medianCorrectionSeconds <= maxMedianCorrectionSeconds,
+      value: `${medianCorrectionSeconds.toFixed(1)}s`,
+      expected: `<= ${maxMedianCorrectionSeconds}s`
+    },
+    {
+      name: "korean_complex_share",
+      passed: koreanComplexShare >= minKoreanComplexShare,
+      value: percentage(koreanComplexShare),
+      expected: `>= ${percentage(minKoreanComplexShare)}`
+    },
+    {
+      name: "korean_complex_success_rate",
+      passed: complexSuccessRate >= minComplexSuccessRate,
+      value: percentage(complexSuccessRate),
+      expected: `>= ${percentage(minComplexSuccessRate)}`
     }
   ];
 
-  if (baselineMedianScore !== null) {
-    checks.push({
-      name: "median_score_drop",
-      passed: scoreDropRatio <= maxMedianScoreDrop,
-      value: percentage(scoreDropRatio),
-      expected: `<= ${percentage(maxMedianScoreDrop)}`
-    });
-  }
+  console.log(`[eval-floorplan-gate] fixtures=${total} success=${successCount} reviewRate=${percentage(reviewRate)}`);
+  console.log(
+    `[eval-floorplan-gate] koreanComplex=${koreanComplexFixtures.length} share=${percentage(koreanComplexShare)} roomTypeF1=${percentage(
+      roomTypeF1Mean
+    )} dimensionAccuracy=${percentage(dimensionAccuracyMean)} scaleAgreement=${percentage(scaleAgreementMean)}`
+  );
 
-  console.log(`[eval-floorplan-gate] fixtures=${total} success=${successCount} recoverable=${recoverableCount}`);
-  console.log(`[eval-floorplan-gate] selectedMedianScore=${currentMedianScore.toFixed(2)}`);
   checks.forEach((check) => {
-    const status = check.passed ? "PASS" : "FAIL";
-    console.log(`[${status}] ${check.name}: ${check.value} (expected ${check.expected})`);
-  });
-
-  Object.entries(channelGroups).forEach(([channel, stats]) => {
-    const channelSuccessRate = stats.total > 0 ? stats.success / stats.total : 0;
-    const channelRecoverableRate = stats.total > 0 ? stats.recoverable / stats.total : 0;
-    console.log(
-      `[eval-floorplan-gate] channel=${channel} success=${percentage(channelSuccessRate)} recoverable=${percentage(channelRecoverableRate)}`
-    );
+    console.log(`[${check.passed ? "PASS" : "FAIL"}] ${check.name}: ${check.value} (expected ${check.expected})`);
   });
 
   const failedChecks = checks.filter((check) => !check.passed);
-  const failedChannelChecks = Object.entries(channelGroups).flatMap(([channel, stats]) => {
-    const channelSuccessRate = stats.total > 0 ? stats.success / stats.total : 0;
-    const channelRecoverableRate = stats.total > 0 ? stats.recoverable / stats.total : 0;
-    const failures: string[] = [];
-    if (minChannelSuccessRate > 0 && channelSuccessRate < minChannelSuccessRate) {
-      failures.push(`channel:${channel}:success_rate`);
-    }
-    if (maxChannelRecoverableRate < 1 && channelRecoverableRate > maxChannelRecoverableRate) {
-      failures.push(`channel:${channel}:recoverable_rate`);
-    }
-    return failures;
-  });
-  if (failedChecks.length > 0 || failedChannelChecks.length > 0) {
-    const failedNames = [...failedChecks.map((check) => check.name), ...failedChannelChecks].join(", ");
-    throw new Error(`Eval gate failed: ${failedNames}`);
+  if (failedChecks.length > 0) {
+    throw new Error(`Eval gate failed: ${failedChecks.map((check) => check.name).join(", ")}`);
   }
 }
 

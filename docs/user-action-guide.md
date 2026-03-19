@@ -41,10 +41,23 @@ ASSET_GENERATION_MAX_POLLS=45
 FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
 FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
 FLOORPLAN_PREPROCESS_PROFILES=balanced,lineart,filled_plan
+FLOORPLAN_REVIEW_SCORE_THRESHOLD=72
+FLOORPLAN_REVIEW_CONFLICT_THRESHOLD=0.3
+FLOORPLAN_REVIEW_DIMENSION_CONFLICT_THRESHOLD=0.35
+FLOORPLAN_REVIEW_SCALE_CONFLICT_THRESHOLD=0.35
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 SNAPTRUDE_API_URL=
 SNAPTRUDE_API_KEY=
+ROBOFLOW_CUBICASA2_URL=
+ROBOFLOW_CUBICASA3_URL=
+ROBOFLOW_API_KEY=
+PADDLEOCR_API_URL=
+PADDLEOCR_API_TOKEN=
+PADDLEOCR_DET_MODEL=PP-OCRv5_det
+PADDLEOCR_REC_MODEL=korean_PP-OCRv5_mobile_rec
+HF_FLOORPLAN_ENDPOINT_URL=
+HF_FLOORPLAN_ENDPOINT_TOKEN=
 TRIPOSR_API_URL=
 TRIPOSR_API_KEY=
 TRIPOSR_STATUS_URL=
@@ -98,9 +111,11 @@ MESHY_STATUS_URL=
 10. custom asset generation 경로 검증:
    - `/v1/assets/generate` 호출 후 `GET /v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
 11. benchmark fixture 검수:
-   - `apps/web/fixtures/floorplans/manifest.json`에 `channel`, `sourcePolicy`를 기록
+   - `apps/web/fixtures/floorplans/manifest.json`에 `channel`, `sourcePolicy`, `qualityTags`, `complexityTier`를 기록
+   - benchmark fixture에는 가능하면 `gold.rooms`, `gold.dimensions`, `gold.scale`, `gold.reviewSeconds`, `gold.expectedReviewRequired`를 기록
    - `sourcePolicy`는 `partner_licensed`, `user_opt_in`, `manual_private`만 허용
    - 외부 listing gallery 이미지를 서비스가 자동 저장/수집한 fixture는 등록하지 않음
+   - blind set 100장 기준 `korean_complex` 표본을 최소 20장 포함
 12. semantic annotation QA:
    - room label 또는 치수 표기가 실제로 있는 fixture에서는 generated revision의 `geometry_json.evidenceRefs.semanticAnnotations.roomHints`와 `dimensionAnnotations`가 비어 있지 않은지 확인
    - semantic annotation이 존재하는 표본에서 `geometry_json.rooms[].labelSource`가 `annotation`으로 승격되는 케이스를 확인
@@ -113,6 +128,7 @@ MESHY_STATUS_URL=
 - 복구 배너 액션(`Copy Errors`, `Try AI Again`, `Start Manual`) 동작
 - diagnostics에서 `axisAlignedRatio`, `orphanWallCount`, `selfIntersectionCount`, `scaleEvidenceCompleteness`를 함께 확인
 - generated 결과가 low-confidence이면 `review_required`로 남는지 확인
+- diagnostics에 `conflictScore`, `reviewReasons`, `conflictBreakdown.dimensionConflict`, `conflictBreakdown.scaleConflict`가 기록되는지 확인
 - auto-reuse가 잘못되면 `reuse_invalidated` 후 remediation intake가 생성되는지 확인
 
 ## 6) 모바일 QA
@@ -221,3 +237,15 @@ Updated:
 
 Removed/Deprecated:
 - 치수 evidence가 있어도 최종 scale 수치를 별도 검산하지 않는 QA 방식.
+
+## 17) 2026-03-19 변경 동기화 (Accuracy Commercialization V2)
+Added:
+- Roboflow CubiCasa, PaddleOCR, HF Dedicated Endpoint worker env 설정 항목.
+- benchmark manifest `qualityTags`, `complexityTier`, `gold.*` 작성 규칙.
+- blind set `korean_complex >= 20%` 구성 및 conflict diagnostics QA.
+
+Updated:
+- benchmark 검수는 단순 channel 기록이 아니라 commercialization metrics와 review expectation까지 포함한다.
+
+Removed/Deprecated:
+- deprecated Next parse endpoint를 eval 기본 경로로 가정하는 운영 방식.

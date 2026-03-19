@@ -332,3 +332,117 @@ test("scoreCandidate does not let semantic annotations outrank structurally weak
 
   assert.ok(cleanScore.total > noisyScore.total);
 });
+
+test("normalizeTopology merges external semantic annotations into provider topology", () => {
+  const normalized = normalizeTopology(
+    {
+      walls: [
+        { id: "w1", start: [0, 0], end: [200, 0], thickness: 12, type: "exterior" },
+        { id: "w2", start: [200, 0], end: [200, 120], thickness: 12, type: "exterior" },
+        { id: "w3", start: [200, 120], end: [0, 120], thickness: 12, type: "exterior" },
+        { id: "w4", start: [0, 120], end: [0, 0], thickness: 12, type: "exterior" }
+      ],
+      openings: [{ id: "d1", position: [20, 0], width: 24, type: "door", isEntrance: true }],
+      scale: 0.025,
+      scaleInfo: {
+        value: 0.025,
+        source: "door_heuristic",
+        confidence: 0.55
+      }
+    },
+    {
+      roomHints: [
+        {
+          id: "ocr-room-1",
+          label: "거실",
+          normalizedLabel: "거실",
+          roomType: "living_room",
+          position: [90, 60],
+          confidence: 0.92,
+          source: "ocr"
+        }
+      ],
+      dimensionAnnotations: [
+        {
+          id: "ocr-dim-1",
+          text: "10,000",
+          mmValue: 10000,
+          p1: [0, 0],
+          p2: [200, 0],
+          pxDistance: 200,
+          confidence: 0.95,
+          orientation: "horizontal",
+          source: "ocr"
+        }
+      ]
+    }
+  );
+
+  assert.equal(normalized.semanticAnnotations.roomHints.length, 1);
+  assert.equal(normalized.semanticAnnotations.roomHints[0]?.roomType, "living_room");
+  assert.equal(normalized.semanticAnnotations.dimensionAnnotations.length, 1);
+  assert.equal(normalized.scaleInfo.source, "ocr_dimension");
+});
+
+test("scoreCandidate rewards coherent semantic and dimension evidence", () => {
+  const coherent = normalizeTopology(
+    {
+      walls: [
+        { id: "w1", start: [0, 0], end: [200, 0], thickness: 12, type: "exterior" },
+        { id: "w2", start: [200, 0], end: [200, 120], thickness: 12, type: "exterior" },
+        { id: "w3", start: [200, 120], end: [0, 120], thickness: 12, type: "exterior" },
+        { id: "w4", start: [0, 120], end: [0, 0], thickness: 12, type: "exterior" }
+      ],
+      openings: [{ id: "d1", position: [24, 0], width: 24, type: "door", isEntrance: true }],
+      scale: 0.05,
+      scaleInfo: {
+        value: 0.05,
+        source: "ocr_dimension",
+        confidence: 0.92,
+        evidence: {
+          mmValue: 10000,
+          pxDistance: 200,
+          p1: [0, 0],
+          p2: [200, 0]
+        }
+      },
+      semanticAnnotations: {
+        roomHints: [
+          {
+            label: "거실",
+            position: [100, 60],
+            polygon: [
+              [0, 0],
+              [200, 0],
+              [200, 120],
+              [0, 120]
+            ]
+          }
+        ],
+        dimensionAnnotations: [
+          {
+            text: "10,000",
+            p1: [0, 0],
+            p2: [200, 0]
+          }
+        ]
+      }
+    }
+  );
+
+  const coherentScore = scoreCandidate(coherent);
+  const conflictingScore = scoreCandidate({
+    walls: coherent.walls,
+    openings: coherent.openings,
+    scaleInfo: {
+      value: 0.02,
+      source: "door_heuristic",
+      confidence: 0.4
+    },
+    semanticAnnotations: coherent.semanticAnnotations
+  });
+
+  assert.ok((coherentScore.metrics.dimensionConflict ?? 0) < (conflictingScore.metrics.dimensionConflict ?? 0));
+  assert.ok((coherentScore.metrics.scaleConflict ?? 0) < (conflictingScore.metrics.scaleConflict ?? 0));
+  assert.ok(coherentScore.total > conflictingScore.total);
+});

@@ -134,6 +134,7 @@ export type AnalyzeUploadRequest = {
   mimeType?: string;
   forceProvider?: string;
   debug?: boolean;
+  externalSemanticAnnotations?: Partial<SemanticAnnotations>;
 };
 
 export type ProviderStatus = {
@@ -152,6 +153,8 @@ export type CandidateDebug = {
     topologyScore: number;
     openingScore: number;
     scaleScore: number;
+    semanticScore?: number;
+    conflictPenalty?: number;
     penalty: number;
     total: number;
   };
@@ -177,6 +180,8 @@ export type CandidateDebug = {
     roomHintCount: number;
     labeledRoomHintCount: number;
     dimensionAnnotationCount: number;
+    dimensionConflict?: number;
+    scaleConflict?: number;
   };
   errors: string[];
   timingMs: number;
@@ -460,7 +465,7 @@ function polygonKey(polygon?: Vec2[]) {
   return polygon && polygon.length > 0 ? polygon.map((point) => pointKey(point)).join(";") : "na";
 }
 
-function normalizeSemanticLabel(text: string) {
+export function normalizeSemanticLabel(text: string) {
   return text
     .trim()
     .replace(/\s+/g, "")
@@ -468,7 +473,7 @@ function normalizeSemanticLabel(text: string) {
     .toLowerCase();
 }
 
-function inferRoomTypeFromLabel(label: string): SemanticRoomType {
+export function inferRoomTypeFromLabel(label: string): SemanticRoomType {
   const normalized = normalizeSemanticLabel(label);
   if (!normalized) return "other";
   if (normalized.includes("대피공간") || normalized.includes("evacuation")) return "evacuation_space";
@@ -506,7 +511,7 @@ function inferRoomTypeFromLabel(label: string): SemanticRoomType {
   return "other";
 }
 
-function parseDimensionMmValue(text: string, orientation?: DimensionAnnotation["orientation"]) {
+export function parseDimensionMmValue(text: string, orientation?: DimensionAnnotation["orientation"]) {
   const raw = text.trim();
   if (!raw) return null;
   if (/[평㎡]/.test(raw) || /m²|m2|sq\.?\s*m|sqm/i.test(raw)) return null;
@@ -537,7 +542,7 @@ function parseDimensionMmValue(text: string, orientation?: DimensionAnnotation["
   return null;
 }
 
-function getDimensionOrientation(p1?: Vec2, p2?: Vec2): DimensionAnnotation["orientation"] | undefined {
+export function getDimensionOrientation(p1?: Vec2, p2?: Vec2): DimensionAnnotation["orientation"] | undefined {
   if (!p1 || !p2) return undefined;
   const dx = Math.abs(p2[0] - p1[0]);
   const dy = Math.abs(p2[1] - p1[1]);
@@ -908,12 +913,16 @@ function dedupeRoomHints(items: RoomHint[]) {
     }));
 }
 
-function normalizeSemanticAnnotations(payload: Record<string, unknown>): SemanticAnnotations {
+function normalizeSemanticAnnotations(
+  payload: Record<string, unknown>,
+  externalSemanticAnnotations?: Partial<SemanticAnnotations>
+): SemanticAnnotations {
   const semanticPayload =
     payload.semanticAnnotations && typeof payload.semanticAnnotations === "object" && !Array.isArray(payload.semanticAnnotations)
       ? (payload.semanticAnnotations as Record<string, unknown>)
       : {};
   const roomHintSources = [
+    externalSemanticAnnotations?.roomHints,
     semanticPayload.roomHints,
     semanticPayload.roomLabels,
     semanticPayload.rooms,
@@ -925,6 +934,7 @@ function normalizeSemanticAnnotations(payload: Record<string, unknown>): Semanti
     (payload.annotations as Record<string, unknown> | undefined)?.rooms
   ];
   const dimensionSources = [
+    externalSemanticAnnotations?.dimensionAnnotations,
     semanticPayload.dimensionAnnotations,
     semanticPayload.dimensions,
     payload.dimensionAnnotations,
@@ -1032,7 +1042,7 @@ function normalizeSemanticAnnotations(payload: Record<string, unknown>): Semanti
   };
 }
 
-function deriveScaleInfoFromDimensions(dimensionAnnotations: DimensionAnnotation[]) {
+export function deriveScaleInfoFromDimensions(dimensionAnnotations: DimensionAnnotation[]) {
   const candidates = dimensionAnnotations
     .map((annotation) => {
       const mmValue = annotation.mmValue;
@@ -1087,7 +1097,7 @@ function deriveScaleInfoFromDimensions(dimensionAnnotations: DimensionAnnotation
   };
 }
 
-function deriveScaleValueFromEvidence(evidence: ScaleInfo["evidence"] | undefined) {
+export function deriveScaleValueFromEvidence(evidence: ScaleInfo["evidence"] | undefined) {
   if (!evidence) return null;
   const mmValue = Number(evidence.mmValue);
   const pxDistance = Number.isFinite(Number(evidence.pxDistance))
@@ -1195,9 +1205,9 @@ function unwrapTopologyPayload(input: unknown): Record<string, unknown> {
   return current as Record<string, unknown>;
 }
 
-export function normalizeTopology(raw: unknown): NormalizedTopology {
+export function normalizeTopology(raw: unknown, externalSemanticAnnotations?: Partial<SemanticAnnotations>): NormalizedTopology {
   const payload = unwrapTopologyPayload(raw);
-  const semanticAnnotations = normalizeSemanticAnnotations(payload);
+  const semanticAnnotations = normalizeSemanticAnnotations(payload, externalSemanticAnnotations);
 
   const wallSourceRaw = payload.walls ?? payload.wallSegments ?? payload.lines ?? payload.segments ?? [];
   const wallSource = Array.isArray(wallSourceRaw) ? wallSourceRaw : [];
@@ -1379,6 +1389,31 @@ function segmentsIntersect(a: TopologyWall, b: TopologyWall) {
   return false;
 }
 
+function computeDimensionConflict(scaleInfo: ScaleInfo, dimensionAnnotations: DimensionAnnotation[]) {
+  const drifts = dimensionAnnotations
+    .map((annotation) => {
+      const mmValue = annotation.mmValue;
+      const pxDistance =
+        annotation.pxDistance ??
+        (annotation.p1 && annotation.p2 ? distance(annotation.p1, annotation.p2) : undefined);
+      if (!Number.isFinite(mmValue) || !Number.isFinite(pxDistance) || !pxDistance || pxDistance <= 0) return null;
+      const expectedPxDistance = (mmValue / 1000) / Math.max(scaleInfo.value, 0.000001);
+      const drift = Math.abs(expectedPxDistance - pxDistance) / Math.max(pxDistance, 1);
+      return clamp(drift, 0, 1);
+    })
+    .filter((drift): drift is number => Number.isFinite(drift));
+
+  if (drifts.length === 0) return 0;
+  return clamp(median(drifts), 0, 1);
+}
+
+function computeScaleConflict(scaleInfo: ScaleInfo, dimensionAnnotations: DimensionAnnotation[]) {
+  const derivedScale = deriveScaleInfoFromDimensions(dimensionAnnotations);
+  if (!derivedScale || !Number.isFinite(scaleInfo.value) || scaleInfo.value <= 0) return 0;
+  const drift = Math.abs(derivedScale.value - scaleInfo.value) / Math.max(derivedScale.value, 0.000001);
+  return clamp(drift, 0, 1);
+}
+
 export function scoreCandidate(candidate: {
   walls: TopologyWall[];
   openings: TopologyOpening[];
@@ -1457,6 +1492,11 @@ export function scoreCandidate(candidate: {
   const labeledRoomHintCount =
     candidate.semanticAnnotations?.roomHints.filter((roomHint) => roomHint.roomType !== "other").length ?? 0;
   const dimensionAnnotationCount = candidate.semanticAnnotations?.dimensionAnnotations.length ?? 0;
+  const dimensionConflict = computeDimensionConflict(
+    candidate.scaleInfo,
+    candidate.semanticAnnotations?.dimensionAnnotations ?? []
+  );
+  const scaleConflict = computeScaleConflict(candidate.scaleInfo, candidate.semanticAnnotations?.dimensionAnnotations ?? []);
 
   const topologyScore = Math.min(
     65,
@@ -1473,6 +1513,10 @@ export function scoreCandidate(candidate: {
     openingCount * 1.5 + openingsAttachedRatio * 6 + openingTypeConfidenceMean * 4 + (entranceDetected ? 2 : 0)
   );
   const scaleScore = Math.min(15, candidate.scaleInfo.confidence * 9 + scaleEvidenceCompleteness * 6);
+  const semanticScore = Math.min(
+    12,
+    roomHintCount * 0.8 + labeledRoomHintCount * 1.6 + dimensionAnnotationCount * 1.4
+  );
 
   let penalty = 0;
   if (wallCount < 4) penalty += 20;
@@ -1485,8 +1529,10 @@ export function scoreCandidate(candidate: {
   penalty += openingOutOfWallRangeCount * 4;
   penalty += wallThicknessOutlierRate * 10;
   penalty += loopCountPenalty * 2;
+  const conflictPenalty = dimensionConflict * 7 + scaleConflict * 8;
+  penalty += conflictPenalty;
 
-  const total = Math.max(0, topologyScore + openingScore + scaleScore - penalty);
+  const total = Math.max(0, topologyScore + openingScore + scaleScore + semanticScore - penalty);
 
   return {
     total,
@@ -1494,6 +1540,8 @@ export function scoreCandidate(candidate: {
       topologyScore,
       openingScore,
       scaleScore,
+      semanticScore,
+      conflictPenalty,
       penalty,
       total
     },
@@ -1518,7 +1566,9 @@ export function scoreCandidate(candidate: {
       entranceDetected,
       roomHintCount,
       labeledRoomHintCount,
-      dimensionAnnotationCount
+      dimensionAnnotationCount,
+      dimensionConflict,
+      scaleConflict
     }
   };
 }
@@ -1706,7 +1756,11 @@ async function preprocessImage(base64: string, profile: PreprocessProfile) {
   return output.toString("base64");
 }
 
-async function runProvider(provider: ProviderName, pass: { passId: string; profile: PreprocessProfile; base64: string; mimeType: string }) {
+async function runProvider(
+  provider: ProviderName,
+  pass: { passId: string; profile: PreprocessProfile; base64: string; mimeType: string },
+  externalSemanticAnnotations?: Partial<SemanticAnnotations>
+) {
   const imageDataUrl = `data:${pass.mimeType};base64,${pass.base64}`;
   const start = Date.now();
   try {
@@ -1717,7 +1771,7 @@ async function runProvider(provider: ProviderName, pass: { passId: string; profi
           ? await analyzeWithOpenAI(imageDataUrl)
           : await analyzeWithSnaptrude(imageDataUrl, pass.mimeType);
 
-    const normalized = normalizeTopology(payload);
+    const normalized = normalizeTopology(payload, externalSemanticAnnotations);
     const scored = scoreCandidate({
       walls: normalized.walls,
       openings: normalized.openings,
@@ -1826,7 +1880,7 @@ export async function analyzeFloorplanUpload(request: AnalyzeUploadRequest): Pro
 
     for (const provider of enabledProviders) {
       for (const pass of preprocessPasses) {
-        const run = await runProvider(provider, pass);
+        const run = await runProvider(provider, pass, request.externalSemanticAnnotations);
         if (run.ok) {
           candidates.push(run.candidate);
         } else {
