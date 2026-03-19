@@ -183,6 +183,9 @@ export function buildRevisionArtifacts(topology: TopologyPayload, geometry: Geom
       scaleInfo: topology.metadata.scaleInfo,
       semanticAnnotations: topology.semanticAnnotations,
       selection: topology.selection,
+      providerStatus: topology.providerStatus,
+      providerErrors: topology.providerErrors,
+      analysisContext: (topology.metadata as Record<string, unknown>).analysisContext ?? null,
       selectedProvider: topology.selectedProvider ?? null,
       selectedPassId: topology.selectedPassId ?? null
     }

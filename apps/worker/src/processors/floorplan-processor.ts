@@ -3,6 +3,7 @@ import { normalizeAndValidateTopology } from "../pipeline/normalize-validate";
 import { buildGeometry } from "../pipeline/geometry-builder";
 import { buildRevisionArtifacts } from "../pipeline/revision-builder";
 import { buildSceneJson } from "../pipeline/scene-builder";
+import { deriveScaleInfoFromDimensions, deriveScaleValueFromEvidence, scoreCandidate, type TopologyPayload, type Vec2 } from "@plan2space/floorplan-core";
 import {
   markJobDeadLetter,
   markJobFailed,
@@ -19,7 +20,10 @@ import { getSourceAssetByStoragePath } from "../repositories/source-assets-repo"
 import { env } from "../config/env";
 import { supabaseService } from "../services/supabase";
 
-const REVIEW_REQUIRED_SCORE_THRESHOLD = 72;
+const REVIEW_REQUIRED_SCORE_THRESHOLD = env.FLOORPLAN_REVIEW_SCORE_THRESHOLD;
+const REVIEW_REQUIRED_CONFLICT_THRESHOLD = env.FLOORPLAN_REVIEW_CONFLICT_THRESHOLD;
+const REVIEW_REQUIRED_DIMENSION_CONFLICT_THRESHOLD = env.FLOORPLAN_REVIEW_DIMENSION_CONFLICT_THRESHOLD;
+const REVIEW_REQUIRED_SCALE_CONFLICT_THRESHOLD = env.FLOORPLAN_REVIEW_SCALE_CONFLICT_THRESHOLD;
 
 function toDataUrl(buffer: ArrayBuffer, mimeType: string) {
   const base64 = Buffer.from(buffer).toString("base64");
@@ -38,6 +42,117 @@ function parseJobPayload(payload: unknown) {
     floorplanId,
     objectPath,
     mimeType
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function pointInPolygon(point: Vec2, polygon: Vec2[]) {
+  let inside = false;
+  for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index, index += 1) {
+    const [xi, yi] = polygon[index]!;
+    const [xj, yj] = polygon[previous]!;
+    const intersects =
+      yi > point[1] !== yj > point[1] &&
+      point[0] < ((xj - xi) * (point[1] - yi)) / Math.max(yj - yi, 1e-9) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function computeDimensionConflict(topology: TopologyPayload) {
+  const derivedScale = deriveScaleInfoFromDimensions(topology.semanticAnnotations.dimensionAnnotations);
+  if (!derivedScale) return 0;
+  const drift = Math.abs(derivedScale.value - topology.metadata.scale) / Math.max(derivedScale.value, 0.000001);
+  return clamp(drift, 0, 1);
+}
+
+function computeScaleConflict(topology: TopologyPayload) {
+  const evidenceScale = deriveScaleValueFromEvidence(topology.metadata.scaleInfo.evidence);
+  if (!evidenceScale) return 0;
+  const drift = Math.abs(evidenceScale - topology.metadata.scale) / Math.max(evidenceScale, 0.000001);
+  return clamp(drift, 0, 1);
+}
+
+function computeRoomHintConflict(
+  topology: TopologyPayload,
+  geometry: ReturnType<typeof buildGeometry>
+) {
+  const labeledHints = topology.semanticAnnotations.roomHints.filter((roomHint) => roomHint.roomType !== "other");
+  if (labeledHints.length === 0) return 0;
+
+  let mismatches = 0;
+  for (const roomHint of labeledHints) {
+    const matchedRoom = geometry.roomPolygons.find((room) => pointInPolygon(roomHint.position, room.polygon));
+    if (!matchedRoom) {
+      mismatches += 1;
+      continue;
+    }
+
+    if (matchedRoom.roomType !== roomHint.roomType) {
+      mismatches += 0.7;
+    }
+
+    if (roomHint.polygon && !pointInPolygon(matchedRoom.centroid, roomHint.polygon)) {
+      mismatches += 0.3;
+    }
+  }
+
+  return clamp(mismatches / labeledHints.length, 0, 1);
+}
+
+function computeOpeningTopologyConflict(topology: TopologyPayload) {
+  const scored = scoreCandidate({
+    walls: topology.walls,
+    openings: topology.openings,
+    scaleInfo: topology.metadata.scaleInfo,
+    semanticAnnotations: topology.semanticAnnotations
+  });
+  const unattachedRatio = 1 - scored.metrics.openingsAttachedRatio;
+  const loopBreak = scored.metrics.exteriorLoopClosed ? 0 : 1;
+  const overlapRatio =
+    scored.metrics.openingCount > 0
+      ? clamp(scored.metrics.openingOverlapCount / scored.metrics.openingCount, 0, 1)
+      : 0;
+  const entranceConflict = topology.openings.filter((opening) => opening.isEntrance).length > 1 ? 1 : 0;
+
+  return clamp(unattachedRatio * 0.45 + loopBreak * 0.35 + overlapRatio * 0.1 + entranceConflict * 0.1, 0, 1);
+}
+
+function buildReviewDecision(topology: TopologyPayload, geometry: ReturnType<typeof buildGeometry>) {
+  const dimensionConflict = computeDimensionConflict(topology);
+  const scaleConflict = computeScaleConflict(topology);
+  const roomHintConflict = computeRoomHintConflict(topology, geometry);
+  const openingTopologyConflict = computeOpeningTopologyConflict(topology);
+  const conflictScore =
+    dimensionConflict * 0.4 + scaleConflict * 0.25 + roomHintConflict * 0.2 + openingTopologyConflict * 0.15;
+  const reviewReasons: string[] = [];
+
+  if ((topology.selectedScore ?? 0) < REVIEW_REQUIRED_SCORE_THRESHOLD) {
+    reviewReasons.push("selected_score_low");
+  }
+  if (conflictScore > REVIEW_REQUIRED_CONFLICT_THRESHOLD) {
+    reviewReasons.push("conflict_score_high");
+  }
+  if (dimensionConflict > REVIEW_REQUIRED_DIMENSION_CONFLICT_THRESHOLD) {
+    reviewReasons.push("dimension_conflict_high");
+  }
+  if (scaleConflict > REVIEW_REQUIRED_SCALE_CONFLICT_THRESHOLD) {
+    reviewReasons.push("scale_conflict_high");
+  }
+
+  return {
+    requiresReview: reviewReasons.length > 0,
+    reviewReasons,
+    conflictScore,
+    conflictBreakdown: {
+      dimensionConflict,
+      scaleConflict,
+      roomHintConflict,
+      openingTopologyConflict
+    }
   };
 }
 
@@ -121,6 +236,7 @@ export async function processFloorplanJob(job: JobRow) {
       scale: topology.metadata.scale,
       semanticAnnotations: topology.semanticAnnotations
     });
+    const reviewDecision = buildReviewDecision(topology, geometry);
 
     const sceneJson = buildSceneJson(topology, geometry);
     const revisionArtifacts = buildRevisionArtifacts(topology, geometry);
@@ -180,7 +296,11 @@ export async function processFloorplanJob(job: JobRow) {
         providerErrors: topology.providerErrors,
         selectedScore: topology.selectedScore,
         selection: topology.selection,
-        candidates: topology.candidates ?? []
+        candidates: topology.candidates ?? [],
+        conflictScore: reviewDecision.conflictScore,
+        reviewReasons: reviewDecision.reviewReasons,
+        conflictBreakdown: reviewDecision.conflictBreakdown,
+        analysisContext: (topology.metadata as Record<string, unknown>).analysisContext ?? null
       }
     });
 
@@ -188,9 +308,7 @@ export async function processFloorplanJob(job: JobRow) {
       await attachGeneratedRevisionToProjectIfMissing(floorplan.project_id, layoutRevisionId);
     }
 
-    const requiresReview =
-      Boolean(floorplan.intake_session_id) &&
-      ((topology.selectedScore ?? 0) < REVIEW_REQUIRED_SCORE_THRESHOLD);
+    const requiresReview = Boolean(floorplan.intake_session_id) && reviewDecision.requiresReview;
 
     await updateFloorplanStatus(payload.floorplanId, requiresReview ? "review_required" : "succeeded");
     if (floorplan.intake_session_id) {
@@ -206,7 +324,10 @@ export async function processFloorplanJob(job: JobRow) {
           topologyHash: revisionArtifacts.topologyHash,
           roomGraphHash: revisionArtifacts.roomGraphHash,
           geometryHash: revisionArtifacts.geometryHash,
-          selectedScore: topology.selectedScore
+          selectedScore: topology.selectedScore,
+          conflictScore: reviewDecision.conflictScore,
+          reviewReasons: reviewDecision.reviewReasons,
+          conflictBreakdown: reviewDecision.conflictBreakdown
         }
       });
     }

@@ -6,7 +6,32 @@
       "apartmentName": "sample apartment",
       "typeName": "84A",
       "region": "seoul",
-      "notes": "사용자가 권리를 보유한 수동 업로드 예시"
+      "notes": "사용자가 권리를 보유한 수동 업로드 예시",
+      "qualityTags": ["watermark", "filled_plan", "balcony", "utility_room"],
+      "complexityTier": "korean_complex",
+      "gold": {
+        "rooms": [
+          {
+            "roomType": "living_room",
+            "label": "거실"
+          },
+          {
+            "roomType": "utility",
+            "label": "다용도실"
+          }
+        ],
+        "dimensions": [
+          {
+            "text": "10,060",
+            "mmValue": 10060
+          }
+        ],
+        "scale": {
+          "metersPerPixel": 0.0195
+        },
+        "reviewSeconds": 42,
+        "expectedReviewRequired": false
+      }
     }
   }
 }
