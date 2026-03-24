@@ -112,3 +112,84 @@ test("executeProviders selects hf dedicated candidate and merges paddle OCR sema
     process.env.HF_FLOORPLAN_ENDPOINT_TOKEN = originalEnv.HF_FLOORPLAN_ENDPOINT_TOKEN;
   }
 });
+
+test("executeProviders accepts roboflow cubicasa candidate payloads", async () => {
+  const originalFetch = global.fetch;
+  const originalEnv = {
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    SNAPTRUDE_API_URL: process.env.SNAPTRUDE_API_URL,
+    ROBOFLOW_CUBICASA2_URL: process.env.ROBOFLOW_CUBICASA2_URL,
+    ROBOFLOW_API_KEY: process.env.ROBOFLOW_API_KEY
+  };
+
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.SNAPTRUDE_API_URL;
+  process.env.ROBOFLOW_CUBICASA2_URL = "https://roboflow.example.com/cubicasa2";
+  process.env.ROBOFLOW_API_KEY = "secret";
+
+  global.fetch = (async (input: string | URL | Request) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    if (url === "https://roboflow.example.com/cubicasa2") {
+      return new Response(
+        JSON.stringify({
+          result: {
+            scale: 0.05,
+            scaleInfo: {
+              value: 0.05,
+              source: "ocr_dimension",
+              confidence: 0.9,
+              evidence: {
+                mmValue: 10000,
+                pxDistance: 200,
+                p1: [0, 0],
+                p2: [200, 0]
+              }
+            },
+            walls: [
+              { id: "w1", start: [0, 0], end: [200, 0], thickness: 12, type: "exterior" },
+              { id: "w2", start: [200, 0], end: [200, 120], thickness: 12, type: "exterior" },
+              { id: "w3", start: [200, 120], end: [0, 120], thickness: 12, type: "exterior" },
+              { id: "w4", start: [0, 120], end: [0, 0], thickness: 12, type: "exterior" }
+            ],
+            openings: [{ id: "d1", position: [24, 0], width: 24, type: "door", isEntrance: true }],
+            semanticAnnotations: {
+              roomHints: [{ id: "r1", label: "거실", roomType: "living_room", position: [100, 60], confidence: 0.9, source: "provider" }],
+              dimensionAnnotations: []
+            }
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    return new Response("not found", { status: 404 });
+  }) as typeof fetch;
+
+  try {
+    const result = await executeProviders({
+      base64: SAMPLE_DATA_URL,
+      mimeType: "image/png",
+      debug: true
+    });
+
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+
+    assert.equal(result.data.source, "roboflow_cubicasa2");
+    assert.ok(result.data.walls.length >= 4);
+    assert.ok(result.data.openings.some((opening) => opening.isEntrance));
+    assert.ok(result.data.semanticAnnotations.roomHints.some((roomHint) => roomHint.roomType === "living_room"));
+  } finally {
+    global.fetch = originalFetch;
+    process.env.ANTHROPIC_API_KEY = originalEnv.ANTHROPIC_API_KEY;
+    process.env.OPENAI_API_KEY = originalEnv.OPENAI_API_KEY;
+    process.env.SNAPTRUDE_API_URL = originalEnv.SNAPTRUDE_API_URL;
+    process.env.ROBOFLOW_CUBICASA2_URL = originalEnv.ROBOFLOW_CUBICASA2_URL;
+    process.env.ROBOFLOW_API_KEY = originalEnv.ROBOFLOW_API_KEY;
+  }
+});

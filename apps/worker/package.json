@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/worker.ts",
     "start": "tsx src/worker.ts",
+    "provider:floorplan:check": "node --import tsx scripts/check-floorplan-providers.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test"
   },

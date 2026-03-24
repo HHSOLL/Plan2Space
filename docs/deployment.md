@@ -55,12 +55,37 @@ SUPABASE_SERVICE_ROLE_KEY=
 WORKER_CONCURRENCY=2
 WORKER_POLL_INTERVAL_MS=1000
 FLOORPLAN_PROVIDER_ORDER=anthropic,openai,snaptrude
+FLOORPLAN_PREPROCESS_PROFILES=balanced,lineart,filled_plan
 FLOORPLAN_PROVIDER_TIMEOUT_MS=45000
+FLOORPLAN_MIN_ACCEPT_SCORE=25
+FLOORPLAN_REVIEW_SCORE_THRESHOLD=72
+FLOORPLAN_REVIEW_CONFLICT_THRESHOLD=0.3
+FLOORPLAN_REVIEW_DIMENSION_CONFLICT_THRESHOLD=0.35
+FLOORPLAN_REVIEW_SCALE_CONFLICT_THRESHOLD=0.35
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 SNAPTRUDE_API_URL=
 SNAPTRUDE_API_KEY=
+ROBOFLOW_CUBICASA2_URL=
+ROBOFLOW_CUBICASA3_URL=
+ROBOFLOW_API_KEY=
+PADDLEOCR_API_URL=
+PADDLEOCR_API_TOKEN=
+PADDLEOCR_DET_MODEL=PP-OCRv5_det
+PADDLEOCR_REC_MODEL=korean_PP-OCRv5_mobile_rec
+HF_FLOORPLAN_ENDPOINT_URL=
+HF_FLOORPLAN_ENDPOINT_TOKEN=
 ```
+
+운영 순서:
+1. `cp apps/worker/.env.example apps/worker/.env`
+2. built-in provider 또는 external provider env 입력
+3. `npm --workspace apps/worker run provider:floorplan:check`
+4. commercialization baseline 직전 `npm --workspace apps/worker run provider:floorplan:check -- --strictCommercialization=1`
+
+주의:
+- `pdf_export`는 raw PDF 파일이 아니라 PDF에서 rasterized된 PNG/JPEG 채널을 뜻한다.
+- Roboflow/PaddleOCR/HF Dedicated lane은 env가 없으면 skip되고 built-in providers만 동작한다.
 
 ## 5) Supabase 준비
 1. 마이그레이션 적용:

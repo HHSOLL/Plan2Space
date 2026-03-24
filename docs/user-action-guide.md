@@ -13,6 +13,9 @@ NEXT_PUBLIC_RAILWAY_API_URL=
 NEXT_PUBLIC_APP_URL=
 ```
 
+빠른 시작:
+- `cp apps/web/.env.local.example apps/web/.env.local`
+
 ### Railway API (`apps/api`)
 ```
 API_PORT=4000
@@ -22,6 +25,9 @@ SUPABASE_SERVICE_ROLE_KEY=
 CORS_ORIGINS=http://localhost:3100,http://127.0.0.1:3100,https://plan2space.vercel.app,https://plan2-space-web-*.vercel.app,https://plan2space-*.vercel.app
 FLOORPLAN_UPLOAD_BUCKET=floor-plans
 ```
+
+빠른 시작:
+- `cp apps/api/.env.example apps/api/.env`
 
 참고:
 - Railway 런타임에서는 `PORT`가 자동 주입되며, API는 이를 우선 사용합니다.
@@ -66,10 +72,16 @@ MESHY_API_KEY=
 MESHY_STATUS_URL=
 ```
 
+빠른 시작:
+- `cp apps/worker/.env.example apps/worker/.env`
+- `npm --workspace apps/worker run provider:floorplan:check`
+- 상용화 baseline 직전에는 `npm --workspace apps/worker run provider:floorplan:check -- --strictCommercialization=1`
+
 중요:
 - AI/provider 키는 Vercel이 아니라 Railway Worker에만 둡니다.
 - asset generation provider 키도 Railway Worker에만 둡니다.
 - 외부 부동산 서비스 도면 이미지는 URL 자동 수집이 아니라 사용 권한이 있는 파일 업로드로만 넣습니다.
+- `pdf_export`는 raw PDF가 아니라 PDF에서 rasterized된 이미지 채널로 운영합니다.
 
 ## 2) Supabase 적용 작업
 - `supabase/migrations/20260305_railway_floorplan_queue.sql` 실행
@@ -112,9 +124,12 @@ MESHY_STATUS_URL=
    - `/v1/assets/generate` 호출 후 `GET /v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
 11. benchmark fixture 검수:
    - `apps/web/fixtures/floorplans/manifest.json`에 `channel`, `sourcePolicy`, `qualityTags`, `complexityTier`를 기록
+   - `manifest.example.json -> manifest.json -> fixtures:floorplan:validate -> fixtures:floorplan:blind-gate -> eval:floorplan -> eval:floorplan:gate` 순서로 운영
    - benchmark fixture에는 가능하면 `gold.rooms`, `gold.dimensions`, `gold.scale`, `gold.reviewSeconds`, `gold.expectedReviewRequired`를 기록
    - `sourcePolicy`는 `partner_licensed`, `user_opt_in`, `manual_private`만 허용
    - 외부 listing gallery 이미지를 서비스가 자동 저장/수집한 fixture는 등록하지 않음
+   - 구조/메타데이터 lint: `npm --workspace apps/web run fixtures:floorplan:validate`
+   - blind set gate: `npm --workspace apps/web run fixtures:floorplan:blind-gate`
    - blind set 100장 기준 `korean_complex` 표본을 최소 20장 포함
 12. semantic annotation QA:
    - room label 또는 치수 표기가 실제로 있는 fixture에서는 generated revision의 `geometry_json.evidenceRefs.semanticAnnotations.roomHints`와 `dimensionAnnotations`가 비어 있지 않은지 확인
@@ -217,6 +232,17 @@ Updated:
 
 Removed/Deprecated:
 - 외부 listing gallery URL을 fixture/catalog source로 자동 수집하는 운영 방식.
+
+## 15) 2026-03-24 변경 동기화 (Baseline Ops Readiness)
+Added:
+- `apps/web/.env.local.example`, `apps/api/.env.example`, `apps/worker/.env.example` 기반 빠른 시작 절차.
+- `fixtures:floorplan:validate`, `fixtures:floorplan:blind-gate`, `provider:floorplan:check` 운영 명령.
+
+Updated:
+- blind set 검수를 수기 확인만이 아니라 manifest validator + blind gate 조합으로 수행하도록 확장.
+
+Removed/Deprecated:
+- operator가 문서만 보고 환경 변수와 blind set 구성을 수동 추정하는 방식.
 
 ## 15) 2026-03-13 변경 동기화 (Semantic Room Hints + OCR Dimension)
 Added:
