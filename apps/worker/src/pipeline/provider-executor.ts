@@ -894,6 +894,20 @@ function detectInputChannel(params: { mimeType: string; imageWidth: number; imag
 export async function executeProviders(payload: ExecuteProvidersPayload): Promise<AnalyzeUploadResult> {
   const stripped = stripDataUrl(payload.base64);
   const mimeType = payload.mimeType || stripped.mimeType;
+  if (mimeType.includes("pdf")) {
+    return {
+      ok: false,
+      status: 422,
+      error: {
+        recoverable: true,
+        errorCode: "UNSUPPORTED_FLOORPLAN_FORMAT",
+        details: "Raw PDF uploads are not supported in the current analysis runtime. Rasterize the PDF to PNG/JPEG and keep channel=pdf_export.",
+        providerStatus: [],
+        providerErrors: []
+      }
+    };
+  }
+
   const metadata = await sharp(Buffer.from(stripped.base64, "base64")).metadata();
   const imageWidth = metadata.width ?? 0;
   const imageHeight = metadata.height ?? 0;

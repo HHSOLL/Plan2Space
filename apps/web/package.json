@@ -10,6 +10,8 @@
     "type-check": "tsc --noEmit --incremental false",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs",
     "e2e:intake": "node --import tsx scripts/e2e-intake-flow.ts",
+    "fixtures:floorplan:validate": "node --import tsx scripts/validate-floorplan-fixtures.ts",
+    "fixtures:floorplan:blind-gate": "node --import tsx scripts/validate-floorplan-fixtures.ts --strictBlindSet=1 --minFixtures=100 --minKoreanComplexShare=0.2 --minPdfFixtures=20 --minWatermarkFixtures=20 --minPhoneOrCroppedFixtures=20",
     "eval:floorplan": "node --import tsx scripts/eval-floorplan.ts",
     "eval:floorplan:gate": "node --import tsx scripts/eval-floorplan-gate.ts"
   },

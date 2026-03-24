@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as fsp from "node:fs/promises";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -45,6 +46,8 @@ type FixtureSummary = {
   status: number;
   sessionStatus: string | null;
   selectedProvider: string | null;
+  selectedPassId: string | null;
+  selectedPreprocessProfile: string | null;
   sourceModule: string | null;
   selectedScore: number | null;
   wallCount: number;
@@ -61,6 +64,10 @@ type FixtureSummary = {
   dimensionValueAccuracy: number | null;
   scaleAgreement: number | null;
   correctionSeconds: number | null;
+  hasGoldRooms: boolean;
+  hasGoldDimensions: boolean;
+  hasGoldScale: boolean;
+  hasReviewExpectation: boolean;
   details: string | null;
 };
 
@@ -119,10 +126,13 @@ type RawFixtureResult = {
 type Options = {
   apiUrl: string;
   fixturesDir: string;
+  manifestPath: string;
   outputDir: string;
   debug: boolean;
   keepArtifacts: boolean;
 };
+
+const WORKSPACE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function getMimeType(fileName: string) {
   const lowered = fileName.toLowerCase();
@@ -172,10 +182,16 @@ function parseArgs(argv: string[]): Options {
     apiUrl: apiUrl.replace(/\/+$/, ""),
     fixturesDir: values.get("fixtures")
       ? path.resolve(values.get("fixtures")!)
-      : path.join(process.cwd(), "apps/web/fixtures/floorplans"),
+      : path.join(WORKSPACE_ROOT, "fixtures/floorplans"),
+    manifestPath: values.get("manifest")
+      ? path.resolve(values.get("manifest")!)
+      : path.join(
+          values.get("fixtures") ? path.resolve(values.get("fixtures")!) : path.join(WORKSPACE_ROOT, "fixtures/floorplans"),
+          "manifest.json"
+        ),
     outputDir: values.get("out")
       ? path.resolve(values.get("out")!)
-      : path.join(process.cwd(), "apps/web/.eval/floorplan"),
+      : path.join(WORKSPACE_ROOT, ".eval/floorplan"),
     debug: !["false", "0"].includes((values.get("debug") ?? "true").toLowerCase()),
     keepArtifacts
   };
@@ -234,15 +250,13 @@ function toCsvRow(columns: Array<string | number | boolean | null | undefined>) 
     .join(",");
 }
 
-async function loadFixtureManifest(fixturesDir: string) {
-  const manifestPath = path.join(fixturesDir, "manifest.json");
-  try {
-    const raw = await fsp.readFile(manifestPath, "utf8");
-    const parsed = JSON.parse(raw) as { fixtures?: Record<string, FixtureManifestEntry> };
-    return parsed.fixtures ?? {};
-  } catch {
-    return {};
+async function loadFixtureManifest(manifestPath: string) {
+  const raw = await fsp.readFile(manifestPath, "utf8");
+  const parsed = JSON.parse(raw) as { fixtures?: Record<string, FixtureManifestEntry> };
+  if (!parsed.fixtures || Object.keys(parsed.fixtures).length === 0) {
+    throw new Error(`Fixture manifest is empty: ${manifestPath}`);
   }
+  return parsed.fixtures;
 }
 
 async function cleanupFixtureArtifacts(params: {
@@ -383,7 +397,7 @@ function percentage(value: number) {
 }
 
 async function main() {
-  loadEnvFile(path.join(process.cwd(), "apps/web/.env.local"));
+  loadEnvFile(path.join(WORKSPACE_ROOT, ".env.local"));
 
   const options = parseArgs(process.argv.slice(2));
   const supabaseUrl = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
@@ -398,7 +412,7 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  const fixtureManifest = await loadFixtureManifest(options.fixturesDir);
+  const fixtureManifest = await loadFixtureManifest(options.manifestPath);
   const entries = await fsp.readdir(options.fixturesDir, { withFileTypes: true });
   const fixtures = entries
     .filter((entry) => entry.isFile())
@@ -634,6 +648,9 @@ async function main() {
           status: session.status === "failed" ? 422 : 200,
           sessionStatus: session.status ?? null,
           selectedProvider,
+          selectedPassId: typeof selection?.selectedPassId === "string" ? String(selection.selectedPassId) : null,
+          selectedPreprocessProfile:
+            typeof selection?.preprocessProfile === "string" ? String(selection.preprocessProfile) : null,
           sourceModule: typeof selection?.sourceModule === "string" ? String(selection.sourceModule) : null,
           selectedScore: Number.isFinite(Number(diagnostics?.selectedScore)) ? Number(diagnostics?.selectedScore) : null,
           wallCount: Array.isArray((result as any)?.wallCoordinates) ? (result as any).wallCoordinates.length : 0,
@@ -652,6 +669,10 @@ async function main() {
           dimensionValueAccuracy,
           scaleAgreement,
           correctionSeconds: fixtureMetadata.gold?.reviewSeconds ?? null,
+          hasGoldRooms: Array.isArray(fixtureMetadata.gold?.rooms) && fixtureMetadata.gold!.rooms!.length > 0,
+          hasGoldDimensions: Array.isArray(fixtureMetadata.gold?.dimensions) && fixtureMetadata.gold!.dimensions!.length > 0,
+          hasGoldScale: Boolean(fixtureMetadata.gold?.scale?.metersPerPixel),
+          hasReviewExpectation: typeof fixtureMetadata.gold?.expectedReviewRequired === "boolean",
           details: Array.isArray((diagnostics?.reviewReasons as unknown[]) ?? null)
             ? ((diagnostics?.reviewReasons as string[]) ?? []).join(" | ")
             : null
@@ -678,6 +699,8 @@ async function main() {
         "status",
         "sessionStatus",
         "selectedProvider",
+        "selectedPassId",
+        "selectedPreprocessProfile",
         "sourceModule",
         "selectedScore",
         "wallCount",
@@ -706,6 +729,8 @@ async function main() {
           row.status,
           row.sessionStatus,
           row.selectedProvider,
+          row.selectedPassId,
+          row.selectedPreprocessProfile,
           row.sourceModule,
           row.selectedScore,
           row.wallCount,
@@ -792,6 +817,7 @@ async function main() {
       runAt,
       apiUrl: options.apiUrl,
       fixturesDir: options.fixturesDir,
+      manifestPath: options.manifestPath,
       outputDir: options.outputDir,
       debug: options.debug,
       fixtureManifest,

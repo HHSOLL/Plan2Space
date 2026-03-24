@@ -62,6 +62,8 @@ geometry-first 규칙:
 - `filled_plan` 프로파일은 네이버부동산형 컬러 채움/텍스처 평면도 같은 한국 아파트 gallery 입력을 위한 기본 상용 패스다.
 - room label과 dimension OCR은 PaddleOCR(`korean_PP-OCRv5_mobile_rec`) 외부 lane을 우선 허용하고, 그 결과를 `semanticAnnotations.roomHints/dimensionAnnotations`로 merge한다.
 - 외부 구조 파서 후보는 Roboflow CubiCasa2/3, HF Dedicated Endpoint를 optional candidate로 추가할 수 있다.
+- 외부 lane은 vendor SDK 직접 호출이 아니라 wrapper HTTP JSON contract를 기대한다. 상세 shape는 `docs/provider-rollout.md`를 기준으로 맞춘다.
+- `pdf_export`는 raw PDF가 아니라 rasterized image channel로 취급한다.
 
 정확도 상용화 규칙:
 - blind eval은 Railway intake/job/result 실경로를 사용한다.
@@ -218,6 +220,15 @@ Added:
 Updated:
 - `normalizeScaleInfo`는 raw `scaleInfo`가 약하거나 누락돼도 dimension annotation 기반으로 `ocr_dimension` scale을 재구성한다.
 - room reconstruction은 wall loop가 부족할 때 semantic room hint polygon을 fallback base room으로 사용할 수 있다.
+
+## 15) 2026-03-24 변경 동기화 (Baseline Ops Readiness)
+Added:
+- external provider wrapper contract 문서 `docs/provider-rollout.md`.
+- blind-set preflight/coverage gate 운영 규칙.
+
+Updated:
+- eval은 `manifest.json`이 없으면 실행하지 않고, sparse gold annotation은 coverage gate로 차단한다.
+- `pdf_export`를 raw PDF가 아닌 rasterized image channel로 명확히 정의했다.
 
 Removed/Deprecated:
 - `scaleInfo`만 존재하면 충분하다고 보는 단일 scale 추정 경로.
