@@ -15,7 +15,7 @@ import {
 } from "@react-three/drei";
 import { useState, Suspense } from "react";
 import * as THREE from "three";
-import { Plus, LayoutDashboard, Users } from "lucide-react";
+import { DraftingCompass, LayoutDashboard, Users } from "lucide-react";
 
 // Font URL for Text3D
 const FONT_URL = "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json";
@@ -192,7 +192,7 @@ function SceneContent({ onAction }: { onAction: (id: string) => void }) {
               bevelOffset={0}
               bevelSegments={5}
             >
-              MH_STUDIO
+              PLAN2SPACE
               <meshPhysicalMaterial
                 color="#1a1a1a"
                 roughness={0.1}
@@ -209,16 +209,16 @@ function SceneContent({ onAction }: { onAction: (id: string) => void }) {
             letterSpacing={1.2}
             font="https://fonts.gstatic.com/s/cormorantgaramond/v11/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpHtK.woff"
           >
-            S P A T I A L   A R C H I V E
+            B U I L D E R   E D I T O R   W A L K
           </Text>
         </group>
       </Float>
 
       {/* Menu buttons */}
       <group position={[0, 1, 5]}>
-        <FloatingButton position={[-2.5, 1, 0]} label="New Project" icon={Plus} onClick={() => onAction('new')} />
-        <FloatingButton position={[0, 1, 0]} label="Dashboard" icon={LayoutDashboard} onClick={() => onAction('dashboard')} />
-        <FloatingButton position={[2.5, 1, 0]} label="Gallery" icon={Users} onClick={() => onAction('community')} />
+        <FloatingButton position={[-2.5, 1, 0]} label="Builder" icon={DraftingCompass} onClick={() => onAction('new')} />
+        <FloatingButton position={[0, 1, 0]} label="Studio" icon={LayoutDashboard} onClick={() => onAction('dashboard')} />
+        <FloatingButton position={[2.5, 1, 0]} label="Community" icon={Users} onClick={() => onAction('community')} />
       </group>
 
       <ContactShadows position={[0, -2, 0]} opacity={0.1} scale={40} blur={4} far={15} />

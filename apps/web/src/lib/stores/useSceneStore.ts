@@ -129,6 +129,7 @@ export type NavGraph = {
 export type SceneAsset = {
   id: string;
   assetId: string;
+  catalogItemId?: string | null;
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
@@ -169,6 +170,8 @@ export type ProjectSnapshot = {
   cameraAnchors: CameraAnchor[];
   navGraph: NavGraph;
   assets: SceneAsset[];
+  wallMaterialIndex: number;
+  floorMaterialIndex: number;
 };
 
 export type VersionHistory = {
@@ -218,6 +221,8 @@ type SceneState = SceneDataState & {
   upsertMaterial: (material: MaterialRef) => void;
   addComment: (assetId: string, comment: Comment) => void;
   logActivity: (userId: string, action: string) => void;
+  initializeHistory: (label?: string) => void;
+  recordSnapshot: (label?: string) => void;
   createSnapshot: (label?: string) => void;
   undo: () => void;
   redo: () => void;
@@ -269,6 +274,64 @@ const createId = () => {
   }
   return `asset-${Math.random().toString(36).slice(2, 10)}`;
 };
+
+function buildSnapshot(
+  state: SceneDataState,
+  label?: string,
+  timestamp = Date.now()
+): ProjectSnapshot {
+  return {
+    id: `snapshot-${timestamp}`,
+    timestamp,
+    label: label ?? `Snapshot ${new Date(timestamp).toLocaleTimeString()}`,
+    scale: state.scale,
+    scaleInfo: state.scaleInfo,
+    walls: state.walls,
+    openings: state.openings,
+    floors: state.floors,
+    ceilings: state.ceilings,
+    rooms: state.rooms,
+    cameraAnchors: state.cameraAnchors,
+    navGraph: state.navGraph,
+    assets: state.assets,
+    wallMaterialIndex: state.wallMaterialIndex,
+    floorMaterialIndex: state.floorMaterialIndex
+  };
+}
+
+function serializeSnapshot(snapshot: ProjectSnapshot) {
+  return JSON.stringify({
+    scale: snapshot.scale,
+    scaleInfo: snapshot.scaleInfo,
+    walls: snapshot.walls,
+    openings: snapshot.openings,
+    floors: snapshot.floors,
+    ceilings: snapshot.ceilings,
+    rooms: snapshot.rooms,
+    cameraAnchors: snapshot.cameraAnchors,
+    navGraph: snapshot.navGraph,
+    assets: snapshot.assets,
+    wallMaterialIndex: snapshot.wallMaterialIndex,
+    floorMaterialIndex: snapshot.floorMaterialIndex
+  });
+}
+
+function applySnapshot(snapshot: ProjectSnapshot) {
+  return {
+    scale: snapshot.scale,
+    scaleInfo: snapshot.scaleInfo ?? makeUnknownScaleInfo(snapshot.scale),
+    walls: snapshot.walls,
+    openings: snapshot.openings,
+    floors: snapshot.floors,
+    ceilings: snapshot.ceilings,
+    rooms: snapshot.rooms,
+    cameraAnchors: snapshot.cameraAnchors,
+    navGraph: snapshot.navGraph,
+    assets: snapshot.assets,
+    wallMaterialIndex: snapshot.wallMaterialIndex,
+    floorMaterialIndex: snapshot.floorMaterialIndex
+  };
+}
 
 export const useSceneStore = create<SceneState>((set) => ({
   ...initialSceneState,
@@ -340,24 +403,43 @@ export const useSceneStore = create<SceneState>((set) => ({
         ...state.activities
       ].slice(0, 50)
     })),
+  initializeHistory: (label) =>
+    set((state) => {
+      const timestamp = Date.now();
+      const snapshot = buildSnapshot(state, label ?? "Session start", timestamp);
+      return {
+        versionHistory: {
+          snapshots: [snapshot],
+          currentIndex: 0
+        },
+        lastSnapshotTime: timestamp
+      };
+    }),
+  recordSnapshot: (label) =>
+    set((state) => {
+      const timestamp = Date.now();
+      const snapshot = buildSnapshot(state, label, timestamp);
+      const activeSnapshots = state.versionHistory.snapshots.slice(
+        0,
+        state.versionHistory.currentIndex + 1
+      );
+      const previous = activeSnapshots[activeSnapshots.length - 1];
+      if (previous && serializeSnapshot(previous) === serializeSnapshot(snapshot)) {
+        return state;
+      }
+      activeSnapshots.push(snapshot);
+      return {
+        versionHistory: {
+          snapshots: activeSnapshots,
+          currentIndex: activeSnapshots.length - 1
+        },
+        lastSnapshotTime: timestamp
+      };
+    }),
   createSnapshot: (label) =>
     set((state) => {
       const timestamp = Date.now();
-      const snapshot: ProjectSnapshot = {
-        id: `snapshot-${timestamp}`,
-        timestamp,
-        label: label ?? `Snapshot ${new Date(timestamp).toLocaleTimeString()}`,
-        scale: state.scale,
-        scaleInfo: state.scaleInfo,
-        walls: state.walls,
-        openings: state.openings,
-        floors: state.floors,
-        ceilings: state.ceilings,
-        rooms: state.rooms,
-        cameraAnchors: state.cameraAnchors,
-        navGraph: state.navGraph,
-        assets: state.assets
-      };
+      const snapshot = buildSnapshot(state, label, timestamp);
       const newSnapshots = state.versionHistory.snapshots.slice(0, state.versionHistory.currentIndex + 1);
       newSnapshots.push(snapshot);
       return {
@@ -374,16 +456,7 @@ export const useSceneStore = create<SceneState>((set) => ({
       if (currentIndex <= 0) return state;
       const prev = snapshots[currentIndex - 1];
       return {
-        scale: prev.scale,
-        scaleInfo: prev.scaleInfo ?? makeUnknownScaleInfo(prev.scale),
-        walls: prev.walls,
-        openings: prev.openings,
-        floors: prev.floors,
-        ceilings: prev.ceilings,
-        rooms: prev.rooms,
-        cameraAnchors: prev.cameraAnchors,
-        navGraph: prev.navGraph,
-        assets: prev.assets,
+        ...applySnapshot(prev),
         versionHistory: { ...state.versionHistory, currentIndex: currentIndex - 1 }
       };
     }),
@@ -393,16 +466,7 @@ export const useSceneStore = create<SceneState>((set) => ({
       if (currentIndex >= snapshots.length - 1) return state;
       const next = snapshots[currentIndex + 1];
       return {
-        scale: next.scale,
-        scaleInfo: next.scaleInfo ?? makeUnknownScaleInfo(next.scale),
-        walls: next.walls,
-        openings: next.openings,
-        floors: next.floors,
-        ceilings: next.ceilings,
-        rooms: next.rooms,
-        cameraAnchors: next.cameraAnchors,
-        navGraph: next.navGraph,
-        assets: next.assets,
+        ...applySnapshot(next),
         versionHistory: { ...state.versionHistory, currentIndex: currentIndex + 1 }
       };
     }),
@@ -412,16 +476,7 @@ export const useSceneStore = create<SceneState>((set) => ({
       if (index === -1) return state;
       const snapshot = state.versionHistory.snapshots[index];
       return {
-        scale: snapshot.scale,
-        scaleInfo: snapshot.scaleInfo ?? makeUnknownScaleInfo(snapshot.scale),
-        walls: snapshot.walls,
-        openings: snapshot.openings,
-        floors: snapshot.floors,
-        ceilings: snapshot.ceilings,
-        rooms: snapshot.rooms,
-        cameraAnchors: snapshot.cameraAnchors,
-        navGraph: snapshot.navGraph,
-        assets: snapshot.assets,
+        ...applySnapshot(snapshot),
         versionHistory: { ...state.versionHistory, currentIndex: index }
       };
     }),

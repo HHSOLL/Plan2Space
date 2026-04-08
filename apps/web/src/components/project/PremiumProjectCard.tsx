@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Folder, Clock, Trash2 } from "lucide-react";
+import { getCatalogPreviewClasses, getProjectAssetSummary } from "../../lib/builder/catalog";
 import type { Project } from "../../lib/stores/useProjectStore";
 
 interface PremiumProjectCardProps {
@@ -13,6 +14,8 @@ interface PremiumProjectCardProps {
 
 const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProjectCardProps>(
     function PremiumProjectCard({ project, onSelect, onDelete }, ref) {
+        const assetSummary = getProjectAssetSummary(project.metadata);
+        const previewTheme = getCatalogPreviewClasses(assetSummary?.primaryTone ?? "sand");
         return (
             <motion.div
                 ref={ref}
@@ -33,8 +36,30 @@ const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProj
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         />
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center p-12">
-                            <Folder className="w-8 h-8 text-black/5" />
+                        <div className={`absolute inset-0 p-6 ${previewTheme.surface}`}>
+                            <div className="flex h-full flex-col justify-between">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className={`rounded-full border px-3 py-2 text-[9px] font-bold uppercase tracking-[0.24em] ${previewTheme.chip}`}>
+                                        {assetSummary?.primaryCollection ?? "Builder Room"}
+                                    </div>
+                                    <Folder className="w-8 h-8 text-black/10" />
+                                </div>
+                                {assetSummary && assetSummary.highlightedItems.length > 0 ? (
+                                    <div className="space-y-3">
+                                        <div className="text-[10px] font-bold uppercase tracking-[0.22em] opacity-55">
+                                            Placed Pieces
+                                        </div>
+                                        <div className="space-y-2">
+                                            {assetSummary.highlightedItems.slice(0, 2).map((item) => (
+                                                <div key={`${project.id}-${item.assetId}-${item.catalogItemId ?? "asset"}`} className="flex items-center justify-between gap-3 text-sm">
+                                                    <span className="line-clamp-1">{item.label}</span>
+                                                    <span className="text-[11px] font-semibold opacity-65">x{item.count}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -61,6 +86,18 @@ const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProj
                             <p className="text-[10px] text-[#666666] font-medium uppercase tracking-[0.1em] line-clamp-2 leading-relaxed h-10">
                                 {project.description || "No project description provided."}
                             </p>
+                            {assetSummary ? (
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {assetSummary.collections.slice(0, 2).map((collection) => (
+                                        <span
+                                            key={`${project.id}-${collection.label}`}
+                                            className="rounded-full border border-black/10 bg-[#f7f3ec] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#7b6e61]"
+                                        >
+                                            {collection.label} {collection.count}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : null}
                         </div>
                     </div>
 

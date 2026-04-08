@@ -76,14 +76,16 @@ function ModelInstance({ assetId }: { assetId: string }) {
 function FurnitureItem({ asset }: { asset: SceneAsset }) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
+  const readOnly = useEditorStore((state) => state.readOnly);
   const updateFurniture = useSceneStore((state) => state.updateFurniture);
+  const recordSnapshot = useSceneStore((state) => state.recordSnapshot);
   const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
   const [isDragging, setIsDragging] = useState(false);
 
   const position = useMemo(() => new THREE.Vector3(...asset.position), [asset.position]);
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
-    if (viewMode !== "top" || isTransforming) return;
+    if (viewMode !== "top" || isTransforming || readOnly) return;
     event.stopPropagation();
     setSelectedAssetId(asset.id);
     setIsDragging(true);
@@ -92,15 +94,18 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
   };
 
   const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
-    if (viewMode !== "top") return;
+    if (viewMode !== "top" || readOnly) return;
     event.stopPropagation();
+    if (isDragging) {
+      recordSnapshot("Move asset");
+    }
     setIsDragging(false);
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.releasePointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
-    if (viewMode !== "top" || !isDragging) return;
+    if (viewMode !== "top" || !isDragging || readOnly) return;
     event.stopPropagation();
     const intersection = new THREE.Vector3();
     if (!event.ray.intersectPlane(groundPlane, intersection)) return;
@@ -119,7 +124,7 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
   );
 
   const groupProps =
-    viewMode === "top"
+    viewMode === "top" && !readOnly
       ? {
           onPointerDown: handlePointerDown,
           onPointerUp: handlePointerUp,

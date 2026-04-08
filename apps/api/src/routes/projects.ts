@@ -12,6 +12,8 @@ import { ApiError } from "../services/errors";
 import { createAuthedSupabaseClient, supabaseService } from "../services/supabase";
 import { env } from "../config/env";
 import { createIntakeSessionForOwner } from "../services/intake-service";
+import { resolveLatestVersion } from "../services/scene-service";
+import { buildProjectVersionCustomization, buildProjectVersionFloorPlan } from "../services/project-version-service";
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1),
@@ -38,104 +40,56 @@ const SaveVersionSchema = z.object({
     floorIndex: z.number()
   }),
   thumbnailDataUrl: z.string().nullable().optional(),
+  assetSummary: z
+    .object({
+      totalAssets: z.number(),
+      highlightedItems: z
+        .array(
+          z.object({
+            catalogItemId: z.string().nullable(),
+            assetId: z.string(),
+            label: z.string(),
+            category: z.string(),
+            collection: z.string(),
+            tone: z.enum(["sand", "olive", "slate", "ember"]),
+            count: z.number()
+          })
+        )
+        .default([]),
+      collections: z
+        .array(
+          z.object({
+            label: z.string(),
+            count: z.number()
+          })
+        )
+        .default([]),
+      uncataloguedCount: z.number(),
+      primaryTone: z.enum(["sand", "olive", "slate", "ember"]),
+      primaryCollection: z.string().nullable()
+    })
+    .nullable()
+    .optional(),
   projectName: z.string().optional(),
   projectDescription: z.string().nullable().optional()
 });
 
-const DEFAULT_WALL_HEIGHT = 2.8;
-
 function dataUrlToBuffer(dataUrl: string) {
-  const [header, base64] = dataUrl.split(",");
-  const mimeMatch = header?.match(/data:(.*);base64/);
+  const [header, payload = ""] = dataUrl.split(",", 2);
+  const mimeMatch = header?.match(/^data:([^;,]+)/);
   const mime = mimeMatch?.[1] ?? "image/png";
+  const isBase64 = header?.includes(";base64");
   return {
     mime,
-    buffer: Buffer.from(base64 ?? "", "base64")
+    buffer: Buffer.from(isBase64 ? payload : decodeURIComponent(payload), isBase64 ? "base64" : "utf8")
   };
 }
 
-function buildFloorPlan(topology: z.infer<typeof SaveVersionSchema>["topology"]) {
-  const scale = topology.scale;
-  const walls = topology.walls as Array<Record<string, any>>;
-  const openings = topology.openings as Array<Record<string, any>>;
-  const floors = Array.isArray(topology.floors) ? (topology.floors as Array<Record<string, any>>) : [];
-  const wallHeight = walls.reduce((max, wall) => Math.max(max, Number(wall.height) || DEFAULT_WALL_HEIGHT), DEFAULT_WALL_HEIGHT);
-  const wallThickness = walls.length > 0 ? Math.max(0.02, Number(walls[0]?.thickness ?? 0.2) * scale) : 0.2;
-
-  return {
-    schemaVersion: 1,
-    unit: "m",
-    coordSystem: {
-      plane: "xz",
-      upAxis: "y"
-    },
-    params: {
-      wallHeight,
-      wallThickness,
-      ceilingHeight: wallHeight
-    },
-    walls: walls.map((wall) => ({
-      id: wall.id,
-      a: [Number(wall.start?.[0] ?? 0) * scale, Number(wall.start?.[1] ?? 0) * scale],
-      b: [Number(wall.end?.[0] ?? 0) * scale, Number(wall.end?.[1] ?? 0) * scale],
-      thickness: Number(wall.thickness ?? 12) * scale,
-      height: Number(wall.height ?? wallHeight)
-    })),
-    openings: openings.map((opening) => ({
-      id: opening.id,
-      wallId: opening.wallId,
-      type: opening.type,
-      offset: Number(opening.offset ?? 0) * scale,
-      width: Number(opening.width ?? 90) * scale,
-      height: Number(opening.height ?? 210) * scale,
-      verticalOffset:
-        typeof opening.verticalOffset === "number" ? Number(opening.verticalOffset) * scale : undefined,
-      sillHeight: typeof opening.sillHeight === "number" ? Number(opening.sillHeight) * scale : undefined
-    })),
-    source: {
-      kind: "manual_2d_editor",
-      raw: topology.scaleInfo
-        ? {
-            scaleInfo: topology.scaleInfo
-          }
-        : undefined
-    },
-    floors: floors.map((floor) => ({
-      id: floor.id,
-      outline: Array.isArray(floor.outline)
-        ? floor.outline.map((point: unknown) => [
-            Number((point as [number, number])?.[0] ?? 0) * scale,
-            Number((point as [number, number])?.[1] ?? 0) * scale
-          ])
-        : [],
-      materialId: typeof floor.materialId === "string" ? floor.materialId : null
-    }))
-  };
-}
-
-function buildCustomization(payload: z.infer<typeof SaveVersionSchema>) {
-  return {
-    schemaVersion: 1,
-    furniture: payload.assets.map((asset: Record<string, any>) => ({
-      id: asset.id,
-      modelId: asset.assetId,
-      position: asset.position,
-      rotation: asset.rotation,
-      scale: asset.scale,
-      metadata: {
-        path: asset.assetId
-      }
-    })),
-    surfaceMaterials: {},
-    defaults: {
-      floor: {
-        materialSkuId: `floor:${payload.materials.floorIndex}`
-      },
-      wall: {
-        materialSkuId: `wall:${payload.materials.wallIndex}`
-      }
-    }
-  };
+function mimeToExtension(mime: string) {
+  if (mime === "image/svg+xml") return "svg";
+  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/png") return "png";
+  return "bin";
 }
 
 export const projectsRouter = Router();
@@ -177,6 +131,19 @@ projectsRouter.get("/projects/:projectId", async (request, response, next) => {
     const project = await getProject(ownerId, request.params.projectId);
     if (!project) throw new ApiError(404, "Project not found.");
     response.status(200).json({ project });
+  } catch (error) {
+    next(error);
+  }
+});
+
+projectsRouter.get("/projects/:projectId/versions/latest", async (request, response, next) => {
+  try {
+    const ownerId = request.user?.id;
+    if (!ownerId) throw new ApiError(401, "Unauthorized");
+    const project = await getProject(ownerId, request.params.projectId);
+    if (!project) throw new ApiError(404, "Project not found.");
+    const version = await resolveLatestVersion(request.params.projectId);
+    response.status(200).json({ version: version ?? null });
   } catch (error) {
     next(error);
   }
@@ -247,31 +214,48 @@ projectsRouter.post("/projects/:projectId/versions", async (request, response, n
     }
 
     let snapshotPath: string | null = null;
+    const nextMeta: Record<string, unknown> = {
+      ...(project.metadata ?? {})
+    };
     if (payload.thumbnailDataUrl) {
       const parsed = dataUrlToBuffer(payload.thumbnailDataUrl);
-      snapshotPath = `${ownerId}/${request.params.projectId}/thumbnail-${Date.now()}.png`;
+      snapshotPath = `${ownerId}/${request.params.projectId}/thumbnail-${Date.now()}.${mimeToExtension(parsed.mime)}`;
       const upload = await supabaseService.storage.from(env.FLOORPLAN_UPLOAD_BUCKET).upload(snapshotPath, parsed.buffer, {
         contentType: parsed.mime,
         upsert: true
       });
       if (upload.error) throw upload.error;
 
+      nextMeta.thumbnailBucket = env.FLOORPLAN_UPLOAD_BUCKET;
+    }
+
+    if (payload.assetSummary !== undefined) {
+      nextMeta.assetSummary = payload.assetSummary;
+    }
+
+    if (snapshotPath || payload.assetSummary !== undefined) {
       const { error: updateProjectError } = await supabaseService
         .from("projects")
         .update({
-          thumbnail_path: snapshotPath,
-          meta: {
-            ...(project.metadata ?? {}),
-            thumbnailBucket: env.FLOORPLAN_UPLOAD_BUCKET
-          }
+          ...(snapshotPath ? { thumbnail_path: snapshotPath } : {}),
+          meta: nextMeta
         })
         .eq("id", request.params.projectId)
         .eq("owner_id", ownerId);
       if (updateProjectError) throw updateProjectError;
     }
 
-    const floorPlan = buildFloorPlan(payload.topology);
-    const customization = buildCustomization(payload);
+    const floorPlan = buildProjectVersionFloorPlan({
+      scale: payload.topology.scale,
+      scaleInfo: payload.topology.scaleInfo,
+      walls: payload.topology.walls as Array<Record<string, unknown>>,
+      openings: payload.topology.openings as Array<Record<string, unknown>>,
+      floors: Array.isArray(payload.topology.floors) ? (payload.topology.floors as Array<Record<string, unknown>>) : []
+    });
+    const customization = buildProjectVersionCustomization(
+      payload.assets as Array<Record<string, unknown>>,
+      payload.materials
+    );
 
     const authedSupabase = createAuthedSupabaseClient(request.user.accessToken);
     const { data, error } = await authedSupabase.rpc("create_project_version", {

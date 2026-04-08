@@ -1,9 +1,11 @@
 "use client";
 
 import { backendFetch } from "../backend/client";
+import type { ProjectAssetSummary } from "../builder/catalog";
+import type { Project } from "../stores/useProjectStore";
 import type { Floor, Opening, ScaleInfo, SceneAsset, Wall } from "../stores/useSceneStore";
 
-type SaveProjectPayload = {
+export type SaveProjectPayload = {
   topology: {
     scale: number;
     scaleInfo?: ScaleInfo;
@@ -17,6 +19,7 @@ type SaveProjectPayload = {
     floorIndex: number;
   };
   thumbnailDataUrl?: string | null;
+  assetSummary?: ProjectAssetSummary | null;
   projectName?: string;
   projectDescription?: string | null;
   message?: string;
@@ -27,4 +30,18 @@ export async function saveProject(id: string, payload: SaveProjectPayload) {
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export async function createProjectDraft(payload: {
+  name: string;
+  description?: string | null;
+}) {
+  return backendFetch<Project>("/v1/projects", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchLatestProjectVersion(projectId: string) {
+  return backendFetch<{ version: Record<string, unknown> | null }>(`/v1/projects/${projectId}/versions/latest`);
 }

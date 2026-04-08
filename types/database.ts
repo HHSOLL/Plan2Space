@@ -298,9 +298,13 @@ export interface Database {
         Row: {
           id: UUID;
           project_id: UUID;
+          project_version_id: UUID | null;
           token: string;
           permissions: string;
           expires_at: string | null;
+          is_gallery_visible: boolean;
+          published_at: string | null;
+          preview_meta: Json | null;
           created_by: UUID;
           created_at: string;
           updated_at: string;
@@ -308,9 +312,13 @@ export interface Database {
         Insert: {
           id?: UUID;
           project_id: UUID;
+          project_version_id?: UUID | null;
           token: string;
           permissions?: string;
           expires_at?: string | null;
+          is_gallery_visible?: boolean;
+          published_at?: string | null;
+          preview_meta?: Json | null;
           created_by: UUID;
           created_at?: string;
           updated_at?: string;
@@ -318,9 +326,13 @@ export interface Database {
         Update: {
           id?: UUID;
           project_id?: UUID;
+          project_version_id?: UUID | null;
           token?: string;
           permissions?: string;
           expires_at?: string | null;
+          is_gallery_visible?: boolean;
+          published_at?: string | null;
+          preview_meta?: Json | null;
           created_by?: UUID;
           created_at?: string;
           updated_at?: string;
@@ -331,6 +343,13 @@ export interface Database {
             columns: ["project_id"];
             isOneToOne: false;
             referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shared_projects_project_version_id_fkey";
+            columns: ["project_version_id"];
+            isOneToOne: false;
+            referencedRelation: "project_versions";
             referencedColumns: ["id"];
           }
         ];

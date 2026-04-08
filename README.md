@@ -20,6 +20,7 @@ npm run dev:web
 필수:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_RAILWAY_API_URL` (`/gallery`, `/community`, shared/showcase API 복원에 필요)
 
 권장:
 - `SUPABASE_SERVICE_ROLE_KEY` (캐시/서버 작업)
@@ -52,6 +53,8 @@ npm run assets:draco
 
 ## 문서
 
+- `docs/developer-handbook.md`
+- `docs/file-role-index.md`
 - `docs/auth-guide.md`
 - `docs/asset-guide.md`
 - `docs/ai-pipeline.md`

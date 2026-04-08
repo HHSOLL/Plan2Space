@@ -191,3 +191,181 @@ Updated:
 
 Removed/Deprecated:
 - deprecated Next parse endpoint 기반 eval을 기준선으로 유지하는 완료 조건.
+
+## 2026-04-08 변경 동기화 (Builder-First Pivot Slice)
+Added:
+- 첫 전환 슬라이스로 `/studio/builder` blank-room 생성 화면과 builder-authored project version 로딩 경로를 추가.
+- landing/studio/navbar의 기본 CTA를 builder-first 경로로 정렬하는 완료 기준을 추가.
+
+Updated:
+- Phase 2의 수동 복구/생성 범위를 `2D correction` 단독이 아니라 `blank-room builder -> editor 진입`까지 확장한다.
+- Phase 4의 경험 완성 범위에 IKEA-style shell로 재구성된 landing/studio/editor 진입면을 포함한다.
+
+Removed/Deprecated:
+- 새 프로젝트 생성이 항상 intake upload 또는 catalog search에서 시작된다는 가정.
+
+## 2026-04-08 변경 동기화 (Viewer / Share Slice)
+Added:
+- `/shared/[token]`에서 builder-origin 프로젝트도 동일하게 보이도록 `latest saved version -> shared viewer` 복원 경로를 추가.
+- 공유 surface 완료 기준에 read-only top/walk toggle과 scene summary shell을 추가.
+
+Updated:
+- Phase 4의 경험 완성 범위에 shared token viewer를 IKEA-style read-only surface로 정리하는 작업을 포함한다.
+
+Removed/Deprecated:
+- shared page가 raw `floor_plan`과 `customization`만 따로 읽어 장면을 조립하는 구현 기준.
+
+## 2026-04-08 변경 동기화 (Viewer-First Share Slice)
+Added:
+- shared project route에 top/walk 토글, scene stats, access summary를 포함한 read-only viewer shell 완료 기준을 추가.
+
+Updated:
+- Phase 4의 경험 완성 범위에 `/shared/[token]` viewer surface 정리와 share modal 문구 정합성을 포함한다.
+
+Removed/Deprecated:
+- shared route를 walk-only preview 하나로 고정하는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Shell Reuse + Permission UI Cleanup)
+Added:
+- Phase 4 완료 범위에 editor/shared viewer 공통 shell 컴포넌트(mode toggle, metric grid) 재사용을 추가한다.
+
+Updated:
+- share flow는 새 링크 생성 시 preview-only semantics를 기본으로 하고, 기존 `edit` permission row는 backward-compatible preview fallback으로 표기한다.
+
+Removed/Deprecated:
+- share modal이 실제보다 넓은 shared edit capability를 즉시 제공하는 UI 표기.
+
+## 2026-04-08 변경 동기화 (Builder-Only Editor + Shared Viewport)
+Added:
+- Phase 4 완료 범위에 editor/shared viewer 공통 `SceneViewport` 재사용과 library shelf productization을 추가한다.
+
+Updated:
+- `/project/[id]`의 메인 surface는 builder-first editor shell만 남기고, legacy floorplan import UI는 studio 밖으로 밀어낸다.
+- shared viewer의 mode toggle은 editor와 동일한 geometry/scale gate를 따른다.
+
+Removed/Deprecated:
+- 메인 editor launch 단계에서 legacy upload/template lookup을 계속 제공하는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Shell State Isolation + Chrome Extraction)
+Added:
+- Phase 4 완료 범위에 editor/shared viewer route별 shell preset/reset과 global store bleed 방지 작업을 추가한다.
+- header/launch/inspector를 reusable editor shell 컴포넌트로 분리하는 정리 작업을 추가한다.
+
+Updated:
+- `/project/[id]`는 scene hydration뿐 아니라 shell state도 route mount 시 명시적으로 초기화해야 한다.
+- shared viewer는 preview-only readOnly surface를 mount/unmount lifecycle에서 안전하게 적용해야 한다.
+
+Removed/Deprecated:
+- shared viewer/editor가 panel, transform, readOnly 상태를 ad hoc setter로만 맞추는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Autosave + History Product UX)
+Added:
+- Phase 4 완료 범위에 route-local autosave session, dirty/saving/saved 상태 badge, mobile save status 표면을 추가한다.
+- Phase 4 완료 범위에 scene baseline snapshot과 committed mutation snapshot 기반 undo/redo UX를 추가한다.
+- mobile top-editor controls 분리를 통해 library/inspector/undo/redo 조작을 독립 컴포넌트로 유지한다.
+
+Updated:
+- editor productization 범위는 단순 shell 정리에서 저장 피드백과 history 조작까지 포함하도록 확장한다.
+- wall/floor finish, asset drag/transform, keyboard rotate도 editor history 범위에 포함한다.
+
+Removed/Deprecated:
+- save UX를 manual archive button 하나에만 의존하는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Asset Catalog Productization)
+Added:
+- Phase 4 완료 범위에 shared catalog contract, canonical category normalization, featured/starter shelf UX를 추가한다.
+- builder editor와 legacy asset overlay가 동일한 manifest normalization을 사용하도록 정리 작업을 포함한다.
+
+Updated:
+- library shelf productization 범위는 단순 검색 리스트가 아니라 category chips, spotlight card, featured picks, placed-state feedback까지 포함한다.
+- starter set selection은 manifest 순서에 의존하는 ad hoc page logic 대신 shared catalog helper를 기준으로 유지한다.
+
+Removed/Deprecated:
+- editor page 내부에 catalog fallback, fetch, filter, featured selection 로직이 직접 박혀 있는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Viewer Catalog Metadata Slice)
+Added:
+- Phase 4 완료 범위에 shared viewer sidebar의 catalog-aware `placed pieces / collections` summary를 추가한다.
+- selected asset inspector가 catalog lookup을 통해 label/category/collection 메타를 노출하는 정리 작업을 추가한다.
+
+Updated:
+- viewer/share productization 범위는 scene stats만이 아니라 catalog metadata를 통한 asset storytelling까지 포함한다.
+- uncatalogued generated assets는 scene 저장 계약을 건드리지 않고 viewer 메타 레이어에서만 fallback count로 다룬다.
+
+Removed/Deprecated:
+- shared viewer가 배치 자산에 대해 개수만 보여주고 어떤 종류의 가구가 있는지는 설명하지 않는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Project Summary Metadata Slice)
+Added:
+- Phase 4 완료 범위에 `project.meta.assetSummary` 저장과 studio/share surface 활용을 추가한다.
+- catalog variant identity를 위해 saved furniture metadata에 optional `catalogItemId`를 보존하는 작업을 추가한다.
+
+Updated:
+- studio productization 범위는 project thumbnail만이 아니라 latest saved asset summary와 collection badges까지 포함한다.
+- share modal은 링크 생성 폼만이 아니라 현재 project preview와 saved summary를 함께 보여주는 방향으로 확장한다.
+
+Removed/Deprecated:
+- studio/share surface가 latest saved scene metadata 없이 이름/설명만으로 구성되는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Pinned Share Snapshot Slice)
+Added:
+- Phase 4 완료 범위에 `shared_projects.project_version_id` 기반 pinned share snapshot과 `preview_meta` 저장을 추가한다.
+- shared viewer는 pinned snapshot 메타가 존재할 때 latest project drift 없이 동일한 summary rail을 유지해야 한다.
+
+Updated:
+- share flow 완료 기준은 단순 링크 생성이 아니라 `create link -> later save -> old link still shows the original saved snapshot`까지 포함한다.
+- viewer/share productization은 live latest pointer보다 saved snapshot pinning을 우선한다.
+
+Removed/Deprecated:
+- shared link가 항상 프로젝트의 최신 저장본을 따라가도 되는 완료 기준.
+
+## 2026-04-08 변경 동기화 (Published Gallery Slice)
+Added:
+- Phase 4 완료 범위에 `shared_projects.is_gallery_visible`, `published_at` 기반 공개 showcase surface를 추가한다.
+- `/gallery`는 mock 카드가 아니라 pinned share snapshot archive를 렌더하고 각 카드는 `/shared/[token]` viewer로 연결된다.
+
+Updated:
+- publish/community productization은 social feed보다 먼저 `permanent view-only snapshot -> gallery showcase` 루프를 닫는 방향으로 정리한다.
+- share modal은 링크 생성뿐 아니라 gallery visibility 제어까지 담당한다.
+
+Removed/Deprecated:
+- gallery/community가 mock 콘텐츠로만 남아 있어도 publish loop가 완료된 것으로 보는 기준.
+
+## 2026-04-09 변경 동기화 (Community Feed + Legacy Compatibility Retirement)
+Added:
+- Phase 5 완료 범위에 `/community` real feed를 추가한다. 이 feed는 published pinned snapshot을 featured room, recent circulation list, archive picks로 재구성한다.
+- active web scope에서 더 이상 사용하지 않는 legacy `AssetPanel` / `job-polling` 경로 제거를 포함한다.
+
+Updated:
+- community productization은 더 이상 gallery redirect가 아니라 `share modal -> publish -> community feed + gallery archive -> shared viewer` 루프로 정의한다.
+- legacy floorplan/intake retirement는 old project를 backfill로 versioned snapshot에 편입시키고, 새 생성/편집 표면에서는 upload/intake를 노출하지 않는 것으로 본다.
+- active web bundle 정리 범위는 단순 UI copy 변경이 아니라 legacy intake helper 제거와 compatibility bootstrap 제거까지 포함한다.
+
+Removed/Deprecated:
+- `/community`를 gallery 임시 alias로 두는 완료 기준.
+- compatibility migration CTA 없이 legacy room을 조용히 bootstrap만 하는 상태.
+
+## 2026-04-09 변경 동기화 (Latest Version Cutover + Legacy Backfill)
+Added:
+- Phase 5 완료 범위에 `GET /v1/projects/:projectId/versions/latest` 기반 latest saved snapshot hydration을 추가한다.
+- Phase 5 완료 범위에 `apps/api` legacy backfill CLI와 `project_versions` 초기 채우기 운영 절차를 추가한다.
+
+Updated:
+- `/project/[id]` bootstrap은 saved version read만 사용하고, version이 없으면 builder launch empty state로 머문다.
+- legacy hard retirement 완료 기준은 UI 제거만이 아니라 old project를 saved version으로 이관할 수 있는 backfill 수단을 갖추는 것까지 포함한다.
+- ops rollout 순서는 `dry-run backfill -> targeted backfill -> remaining candidates 0 확인 -> active web compatibility bootstrap 제거`로 유지한다.
+- saved version read 자체가 실패한 경우 editor는 builder launch로 fail-open하지 않고 explicit workspace error state를 보여준다.
+
+Removed/Deprecated:
+- active editor bootstrap이 `scene/latest` 단일 응답에 latest version과 legacy payload를 함께 실어 나르는 완료 기준.
+
+## 2026-04-09 변경 동기화 (Post-Backfill Web Cutover)
+Added:
+- Phase 5 완료 범위에 production backfill 검증 후 `/project/[id]`에서 legacy compatibility banner와 `lib/api/legacy-project.ts`를 제거하는 후속 컷오버를 추가한다.
+
+Updated:
+- active web path의 legacy retirement는 "fallback 유지"가 아니라 "ops seam만 남기고 editor bundle에서는 제거"로 본다.
+- public publish loop 완료 기준에는 showcase transport failure를 empty archive로 숨기지 않는 unavailable state가 포함된다.
+
+Removed/Deprecated:
+- saved version candidate가 0이 된 뒤에도 active editor가 legacy bootstrap client를 계속 유지하는 완료 기준.

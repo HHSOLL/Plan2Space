@@ -5,11 +5,11 @@ import type {
   NavGraph,
   RoomType,
   RoomZone,
+  SceneAsset,
   ScaleInfo,
   Wall,
   Opening
 } from "../../lib/stores/useSceneStore";
-import type { FloorplanResultResponse, LayoutRevisionResponse } from "./upload";
 
 const SYNTHETIC_PX_PER_MM = 0.1;
 const SYNTHETIC_SCALE_METERS_PER_PIXEL = 0.001 / SYNTHETIC_PX_PER_MM;
@@ -24,8 +24,11 @@ export type MappedSceneResult = {
   rooms: RoomZone[];
   cameraAnchors: CameraAnchor[];
   navGraph: NavGraph;
+  assets: SceneAsset[];
   scale: number;
   scaleInfo: ScaleInfo;
+  wallMaterialIndex: number;
+  floorMaterialIndex: number;
   entranceId: string | null;
   diagnostics?: Record<string, unknown>;
 };
@@ -326,6 +329,57 @@ function mapSceneNavGraph(value: unknown): NavGraph {
   return { nodes, edges };
 }
 
+function mapSceneAssets(value: unknown): SceneAsset[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map<SceneAsset | null>((entry, index) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+      const record = entry as Record<string, unknown>;
+      return {
+        id: toStringValue(record.id, `asset-${index + 1}`),
+        assetId: toStringValue(record.assetId ?? record.modelId, "placeholder:chair"),
+        catalogItemId:
+          typeof record.catalogItemId === "string"
+            ? record.catalogItemId
+            : record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)
+              ? toStringValue((record.metadata as Record<string, unknown>).catalogItemId, "")
+              : null,
+        position:
+          Array.isArray(record.position) && record.position.length >= 3
+            ? [
+                toNumberValue(record.position[0], 0),
+                toNumberValue(record.position[1], 0),
+                toNumberValue(record.position[2], 0)
+              ]
+            : [0, 0, 0],
+        rotation:
+          Array.isArray(record.rotation) && record.rotation.length >= 3
+            ? [
+                toNumberValue(record.rotation[0], 0),
+                toNumberValue(record.rotation[1], 0),
+                toNumberValue(record.rotation[2], 0)
+              ]
+            : [0, 0, 0],
+        scale:
+          Array.isArray(record.scale) && record.scale.length >= 3
+            ? [
+                toNumberValue(record.scale[0], 1),
+                toNumberValue(record.scale[1], 1),
+                toNumberValue(record.scale[2], 1)
+              ]
+            : [1, 1, 1],
+        materialId: typeof record.materialId === "string" ? record.materialId : null
+      } satisfies SceneAsset;
+    })
+    .filter((entry): entry is SceneAsset => Boolean(entry));
+}
+
+function parseMaterialIndex(value: unknown, fallback: number) {
+  if (typeof value !== "string") return fallback;
+  const match = value.match(/:(\d+)$/);
+  return match ? Number(match[1]) : fallback;
+}
+
 function mapScenePayloadToScene(
   sceneJson: Record<string, unknown>,
   fallback: {
@@ -380,217 +434,175 @@ function mapScenePayloadToScene(
     rooms,
     cameraAnchors,
     navGraph,
+    assets: [],
     scale,
     scaleInfo,
+    wallMaterialIndex: 0,
+    floorMaterialIndex: 0,
     entranceId,
     diagnostics: fallback.diagnostics
   };
 }
 
-export function mapFloorplanResultToScene(result: FloorplanResultResponse): MappedSceneResult {
-  const sceneJson = result.sceneJson ?? {};
-  return mapScenePayloadToScene(sceneJson, {
-    wallCoordinates: result.wallCoordinates,
-    roomPolygons: result.roomPolygons,
-    scale: result.scale,
-    diagnostics: result.diagnostics
-  });
-}
+export function mapProjectVersionToScene(version: Record<string, unknown>): MappedSceneResult | null {
+  const floorPlan =
+    version.floor_plan && typeof version.floor_plan === "object" && !Array.isArray(version.floor_plan)
+      ? (version.floor_plan as Record<string, unknown>)
+      : null;
+  const customization =
+    version.customization && typeof version.customization === "object" && !Array.isArray(version.customization)
+      ? (version.customization as Record<string, unknown>)
+      : null;
 
-function mmPointToSyntheticPx(
-  pointMm: [number, number],
-  offset: { x: number; y: number }
-): [number, number] {
-  return [
-    Math.round(pointMm[0] * SYNTHETIC_PX_PER_MM + offset.x),
-    Math.round(pointMm[1] * SYNTHETIC_PX_PER_MM + offset.y)
-  ];
-}
+  if (!floorPlan) return null;
 
-function mapMmRoomsToSceneRooms(
-  rooms: Record<string, unknown>[],
-  offset: { x: number; y: number }
-): RoomZone[] {
-  return rooms
-    .map((room, index) => {
-      const polygonMm = getPolygonPoints(room.polygonMm ?? room.polygon);
-      if (polygonMm.length < 3) return null;
-      const roomType = toRoomType(room.roomType);
-      return {
-        id: toStringValue(room.id, `rev-room-${index + 1}`),
-        roomType,
-        label: toRoomLabel(roomType, room.label),
-        polygon: polygonMm.map((point) => mmPointToSyntheticPx(point, offset)),
-        area: toNumberValue(room.areaSqMm, 0) / 1_000_000,
-        center: mmPointToSyntheticPx(toVec2(room.centroidMm, polygonMm[0]!), offset),
-        openingIds: Array.isArray(room.openingIds) ? room.openingIds.filter((value): value is string => typeof value === "string") : [],
-        connectedRoomIds: Array.isArray(room.connectedRoomIds)
-          ? room.connectedRoomIds.filter((value): value is string => typeof value === "string")
-          : [],
-        estimatedCeilingHeight: toNumberValue(room.estimatedCeilingHeightMm, 2800) / 1000,
-        estimatedUsage: toUsage(room.estimatedUsage),
-        isExteriorFacing: Boolean(room.isExteriorFacing)
-      } satisfies RoomZone;
-    })
-    .filter((room): room is RoomZone => Boolean(room));
-}
-
-function mapMmFloorsFromRooms(rooms: RoomZone[]): Floor[] {
-  return rooms.map((room) => ({
-    id: `floor-${room.id}`,
-    outline: room.polygon,
-    materialId: null,
-    roomId: room.id,
-    roomType: room.roomType,
-    label: room.label
-  }));
-}
-
-function mapMmCeilingsFromRooms(rooms: RoomZone[]): Ceiling[] {
-  return rooms.map((room) => ({
-    id: `ceiling-${room.id}`,
-    outline: room.polygon,
-    materialId: null,
-    roomId: room.id,
-    roomType: room.roomType,
-    height: room.estimatedCeilingHeight
-  }));
-}
-
-function mapDerivedCameraFromRevision(value: unknown, offset: { x: number; y: number }): CameraAnchor[] {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  const record = value as Record<string, unknown>;
-  return getArrayRecords(record.anchors).map((anchor, index) => ({
-    id: toStringValue(anchor.id, `camera-anchor-${index + 1}`),
-    kind:
-      anchor.kind === "entrance" || anchor.kind === "room_center" || anchor.kind === "overview"
-        ? anchor.kind
-        : "overview",
-    roomId: typeof anchor.roomId === "string" ? anchor.roomId : null,
-    openingId: typeof anchor.openingId === "string" ? anchor.openingId : null,
-    planPosition: mmPointToSyntheticPx(toVec2(anchor.planPositionMm, [0, 0]), offset),
-    targetPlanPosition: mmPointToSyntheticPx(toVec2(anchor.targetPlanPositionMm, [0, 0]), offset),
-    height: toNumberValue(anchor.heightMm, 1600) / 1000
-  }));
-}
-
-function mapDerivedNavFromRevision(value: unknown, offset: { x: number; y: number }): NavGraph {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { nodes: [], edges: [] };
-  }
-  const record = value as Record<string, unknown>;
-  return {
-    nodes: getArrayRecords(record.nodes).map((node, index) => ({
-      id: toStringValue(node.id, `nav-node-${index + 1}`),
-      roomId: typeof node.roomId === "string" ? node.roomId : null,
-      kind: node.kind === "entrance" ? "entrance" : "room_center",
-      planPosition: mmPointToSyntheticPx(toVec2(node.planPositionMm, [0, 0]), offset)
-    })) as NavGraph["nodes"],
-    edges: getArrayRecords(record.edges)
-      .map((edge, index) => ({
-        id: toStringValue(edge.id, `nav-edge-${index + 1}`),
-        fromNodeId: toStringValue(edge.fromNodeId, ""),
-        toNodeId: toStringValue(edge.toNodeId, ""),
-        relation:
-          edge.relation === "passage"
-            ? ("passage" as const)
-            : edge.relation === "entrance"
-              ? ("entrance" as const)
-              : ("door" as const),
-        openingId: toStringValue(edge.openingId, "")
-      }))
-      .filter((edge) => edge.fromNodeId.length > 0 && edge.toNodeId.length > 0) as NavGraph["edges"]
-  };
-}
-
-export function mapLayoutRevisionToScene(revision: LayoutRevisionResponse): MappedSceneResult {
-  if (revision.derived_scene_json && Object.keys(revision.derived_scene_json).length > 0) {
-    return mapScenePayloadToScene(revision.derived_scene_json, {
-      scale: SYNTHETIC_SCALE_METERS_PER_PIXEL,
-      diagnostics: {
-        layoutRevisionId: revision.id,
-        geometryHash: revision.geometry_hash,
-        topologyHash: revision.topology_hash ?? null,
-        roomGraphHash: revision.room_graph_hash ?? null
-      }
-    });
-  }
-
-  const geometry = revision.geometry_json ?? {};
-  const scaleRecord = (geometry.scale ?? {}) as Record<string, unknown>;
-  const walls = getArrayRecords(geometry.walls);
-  const openings = getArrayRecords(geometry.openings);
-  const rooms = getArrayRecords(geometry.rooms);
-  const pointCloud: Array<[number, number]> = [
-    ...walls.flatMap((wall) => [toVec2(wall.startMm, [0, 0]), toVec2(wall.endMm, [0, 0])]),
-    ...rooms.flatMap((room) => getPolygonPoints(room.polygonMm ?? room.polygon))
-  ];
-
-  const bounds = measureBounds(pointCloud);
-  const offset = {
-    x: SYNTHETIC_CANVAS_PADDING - bounds.minX * SYNTHETIC_PX_PER_MM,
-    y: SYNTHETIC_CANVAS_PADDING - bounds.minY * SYNTHETIC_PX_PER_MM
-  };
-
-  const mappedWalls: Wall[] = walls.map((wall, index) => ({
-    id: toStringValue(wall.id, `rev-wall-${index + 1}`),
-    start: mmPointToSyntheticPx(toVec2(wall.startMm, [0, 0]), offset),
-    end: mmPointToSyntheticPx(toVec2(wall.endMm, [0, 0]), offset),
-    thickness: Math.max(6, toNumberValue(wall.thicknessMm, 180) * SYNTHETIC_PX_PER_MM),
-    height: DEFAULT_WALL_HEIGHT_METERS,
-    type: toWallType(wall.type),
-    isPartOfBalcony: Boolean(wall.isPartOfBalcony),
-    confidence: typeof wall.confidence === "number" ? wall.confidence : undefined
+  const floorPlanWalls = getArrayRecords(floorPlan.walls).map((wall, index) => ({
+    id: toStringValue(wall.id, `saved-wall-${index + 1}`),
+    start: toVec2(wall.a ?? wall.start, [0, 0]),
+    end: toVec2(wall.b ?? wall.end, [0, 0]),
+    thickness: toNumberValue(wall.thickness, 0.12),
+    height: toNumberValue(wall.height, DEFAULT_WALL_HEIGHT_METERS),
+    type: "exterior" as const
   }));
 
-  const mappedOpenings: Opening[] = openings.map((opening, index) => ({
-    id: toStringValue(opening.id, `rev-opening-${index + 1}`),
+  const floorPlanOpenings: Opening[] = getArrayRecords(floorPlan.openings).map((opening, index) => ({
+    id: toStringValue(opening.id, `saved-opening-${index + 1}`),
     wallId: toStringValue(opening.wallId, ""),
     type: opening.type === "window" ? "window" : "door",
-    offset: Math.max(0, toNumberValue(opening.offsetMm, 0) * SYNTHETIC_PX_PER_MM),
-    width: Math.max(12, toNumberValue(opening.widthMm, opening.type === "window" ? 1200 : 900) * SYNTHETIC_PX_PER_MM),
-    height: Math.max(60, toNumberValue(opening.heightMm, opening.type === "window" ? 1200 : 2100) * SYNTHETIC_PX_PER_MM),
-    isEntrance: Boolean(opening.isEntrance),
-    detectConfidence: typeof opening.detectConfidence === "number" ? opening.detectConfidence : undefined,
-    attachConfidence: typeof opening.attachConfidence === "number" ? opening.attachConfidence : undefined,
-    typeConfidence: typeof opening.typeConfidence === "number" ? opening.typeConfidence : undefined
+    offset: toNumberValue(opening.offset, 0),
+    width: toNumberValue(opening.width, opening.type === "window" ? 1.6 : 0.9),
+    height: toNumberValue(opening.height, opening.type === "window" ? 1.2 : 2.1),
+    verticalOffset: typeof opening.verticalOffset === "number" ? opening.verticalOffset : undefined,
+    sillHeight: typeof opening.sillHeight === "number" ? opening.sillHeight : undefined,
+    isEntrance: Boolean(opening.isEntrance)
   }));
 
-  const mappedRooms = mapMmRoomsToSceneRooms(rooms, offset);
-  const mappedFloors = mapMmFloorsFromRooms(mappedRooms);
-  const mappedCeilings = mapMmCeilingsFromRooms(mappedRooms);
-  const cameraAnchors = mapDerivedCameraFromRevision(revision.derived_camera_json, offset);
-  const navGraph = mapDerivedNavFromRevision(revision.derived_nav_json, offset);
-  const entranceId = mappedOpenings.find((opening) => opening.isEntrance)?.id ?? null;
+  const floorPlanFloors = getArrayRecords(floorPlan.floors).map((floor, index) => ({
+    id: toStringValue(floor.id, `saved-floor-${index + 1}`),
+    outline: getPolygonPoints(floor.outline),
+    materialId: typeof floor.materialId === "string" ? floor.materialId : null
+  }));
+
+  const fallbackOutline =
+    floorPlanFloors.find((floor) => floor.outline.length >= 3)?.outline ??
+    floorPlanWalls.map((wall) => wall.start);
+  if (fallbackOutline.length < 3) return null;
+
+  const bounds = measureBounds(fallbackOutline);
+  const roomCenter: [number, number] = [(bounds.minX + bounds.maxX) / 2, (bounds.minY + bounds.maxY) / 2];
+  const ceilingHeight = toNumberValue(
+    (floorPlan.params as Record<string, unknown> | undefined)?.ceilingHeight,
+    DEFAULT_WALL_HEIGHT_METERS
+  );
+  const roomArea =
+    Math.abs(
+      fallbackOutline.reduce((sum, point, index) => {
+        const next = fallbackOutline[(index + 1) % fallbackOutline.length]!;
+        return sum + point[0] * next[1] - next[0] * point[1];
+      }, 0)
+    ) / 2;
+
+  const rooms: RoomZone[] = [
+    {
+      id: "saved-room-main",
+      roomType: "living_room",
+      label: "Saved Room",
+      polygon: fallbackOutline,
+      area: roomArea,
+      center: roomCenter,
+      openingIds: floorPlanOpenings.map((opening) => opening.id),
+      connectedRoomIds: [],
+      estimatedCeilingHeight: ceilingHeight,
+      estimatedUsage: "primary",
+      isExteriorFacing: true
+    }
+  ];
+
+  const floors: Floor[] =
+    floorPlanFloors.length > 0
+      ? floorPlanFloors.map((floor) => ({
+          ...floor,
+          roomId: "saved-room-main",
+          roomType: "living_room" as const,
+          label: "Saved Room"
+        }))
+      : [
+          {
+            id: "saved-floor-main",
+            outline: fallbackOutline,
+            materialId: null,
+            roomId: "saved-room-main",
+            roomType: "living_room",
+            label: "Saved Room"
+          }
+        ];
+
+  const ceilings: Ceiling[] = floors.map((floor) => ({
+    id: `ceiling-${floor.id}`,
+    outline: floor.outline,
+    materialId: null,
+    roomId: floor.roomId,
+    roomType: floor.roomType,
+    height: ceilingHeight
+  }));
+
+  const entranceId =
+    floorPlanOpenings.find((opening) => opening.isEntrance)?.id ??
+    floorPlanOpenings.find((opening) => opening.type === "door")?.id ??
+    null;
+
+  const assets = mapSceneAssets(
+    getArrayRecords(customization?.furniture).map((asset) => ({
+      id: asset.id,
+      assetId: asset.modelId,
+      catalogItemId:
+        asset.metadata && typeof asset.metadata === "object" && !Array.isArray(asset.metadata)
+          ? toStringValue((asset.metadata as Record<string, unknown>).catalogItemId, "")
+          : null,
+      position: asset.position,
+      rotation: asset.rotation,
+      scale: asset.scale,
+      materialId: null
+    }))
+  );
+
+  const defaults =
+    customization?.defaults && typeof customization.defaults === "object" && !Array.isArray(customization.defaults)
+      ? (customization.defaults as Record<string, unknown>)
+      : {};
+  const floorDefaults =
+    defaults.floor && typeof defaults.floor === "object" && !Array.isArray(defaults.floor)
+      ? (defaults.floor as Record<string, unknown>)
+      : {};
+  const wallDefaults =
+    defaults.wall && typeof defaults.wall === "object" && !Array.isArray(defaults.wall)
+      ? (defaults.wall as Record<string, unknown>)
+      : {};
 
   return {
-    walls: mappedWalls,
-    openings: mappedOpenings,
-    floors: mappedFloors,
-    ceilings: mappedCeilings,
-    rooms: mappedRooms,
-    cameraAnchors,
-    navGraph,
-    scale: SYNTHETIC_SCALE_METERS_PER_PIXEL,
+    walls: floorPlanWalls,
+    openings: floorPlanOpenings,
+    floors,
+    ceilings,
+    rooms,
+    cameraAnchors: [],
+    navGraph: { nodes: [], edges: [] },
+    assets,
+    scale: 1,
     scaleInfo: {
-      value: SYNTHETIC_SCALE_METERS_PER_PIXEL,
-      source:
-        scaleRecord.source === "ocr_dimension" ||
-        scaleRecord.source === "door_heuristic" ||
-        scaleRecord.source === "user_measure"
-          ? scaleRecord.source
-          : "unknown",
-      confidence: toNumberValue(scaleRecord.confidence, 0),
+      value: 1,
+      source: "user_measure",
+      confidence: 0.95,
       evidence: {
-        notes: `Imported from layout revision ${revision.id} geometry in millimeters.`
+        notes: `Loaded from saved project version ${toStringValue(version.id, "draft")}.`
       }
     },
+    wallMaterialIndex: parseMaterialIndex(wallDefaults.materialSkuId, 0),
+    floorMaterialIndex: parseMaterialIndex(floorDefaults.materialSkuId, 0),
     entranceId,
     diagnostics: {
-      layoutRevisionId: revision.id,
-      geometryHash: revision.geometry_hash,
-      topologyHash: revision.topology_hash ?? null,
-      roomGraphHash: revision.room_graph_hash ?? null
+      projectVersionId: toStringValue(version.id, "draft"),
+      message: toStringValue(version.message, "Saved project version")
     }
   };
 }

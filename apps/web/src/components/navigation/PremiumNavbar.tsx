@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
 import { useLanguageStore } from "../../lib/stores/useLanguageStore";
 import { AuthPopup } from "../overlay/AuthPopup";
-import { NewProjectModal } from "../overlay/NewProjectModal";
 
 export function PremiumNavbar() {
     const router = useRouter();
@@ -16,7 +15,6 @@ export function PremiumNavbar() {
     const { language, setLanguage } = useLanguageStore();
     const isAuthenticated = Boolean(session?.user);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
-    const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Hydration handling for persistent store
@@ -43,6 +41,9 @@ export function PremiumNavbar() {
         }
 
         switch (action) {
+            case 'builder':
+                router.push("/studio/builder");
+                break;
             case 'studio':
                 router.push("/studio");
                 break;
@@ -51,9 +52,6 @@ export function PremiumNavbar() {
                 break;
             case 'community':
                 router.push("/community");
-                break;
-            case 'new':
-                setIsProjectModalOpen(true);
                 break;
         }
     };
@@ -73,6 +71,7 @@ export function PremiumNavbar() {
 
                     <div className="hidden md:flex items-center gap-12 text-[10px] font-bold uppercase tracking-[0.2em] text-[#666666]">
                         {[
+                            { name: 'Builder', action: 'builder' },
                             { name: 'Studio', action: 'studio' },
                             { name: 'Gallery', action: 'gallery' },
                             { name: 'Community', action: 'community' }
@@ -80,7 +79,7 @@ export function PremiumNavbar() {
                             <button
                                 key={item.name}
                                 onClick={() => handleAction(item.action)}
-                                className={`hover:text-black transition-colors ${pathname === (item.action === 'studio' ? '/studio' : '/' + item.action) ? 'text-black' : ''}`}
+                                className={`hover:text-black transition-colors ${pathname === (item.action === 'studio' ? '/studio' : item.action === 'builder' ? '/studio/builder' : '/' + item.action) ? 'text-black' : ''}`}
                             >
                                 {item.name}
                             </button>
@@ -120,10 +119,10 @@ export function PremiumNavbar() {
                             </div>
                         ) : (
                             <button
-                                onClick={() => setIsAuthOpen(true)}
+                                onClick={() => (isAuthenticated ? router.push("/studio/builder") : setIsAuthOpen(true))}
                                 className="px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
                             >
-                                Get Started
+                                Start Room
                             </button>
                         )}
                     </div>
@@ -142,6 +141,7 @@ export function PremiumNavbar() {
                     <div className="md:hidden border-t border-[#e5e5e0] bg-white/95 backdrop-blur-md px-4 py-4 space-y-4">
                         <div className="grid grid-cols-1 gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#666666]">
                             {[
+                                { name: 'Builder', action: 'builder' },
                                 { name: 'Studio', action: 'studio' },
                                 { name: 'Gallery', action: 'gallery' },
                                 { name: 'Community', action: 'community' }
@@ -200,7 +200,7 @@ export function PremiumNavbar() {
                                 }}
                                 className="w-full px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
                             >
-                                Get Started
+                                Start Room
                             </button>
                         )}
                     </div>
@@ -208,10 +208,6 @@ export function PremiumNavbar() {
             </nav>
 
             <AuthPopup isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-            <NewProjectModal
-                isOpen={isProjectModalOpen}
-                onClose={() => setIsProjectModalOpen(false)}
-            />
         </>
     );
 }

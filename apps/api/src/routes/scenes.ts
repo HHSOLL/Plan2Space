@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { ApiError } from "../services/errors";
 import { getLatestSceneForOwner } from "../services/floorplan-service";
-import { resolveLatestVersion } from "../services/scene-service";
 
 export const scenesRouter = Router();
 
@@ -12,13 +11,7 @@ scenesRouter.get("/projects/:projectId/scene/latest", async (request, response, 
 
     const scene = await getLatestSceneForOwner(ownerId, request.params.projectId);
     if (!scene) throw new ApiError(404, "Project not found.");
-
-    const latestVersion = await resolveLatestVersion(request.params.projectId);
-
-    response.status(200).json({
-      ...scene,
-      latestVersion: latestVersion ?? null
-    });
+    response.status(200).json(scene);
   } catch (error) {
     next(error);
   }

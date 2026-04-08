@@ -23,21 +23,23 @@ export default function AssetTransformControls() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const transformMode = useEditorStore((state) => state.transformMode);
   const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
+  const readOnly = useEditorStore((state) => state.readOnly);
   const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
   const assets = useSceneStore((state) => state.assets);
   const updateFurniture = useSceneStore((state) => state.updateFurniture);
+  const recordSnapshot = useSceneStore((state) => state.recordSnapshot);
 
   const [target, setTarget] = useState<THREE.Object3D | null>(null);
 
   useEffect(() => {
-    if (!selectedAssetId || viewMode !== "top") {
+    if (!selectedAssetId || viewMode !== "top" || readOnly) {
       setTarget(null);
       setIsTransforming(false);
       return;
     }
     const object = scene.getObjectByName(`furniture:${selectedAssetId}`) ?? null;
     setTarget(object);
-  }, [assets, scene, selectedAssetId, setIsTransforming, viewMode]);
+  }, [assets, readOnly, scene, selectedAssetId, setIsTransforming, viewMode]);
 
   const syncTarget = useCallback(() => {
     if (!selectedAssetId || !target) return;
@@ -48,7 +50,7 @@ export default function AssetTransformControls() {
     });
   }, [selectedAssetId, target, updateFurniture]);
 
-  if (viewMode !== "top" || !target) return null;
+  if (viewMode !== "top" || readOnly || !target) return null;
 
   return (
     <TransformControls
@@ -62,6 +64,7 @@ export default function AssetTransformControls() {
       onMouseUp={() => {
         setIsTransforming(false);
         syncTarget();
+        recordSnapshot("Transform asset");
       }}
     />
   );

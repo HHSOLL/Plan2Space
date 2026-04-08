@@ -7,7 +7,8 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test"
+    "test": "node --import tsx --test",
+    "backfill:legacy-project-versions": "tsx scripts/backfill-legacy-project-versions.ts"
   },
   "dependencies": {
     "@plan2space/contracts": "0.0.0",

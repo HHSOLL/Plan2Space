@@ -12,6 +12,7 @@ import { jobsRouter } from "./routes/jobs";
 import { projectsRouter } from "./routes/projects";
 import { revisionsRouter } from "./routes/revisions";
 import { scenesRouter } from "./routes/scenes";
+import { showcaseRouter } from "./routes/showcase";
 
 function serializeUnknownError(error: unknown) {
   if (error instanceof Error) {
@@ -51,6 +52,7 @@ export function createApp() {
   app.use(express.json({ limit: "20mb" }));
 
   app.use("/v1", healthRouter);
+  app.use("/v1", showcaseRouter);
 
   app.use("/v1", requireAuth, projectsRouter);
   app.use("/v1", requireAuth, assetsRouter);

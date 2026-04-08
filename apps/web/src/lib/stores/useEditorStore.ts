@@ -3,9 +3,24 @@ import { create } from "zustand";
 export type EditorViewMode = "2d-edit" | "top" | "walk";
 export type TransformMode = "translate" | "rotate";
 
-type EditorPanels = {
+export type EditorPanels = {
   properties: boolean;
   assets: boolean;
+};
+
+export type EditorShellPreset = "editor" | "viewer";
+
+type EditorShellState = {
+  viewMode: EditorViewMode;
+  selectedId: string | null;
+  panels: EditorPanels;
+  transformMode: TransformMode;
+  isTransforming: boolean;
+  readOnly: boolean;
+};
+
+type EditorShellOverrides = Partial<Omit<EditorShellState, "panels">> & {
+  panels?: Partial<EditorPanels>;
 };
 
 type EditorState = {
@@ -20,12 +35,18 @@ type EditorState = {
   openPanel: (panel: keyof EditorPanels) => void;
   closePanel: (panel: keyof EditorPanels) => void;
   togglePanel: (panel: keyof EditorPanels) => void;
+  setPanels: (panels: Partial<EditorPanels>) => void;
   setTransformMode: (mode: TransformMode) => void;
   setIsTransforming: (value: boolean) => void;
   setReadOnly: (value: boolean) => void;
+  applyShellPreset: (
+    preset: EditorShellPreset,
+    overrides?: EditorShellOverrides
+  ) => void;
+  resetShellState: (overrides?: EditorShellOverrides) => void;
 };
 
-export const useEditorStore = create<EditorState>((set) => ({
+const editorShellDefaults: EditorShellState = {
   viewMode: "top",
   selectedId: null,
   panels: {
@@ -34,7 +55,30 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
   transformMode: "translate",
   isTransforming: false,
-  readOnly: false,
+  readOnly: false
+};
+
+const viewerShellDefaults: EditorShellState = {
+  ...editorShellDefaults,
+  readOnly: true
+};
+
+function resolveShellState(
+  base: EditorShellState,
+  overrides?: EditorShellOverrides
+): EditorShellState {
+  return {
+    ...base,
+    ...overrides,
+    panels: {
+      ...base.panels,
+      ...overrides?.panels
+    }
+  };
+}
+
+export const useEditorStore = create<EditorState>((set) => ({
+  ...editorShellDefaults,
   setViewMode: (mode) => set({ viewMode: mode }),
   setSelectedId: (id) => set({ selectedId: id }),
   openPanel: (panel) =>
@@ -45,7 +89,18 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => ({
       panels: { ...state.panels, [panel]: !state.panels[panel] }
     })),
+  setPanels: (panels) =>
+    set((state) => ({ panels: { ...state.panels, ...panels } })),
   setTransformMode: (mode) => set({ transformMode: mode }),
   setIsTransforming: (value) => set({ isTransforming: value }),
-  setReadOnly: (value) => set({ readOnly: value })
+  setReadOnly: (value) => set({ readOnly: value }),
+  applyShellPreset: (preset, overrides) =>
+    set(
+      resolveShellState(
+        preset === "viewer" ? viewerShellDefaults : editorShellDefaults,
+        overrides
+      )
+    ),
+  resetShellState: (overrides) =>
+    set(resolveShellState(editorShellDefaults, overrides))
 }));

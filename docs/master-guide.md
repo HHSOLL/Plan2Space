@@ -68,11 +68,15 @@
 - `GET /v1/jobs/:jobId`
 - `POST /v1/jobs/:jobId/retry`
 - `GET /v1/floorplans/:floorplanId/result`
+- `GET /v1/projects/:projectId/versions/latest`
 - `GET /v1/projects/:projectId/scene/latest`
 
 ## 프론트엔드 API 기준
 - `NEXT_PUBLIC_RAILWAY_API_URL` 기반으로 Railway API 호출.
 - `Authorization: Bearer <supabase access token>` 헤더 전달.
+- active builder-first web surface는 `projects`, `project versions`, `shared`, `showcase` 중심으로 동작하고, intake/floorplan/revision fetch는 compatibility 또는 ops 경계에서만 사용한다.
+- `GET /v1/projects/:projectId/versions/latest`는 active editor/viewer가 latest saved snapshot을 읽는 기본 경로다.
+- `GET /v1/projects/:projectId/scene/latest`는 archived room bootstrap과 ops 검증용 compatibility 경로로만 유지한다.
 - Next.js 내부 도메인/파싱 API(`/api/ai/parse-floorplan`, `/api/projects/*`, `/api/furnitures/*`, `/api/assets/generate`)는 사용하지 않는다.
 
 ## 데이터 테이블 기준
@@ -215,3 +219,185 @@ Updated:
 
 Removed/Deprecated:
 - 폐기된 Next parse endpoint(`/api/ai/parse-floorplan`)를 eval 기본 경로로 사용하는 방식.
+
+## 2026-04-08 변경 동기화 (Builder-First Studio Surface)
+Added:
+- 웹 진입 플로우에 `landing -> /studio/builder -> /project/[id]` builder-first 수동 방 생성 경로를 추가.
+- `/v1/projects` + `/v1/projects/:id/versions`만으로 blank-room 프로젝트를 생성하는 frontend 계약을 추가.
+
+Updated:
+- 기본 제품 표면을 `도면 업로드 시작`에서 `빈 방 생성 후 편집 시작`으로 조정했다.
+- `/project/[id]`는 worker result가 없더라도 `latestVersion`을 읽어 builder-authored room을 복원할 수 있어야 한다.
+
+Removed/Deprecated:
+- `New Project`의 기본 진입을 floorplan upload/intake modal로 두는 UX.
+
+## 2026-04-08 변경 동기화 (Shared Viewer Shell Alignment)
+Added:
+- `/shared/[token]`에 top/walk 전환이 가능한 viewer-first 공유 surface를 추가.
+- shared viewer도 editor와 동일하게 saved project version hydration 경로를 사용하도록 `latestVersion -> scene mapper` 기준을 추가.
+
+Updated:
+- 공유 링크는 raw `floor_plan/customization` 수동 조립보다 저장 버전 기준 scene 복원을 우선 사용한다.
+- `edit` 권한 공유 링크도 현재 refactor 단계에서는 preview-first surface로 취급한다.
+
+Removed/Deprecated:
+- shared viewer가 `floor_plan.rooms + customization.furniture`만으로 독립 조립된다는 가정.
+
+## 2026-04-08 변경 동기화 (Viewer-First Shared Surface)
+Added:
+- `/shared/[token]`가 top/walk 전환이 가능한 read-only viewer shell을 기본 surface로 제공한다.
+
+Updated:
+- 공유 링크는 편집 surface가 아니라 viewer surface를 우선 제공하고, 상세 메타/scene stats를 함께 노출한다.
+
+Removed/Deprecated:
+- 공유 링크를 단순 canvas-only walkthrough 화면으로 취급하는 UX.
+
+## 2026-04-08 변경 동기화 (Shell Reuse + Share Permission Alignment)
+Added:
+- editor와 shared viewer가 동일한 mode toggle / metric grid 컴포넌트를 공유하는 shell 기준을 추가한다.
+
+Updated:
+- share modal은 현재 런타임 계약과 맞춰 새 링크를 preview-only viewer access로 안내하고, 기존 `edit` 링크는 preview fallback으로 표기한다.
+
+Removed/Deprecated:
+- 공유 권한 UI가 즉시 shared editor access를 제공하는 것처럼 보이는 문구.
+
+## 2026-04-08 변경 동기화 (Builder-Only Editor Surface)
+Added:
+- editor와 shared viewer가 동일한 `SceneViewport` 렌더 surface를 공유하는 기준을 추가한다.
+- top-view 좌측 패널은 category filter와 starter set이 있는 library shelf를 기본 자산 표면으로 사용한다.
+
+Updated:
+- `/project/[id]`의 기본 편집 surface는 builder-authored room shell 기준으로 동작하고, legacy floorplan import UI는 더 이상 메인 editor에서 노출하지 않는다.
+- shared viewer의 `Walk` 토글은 editor와 같은 geometry/scale gate를 따른다.
+
+Removed/Deprecated:
+- 메인 editor launch surface에서 legacy upload/template recovery를 직접 노출하는 UX.
+
+## 2026-04-08 변경 동기화 (Editor Shell State Isolation)
+Added:
+- editor/shared viewer가 route mount 시 explicit shell preset을 적용하고 unmount 시 기본 editor shell state로 복귀하는 기준을 추가한다.
+- `/project/[id]`의 header, launch surface, inspector는 editor shell 컴포넌트로 분리 가능한 구조를 유지한다.
+
+Updated:
+- global `useEditorStore`는 `readOnly`, panel, transform state가 route 간에 암묵적으로 남지 않도록 preset/reset helper를 통해 다룬다.
+- top view에서 walk mode로 벗어날 때는 stale panel/transform UI가 남지 않도록 shell state를 정리한다.
+
+Removed/Deprecated:
+- shared viewer와 editor가 전역 shell state를 부분적으로만 덮어쓰고 수동 setter로 복구하는 방식.
+
+## 2026-04-08 변경 동기화 (Editor Save Session + History UX)
+Added:
+- editor route는 route-local autosave session을 사용해 `dirty`, `saving`, `lastSavedAt`, `saveError` 상태를 관리한다.
+- scene history는 baseline snapshot과 committed snapshot append 방식으로 `undo/redo`를 지원하고, wall/floor finish도 history 범위에 포함한다.
+- mobile top-editor controls는 library/inspector 토글과 undo/redo 액션을 별도 shell 컴포넌트로 제공한다.
+
+Updated:
+- 저장 UX는 manual save 버튼만이 아니라 autosave feedback badge와 mobile status text를 함께 제공해야 한다.
+- asset drag/transform/hotkey 회전은 commit 시점에 history snapshot을 남겨 stale history gap이 생기지 않도록 한다.
+
+Removed/Deprecated:
+- snapshot 구조가 존재하지만 실제 editor mutation과 연결되지 않아 undo/redo가 사실상 비활성인 상태.
+
+## 2026-04-08 변경 동기화 (Asset Library Productization)
+Added:
+- builder asset library의 단일 계약으로 `lib/builder/catalog.ts`와 `useAssetCatalog` 기반 정규화/카테고리/featured 계산 기준을 추가한다.
+- top-view library shelf는 starter set, canonical category chips, spotlight pick, featured picks, placed-state badge를 포함한 제품형 카탈로그 표면을 사용한다.
+
+Updated:
+- `/project/[id]`는 page-local manifest parsing 대신 shared catalog hook을 사용하고, builder shelf를 단일 catalog surface로 사용한다.
+- manifest category는 raw 문자열을 그대로 노출하지 않고 canonical category label로 정규화한다.
+
+Removed/Deprecated:
+- editor page와 retired legacy overlay panel이 서로 다른 catalog parsing 규칙을 갖는 구조.
+
+## 2026-04-08 변경 동기화 (Catalog Metadata on Viewer Surfaces)
+Added:
+- catalog item은 `collection`과 `tone` 메타를 가지며, shared viewer는 saved scene의 배치 자산을 catalog lookup으로 매핑해 `Placed pieces`와 `Collections` 요약을 노출한다.
+- editor inspector는 raw asset path 대신 catalog label/category/collection 메타를 우선 표시한다.
+
+Updated:
+- shared viewer summary는 단순 scene counts 외에도 catalog-aware asset summary를 함께 보여준다.
+- custom/generated asset처럼 catalog lookup에 없는 항목은 `uncatalogued` count로만 처리하고 scene contract는 바꾸지 않는다.
+
+Removed/Deprecated:
+- viewer/inspector가 배치 자산을 항상 raw `assetId` 문자열로만 설명하는 UI.
+
+## 2026-04-08 변경 동기화 (Project Summary Metadata + Variant Identity)
+Added:
+- scene asset은 선택적으로 `catalogItemId`를 저장하고, saved customization metadata에도 동일 키를 남겨 catalog variant identity를 복원할 수 있다.
+- project는 `meta.assetSummary`에 top placed pieces, collections, primary tone/collection을 저장하고 studio card/share modal은 이를 우선 사용한다.
+- project list/detail 응답은 `thumbnail_path`를 signed thumbnail URL로 해석해 `thumbnail` 필드를 내려준다.
+
+Updated:
+- studio project card와 share modal은 단순 프로젝트 이름만이 아니라 latest saved summary metadata를 함께 표시한다.
+- `placed` 상태는 가능할 때 `catalogItemId` 기준으로 계산하고, 구버전 저장본만 `assetId` fallback을 사용한다.
+
+Removed/Deprecated:
+- variant가 같은 `assetId` 하나로만 식별되어 merch-level 구분이 불가능한 상태.
+
+## 2026-04-08 변경 동기화 (Pinned Share Snapshot)
+Added:
+- shared link는 `shared_projects.project_version_id`에 고정된 saved version을 가리키고, `shared_projects.preview_meta`에 project name/description, version number, `assetSummary`를 저장한다.
+- shared viewer는 pinned preview metadata가 있으면 live catalog lookup보다 이를 우선 소비해 `Placed pieces`와 `Collections` 요약을 안정적으로 유지한다.
+
+Updated:
+- share modal의 새 링크 생성 의미는 "현재 latest saved snapshot을 고정한 read-only viewer link"로 본다.
+- `/shared/[token]`은 project 최신 버전 fallback 없이 pinned version만 복원해야 한다. `project_version_id`가 없거나 읽을 수 없으면 fail-closed 처리한다.
+
+Removed/Deprecated:
+- shared link가 항상 현재 latest project version과 현재 catalog 상태를 다시 읽는 느슨한 pointer 계약.
+
+## 2026-04-08 변경 동기화 (Published Showcase Surface)
+Added:
+- `shared_projects.is_gallery_visible`와 `published_at`를 통해 pinned snapshot link를 public showcase surface에 노출하는 기준을 추가한다.
+- public showcase는 `/gallery`에서 `shared_projects.project_version_id + preview_meta`를 읽어 `/shared/[token]`으로 deep-link하는 read-only archive로 동작한다.
+
+Updated:
+- gallery는 더 이상 mock editorial feed가 아니라 builder-first editor에서 발행한 permanent view-only snapshot 목록을 보여준다.
+- `/community`는 gallery redirect가 아니라 pinned public snapshot을 큐레이션한 별도 community feed surface로 동작한다.
+- showcase transport/configuration 실패는 ordinary empty state로 숨기지 않고 unavailable state로 드러낸다.
+
+Removed/Deprecated:
+- mock gallery cards와 fake community discussion을 제품 surface로 유지하는 상태.
+
+## 2026-04-09 변경 동기화 (Community Feed + Legacy Compatibility Retirement)
+Added:
+- `/community`는 published pinned snapshot을 기반으로 featured room, recent circulation feed, archive picks를 렌더하는 실제 public surface가 된다.
+
+Updated:
+- landing 3D CTA와 새 프로젝트 생성 copy는 community feed와 builder-first 진입을 기준으로 맞춘다.
+- old project 지원은 "계속 intake/upload surface를 노출"하는 방식이 아니라 "ops backfill로 versioned snapshot을 만들고 이후 saved version 경로로 연다"는 방식으로 유지한다.
+- active web surface는 intake/catalog/upload/finalize helper를 더 이상 번들하지 않고, saved version 중심 경로를 기본으로 유지한다.
+
+Removed/Deprecated:
+- `/community -> /gallery` redirect.
+- 사용자에게 노출되는 legacy `AssetPanel` / `job-polling` overlay 경로.
+- web-side legacy intake helper module(`features/floorplan/upload.ts`).
+
+## 2026-04-09 변경 동기화 (Latest Version Cutover + Legacy Backfill Ops)
+Added:
+- active web는 `GET /v1/projects/:projectId/versions/latest`로 latest saved version만 hydrate한다.
+- `apps/api/scripts/backfill-legacy-project-versions.ts`와 `npm --workspace apps/api run backfill:legacy-project-versions -- --dry-run --limit <n>` 운영 절차를 추가한다.
+
+Updated:
+- `/project/[id]` bootstrap 순서는 `latest saved version -> empty builder launch`로 고정한다.
+- legacy retirement의 마감 기준은 old project를 즉시 삭제하는 것이 아니라, backfill로 `project_versions`를 채운 뒤 active web의 compatibility bootstrap을 제거하는 것이다.
+- backfill CLI는 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`가 주입된 ops 환경에서만 실행한다.
+
+Removed/Deprecated:
+- active editor가 `scene/latest` 하나에 latest saved version hydration과 legacy recovery를 함께 의존하는 구조.
+
+## 2026-04-09 변경 동기화 (Production Backfill Complete + Web Bootstrap Retirement)
+Added:
+- `2026-04-09` 기준 Railway production `api` 환경에서 legacy backfill dry-run 결과 remaining candidate가 `0`임을 확인했다.
+
+Updated:
+- active web editor는 더 이상 `scene/latest`, layout revision, embedded metadata compatibility bootstrap을 사용하지 않는다.
+- `GET /v1/projects/:projectId/scene/latest`는 ops/admin 검증용 legacy seam으로만 유지한다.
+- `/project/[id]`는 `versions/latest` 읽기 실패를 builder empty state로 감추지 않고 명시적 workspace load failure 상태로 노출한다.
+
+Removed/Deprecated:
+- user-facing web bundle에 `LegacyCompatibilityBanner`와 `lib/api/legacy-project.ts`를 유지하는 구조.

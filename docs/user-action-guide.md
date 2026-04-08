@@ -88,6 +88,8 @@ MESHY_STATUS_URL=
 - `supabase/migrations/20260311_v4_intake_revision_foundation.sql` 실행
 - `supabase/migrations/20260312120000_v4_finalize_intake_session_resolution_state_fix.sql` 실행
 - `supabase/migrations/20260312143000_asset_generation_jobs_result.sql` 실행
+- `supabase/migrations/20260408153000_shared_projects_snapshot_pinning.sql` 실행
+- `supabase/migrations/20260408172000_shared_projects_gallery_visibility.sql` 실행
 - 신규 테이블 확인:
   - `floorplans`
   - `jobs`
@@ -275,3 +277,175 @@ Updated:
 
 Removed/Deprecated:
 - deprecated Next parse endpoint를 eval 기본 경로로 가정하는 운영 방식.
+
+## 18) 2026-04-08 변경 동기화 (Builder-First Entry Flow)
+Added:
+- 운영 확인 시나리오에 `/studio/builder`에서 blank-room 프로젝트를 생성하고 바로 `/project/[id]`로 진입하는 수동 생성 경로를 추가한다.
+- builder QA 항목으로 템플릿 선택, 치수 슬라이더, 재질 선택, version save 후 재진입 복원을 확인한다.
+
+Updated:
+- 신규 프로젝트 시작 절차를 `floorplan upload only`가 아니라 `builder-first`와 `intake-first` 두 경로로 구분한다.
+
+Removed/Deprecated:
+- 운영자가 모든 신규 프로젝트를 floorplan upload modal에서만 시작한다고 보는 절차.
+
+## 19) 2026-04-08 변경 동기화 (Shared Viewer QA)
+Added:
+- 공유 QA에 share link 생성 후 `/shared/[token]`에서 top/walk 전환, asset/floor summary, expiry badge 노출을 확인하는 항목을 추가한다.
+- builder-origin 프로젝트를 share한 뒤 shared viewer에서도 동일한 room shell/material preset이 보존되는지 확인한다.
+
+Updated:
+- 공유 링크 검수는 단순 token 생성이 아니라 `latest saved version` 기준 scene 복원까지 포함한다.
+
+Removed/Deprecated:
+- shared viewer를 walk-only 미리보기로만 간주하는 검수 방식.
+
+## 19) 2026-04-08 변경 동기화 (Viewer-First Share QA)
+Added:
+- 공유 링크 QA에 `/shared/[token]`에서 top/walk 전환, scene stats 노출, read-only gating, 만료 링크 차단을 포함한다.
+
+Updated:
+- share link 검수는 단순 링크 생성 여부뿐 아니라 viewer shell의 메타 정보와 read-only 동작까지 확인하도록 확장한다.
+
+Removed/Deprecated:
+- 공유 링크를 walk-only preview 한 장면으로만 확인하는 절차.
+
+## 20) 2026-04-08 변경 동기화 (Share Permission QA)
+Added:
+- 공유 링크 QA에 `View Only`와 `Edit Requested · Preview Only` 라벨이 실제 동작과 일치하는지 확인하는 항목을 추가한다.
+
+Updated:
+- 새 공유 링크는 모두 read-only viewer로 열리는 현재 계약을 기준으로 검수한다.
+
+Removed/Deprecated:
+- 공유 권한이 즉시 shared edit surface를 연다고 가정하는 검수 기준.
+
+## 21) 2026-04-08 변경 동기화 (Builder-Only Editor QA)
+Added:
+- `/project/[id]`에서 legacy import 카드가 사라지고 builder launch, asset shelf, inspector만 남는지 확인한다.
+- shared viewer와 main editor가 같은 viewport 시각 언어를 유지하는지, `Walk` 버튼 disabled 조건이 일치하는지 확인한다.
+
+Updated:
+- editor QA는 2D floorplan import 진입보다 builder launch -> asset placement -> save/share 흐름을 우선 검수한다.
+
+Removed/Deprecated:
+- 메인 editor에서 legacy floorplan upload/template lookup을 계속 검수 대상으로 두는 절차.
+
+## 22) 2026-04-08 변경 동기화 (Editor Shell Isolation QA)
+Added:
+- `/shared/[token] -> /project/[id]` 이동 후 editor가 read-only 상태로 남지 않는지 확인한다.
+- shared viewer를 열었다 닫은 뒤 editor mode toggle, library panel, inspector panel, transform mode가 이전 route 상태를 물고 오지 않는지 확인한다.
+- top view에서 walk mode로 갔다가 다시 돌아올 때 stale inspector/library panel이 자동 복귀하지 않는지 확인한다.
+
+Updated:
+- Phase 4 QA 범위에 scene 렌더링뿐 아니라 editor/shared viewer shell state isolation 검수를 포함한다.
+
+Removed/Deprecated:
+- route 간 shell state는 수동 눈대중으로만 확인하고 별도 회귀 체크를 하지 않는 QA 방식.
+
+## 23) 2026-04-08 변경 동기화 (Autosave + History QA)
+Added:
+- top view에서 자산 추가, 이동, 회전, 삭제, wall/floor finish 변경 후 `Unsaved changes -> Saving... -> Saved` 흐름이 보이는지 확인한다.
+- mobile 폭에서 library/inspector 토글과 undo/redo 버튼이 노출되고 실제로 동작하는지 확인한다.
+- undo/redo가 asset 배치와 finish 변경을 이전 상태로 되돌리고 다시 앞으로 진행하는지 확인한다.
+
+Updated:
+- editor QA는 save 버튼 클릭 여부만이 아니라 autosave badge와 mobile status text까지 포함해 검수한다.
+- asset drag/transform QA는 시각적 이동뿐 아니라 history snapshot이 남는지까지 포함한다.
+
+Removed/Deprecated:
+- 저장 검수를 manual save toast만 보고 끝내는 절차.
+
+## 24) 2026-04-08 변경 동기화 (Asset Catalog QA)
+Added:
+- top editor library shelf에서 canonical category chips, spotlight pick, featured picks, starter set CTA가 모두 보이는지 확인한다.
+- 동일 자산을 이미 배치한 뒤 shelf와 spotlight card에서 `In Room` 상태가 노출되는지 확인한다.
+- retired legacy overlay 없이 builder shelf 하나만으로 자산 검색, featured, starter set 흐름이 유지되는지 확인한다.
+
+Updated:
+- library QA는 단순 검색 결과 노출뿐 아니라 category normalization과 starter set selection 일관성까지 포함한다.
+- manifest 검수 시 `assetId`가 `placeholder:` 또는 유효 경로 형식인지 확인하고, malformed `scale` 값은 catalog에 노출되지 않는지 확인한다.
+
+Removed/Deprecated:
+- builder shelf 외에 별도 legacy asset overlay를 QA 범위로 유지하는 절차.
+
+## 25) 2026-04-08 변경 동기화 (Viewer Catalog Metadata QA)
+Added:
+- shared viewer에서 배치된 가구가 `Placed pieces` 카드로 보이고, category/collection/count가 scene과 맞는지 확인한다.
+- inspector에서 선택 자산이 raw asset path가 아니라 catalog label/category/collection으로 표시되는지 확인한다.
+- generated/custom asset처럼 catalog에 없는 항목이 있을 때 shared viewer에서 uncatalogued count로만 집계되고 scene 렌더는 유지되는지 확인한다.
+
+Updated:
+- share QA는 scene stats 외에 catalog-aware asset summary까지 포함해 검수한다.
+
+Removed/Deprecated:
+- shared viewer 검수를 벽/문/자산 총개수만 맞는지 보는 수준에서 끝내는 절차.
+
+## 26) 2026-04-08 변경 동기화 (Project Summary Metadata QA)
+Added:
+- 저장 후 studio 카드에서 thumbnail이 보이거나, 없을 때 asset summary 기반 preview surface가 보이는지 확인한다.
+- share modal을 열면 현재 project preview와 collection badges가 latest saved state와 일치하는지 확인한다.
+- 동일 모델의 variant를 배치한 뒤 저장/재진입했을 때 inspector와 shelf의 `placed` 상태가 `catalogItemId` 기준으로 유지되는지 확인한다.
+
+Updated:
+- studio QA는 project 이름/날짜만이 아니라 `assetSummary` 기반 badge와 preview state까지 포함한다.
+
+Removed/Deprecated:
+- project card/share modal을 saved asset metadata 없이 정적 문구만 검수하는 절차.
+
+## 27) 2026-04-08 변경 동기화 (Pinned Share Snapshot QA)
+Added:
+- `supabase/migrations/20260408153000_shared_projects_snapshot_pinning.sql`을 적용한다.
+- share modal에서 링크를 생성한 뒤 active link row에 snapshot version badge가 보이는지 확인한다.
+- 링크를 만든 뒤 프로젝트를 다시 저장해도 기존 `/shared/[token]` 링크가 새 latest version이 아니라 생성 당시 snapshot을 유지하는지 확인한다.
+- 구버전 shared link도 migration backfill 후 최소한 pinned version id 또는 preview metadata를 갖는지 확인한다.
+
+Updated:
+- share QA는 링크 열림 여부만이 아니라 snapshot pinning과 preview metadata 일관성까지 포함한다.
+- viewer QA는 live catalog 변경이 있더라도 pinned `assetSummary`가 summary rail에서 유지되는지 확인한다.
+- pinned version이 없는 예전 shared row는 `/shared/[token]`에서 fail-closed 되는지 확인한다.
+
+Removed/Deprecated:
+- old share link가 later save 이후 최신 상태로 바뀌어도 문제로 보지 않는 QA 기준.
+
+## 28) 2026-04-08 변경 동기화 (Published Gallery QA)
+Added:
+- `supabase/migrations/20260408172000_shared_projects_gallery_visibility.sql`을 적용한다.
+- share modal에서 permanent view-only link를 만들고 `Publish to gallery`를 켰을 때 active link row에 `Published` badge가 보이는지 확인한다.
+- `/gallery`에서 방금 공개한 snapshot card가 나타나고, 클릭 시 `/shared/[token]` pinned viewer로 이동하는지 확인한다.
+- later save를 한 뒤에도 gallery card가 가리키는 shared viewer가 같은 pinned snapshot version을 유지하는지 확인한다.
+
+Updated:
+- publish QA는 mock feed 확인이 아니라 `share modal -> gallery -> shared viewer` 실경로를 기준으로 검수한다.
+- `/community`는 gallery redirect가 아니라 published snapshot 기반 recent/feed surface를 렌더하는지 확인한다.
+- showcase API/env를 일부러 끊거나 실패시켰을 때 gallery/community가 ordinary empty state가 아니라 unavailable state를 보여주는지 확인한다.
+
+Removed/Deprecated:
+- gallery/community 페이지에 정적 데모 카드만 보이더라도 publish flow가 동작한다고 간주하는 검수 방식.
+
+## 29) 2026-04-09 변경 동기화 (Legacy Compatibility Migration QA)
+Added:
+- targeted backfill 실행 후 해당 project의 `current_version_id`가 새 `project_versions.id`와 일치하는지 확인한다.
+- landing/community/new-project 표면에서 더 이상 새 upload/intake 진입을 안내하지 않는지 확인한다.
+- network/devtools 기준으로 active builder/community/gallery/share 플로우에서 `intake-sessions`, `floorplans`, legacy upload helper 요청이 새로 발생하지 않는지 확인한다.
+
+Updated:
+- legacy project QA는 단순히 "열리기만 하는지"가 아니라 backfill 후 saved version 경로로 전환되었는지까지 포함한다.
+- web regression QA는 old project data를 유지하면서도 active surface bundle에서 legacy intake helper와 compatibility bootstrap client가 제거된 상태를 기준으로 본다.
+
+Removed/Deprecated:
+- old project를 legacy source에서 계속 읽기만 해도 전환 완료로 간주하는 검수 방식.
+
+## 30) 2026-04-09 변경 동기화 (Latest Version Cutover + Backfill Ops QA)
+Added:
+- saved version이 있는 project를 열었을 때 network 기준으로 `GET /v1/projects/:projectId/versions/latest`가 먼저 호출되고, 같은 진입에서 `scene/latest`는 호출되지 않는지 확인한다.
+- Railway production `api` env에서 `backfill:legacy-project-versions -- --dry-run --limit 20` 결과 remaining candidate가 `0`인지 확인한다.
+- ops dry-run으로 `npm --workspace apps/api run backfill:legacy-project-versions -- --dry-run --limit 20`를 실행해 candidate/source/action이 예상대로 나오는지 확인한다.
+
+Updated:
+- legacy retirement QA는 UI surface 제거뿐 아니라 latest saved version read path만 남고 active editor compatibility fallback이 제거되었는지까지 포함한다.
+- backfill 운영 검수는 로컬 셸이 아니라 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`가 주입된 ops 환경을 기준으로 수행한다.
+- valid project에서 `versions/latest` 읽기가 실패하면 `/project/[id]`가 builder launch로 보이지 않고 workspace load failure 상태를 보여주는지 확인한다.
+
+Removed/Deprecated:
+- active saved project가 계속 `scene/latest`를 먼저 읽어도 괜찮다고 보는 검수 방식.

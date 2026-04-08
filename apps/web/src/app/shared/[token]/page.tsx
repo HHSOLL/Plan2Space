@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
+import { normalizeSharePermission } from "../../../lib/share/permissions";
+import { getSharePreviewMeta } from "../../../lib/share/preview";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 import { SharedProjectClient } from "./SharedProjectClient";
-import type { CustomizationData, FloorPlanData } from "../../../../../../types/database";
 
 interface SharedProjectPageProps {
   params: { token: string };
@@ -24,37 +25,33 @@ export default async function SharedProjectPage({ params }: SharedProjectPagePro
     notFound();
   }
 
-  const project = sharedProject.projects;
+  if (!sharedProject.project_version_id) {
+    notFound();
+  }
 
-  const { data: versionData } = await supabase
+  const project = sharedProject.projects;
+  const previewMeta = getSharePreviewMeta(sharedProject.preview_meta);
+  const { data: versionData, error: versionError } = await supabase
     .from("project_versions")
-    .select("customization, floor_plan")
-    .eq("project_id", project.id)
-    .order("version", { ascending: false })
-    .limit(1)
+    .select("id, version, message, customization, floor_plan")
+    .eq("id", sharedProject.project_version_id)
     .maybeSingle();
 
-  const customization = (versionData?.customization ?? null) as CustomizationData | null;
-  const floorPlan = (versionData?.floor_plan ?? null) as FloorPlanData | null;
-  const initialFurniture = customization?.furniture ?? [];
-  const isReadOnly = sharedProject.permissions === "view";
+  if (versionError || !versionData) {
+    notFound();
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 px-6 py-8 text-white">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">{project.name}</h1>
-          {project.description ? <p className="mt-2 text-gray-400">{project.description}</p> : null}
-        </div>
-
-        {isReadOnly ? (
-          <div className="rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-200">
-            View-only mode. Editing is disabled.
-          </div>
-        ) : null}
-
-        <SharedProjectClient initialFurniture={initialFurniture} floorPlan={floorPlan} readOnly={isReadOnly} />
-      </div>
-    </div>
+    <SharedProjectClient
+      projectName={previewMeta?.projectName ?? project.name}
+      projectDescription={previewMeta?.projectDescription ?? project.description}
+      latestVersion={versionData ? (versionData as Record<string, unknown>) : null}
+      linkPermission={normalizeSharePermission(sharedProject.permissions)}
+      expiresAt={sharedProject.expires_at}
+      pinnedVersionNumber={
+        previewMeta?.versionNumber ?? (typeof versionData.version === "number" ? versionData.version : null)
+      }
+      previewAssetSummary={previewMeta?.assetSummary ?? null}
+    />
   );
 }
