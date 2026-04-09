@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { resolveBrowserAppOrigin } from "../../lib/auth/browser-origin";
-import { clearInvalidBrowserSession } from "../../lib/auth/session-recovery";
+import { clearInvalidBrowserSession, isRecoverableSessionError } from "../../lib/auth/session-recovery";
 import { getSupabaseClient } from "../../lib/supabase/client";
 
 function resolveNext(nextParam: string | null) {
@@ -28,6 +29,7 @@ type AuthCallbackClientProps = {
 
 export function AuthCallbackClient({ code, error, errorDescription, nextPath }: AuthCallbackClientProps) {
   const hasStartedRef = useRef(false);
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
     if (hasStartedRef.current || typeof window === "undefined") {
@@ -40,39 +42,101 @@ export function AuthCallbackClient({ code, error, errorDescription, nextPath }: 
       const origin = resolveBrowserAppOrigin() ?? window.location.origin;
       const safeNextPath = resolveNext(nextPath);
       const supabase = getSupabaseClient();
+      let timeoutId: number | undefined;
+
+      const redirectWithStatus = (status: "success" | "error", message?: string) => {
+        if (hasRedirectedRef.current) return;
+        hasRedirectedRef.current = true;
+        window.location.replace(withAuthStatus(origin, safeNextPath, status, message));
+      };
+
+      const redirectToNext = () => {
+        if (hasRedirectedRef.current) return;
+        hasRedirectedRef.current = true;
+        window.location.replace(new URL(safeNextPath, origin).toString());
+      };
+
+      const resolveExistingSession = async (session?: Session | null) => {
+        if (session?.access_token) {
+          redirectWithStatus("success");
+          return true;
+        }
+
+        const { data, error: sessionError } = await supabase!.auth.getSession();
+        if (sessionError) {
+          if (isRecoverableSessionError(sessionError)) {
+            await clearInvalidBrowserSession(supabase!);
+          }
+          redirectWithStatus("error", sessionError.message);
+          return true;
+        }
+
+        if (data.session?.access_token) {
+          redirectWithStatus("success");
+          return true;
+        }
+
+        return false;
+      };
 
       if (error) {
         if (supabase) {
           await clearInvalidBrowserSession(supabase);
         }
         const errorMessage = errorDescription ?? error;
-        window.location.replace(withAuthStatus(origin, safeNextPath, "error", errorMessage));
+        redirectWithStatus("error", errorMessage);
         return;
       }
 
       if (!code) {
-        window.location.replace(new URL(safeNextPath, origin).toString());
+        if (!supabase || !(await resolveExistingSession())) {
+          redirectToNext();
+        }
         return;
       }
 
       if (!supabase) {
-        window.location.replace(
-          withAuthStatus(origin, safeNextPath, "error", "Supabase 환경 변수가 설정되지 않았습니다.")
-        );
+        redirectWithStatus("error", "Supabase 환경 변수가 설정되지 않았습니다.");
         return;
       }
 
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) {
+      const {
+        data: { subscription }
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        void resolveExistingSession(session);
+      });
+
+      if (await resolveExistingSession()) {
+        subscription.unsubscribe();
+        return;
+      }
+
+      timeoutId = window.setTimeout(async () => {
+        if (await resolveExistingSession()) {
+          subscription.unsubscribe();
+          return;
+        }
         await clearInvalidBrowserSession(supabase);
-        window.location.replace(withAuthStatus(origin, safeNextPath, "error", exchangeError.message));
-        return;
-      }
+        redirectWithStatus("error", "로그인 세션을 확인하지 못했습니다. 다시 시도해주세요.");
+        subscription.unsubscribe();
+      }, 5000);
 
-      window.location.replace(withAuthStatus(origin, safeNextPath, "success"));
+      return () => {
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+        }
+        subscription.unsubscribe();
+      };
     };
 
-    void exchangeCode();
+    let cleanup: (() => void) | undefined;
+    void exchangeCode().then((result) => {
+      cleanup = result;
+    });
+
+    return () => {
+      cleanup?.();
+    };
   }, [code, error, errorDescription, nextPath]);
 
   return (

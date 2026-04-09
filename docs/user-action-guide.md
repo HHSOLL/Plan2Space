@@ -107,8 +107,8 @@ MESHY_STATUS_URL=
 - Vercel Preview는 `NEXT_PUBLIC_APP_URL`을 비워 preview host 자체로 OAuth를 시작하게 유지
 - Railway API CORS에 Vercel 프로덕션/프리뷰 도메인 포함
 - Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
-- OAuth는 시작 host와 `/auth/callback` host가 반드시 동일해야 함(브라우저 PKCE verifier same-origin)
-- `/auth/callback`은 브라우저 client에서 code exchange를 수행하므로 로그인 직후 redirect 중 탭/스토리지 정리가 없도록 확인
+- OAuth는 시작 host와 `/auth/callback` host가 반드시 동일해야 함(브라우저 PKCE verifier same-origin cookie storage)
+- callback 직후에는 `/auth/callback` page가 세션 생성 완료를 잠시 기다린 뒤 이동하므로, 중간 redirect를 브라우저 확장/프록시가 가로채지 않는지 확인
 - 브라우저에서 `Invalid Refresh Token`이 보이면 기존 `sb-*` 쿠키/스토리지를 정리한 뒤 재로그인
 
 ## 4) 운영 확인 시나리오
@@ -288,6 +288,16 @@ Updated:
 
 Removed/Deprecated:
 - `/auth/callback` server handler가 verifier를 직접 읽어도 된다는 운영 가정.
+
+## 19) 2026-04-09 변경 동기화 (Photo-led Landing Inputs)
+Added:
+- 홈 에디토리얼 surface용 curated image set(`img1~img7`)을 유지/교체할 때는 warm neutral desk/room photography 톤을 기준으로 검수한다.
+
+Updated:
+- 홈 QA는 단순 CTA 확인뿐 아니라 hero 이미지 품질, category crop, dark showcase 대비를 함께 본다.
+
+Removed/Deprecated:
+- 랜딩 품질을 텍스트/레이아웃만으로 검수하는 방식.
 
 ## 18) 2026-04-08 변경 동기화 (Builder-First Entry Flow)
 Added:

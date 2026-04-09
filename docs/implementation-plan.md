@@ -331,6 +331,18 @@ Updated:
 Removed/Deprecated:
 - `/auth/callback` server route handler에서 code exchange를 처리하는 구현 기준.
 
+## 2026-04-09 변경 동기화 (Editorial Photo Landing + Callback Session Observer)
+Added:
+- Phase 4 경험 완성 범위에 photo-led editorial landing(large hero image, dark service strip, category cards, promo split, dark showcase shelf)을 추가한다.
+
+Updated:
+- 로그인 callback 복구 기준을 `same-origin cookie storage + browser session observer` 중심으로 구체화한다.
+- 홈 기준 이미지는 abstract canvas보다 curated desk/room photography를 우선 사용한다.
+
+Removed/Deprecated:
+- 홈 메인 hero를 fullscreen 3D canvas 하나로 유지하는 완료 기준.
+- callback page에서 수동 `exchangeCodeForSession`을 반복 호출하는 구현 기준.
+
 ## 2026-04-08 변경 동기화 (Published Gallery Slice)
 Added:
 - Phase 4 완료 범위에 `shared_projects.is_gallery_visible`, `published_at` 기반 공개 showcase surface를 추가한다.

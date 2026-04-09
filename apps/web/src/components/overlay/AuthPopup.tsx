@@ -10,9 +10,10 @@ import { toast } from "sonner";
 interface AuthPopupProps {
     isOpen: boolean;
     onClose: () => void;
+    nextPath?: string;
 }
 
-export function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
+export function AuthPopup({ isOpen, onClose, nextPath }: AuthPopupProps) {
     const { loginWithProvider, isLoading, error, notice, session } = useAuthStore();
     const isAuthenticated = Boolean(session?.user);
     const titleId = useId();
@@ -41,7 +42,7 @@ export function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
     }, [isOpen, onClose]);
 
     const handleSocialLogin = async (provider: "google" | "kakao") => {
-        const redirectTo = buildBrowserAuthRedirectUrl();
+        const redirectTo = buildBrowserAuthRedirectUrl(nextPath);
         await loginWithProvider(provider, redirectTo);
     };
 

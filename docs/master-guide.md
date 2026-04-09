@@ -42,7 +42,7 @@
 - `apps/web`:
   - 업로드/잡 생성 요청/잡 상태 폴링/결과 렌더링
   - Supabase 로그인 세션(access token) 획득
-  - OAuth callback(`/auth/callback`)의 code exchange는 브라우저 client에서 수행해 PKCE verifier를 same-origin storage에서 사용
+  - OAuth callback(`/auth/callback`)은 브라우저 Supabase client의 PKCE URL 감지와 cookie storage를 사용하고, callback page는 세션 감지만 수행한다.
   - recoverable auth 오류(`Invalid Refresh Token` 등) 발생 시 브라우저 세션을 정리하고 재로그인을 유도
 - `apps/api`:
   - 사용자 인증 검증(Supabase JWT)
@@ -269,6 +269,17 @@ Updated:
 
 Removed/Deprecated:
 - `/auth/callback` server route handler에서 PKCE code verifier를 기대하는 처리 경로.
+
+## 2026-04-09 변경 동기화 (Editorial Home Surface + Callback Observer Flow)
+Added:
+- 홈 진입면에 warm editorial photo-first shell과 local curated imagery(`img1~img7`)를 사용하는 제품 기준을 추가했다.
+
+Updated:
+- `/auth/callback`은 수동 `exchangeCodeForSession` 호출이 아니라 browser client session 감시와 same-origin cookie storage를 전제로 동작한다.
+- home/navbar의 시각 우선순위를 dark utility shell에서 premium furniture-editorial shell로 조정했다.
+
+Removed/Deprecated:
+- callback page가 브라우저 client 위에서 추가 수동 exchange를 한 번 더 수행하는 처리.
 
 Updated:
 - share modal은 현재 런타임 계약과 맞춰 새 링크를 preview-only viewer access로 안내하고, 기존 `edit` 링크는 preview fallback으로 표기한다.

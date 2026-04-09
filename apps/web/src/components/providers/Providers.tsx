@@ -21,18 +21,24 @@ export function Providers({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+        const url = new URL(window.location.href);
         const canonicalHref = resolveCanonicalBrowserHref(window.location.href);
         if (canonicalHref) {
             window.location.replace(canonicalHref);
             return;
         }
-        const url = new URL(window.location.href);
+        if (url.pathname === "/auth/callback") {
+            return;
+        }
         const code = url.searchParams.get("code");
         if (code && url.pathname !== "/auth/callback") {
             const callbackBase = resolveBrowserAppOrigin() ?? window.location.origin;
             const callbackUrl = new URL("/auth/callback", callbackBase);
             callbackUrl.searchParams.set("code", code);
-            callbackUrl.searchParams.set("next", "/studio");
+            const strippedUrl = new URL(url.toString());
+            ["code", "error", "error_description"].forEach((key) => strippedUrl.searchParams.delete(key));
+            const nextTarget = `${strippedUrl.pathname}${strippedUrl.search}${strippedUrl.hash}` || "/studio";
+            callbackUrl.searchParams.set("next", nextTarget === "/" ? "/studio" : nextTarget);
             const error = url.searchParams.get("error");
             if (error) callbackUrl.searchParams.set("error", error);
             const errorDescription = url.searchParams.get("error_description");
