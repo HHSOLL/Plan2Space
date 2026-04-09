@@ -11,7 +11,13 @@ import { SceneViewport } from "../../../components/editor/SceneViewport";
 import { mapProjectVersionToScene } from "../../../features/floorplan/result-mapper";
 import { resolveShareCapabilities, type SharePermission } from "../../../lib/share/permissions";
 import { getScaleGateMessage } from "../../../lib/ai/scaleInfo";
-import { getCatalogToneClasses, summarizePlacedCatalogItems, type ProjectAssetSummary } from "../../../lib/builder/catalog";
+import {
+  findCatalogItem,
+  getCatalogToneClasses,
+  summarizePlacedCatalogItems,
+  type ProjectAssetSummary
+} from "../../../lib/builder/catalog";
+import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
 
 type SharedProjectClientProps = {
   projectName: string;
@@ -34,6 +40,8 @@ export function SharedProjectClient({
 }: SharedProjectClientProps) {
   const setScene = useSceneStore((state) => state.setScene);
   const resetScene = useSceneStore((state) => state.resetScene);
+  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
+  const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
   const applyShellPreset = useEditorStore((state) => state.applyShellPreset);
   const resetShellState = useEditorStore((state) => state.resetShellState);
   const setViewMode = useEditorStore((state) => state.setViewMode);
@@ -64,6 +72,12 @@ export function SharedProjectClient({
         },
         wallMaterialIndex: 0,
         floorMaterialIndex: 0,
+        lighting: {
+          ambientIntensity: 0.35,
+          hemisphereIntensity: 0.4,
+          directionalIntensity: 1.05,
+          environmentBlur: 0.2
+        },
         entranceId: null,
         diagnostics: {
           message: "No saved version"
@@ -85,15 +99,17 @@ export function SharedProjectClient({
       scale: scenePayload.scale,
       scaleInfo: scenePayload.scaleInfo,
       wallMaterialIndex: scenePayload.wallMaterialIndex,
-      floorMaterialIndex: scenePayload.floorMaterialIndex
+      floorMaterialIndex: scenePayload.floorMaterialIndex,
+      lighting: scenePayload.lighting
     });
+    setSelectedAssetId(scenePayload.assets[0]?.id ?? null);
     useSceneStore.setState({ entranceId: scenePayload.entranceId });
     applyShellPreset("viewer");
     return () => {
       resetShellState();
       resetScene();
     };
-  }, [applyShellPreset, resetScene, resetShellState, scenePayload, setScene]);
+  }, [applyShellPreset, resetScene, resetShellState, scenePayload, setScene, setSelectedAssetId]);
 
   const summaryItems = useMemo(
     () => [
@@ -112,6 +128,26 @@ export function SharedProjectClient({
   const summaryCollections = previewAssetSummary?.collections ?? placedAssetSummary.collections;
   const summaryUncataloguedCount = previewAssetSummary?.uncataloguedCount ?? placedAssetSummary.unmatchedCount;
   const canEnterWalk = (scenePayload.walls.length > 0 || scenePayload.floors.length > 0) && !getScaleGateMessage(scenePayload.scale, scenePayload.scaleInfo);
+  const assetHotspots = useMemo(
+    () =>
+      scenePayload.assets.map((asset, index) => {
+        const catalogItem = findCatalogItem(catalog, asset);
+        return {
+          id: asset.id,
+          label: catalogItem?.label ?? asset.assetId,
+          category: catalogItem?.category ?? "Uncatalogued",
+          collection: catalogItem?.collection ?? "Custom",
+          tone: catalogItem?.tone ?? "slate",
+          anchorType: normalizeSceneAnchorType(asset.anchorType),
+          index
+        };
+      }),
+    [catalog, scenePayload.assets]
+  );
+  const selectedHotspot = useMemo(
+    () => assetHotspots.find((asset) => asset.id === selectedAssetId) ?? null,
+    [assetHotspots, selectedAssetId]
+  );
   const viewerModes = [
     { id: "top", label: "Top View", icon: Box },
     { id: "walk", label: "Walk", icon: Play, enabled: canEnterWalk }
@@ -248,6 +284,62 @@ export function SharedProjectClient({
                     No placed pieces were found in the saved scene yet.
                   </div>
                 )}
+              </div>
+
+              <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Product hotspots</div>
+                {assetHotspots.length > 0 ? (
+                  <div className="mt-4 space-y-2">
+                    {assetHotspots.map((hotspot) => {
+                      const tone = getCatalogToneClasses(hotspot.tone);
+                      const isActive = hotspot.id === selectedAssetId;
+                      return (
+                        <button
+                          key={hotspot.id}
+                          type="button"
+                          onClick={() => setSelectedAssetId(hotspot.id)}
+                          className={`flex w-full items-start justify-between gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                            isActive ? tone.tile : "border-white/10 bg-white/[0.03] hover:border-white/25"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-white">{hotspot.label}</div>
+                            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
+                              {hotspot.collection} · {hotspot.anchorType.replaceAll("_", " ")}
+                            </div>
+                          </div>
+                          <span className="rounded-full border border-white/15 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white/55">
+                            #{hotspot.index + 1}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-4 text-sm leading-6 text-white/50">
+                    Saved snapshot has no product hotspot targets yet.
+                  </div>
+                )}
+                {selectedHotspot ? (
+                  <div className="mt-4 rounded-[16px] border border-white/10 bg-white/[0.03] p-3">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                      Selected detail
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-white">{selectedHotspot.label}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white/55">
+                        {selectedHotspot.category}
+                      </span>
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white/55">
+                        {selectedHotspot.collection}
+                      </span>
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white/55">
+                        {selectedHotspot.anchorType.replaceAll("_", " ")}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs text-white/45">{selectedHotspot.id}</div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">

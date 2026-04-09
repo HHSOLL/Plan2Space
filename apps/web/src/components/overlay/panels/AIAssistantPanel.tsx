@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Action } from "@json-render/core";
 import { JSONUIProvider, Renderer, useDataValue, type ComponentRenderProps } from "@json-render/react";
 import { aiAssistantStub } from "../../../lib/ai-ui/stub";
+import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useSceneStore } from "../../../lib/stores/useSceneStore";
 
@@ -111,6 +112,7 @@ function createId() {
 export default function AIAssistantPanel() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const walls = useSceneStore((state) => state.walls);
+  const ceilings = useSceneStore((state) => state.ceilings);
   const openings = useSceneStore((state) => state.openings);
   const assets = useSceneStore((state) => state.assets);
   const scale = useSceneStore((state) => state.scale);
@@ -140,6 +142,15 @@ export default function AIAssistantPanel() {
       z: (bounds.minZ + bounds.maxZ) / 2
     };
   }, [scale, walls]);
+  const anchorContext = useMemo(
+    () => ({
+      walls,
+      ceilings,
+      scale,
+      sceneAssets: assets
+    }),
+    [assets, ceilings, scale, walls]
+  );
 
   const data = useMemo(
     () => ({
@@ -174,11 +185,20 @@ export default function AIAssistantPanel() {
         setFloorMaterialIndex((floorMaterialIndex + 1) % FLOOR_MATERIAL_COUNT),
       drop_chair: () => {
         const id = createId();
+        const anchoredPlacement = constrainPlacementToAnchor(
+          {
+            position: [center.x, 0, center.z],
+            rotation: [0, 0, 0],
+            anchorType: "floor"
+          },
+          anchorContext
+        );
         addFurniture({
           id,
           assetId: DEFAULT_ASSET,
-          position: [center.x, 0, center.z],
-          rotation: [0, 0, 0],
+          anchorType: anchoredPlacement.anchorType,
+          position: anchoredPlacement.position,
+          rotation: anchoredPlacement.rotation,
           scale: [1, 1, 1],
           materialId: null
         });
@@ -187,6 +207,7 @@ export default function AIAssistantPanel() {
     }),
     [
       addFurniture,
+      anchorContext,
       center.x,
       center.z,
       floorMaterialIndex,

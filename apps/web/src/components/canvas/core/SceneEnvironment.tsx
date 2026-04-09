@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Environment as DreiEnvironment, ContactShadows } from "@react-three/drei";
+import { useSceneStore } from "../../../lib/stores/useSceneStore";
 
 type HdriEntry = {
   id: string;
@@ -16,6 +17,7 @@ type EnvironmentSource =
 const FALLBACK_ENVIRONMENT: EnvironmentSource = { type: "preset", value: "apartment" };
 
 export default function SceneEnvironment() {
+  const lighting = useSceneStore((state) => state.lighting);
   const [environment, setEnvironment] = useState<EnvironmentSource>(FALLBACK_ENVIRONMENT);
 
   useEffect(() => {
@@ -40,9 +42,13 @@ export default function SceneEnvironment() {
   return (
     <>
       {environment.type === "file" ? (
-        <DreiEnvironment files={environment.value} background={false} blur={0.2} />
+        <DreiEnvironment files={environment.value} background={false} blur={lighting.environmentBlur} />
       ) : (
-        <DreiEnvironment preset={environment.value} background={false} blur={0.35} />
+        <DreiEnvironment
+          preset={environment.value}
+          background={false}
+          blur={Math.max(0.05, lighting.environmentBlur + 0.15)}
+        />
       )}
       <ContactShadows
         opacity={0.45}

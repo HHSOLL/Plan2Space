@@ -75,6 +75,7 @@
 - `NEXT_PUBLIC_RAILWAY_API_URL` 기반으로 Railway API 호출.
 - `Authorization: Bearer <supabase access token>` 헤더 전달.
 - active builder-first web surface는 `projects`, `project versions`, `shared`, `showcase` 중심으로 동작하고, intake/floorplan/revision fetch는 compatibility 또는 ops 경계에서만 사용한다.
+- public showcase read surface(`gallery`, `community`)는 Vercel Route Handler(`/api/v1/showcase`)에서 60초 재검증 캐시를 사용하고, upstream source는 Railway `/v1/showcase`를 유지한다.
 - `GET /v1/projects/:projectId/versions/latest`는 active editor/viewer가 latest saved snapshot을 읽는 기본 경로다.
 - `GET /v1/projects/:projectId/scene/latest`는 archived room bootstrap과 ops 검증용 compatibility 경로로만 유지한다.
 - Next.js 내부 도메인/파싱 API(`/api/ai/parse-floorplan`, `/api/projects/*`, `/api/furnitures/*`, `/api/assets/generate`)는 사용하지 않는다.
@@ -401,3 +402,63 @@ Updated:
 
 Removed/Deprecated:
 - user-facing web bundle에 `LegacyCompatibilityBanner`와 `lib/api/legacy-project.ts`를 유지하는 구조.
+
+## 2026-04-09 변경 동기화 (Showcase Read Path on Vercel Route Handler)
+Added:
+- `apps/web`에 public showcase read 전용 Vercel Route Handler(`/api/v1/showcase`)를 추가한다.
+- route handler는 Railway `/v1/showcase`를 upstream으로 사용하면서 `revalidate=60` 캐시를 적용한다.
+
+Updated:
+- `/gallery`, `/community`는 direct client helper 대신 server-side showcase helper를 사용하고, page-level `revalidate=60`을 적용한다.
+- public showcase traffic은 `browser -> vercel route cache -> railway showcase` 순서로 단순화한다.
+
+Removed/Deprecated:
+- public showcase read를 항상 `no-store`로 Railway API에 직접 요청하는 기준.
+
+## 2026-04-09 변경 동기화 (Asset Anchor Model + Placement Constraint Slice)
+Added:
+- `SceneAsset`에 optional `anchorType`(`floor|wall|ceiling|furniture_surface|desk_surface|shelf_surface`)를 추가하고 save/restore 경로에서 metadata로 보존한다.
+- top editor의 drag/transform은 anchorType 기준 제약을 적용한다. `wall`은 최근접 wall segment로 snap되고 `ceiling`/surface 계열은 Y축이 anchor 규칙을 따른다.
+
+Updated:
+- `catalogItemId`는 add/save/restore 전 구간에서 empty string을 `null`로 정규화해 variant identity가 흔들리지 않게 유지한다.
+- inspector는 selected asset의 anchorType을 직접 변경할 수 있고, 변경 즉시 anchor 규칙으로 좌표/회전을 재정렬한다.
+
+Removed/Deprecated:
+- top editor에서 자산 배치를 항상 ground-plane free move로만 처리하는 기준.
+
+## 2026-04-09 변경 동기화 (Viewer Product Hotspots Detail Rail)
+Added:
+- shared viewer 우측 rail에 개별 배치 자산 단위의 `Product hotspots` 리스트를 추가한다.
+- hotspot 클릭 시 `selectedAssetId`가 바뀌고 viewport에서 선택 링으로 강조되며, 하단 `Selected detail` 카드에서 category/collection/anchor 정보를 노출한다.
+
+Updated:
+- shared viewer는 aggregate summary(`placed pieces`)만이 아니라 개별 product inspection flow를 함께 제공한다.
+- viewer 기본 진입 시 첫 번째 배치 자산을 선택해 detail rail이 빈 상태로 시작하지 않게 한다.
+
+Removed/Deprecated:
+- shared viewer에서 배치 자산을 aggregate count로만 보여주고 개별 선택/상세 확인 경로가 없는 기준.
+
+## 2026-04-09 변경 동기화 (Versions Latest Read on Vercel Route)
+Added:
+- `apps/web`에 auth 기반 `GET /api/v1/projects/:projectId/versions/latest` Route Handler를 추가한다.
+- editor bootstrap client는 local route read를 우선 사용하고, 실패 시 기존 Railway `/v1/projects/:projectId/versions/latest`로 fallback한다.
+
+Updated:
+- `latest version` 조회 트래픽은 `browser -> vercel route -> supabase`를 우선 경로로 사용해 Railway API 의존을 줄인다.
+
+Removed/Deprecated:
+- editor bootstrap read를 Railway API 단일 경로로만 처리하는 기준.
+
+## 2026-04-09 변경 동기화 (Lighting Persistence + Legacy Route Gating)
+Added:
+- scene 저장 계약에 `lighting`(ambient/hemisphere/directional/environment blur) 값을 포함하고 project version customization defaults로 저장/복원한다.
+- API 서버는 `ENABLE_LEGACY_API_ROUTES=false` 기본값에서 intake/floorplan/jobs/revisions/scenes 라우트를 마운트하지 않는다.
+
+Updated:
+- editor inspector는 finish 조정과 함께 조명 슬라이더를 제공하며, 변경값은 autosave를 통해 버전 스냅샷에 남는다.
+- surface-aware placement는 desk/shelf/furniture surface 앵커에서 주변 지지 가구 상판으로 스냅하는 규칙을 추가한다.
+
+Removed/Deprecated:
+- active editor 조명값이 런타임에서만 반영되고 저장본에는 남지 않는 계약.
+- legacy floorplan-first 라우트를 API 기본 동작으로 항상 노출하는 기준.

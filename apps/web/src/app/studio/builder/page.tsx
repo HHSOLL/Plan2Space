@@ -135,6 +135,12 @@ export default function StudioBuilderPage() {
           wallIndex: wallMaterialIndex,
           floorIndex: floorMaterialIndex
         },
+        lighting: {
+          ambientIntensity: 0.35,
+          hemisphereIntensity: 0.4,
+          directionalIntensity: 1.05,
+          environmentBlur: 0.2
+        },
         thumbnailDataUrl: previewDataUrl,
         projectName: projectName.trim(),
         projectDescription: projectDescription.trim() || "Builder-authored interior concept",

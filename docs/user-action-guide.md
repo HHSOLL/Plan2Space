@@ -439,6 +439,7 @@ Removed/Deprecated:
 ## 30) 2026-04-09 변경 동기화 (Latest Version Cutover + Backfill Ops QA)
 Added:
 - saved version이 있는 project를 열었을 때 network 기준으로 `GET /v1/projects/:projectId/versions/latest`가 먼저 호출되고, 같은 진입에서 `scene/latest`는 호출되지 않는지 확인한다.
+- web local route가 활성인 배포에서는 `GET /api/v1/projects/:projectId/versions/latest`가 먼저 호출되고, 실패 시에만 Railway `/v1/projects/:projectId/versions/latest`로 fallback 되는지 확인한다.
 - Railway production `api` env에서 `backfill:legacy-project-versions -- --dry-run --limit 20` 결과 remaining candidate가 `0`인지 확인한다.
 - ops dry-run으로 `npm --workspace apps/api run backfill:legacy-project-versions -- --dry-run --limit 20`를 실행해 candidate/source/action이 예상대로 나오는지 확인한다.
 
@@ -449,3 +450,39 @@ Updated:
 
 Removed/Deprecated:
 - active saved project가 계속 `scene/latest`를 먼저 읽어도 괜찮다고 보는 검수 방식.
+
+## 31) 2026-04-09 변경 동기화 (Anchor Placement QA)
+Added:
+- top editor에서 자산을 선택한 뒤 Inspector의 Anchor를 `floor`, `wall`, `ceiling`, `desk_surface`로 바꿨을 때 즉시 위치가 anchor 규칙으로 재정렬되는지 확인한다.
+- `wall` anchor에서 drag/transform 후 release 시 자산이 최근접 벽 선분으로 snap되고 yaw가 벽 방향으로 맞춰지는지 확인한다.
+- `ceiling` anchor에서 drag/transform 후 Y값이 ceiling height로 유지되는지 확인한다.
+
+Updated:
+- 배치 QA는 단순 X/Z 이동 확인이 아니라 anchorType 변경에 따른 제약 규칙(벽 스냅/표면 높이 고정)까지 포함한다.
+- 저장/재진입 QA는 `catalogItemId`와 `anchorType`이 함께 복원되는지 확인한다.
+
+Removed/Deprecated:
+- 자산 배치를 항상 바닥 자유 이동만 확인하는 검수 절차.
+
+## 32) 2026-04-09 변경 동기화 (Viewer Product Hotspot QA)
+Added:
+- `/shared/[token]`에서 `Product hotspots` 리스트가 배치 자산 수와 일치하게 렌더되는지 확인한다.
+- hotspot을 클릭하면 viewport에서 선택 링이 이동하고 `Selected detail` 카드의 label/category/collection/anchor 정보가 같이 바뀌는지 확인한다.
+
+Updated:
+- viewer QA는 aggregate `Placed pieces` 카드만 확인하지 않고 개별 product inspection 흐름까지 포함한다.
+
+Removed/Deprecated:
+- shared viewer 검수를 summary count 확인으로만 끝내는 절차.
+
+## 33) 2026-04-09 변경 동기화 (Lighting Persistence + Legacy Route Gate QA)
+Added:
+- editor inspector에서 Ambient/Hemisphere/Sun/Environment Blur 슬라이더를 조절했을 때 뷰포트 조명이 즉시 반영되는지 확인한다.
+- 조명을 조절한 뒤 저장/새로고침/재진입 시 동일 조명값이 복원되는지 확인한다.
+- `ENABLE_LEGACY_API_ROUTES=false` 배포에서 `/v1/intake-sessions`, `/v1/floorplans`, `/v1/jobs`, `/v1/revisions`, `/v1/projects/:id/scene/latest` 호출이 404 또는 비노출 상태인지 확인한다.
+
+Updated:
+- editor QA 범위에 finish/asset 편집뿐 아니라 조명값의 저장/복원 일관성을 포함한다.
+
+Removed/Deprecated:
+- legacy 라우트를 항상 켜둔 상태에서만 운영 검수를 수행하는 절차.

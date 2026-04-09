@@ -39,6 +39,14 @@ const SaveVersionSchema = z.object({
     wallIndex: z.number(),
     floorIndex: z.number()
   }),
+  lighting: z
+    .object({
+      ambientIntensity: z.number(),
+      hemisphereIntensity: z.number(),
+      directionalIntensity: z.number(),
+      environmentBlur: z.number()
+    })
+    .optional(),
   thumbnailDataUrl: z.string().nullable().optional(),
   assetSummary: z
     .object({
@@ -254,7 +262,8 @@ projectsRouter.post("/projects/:projectId/versions", async (request, response, n
     });
     const customization = buildProjectVersionCustomization(
       payload.assets as Array<Record<string, unknown>>,
-      payload.materials
+      payload.materials,
+      payload.lighting
     );
 
     const authedSupabase = createAuthedSupabaseClient(request.user.accessToken);

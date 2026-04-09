@@ -2,16 +2,16 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Link2, MessagesSquare, Sparkles, Users } from "lucide-react";
 import { PublishedSnapshotCard } from "../../components/project/PublishedSnapshotCard";
 import { getCatalogPreviewClasses } from "../../lib/builder/catalog";
-import { fetchShowcaseSnapshotResult } from "../../lib/api/showcase";
+import { fetchShowcaseSnapshotResultServer } from "../../lib/server/showcase";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString();
 }
 
 export default async function CommunityPage() {
-  const { items: snapshots, error: showcaseError } = await fetchShowcaseSnapshotResult(18);
+  const { items: snapshots, error: showcaseError } = await fetchShowcaseSnapshotResultServer(18);
   const featured = snapshots[0] ?? null;
   const feed = snapshots.slice(1, 7);
   const archive = snapshots.slice(7, 13);

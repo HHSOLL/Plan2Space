@@ -1,11 +1,11 @@
 import { Compass, Sparkles } from "lucide-react";
-import { fetchShowcaseSnapshotResult } from "../../lib/api/showcase";
+import { fetchShowcaseSnapshotResultServer } from "../../lib/server/showcase";
 import { PublishedSnapshotCard } from "../../components/project/PublishedSnapshotCard";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function GalleryPage() {
-  const { items: snapshots, error: showcaseError } = await fetchShowcaseSnapshotResult(24);
+  const { items: snapshots, error: showcaseError } = await fetchShowcaseSnapshotResultServer(24);
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] px-4 pb-20 pt-24 text-[#171411] sm:px-6 lg:px-10">

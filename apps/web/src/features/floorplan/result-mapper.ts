@@ -2,6 +2,7 @@ import type {
   CameraAnchor,
   Ceiling,
   Floor,
+  LightingSettings,
   NavGraph,
   RoomType,
   RoomZone,
@@ -10,11 +11,18 @@ import type {
   Wall,
   Opening
 } from "../../lib/stores/useSceneStore";
+import { normalizeSceneAnchorType } from "../../lib/scene/anchor-types";
 
 const SYNTHETIC_PX_PER_MM = 0.1;
 const SYNTHETIC_SCALE_METERS_PER_PIXEL = 0.001 / SYNTHETIC_PX_PER_MM;
 const DEFAULT_WALL_HEIGHT_METERS = 2.8;
 const SYNTHETIC_CANVAS_PADDING = 72;
+const DEFAULT_LIGHTING: LightingSettings = {
+  ambientIntensity: 0.35,
+  hemisphereIntensity: 0.4,
+  directionalIntensity: 1.05,
+  environmentBlur: 0.2
+};
 
 export type MappedSceneResult = {
   walls: Wall[];
@@ -29,6 +37,7 @@ export type MappedSceneResult = {
   scaleInfo: ScaleInfo;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
+  lighting: LightingSettings;
   entranceId: string | null;
   diagnostics?: Record<string, unknown>;
 };
@@ -338,12 +347,21 @@ function mapSceneAssets(value: unknown): SceneAsset[] {
       return {
         id: toStringValue(record.id, `asset-${index + 1}`),
         assetId: toStringValue(record.assetId ?? record.modelId, "placeholder:chair"),
-        catalogItemId:
-          typeof record.catalogItemId === "string"
-            ? record.catalogItemId
+        catalogItemId: (() => {
+          const catalogItemId =
+            typeof record.catalogItemId === "string"
+              ? record.catalogItemId
+              : record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)
+                ? toStringValue((record.metadata as Record<string, unknown>).catalogItemId, "")
+                : "";
+          return catalogItemId.length > 0 ? catalogItemId : null;
+        })(),
+        anchorType:
+          typeof record.anchorType === "string"
+            ? normalizeSceneAnchorType(record.anchorType)
             : record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)
-              ? toStringValue((record.metadata as Record<string, unknown>).catalogItemId, "")
-              : null,
+              ? normalizeSceneAnchorType((record.metadata as Record<string, unknown>).anchorType)
+              : normalizeSceneAnchorType(null),
         position:
           Array.isArray(record.position) && record.position.length >= 3
             ? [
@@ -378,6 +396,25 @@ function parseMaterialIndex(value: unknown, fallback: number) {
   if (typeof value !== "string") return fallback;
   const match = value.match(/:(\d+)$/);
   return match ? Number(match[1]) : fallback;
+}
+
+function parseLightingDefaults(defaults: Record<string, unknown>) {
+  const lightingDefaults =
+    defaults.lighting && typeof defaults.lighting === "object" && !Array.isArray(defaults.lighting)
+      ? (defaults.lighting as Record<string, unknown>)
+      : {};
+  return {
+    ambientIntensity: toNumberValue(lightingDefaults.ambientIntensity, DEFAULT_LIGHTING.ambientIntensity),
+    hemisphereIntensity: toNumberValue(
+      lightingDefaults.hemisphereIntensity,
+      DEFAULT_LIGHTING.hemisphereIntensity
+    ),
+    directionalIntensity: toNumberValue(
+      lightingDefaults.directionalIntensity,
+      DEFAULT_LIGHTING.directionalIntensity
+    ),
+    environmentBlur: toNumberValue(lightingDefaults.environmentBlur, DEFAULT_LIGHTING.environmentBlur)
+  } satisfies LightingSettings;
 }
 
 function mapScenePayloadToScene(
@@ -439,6 +476,7 @@ function mapScenePayloadToScene(
     scaleInfo,
     wallMaterialIndex: 0,
     floorMaterialIndex: 0,
+    lighting: DEFAULT_LIGHTING,
     entranceId,
     diagnostics: fallback.diagnostics
   };
@@ -555,10 +593,17 @@ export function mapProjectVersionToScene(version: Record<string, unknown>): Mapp
     getArrayRecords(customization?.furniture).map((asset) => ({
       id: asset.id,
       assetId: asset.modelId,
-      catalogItemId:
+      catalogItemId: (() => {
+        const catalogItemId =
+          asset.metadata && typeof asset.metadata === "object" && !Array.isArray(asset.metadata)
+            ? toStringValue((asset.metadata as Record<string, unknown>).catalogItemId, "")
+            : "";
+        return catalogItemId.length > 0 ? catalogItemId : null;
+      })(),
+      anchorType:
         asset.metadata && typeof asset.metadata === "object" && !Array.isArray(asset.metadata)
-          ? toStringValue((asset.metadata as Record<string, unknown>).catalogItemId, "")
-          : null,
+          ? normalizeSceneAnchorType((asset.metadata as Record<string, unknown>).anchorType)
+          : normalizeSceneAnchorType(asset.anchor),
       position: asset.position,
       rotation: asset.rotation,
       scale: asset.scale,
@@ -578,6 +623,7 @@ export function mapProjectVersionToScene(version: Record<string, unknown>): Mapp
     defaults.wall && typeof defaults.wall === "object" && !Array.isArray(defaults.wall)
       ? (defaults.wall as Record<string, unknown>)
       : {};
+  const lighting = parseLightingDefaults(defaults);
 
   return {
     walls: floorPlanWalls,
@@ -599,6 +645,7 @@ export function mapProjectVersionToScene(version: Record<string, unknown>): Mapp
     },
     wallMaterialIndex: parseMaterialIndex(wallDefaults.materialSkuId, 0),
     floorMaterialIndex: parseMaterialIndex(floorDefaults.materialSkuId, 0),
+    lighting,
     entranceId,
     diagnostics: {
       projectVersionId: toStringValue(version.id, "draft"),

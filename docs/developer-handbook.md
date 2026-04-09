@@ -688,6 +688,10 @@ npm --workspace apps/web run e2e:intake -- --api=<railway-url>
 - `apps/web/src/components/editor/BuilderLibraryShelf.tsx`
 - `apps/web/src/components/editor/BuilderInspectorPanel.tsx`
 - `apps/web/src/components/editor/SceneViewport.tsx`
+- `apps/web/src/lib/scene/anchor-types.ts`
+- `apps/web/src/lib/scene/anchors.ts`
+- `apps/web/src/components/canvas/effects/Lights.tsx`
+- `apps/web/src/components/canvas/core/SceneEnvironment.tsx`
 
 ### share / gallery / community 수정
 
@@ -701,6 +705,7 @@ npm --workspace apps/web run e2e:intake -- --api=<railway-url>
 ### 저장/버전 수정
 
 - `apps/web/src/lib/api/project.ts`
+- `apps/web/src/app/api/v1/projects/[projectId]/versions/latest/route.ts`
 - `apps/api/src/routes/projects.ts`
 - `apps/api/src/services/project-version-service.ts`
 
@@ -709,6 +714,8 @@ npm --workspace apps/web run e2e:intake -- --api=<railway-url>
 - `apps/api/src/routes/scenes.ts`
 - `apps/api/src/services/legacy-backfill-service.ts`
 - `apps/api/scripts/backfill-legacy-project-versions.ts`
+- `apps/api/src/config/env.ts` (`ENABLE_LEGACY_API_ROUTES`)
+- `apps/api/src/app.ts`
 - `docs/user-action-guide.md`
 
 ### AI pipeline 수정

@@ -4,6 +4,7 @@ import { TransformControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useState } from "react";
 import * as THREE from "three";
+import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useSceneStore } from "../../../lib/stores/useSceneStore";
 
@@ -26,6 +27,9 @@ export default function AssetTransformControls() {
   const readOnly = useEditorStore((state) => state.readOnly);
   const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
   const assets = useSceneStore((state) => state.assets);
+  const walls = useSceneStore((state) => state.walls);
+  const ceilings = useSceneStore((state) => state.ceilings);
+  const scale = useSceneStore((state) => state.scale);
   const updateFurniture = useSceneStore((state) => state.updateFurniture);
   const recordSnapshot = useSceneStore((state) => state.recordSnapshot);
 
@@ -43,12 +47,32 @@ export default function AssetTransformControls() {
 
   const syncTarget = useCallback(() => {
     if (!selectedAssetId || !target) return;
+    const selectedAsset = assets.find((asset) => asset.id === selectedAssetId);
+    if (!selectedAsset) return;
+    const anchoredPlacement = constrainPlacementToAnchor(
+      {
+        position: vector3ToTuple(target.position),
+        rotation: eulerToTuple(target.rotation),
+        anchorType: selectedAsset.anchorType
+      },
+      {
+        walls,
+        ceilings,
+        scale,
+        sceneAssets: assets,
+        activeAssetId: selectedAsset.id
+      }
+    );
+
+    target.position.set(...anchoredPlacement.position);
+    target.rotation.set(...anchoredPlacement.rotation);
     updateFurniture(selectedAssetId, {
-      position: vector3ToTuple(target.position),
-      rotation: eulerToTuple(target.rotation),
+      anchorType: anchoredPlacement.anchorType,
+      position: anchoredPlacement.position,
+      rotation: anchoredPlacement.rotation,
       scale: vector3ToTuple(target.scale)
     });
-  }, [selectedAssetId, target, updateFurniture]);
+  }, [assets, ceilings, scale, selectedAssetId, target, updateFurniture, walls]);
 
   if (viewMode !== "top" || readOnly || !target) return null;
 

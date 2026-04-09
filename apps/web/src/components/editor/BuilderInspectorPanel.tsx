@@ -2,15 +2,17 @@
 
 import { SlidersHorizontal, Trash2 } from "lucide-react";
 import type { LibraryCatalogItem } from "../../lib/builder/catalog";
+import { SCENE_ANCHOR_TYPES, type SceneAnchorType } from "../../lib/scene/anchor-types";
 import { builderFloorFinishes, builderWallFinishes } from "../../lib/builder/templates";
 import type { TransformMode } from "../../lib/stores/useEditorStore";
-import type { SceneAsset } from "../../lib/stores/useSceneStore";
+import type { LightingSettings, SceneAsset } from "../../lib/stores/useSceneStore";
 
 type BuilderInspectorPanelProps = {
   visible: boolean;
   transformMode: TransformMode;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
+  lighting: LightingSettings;
   wallsCount: number;
   floorsCount: number;
   assetsCount: number;
@@ -19,6 +21,8 @@ type BuilderInspectorPanelProps = {
   onTransformModeChange: (mode: TransformMode) => void;
   onWallMaterialChange: (index: number) => void;
   onFloorMaterialChange: (index: number) => void;
+  onLightingChange: (lighting: Partial<LightingSettings>) => void;
+  onLightingCommit: () => void;
   onUpdateAsset: (id: string, updates: Partial<SceneAsset>) => void;
   onRemoveAsset: (id: string) => void;
   formatAssetLabel: (assetId: string) => string;
@@ -29,6 +33,7 @@ export function BuilderInspectorPanel({
   transformMode,
   wallMaterialIndex,
   floorMaterialIndex,
+  lighting,
   wallsCount,
   floorsCount,
   assetsCount,
@@ -37,10 +42,28 @@ export function BuilderInspectorPanel({
   onTransformModeChange,
   onWallMaterialChange,
   onFloorMaterialChange,
+  onLightingChange,
+  onLightingCommit,
   onUpdateAsset,
   onRemoveAsset,
   formatAssetLabel
 }: BuilderInspectorPanelProps) {
+  const anchorLabel: Record<SceneAnchorType, string> = {
+    floor: "Floor",
+    wall: "Wall",
+    ceiling: "Ceiling",
+    furniture_surface: "Furniture Surface",
+    desk_surface: "Desk Surface",
+    shelf_surface: "Shelf Surface"
+  };
+  const isYManagedByAnchor =
+    selectedAsset?.anchorType === "floor" ||
+    selectedAsset?.anchorType === "ceiling" ||
+    selectedAsset?.anchorType === "desk_surface" ||
+    selectedAsset?.anchorType === "furniture_surface" ||
+    selectedAsset?.anchorType === "shelf_surface";
+  const isRotationManagedByAnchor = selectedAsset?.anchorType === "wall";
+
   return (
     <aside
       className={`absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,320px)] flex-col rounded-[28px] border border-white/10 bg-black/50 backdrop-blur-2xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
@@ -121,6 +144,66 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Lighting</p>
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+            Ambient
+            <input
+              type="range"
+              min="0.05"
+              max="1.2"
+              step="0.05"
+              value={lighting.ambientIntensity}
+              onChange={(event) => onLightingChange({ ambientIntensity: Number(event.target.value) })}
+              onMouseUp={onLightingCommit}
+              onTouchEnd={onLightingCommit}
+              className="w-full accent-white"
+            />
+          </label>
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+            Hemisphere
+            <input
+              type="range"
+              min="0.05"
+              max="1.4"
+              step="0.05"
+              value={lighting.hemisphereIntensity}
+              onChange={(event) => onLightingChange({ hemisphereIntensity: Number(event.target.value) })}
+              onMouseUp={onLightingCommit}
+              onTouchEnd={onLightingCommit}
+              className="w-full accent-white"
+            />
+          </label>
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+            Sun
+            <input
+              type="range"
+              min="0.2"
+              max="2.4"
+              step="0.05"
+              value={lighting.directionalIntensity}
+              onChange={(event) => onLightingChange({ directionalIntensity: Number(event.target.value) })}
+              onMouseUp={onLightingCommit}
+              onTouchEnd={onLightingCommit}
+              className="w-full accent-white"
+            />
+          </label>
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+            Environment Blur
+            <input
+              type="range"
+              min="0"
+              max="0.8"
+              step="0.02"
+              value={lighting.environmentBlur}
+              onChange={(event) => onLightingChange({ environmentBlur: Number(event.target.value) })}
+              onMouseUp={onLightingCommit}
+              onTouchEnd={onLightingCommit}
+              className="w-full accent-white"
+            />
+          </label>
+        </div>
+
+        <div className="space-y-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Room summary</p>
           <div className="space-y-2 text-sm text-white/70">
             <div className="flex items-center justify-between">
@@ -158,6 +241,24 @@ export function BuilderInspectorPanel({
                 ) : null}
                 <div className="mt-1 text-xs text-white/45">{selectedAsset.id}</div>
               </div>
+              <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Anchor
+                <select
+                  value={selectedAsset.anchorType ?? "floor"}
+                  onChange={(event) =>
+                    onUpdateAsset(selectedAsset.id, {
+                      anchorType: event.target.value as SceneAnchorType
+                    })
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none"
+                >
+                  {SCENE_ANCHOR_TYPES.map((anchorType) => (
+                    <option key={anchorType} value={anchorType}>
+                      {anchorLabel[anchorType]}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
                   X
@@ -196,11 +297,33 @@ export function BuilderInspectorPanel({
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Y
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={selectedAsset.position[1]}
+                    disabled={isYManagedByAnchor}
+                    onChange={(event) =>
+                      onUpdateAsset(selectedAsset.id, {
+                        position: [
+                          selectedAsset.position[0],
+                          Number(event.target.value),
+                          selectedAsset.position[2]
+                        ]
+                      })
+                    }
+                    className={`w-full rounded-xl border border-white/10 px-3 py-2 text-sm outline-none ${
+                      isYManagedByAnchor ? "cursor-not-allowed bg-black/45 text-white/45" : "bg-black/25 text-white"
+                    }`}
+                  />
+                </label>
+                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
                   Rotate Y
                   <input
                     type="number"
                     step="0.1"
                     value={selectedAsset.rotation[1]}
+                    disabled={isRotationManagedByAnchor}
                     onChange={(event) =>
                       onUpdateAsset(selectedAsset.id, {
                         rotation: [
@@ -210,7 +333,9 @@ export function BuilderInspectorPanel({
                         ]
                       })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none"
+                    className={`w-full rounded-xl border border-white/10 px-3 py-2 text-sm outline-none ${
+                      isRotationManagedByAnchor ? "cursor-not-allowed bg-black/45 text-white/45" : "bg-black/25 text-white"
+                    }`}
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
@@ -229,6 +354,14 @@ export function BuilderInspectorPanel({
                   />
                 </label>
               </div>
+              {isYManagedByAnchor || isRotationManagedByAnchor ? (
+                <div className="text-[10px] uppercase tracking-[0.14em] text-white/45">
+                  Current anchor manages
+                  {isYManagedByAnchor ? " height" : ""}
+                  {isYManagedByAnchor && isRotationManagedByAnchor ? " and" : ""}
+                  {isRotationManagedByAnchor ? " yaw" : ""}.
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={() => onRemoveAsset(selectedAsset.id)}

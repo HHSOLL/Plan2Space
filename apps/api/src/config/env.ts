@@ -7,14 +7,16 @@ const EnvSchema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   CORS_ORIGINS: z.string().default("http://127.0.0.1:3100,http://localhost:3100"),
-  FLOORPLAN_UPLOAD_BUCKET: z.string().default("floor-plans")
+  FLOORPLAN_UPLOAD_BUCKET: z.string().default("floor-plans"),
+  ENABLE_LEGACY_API_ROUTES: z.enum(["true", "false"]).default("false")
 });
 
 const parsedEnv = EnvSchema.parse(process.env);
 
 export const env = {
   ...parsedEnv,
-  API_PORT: parsedEnv.PORT ?? parsedEnv.API_PORT
+  API_PORT: parsedEnv.PORT ?? parsedEnv.API_PORT,
+  ENABLE_LEGACY_API_ROUTES: parsedEnv.ENABLE_LEGACY_API_ROUTES === "true"
 };
 
 export type CorsOriginRule = {

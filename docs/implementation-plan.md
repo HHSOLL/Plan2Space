@@ -369,3 +369,71 @@ Updated:
 
 Removed/Deprecated:
 - saved version candidate가 0이 된 뒤에도 active editor가 legacy bootstrap client를 계속 유지하는 완료 기준.
+
+## 2026-04-09 변경 동기화 (Vercel Showcase Read Cache Slice)
+Added:
+- Phase 5 hardening 범위에 `apps/web` Route Handler(`/api/v1/showcase`)를 통한 public showcase read 캐시 경로를 추가한다.
+- `gallery/community` server surface에서 `revalidate=60` 기반의 반복 가능한 cache warm 경로를 포함한다.
+
+Updated:
+- API migration의 첫 단계는 write/auth-heavy route 이동이 아니라 public read route(showcase) 캐시 이전으로 정의한다.
+- Railway showcase endpoint는 source of truth로 유지하되, public read 트래픽은 Vercel cache layer를 우선 통과하도록 조정한다.
+
+Removed/Deprecated:
+- public showcase를 항상 `no-store` direct fetch로만 처리하는 완료 기준.
+
+## 2026-04-09 변경 동기화 (Anchor-Aware Placement Baseline)
+Added:
+- Phase 5 hardening 범위에 `SceneAsset.anchorType` optional 도입과 save/restore(metadata) 보존 경로를 추가한다.
+- Phase 5 editor polish 범위에 anchor-aware drag/transform baseline(`wall snap`, `ceiling/surface Y constraint`)을 포함한다.
+
+Updated:
+- catalog variant identity 하드닝 범위에 `catalogItemId` empty-string 정규화(`null`)를 추가해 placed-state drift를 방지한다.
+- inspector 완료 기준은 좌표/회전/스케일 수정뿐 아니라 anchorType 전환 후 위치 재정렬 동작까지 포함한다.
+
+Removed/Deprecated:
+- 배치 시스템을 floor free-placement 단일 모델로 유지하는 완료 기준.
+
+## 2026-04-09 변경 동기화 (Viewer Product Hotspot Details)
+Added:
+- Phase 5 viewer polish 범위에 shared viewer `Product hotspots` rail(개별 자산 선택 + detail card)을 추가한다.
+- viewer에서 선택된 자산을 viewport selection ring으로 피드백하는 read-only inspection 경로를 포함한다.
+
+Updated:
+- publish/viewer 완료 기준은 aggregate asset summary만이 아니라 개별 product inspection 클릭 흐름까지 포함한다.
+
+Removed/Deprecated:
+- shared viewer가 `placed pieces` aggregate 카드만 제공해 개별 상품 상세 확인이 불가능한 완료 기준.
+
+## 2026-04-09 변경 동기화 (Versions Latest Route Migration Slice)
+Added:
+- Phase 5 API migration 범위에 `apps/web` Route Handler `GET /api/v1/projects/:projectId/versions/latest`를 추가한다.
+- editor bootstrap read path는 local route 우선 + Railway fallback 이중화로 롤아웃한다.
+
+Updated:
+- Railway cost reduction 2차 범위는 public showcase read에 이어 authenticated latest-version read를 Vercel 쪽으로 이동하는 것으로 정의한다.
+
+Removed/Deprecated:
+- authenticated latest-version read를 Railway API에만 의존하는 완료 기준.
+
+## 2026-04-09 변경 동기화 (Lighting Controls + Legacy API Gate)
+Added:
+- Phase 5 editor polish 범위에 lighting control(ambient/hemisphere/sun/env blur)과 version persistence를 추가한다.
+- Phase 5 hard retirement 범위에 API legacy routes를 env flag(`ENABLE_LEGACY_API_ROUTES`) 뒤로 숨기는 조치를 추가한다.
+
+Updated:
+- deskterior 배치 완료 기준은 desk/shelf/furniture surface 앵커가 주변 지지 가구 상판에 스냅되는 동작까지 포함한다.
+- worker-centric backend 기준은 legacy routes 상시 오픈이 아니라 필요 시에만 flag로 복원 가능한 형태를 기준으로 한다.
+
+Removed/Deprecated:
+- 조명 편집이 scene 저장 계약과 분리된 채 일회성 런타임 값으로만 남는 완료 기준.
+
+## 2026-04-09 변경 동기화 (Surface-Aware Deskterior Snap)
+Added:
+- Phase 5 placement 범위에 desk/shelf/furniture surface 앵커가 주변 지지 가구 상판으로 스냅되는 규칙을 추가한다.
+
+Updated:
+- 표면 인지 배치 완료 기준은 앵커 타입 선택뿐 아니라 drag/transform 시 주변 가구 상판 제약이 일관되게 적용되는지를 포함한다.
+
+Removed/Deprecated:
+- desk/shelf surface 앵커가 단순 Y값 프리셋만 적용하고 실제 지지 표면을 찾지 않는 완료 기준.

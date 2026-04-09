@@ -1,6 +1,14 @@
 import { supabaseService } from "./supabase";
 
 const DEFAULT_WALL_HEIGHT = 2.8;
+const ASSET_ANCHOR_TYPES = new Set([
+  "floor",
+  "wall",
+  "ceiling",
+  "furniture_surface",
+  "desk_surface",
+  "shelf_surface"
+]);
 
 type TopologyPayload = {
   scale: number;
@@ -15,7 +23,18 @@ type MaterialsPayload = {
   floorIndex: number;
 };
 
+type LightingPayload = {
+  ambientIntensity: number;
+  hemisphereIntensity: number;
+  directionalIntensity: number;
+  environmentBlur: number;
+};
+
 type AssetPayload = Array<Record<string, unknown>>;
+
+function normalizeAssetAnchor(value: unknown) {
+  return typeof value === "string" && ASSET_ANCHOR_TYPES.has(value) ? value : "floor";
+}
 
 export function buildProjectVersionFloorPlan(topology: TopologyPayload) {
   const scale = topology.scale;
@@ -77,22 +96,37 @@ export function buildProjectVersionFloorPlan(topology: TopologyPayload) {
   };
 }
 
-export function buildProjectVersionCustomization(assets: AssetPayload, materials: MaterialsPayload) {
+export function buildProjectVersionCustomization(
+  assets: AssetPayload,
+  materials: MaterialsPayload,
+  lighting?: Partial<LightingPayload>
+) {
+  const fallbackLighting: LightingPayload = {
+    ambientIntensity: 0.35,
+    hemisphereIntensity: 0.4,
+    directionalIntensity: 1.05,
+    environmentBlur: 0.2
+  };
   return {
     schemaVersion: 1,
-    furniture: assets.map((asset: Record<string, any>) => ({
-      id: asset.id,
-      modelId: asset.assetId,
-      position: asset.position,
-      rotation: asset.rotation,
-      scale: asset.scale,
-      metadata: {
-        path: asset.assetId,
-        ...(typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
-          ? { catalogItemId: asset.catalogItemId }
-          : {})
-      }
-    })),
+    furniture: assets.map((asset: Record<string, any>) => {
+      const anchorType = normalizeAssetAnchor(asset.anchorType);
+      return {
+        id: asset.id,
+        modelId: asset.assetId,
+        anchor: anchorType,
+        position: asset.position,
+        rotation: asset.rotation,
+        scale: asset.scale,
+        metadata: {
+          path: asset.assetId,
+          anchorType,
+          ...(typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
+            ? { catalogItemId: asset.catalogItemId }
+            : {})
+        }
+      };
+    }),
     surfaceMaterials: {},
     defaults: {
       floor: {
@@ -100,6 +134,24 @@ export function buildProjectVersionCustomization(assets: AssetPayload, materials
       },
       wall: {
         materialSkuId: `wall:${materials.wallIndex}`
+      },
+      lighting: {
+        ambientIntensity:
+          typeof lighting?.ambientIntensity === "number"
+            ? lighting.ambientIntensity
+            : fallbackLighting.ambientIntensity,
+        hemisphereIntensity:
+          typeof lighting?.hemisphereIntensity === "number"
+            ? lighting.hemisphereIntensity
+            : fallbackLighting.hemisphereIntensity,
+        directionalIntensity:
+          typeof lighting?.directionalIntensity === "number"
+            ? lighting.directionalIntensity
+            : fallbackLighting.directionalIntensity,
+        environmentBlur:
+          typeof lighting?.environmentBlur === "number"
+            ? lighting.environmentBlur
+            : fallbackLighting.environmentBlur
       }
     }
   };

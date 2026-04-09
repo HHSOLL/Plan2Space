@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { normalizeSceneAnchorType, type SceneAnchorType } from "../scene/anchor-types";
 
 export type Vector2 = [number, number];
 export type Vector3 = [number, number, number];
@@ -130,6 +131,7 @@ export type SceneAsset = {
   id: string;
   assetId: string;
   catalogItemId?: string | null;
+  anchorType?: SceneAnchorType;
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
@@ -140,6 +142,13 @@ export type MaterialRef = {
   id: string;
   name: string;
   type: "floor" | "wall" | "ceiling" | "asset";
+};
+
+export type LightingSettings = {
+  ambientIntensity: number;
+  hemisphereIntensity: number;
+  directionalIntensity: number;
+  environmentBlur: number;
 };
 
 export type Comment = {
@@ -172,6 +181,7 @@ export type ProjectSnapshot = {
   assets: SceneAsset[];
   wallMaterialIndex: number;
   floorMaterialIndex: number;
+  lighting: LightingSettings;
 };
 
 export type VersionHistory = {
@@ -193,6 +203,7 @@ type SceneDataState = {
   materials: Record<string, MaterialRef>;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
+  lighting: LightingSettings;
   selectedAssetId: string | null;
   entranceId: string | null;
   commentsByAsset: Record<string, Comment[]>;
@@ -214,6 +225,7 @@ type SceneState = SceneDataState & {
   setScaleInfo: (scaleInfo: ScaleInfo) => void;
   setWallMaterialIndex: (index: number) => void;
   setFloorMaterialIndex: (index: number) => void;
+  setLighting: (lighting: Partial<LightingSettings>) => void;
   setSelectedAssetId: (id: string | null) => void;
   addFurniture: (asset: Omit<SceneAsset, "id"> & { id?: string }) => void;
   updateFurniture: (id: string, updates: Partial<SceneAsset>) => void;
@@ -240,6 +252,13 @@ const makeUnknownScaleInfo = (value = 1): ScaleInfo => ({
   }
 });
 
+const DEFAULT_LIGHTING: LightingSettings = {
+  ambientIntensity: 0.35,
+  hemisphereIntensity: 0.4,
+  directionalIntensity: 1.05,
+  environmentBlur: 0.2
+};
+
 const initialSceneState: SceneDataState = {
   scale: 1,
   scaleInfo: makeUnknownScaleInfo(1),
@@ -257,6 +276,7 @@ const initialSceneState: SceneDataState = {
   materials: {},
   wallMaterialIndex: 0,
   floorMaterialIndex: 0,
+  lighting: DEFAULT_LIGHTING,
   selectedAssetId: null,
   entranceId: null,
   commentsByAsset: {},
@@ -295,7 +315,8 @@ function buildSnapshot(
     navGraph: state.navGraph,
     assets: state.assets,
     wallMaterialIndex: state.wallMaterialIndex,
-    floorMaterialIndex: state.floorMaterialIndex
+    floorMaterialIndex: state.floorMaterialIndex,
+    lighting: state.lighting
   };
 }
 
@@ -312,7 +333,8 @@ function serializeSnapshot(snapshot: ProjectSnapshot) {
     navGraph: snapshot.navGraph,
     assets: snapshot.assets,
     wallMaterialIndex: snapshot.wallMaterialIndex,
-    floorMaterialIndex: snapshot.floorMaterialIndex
+    floorMaterialIndex: snapshot.floorMaterialIndex,
+    lighting: snapshot.lighting
   });
 }
 
@@ -329,7 +351,8 @@ function applySnapshot(snapshot: ProjectSnapshot) {
     navGraph: snapshot.navGraph,
     assets: snapshot.assets,
     wallMaterialIndex: snapshot.wallMaterialIndex,
-    floorMaterialIndex: snapshot.floorMaterialIndex
+    floorMaterialIndex: snapshot.floorMaterialIndex,
+    lighting: snapshot.lighting ?? DEFAULT_LIGHTING
   };
 }
 
@@ -355,6 +378,13 @@ export const useSceneStore = create<SceneState>((set) => ({
     })),
   setWallMaterialIndex: (index) => set({ wallMaterialIndex: index }),
   setFloorMaterialIndex: (index) => set({ floorMaterialIndex: index }),
+  setLighting: (lighting) =>
+    set((state) => ({
+      lighting: {
+        ...state.lighting,
+        ...lighting
+      }
+    })),
   setSelectedAssetId: (id) => set({ selectedAssetId: id }),
   addFurniture: (asset) =>
     set((state) => {
@@ -363,6 +393,11 @@ export const useSceneStore = create<SceneState>((set) => ({
         {
           id: asset.id ?? createId(),
           assetId: asset.assetId,
+          catalogItemId:
+            typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
+              ? asset.catalogItemId
+              : null,
+          anchorType: normalizeSceneAnchorType(asset.anchorType),
           position: asset.position,
           rotation: asset.rotation,
           scale: asset.scale,
@@ -373,7 +408,20 @@ export const useSceneStore = create<SceneState>((set) => ({
     }),
   updateFurniture: (id, updates) =>
     set((state) => ({
-      assets: state.assets.map((asset) => (asset.id === id ? { ...asset, ...updates } : asset))
+      assets: state.assets.map((asset) =>
+        asset.id === id
+          ? {
+              ...asset,
+              ...updates,
+              catalogItemId:
+                typeof (updates.catalogItemId ?? asset.catalogItemId) === "string" &&
+                (updates.catalogItemId ?? asset.catalogItemId)?.length
+                  ? (updates.catalogItemId ?? asset.catalogItemId)
+                  : null,
+              anchorType: normalizeSceneAnchorType(updates.anchorType ?? asset.anchorType)
+            }
+          : asset
+      )
     })),
   removeFurniture: (id) =>
     set((state) => ({
@@ -486,8 +534,27 @@ export const useSceneStore = create<SceneState>((set) => ({
       const nextScaleInfo =
         scene.scaleInfo ??
         (typeof scene.scale === "number" ? { ...state.scaleInfo, value: scene.scale } : state.scaleInfo);
+      const nextAssets =
+        Array.isArray(scene.assets) && scene.assets.length > 0
+          ? scene.assets.map((asset) => ({
+              ...asset,
+              catalogItemId:
+                typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
+                  ? asset.catalogItemId
+                  : null,
+              anchorType: normalizeSceneAnchorType(asset.anchorType)
+            }))
+          : scene.assets;
+      const nextLighting = scene.lighting
+        ? {
+            ...state.lighting,
+            ...scene.lighting
+          }
+        : state.lighting;
       return {
         ...scene,
+        assets: nextAssets,
+        lighting: nextLighting,
         scale: nextScale,
         scaleInfo: nextScaleInfo
       };

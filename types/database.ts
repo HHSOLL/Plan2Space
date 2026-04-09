@@ -109,7 +109,7 @@ export interface FurnitureItem {
   position: Vec3;
   rotation: Euler;
   scale: Vec3;
-  anchor?: "floor" | "wall";
+  anchor?: "floor" | "wall" | "ceiling" | "furniture_surface" | "desk_surface" | "shelf_surface";
   surfaceId?: SurfaceId;
   locked?: boolean;
   metadata?: Json;
@@ -123,6 +123,12 @@ export interface CustomizationData {
     floor?: SurfaceMaterialAssignment;
     wall?: SurfaceMaterialAssignment;
     ceiling?: SurfaceMaterialAssignment;
+    lighting?: {
+      ambientIntensity?: number;
+      hemisphereIntensity?: number;
+      directionalIntensity?: number;
+      environmentBlur?: number;
+    };
   };
 }
 

@@ -2,7 +2,7 @@ import { assetsRouter } from "./routes/assets";
 import { catalogRouter } from "./routes/catalog";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
-import { isCorsOriginAllowed } from "./config/env";
+import { env, isCorsOriginAllowed } from "./config/env";
 import { requireAuth } from "./middleware/auth";
 import { ApiError } from "./services/errors";
 import { floorplansRouter } from "./routes/floorplans";
@@ -57,11 +57,14 @@ export function createApp() {
   app.use("/v1", requireAuth, projectsRouter);
   app.use("/v1", requireAuth, assetsRouter);
   app.use("/v1", requireAuth, catalogRouter);
-  app.use("/v1", requireAuth, intakeRouter);
-  app.use("/v1", requireAuth, floorplansRouter);
-  app.use("/v1", requireAuth, jobsRouter);
-  app.use("/v1", requireAuth, revisionsRouter);
-  app.use("/v1", requireAuth, scenesRouter);
+
+  if (env.ENABLE_LEGACY_API_ROUTES) {
+    app.use("/v1", requireAuth, intakeRouter);
+    app.use("/v1", requireAuth, floorplansRouter);
+    app.use("/v1", requireAuth, jobsRouter);
+    app.use("/v1", requireAuth, revisionsRouter);
+    app.use("/v1", requireAuth, scenesRouter);
+  }
 
   app.use((_request, response) => {
     response.status(404).json({ error: "Not found" });

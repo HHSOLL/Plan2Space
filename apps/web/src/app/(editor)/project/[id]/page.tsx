@@ -34,6 +34,8 @@ import {
   mapProjectVersionToScene,
   type MappedSceneResult
 } from "../../../../features/floorplan/result-mapper";
+import { constrainPlacementToAnchor, inferAnchorTypeForCatalogItem } from "../../../../lib/scene/anchors";
+import { normalizeSceneAnchorType } from "../../../../lib/scene/anchor-types";
 
 const STARTER_SET_OFFSETS: Array<[number, number]> = [
   [-2.2, -1.2],
@@ -80,14 +82,17 @@ export default function ProjectEditorPage() {
   const walls = useSceneStore((state) => state.walls);
   const openings = useSceneStore((state) => state.openings);
   const floors = useSceneStore((state) => state.floors);
+  const ceilings = useSceneStore((state) => state.ceilings);
   const assets = useSceneStore((state) => state.assets);
   const scale = useSceneStore((state) => state.scale);
   const scaleInfo = useSceneStore((state) => state.scaleInfo);
   const wallMaterialIndex = useSceneStore((state) => state.wallMaterialIndex);
   const floorMaterialIndex = useSceneStore((state) => state.floorMaterialIndex);
+  const lighting = useSceneStore((state) => state.lighting);
   const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
   const setWallMaterialIndex = useSceneStore((state) => state.setWallMaterialIndex);
   const setFloorMaterialIndex = useSceneStore((state) => state.setFloorMaterialIndex);
+  const setLighting = useSceneStore((state) => state.setLighting);
   const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
   const addFurniture = useSceneStore((state) => state.addFurniture);
   const updateFurniture = useSceneStore((state) => state.updateFurniture);
@@ -180,7 +185,8 @@ export default function ProjectEditorPage() {
         navGraph: mapped.navGraph,
         assets: mapped.assets,
         wallMaterialIndex: mapped.wallMaterialIndex,
-        floorMaterialIndex: mapped.floorMaterialIndex
+        floorMaterialIndex: mapped.floorMaterialIndex,
+        lighting: mapped.lighting
       });
       useSceneStore.setState({ entranceId: mapped.entranceId });
     },
@@ -253,6 +259,15 @@ export default function ProjectEditorPage() {
       z: (bounds.minZ + bounds.maxZ) / 2
     };
   }, [scale, walls]);
+  const anchorContext = useMemo(
+    () => ({
+      walls,
+      ceilings,
+      scale,
+      sceneAssets: assets
+    }),
+    [assets, ceilings, scale, walls]
+  );
   const placedItemKeys = useMemo(
     () => new Set(assets.map((asset) => asset.catalogItemId ?? asset.assetId)),
     [assets]
@@ -278,12 +293,21 @@ export default function ProjectEditorPage() {
   const addCatalogItemToScene = useCallback(
     (item: LibraryCatalogItem) => {
       const id = createAssetId();
+      const anchoredPlacement = constrainPlacementToAnchor(
+        {
+          position: [sceneCenter.x, 0, sceneCenter.z],
+          rotation: [0, 0, 0],
+          anchorType: inferAnchorTypeForCatalogItem(item)
+        },
+        anchorContext
+      );
       addFurniture({
         id,
         assetId: item.assetId,
         catalogItemId: item.id,
-        position: [sceneCenter.x, 0, sceneCenter.z],
-        rotation: [0, 0, 0],
+        anchorType: anchoredPlacement.anchorType,
+        position: anchoredPlacement.position,
+        rotation: anchoredPlacement.rotation,
         scale: item.scale,
         materialId: null
       });
@@ -291,7 +315,15 @@ export default function ProjectEditorPage() {
       recordSnapshot(`Add ${item.label}`);
       toast.success(`${item.label} added to the room.`);
     },
-    [addFurniture, createAssetId, recordSnapshot, sceneCenter.x, sceneCenter.z, setSelectedAssetId]
+    [
+      addFurniture,
+      anchorContext,
+      createAssetId,
+      recordSnapshot,
+      sceneCenter.x,
+      sceneCenter.z,
+      setSelectedAssetId
+    ]
   );
 
   const addStarterSetToScene = useCallback(() => {
@@ -299,12 +331,21 @@ export default function ProjectEditorPage() {
 
     selectedItems.slice(0, STARTER_SET_OFFSETS.length).forEach((item, index) => {
       const [offsetX, offsetZ] = STARTER_SET_OFFSETS[index] ?? [0, 0];
+      const anchoredPlacement = constrainPlacementToAnchor(
+        {
+          position: [sceneCenter.x + offsetX, 0, sceneCenter.z + offsetZ],
+          rotation: [0, 0, 0],
+          anchorType: inferAnchorTypeForCatalogItem(item)
+        },
+        anchorContext
+      );
       addFurniture({
         id: createAssetId(),
         assetId: item.assetId,
         catalogItemId: item.id,
-        position: [sceneCenter.x + offsetX, 0, sceneCenter.z + offsetZ],
-        rotation: [0, 0, 0],
+        anchorType: anchoredPlacement.anchorType,
+        position: anchoredPlacement.position,
+        rotation: anchoredPlacement.rotation,
         scale: item.scale,
         materialId: null
       });
@@ -313,14 +354,44 @@ export default function ProjectEditorPage() {
     setSelectedAssetId(null);
     recordSnapshot("Add starter set");
     toast.success("Starter set added to the room.");
-  }, [addFurniture, createAssetId, libraryCatalog, recordSnapshot, sceneCenter.x, sceneCenter.z, setSelectedAssetId]);
+  }, [
+    addFurniture,
+    anchorContext,
+    createAssetId,
+    libraryCatalog,
+    recordSnapshot,
+    sceneCenter.x,
+    sceneCenter.z,
+    setSelectedAssetId
+  ]);
 
   const updateAssetFromInspector = useCallback(
     (id: string, updates: Parameters<typeof updateFurniture>[1]) => {
-      updateFurniture(id, updates);
+      const targetAsset = assets.find((asset) => asset.id === id);
+      if (!targetAsset) return;
+
+      const mergedAnchorType = normalizeSceneAnchorType(updates.anchorType ?? targetAsset.anchorType);
+      const anchoredPlacement = constrainPlacementToAnchor(
+        {
+          position: updates.position ?? targetAsset.position,
+          rotation: updates.rotation ?? targetAsset.rotation,
+          anchorType: mergedAnchorType
+        },
+        {
+          ...anchorContext,
+          activeAssetId: targetAsset.id
+        }
+      );
+
+      updateFurniture(id, {
+        ...updates,
+        anchorType: anchoredPlacement.anchorType,
+        position: anchoredPlacement.position,
+        rotation: anchoredPlacement.rotation
+      });
       recordSnapshot("Edit asset");
     },
-    [recordSnapshot, updateFurniture]
+    [anchorContext, assets, recordSnapshot, updateFurniture]
   );
 
   const removeAssetFromInspector = useCallback(
@@ -346,6 +417,15 @@ export default function ProjectEditorPage() {
     },
     [recordSnapshot, setFloorMaterialIndex]
   );
+  const applyLightingSetting = useCallback(
+    (updates: Partial<typeof lighting>) => {
+      setLighting(updates);
+    },
+    [setLighting]
+  );
+  const commitLightingSetting = useCallback(() => {
+    recordSnapshot("Lighting");
+  }, [recordSnapshot]);
 
   const hasSceneGeometry = walls.length > 0 || floors.length > 0;
   const canEnter3D = hasSceneGeometry && !getScaleGateMessage(scale, scaleInfo);
@@ -380,9 +460,10 @@ export default function ProjectEditorPage() {
         wallIndex: wallMaterialIndex,
         floorIndex: floorMaterialIndex
       },
+      lighting,
       assetSummary: buildProjectAssetSummary(libraryCatalog, assets)
     }),
-    [assets, floorMaterialIndex, floors, libraryCatalog, openings, scale, scaleInfo, wallMaterialIndex, walls]
+    [assets, floorMaterialIndex, floors, libraryCatalog, lighting, openings, scale, scaleInfo, wallMaterialIndex, walls]
   );
   const saveSignature = useMemo(() => JSON.stringify(savePayload), [savePayload]);
   const {
@@ -544,6 +625,7 @@ export default function ProjectEditorPage() {
                     transformMode={transformMode}
                     wallMaterialIndex={wallMaterialIndex}
                     floorMaterialIndex={floorMaterialIndex}
+                    lighting={lighting}
                     wallsCount={walls.length}
                     floorsCount={floors.length}
                     assetsCount={assets.length}
@@ -552,6 +634,8 @@ export default function ProjectEditorPage() {
                     onTransformModeChange={setTransformMode}
                     onWallMaterialChange={applyWallFinish}
                     onFloorMaterialChange={applyFloorFinish}
+                    onLightingChange={applyLightingSetting}
+                    onLightingCommit={commitLightingSetting}
                     onUpdateAsset={updateAssetFromInspector}
                     onRemoveAsset={removeAssetFromInspector}
                     formatAssetLabel={formatAssetIdLabel}

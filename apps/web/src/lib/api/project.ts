@@ -3,7 +3,7 @@
 import { backendFetch } from "../backend/client";
 import type { ProjectAssetSummary } from "../builder/catalog";
 import type { Project } from "../stores/useProjectStore";
-import type { Floor, Opening, ScaleInfo, SceneAsset, Wall } from "../stores/useSceneStore";
+import type { Floor, LightingSettings, Opening, ScaleInfo, SceneAsset, Wall } from "../stores/useSceneStore";
 
 export type SaveProjectPayload = {
   topology: {
@@ -18,6 +18,7 @@ export type SaveProjectPayload = {
     wallIndex: number;
     floorIndex: number;
   };
+  lighting?: LightingSettings;
   thumbnailDataUrl?: string | null;
   assetSummary?: ProjectAssetSummary | null;
   projectName?: string;
@@ -43,5 +44,22 @@ export async function createProjectDraft(payload: {
 }
 
 export async function fetchLatestProjectVersion(projectId: string) {
+  const localPath = `/api/v1/projects/${projectId}/versions/latest`;
+  try {
+    const response = await fetch(localPath, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    });
+    if (response.ok) {
+      return (await response.json()) as { version: Record<string, unknown> | null };
+    }
+  } catch {
+    // Fallback to Railway API below.
+  }
+
   return backendFetch<{ version: Record<string, unknown> | null }>(`/v1/projects/${projectId}/versions/latest`);
 }
