@@ -319,6 +319,18 @@ Updated:
 Removed/Deprecated:
 - shared link가 항상 프로젝트의 최신 저장본을 따라가도 되는 완료 기준.
 
+## 2026-04-09 변경 동기화 (Landing Shell + OAuth PKCE Recovery)
+Added:
+- Phase 4 경험 완성 범위에 밝은 IKEA-style 랜딩 shell(히어로/플로우/원칙/CTA) 정리를 추가한다.
+- OAuth callback 안정화 범위에 브라우저 client 기반 PKCE code exchange를 추가한다.
+
+Updated:
+- 홈 진입면의 비주얼 우선순위를 dark fullscreen canvas 중심에서 light framed preview + 정보 계층 중심으로 조정한다.
+- 로그인 실패 복구 기준을 `PKCE verifier mismatch`까지 포함하도록 확장한다.
+
+Removed/Deprecated:
+- `/auth/callback` server route handler에서 code exchange를 처리하는 구현 기준.
+
 ## 2026-04-08 변경 동기화 (Published Gallery Slice)
 Added:
 - Phase 4 완료 범위에 `shared_projects.is_gallery_visible`, `published_at` 기반 공개 showcase surface를 추가한다.

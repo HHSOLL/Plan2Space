@@ -42,6 +42,7 @@
 - `apps/web`:
   - 업로드/잡 생성 요청/잡 상태 폴링/결과 렌더링
   - Supabase 로그인 세션(access token) 획득
+  - OAuth callback(`/auth/callback`)의 code exchange는 브라우저 client에서 수행해 PKCE verifier를 same-origin storage에서 사용
   - recoverable auth 오류(`Invalid Refresh Token` 등) 발생 시 브라우저 세션을 정리하고 재로그인을 유도
 - `apps/api`:
   - 사용자 인증 검증(Supabase JWT)
@@ -258,6 +259,16 @@ Removed/Deprecated:
 ## 2026-04-08 변경 동기화 (Shell Reuse + Share Permission Alignment)
 Added:
 - editor와 shared viewer가 동일한 mode toggle / metric grid 컴포넌트를 공유하는 shell 기준을 추가한다.
+
+## 2026-04-09 변경 동기화 (PKCE Callback Stabilization)
+Added:
+- Supabase OAuth callback의 code exchange를 브라우저 client 경계에서 수행하는 운영 기준을 추가했다.
+
+Updated:
+- frontend auth 책임을 `server callback exchange`에서 `same-origin browser callback exchange` 중심으로 조정했다.
+
+Removed/Deprecated:
+- `/auth/callback` server route handler에서 PKCE code verifier를 기대하는 처리 경로.
 
 Updated:
 - share modal은 현재 런타임 계약과 맞춰 새 링크를 preview-only viewer access로 안내하고, 기존 `edit` 링크는 preview fallback으로 표기한다.

@@ -2,246 +2,207 @@
 
 import { Canvas } from "@react-three/fiber";
 import {
-  ContactShadows,
-  Float,
-  Environment,
-  PerspectiveCamera,
-  Text,
-  Html,
-  Center,
-  Text3D,
   AdaptiveDpr,
-  Preload
+  ContactShadows,
+  Environment,
+  Float,
+  Html,
+  PerspectiveCamera,
+  Preload,
+  Text
 } from "@react-three/drei";
 import { useState, Suspense } from "react";
-import * as THREE from "three";
+import type { LucideIcon } from "lucide-react";
 import { DraftingCompass, LayoutDashboard, Users } from "lucide-react";
 
-// Font URL for Text3D
-const FONT_URL = "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json";
+type LandingHeroCanvasProps = {
+  onAction: (id: string) => void;
+  layout?: "fullscreen" | "framed";
+};
 
-function BlueprintGrid() {
+function GridPlane() {
   return (
-    <group position={[0, -1.95, 0]}>
-      {/* Structural Blueprint Lines */}
-      <gridHelper args={[100, 100, "#e5e5e5", "#f0f0f0"]} />
-
-      {/* Measurement Lines (Stylized) */}
-      <group position={[5, 0, 5]}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.02, 10]} />
-          <meshBasicMaterial color="#0000ff" transparent opacity={0.2} />
-        </mesh>
-        <Text
-          position={[0, 0, 5]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.2}
-          color="#0000ff"
-        >
-          12.5m
-        </Text>
-      </group>
+    <group position={[0, -1.5, 0]}>
+      <gridHelper args={[32, 32, "#d9ccba", "#efe6da"]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[30, 30]} />
+        <meshStandardMaterial color="#f7f0e5" />
+      </mesh>
     </group>
   );
 }
 
-function FloatingButton({ position, label, icon: Icon, onClick }: { position: [number, number, number], label: string, icon: any, onClick?: () => void }) {
+function FloatingAction({
+  position,
+  label,
+  icon: Icon,
+  onClick
+}: {
+  position: [number, number, number];
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
 
   return (
-    <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-      <group position={position} onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
-      }}>
+    <Float speed={1.2} floatIntensity={0.4} rotationIntensity={0.06}>
+      <group
+        position={position}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}
+      >
         <mesh
+          castShadow
+          receiveShadow
           onPointerOver={() => {
             setHovered(true);
-            document.body.style.cursor = 'pointer';
+            document.body.style.cursor = "pointer";
           }}
           onPointerOut={() => {
             setHovered(false);
-            document.body.style.cursor = 'auto';
+            document.body.style.cursor = "auto";
           }}
-          castShadow
         >
-          <sphereGeometry args={[0.45, 32, 32]} />
+          <boxGeometry args={[1.6, 0.58, 0.18]} />
           <meshPhysicalMaterial
-            color={hovered ? "#222" : "#ffffff"}
-            roughness={0.05}
-            metalness={0.1}
-            transmission={0.4}
-            thickness={1}
-            ior={1.5}
-            clearcoat={1}
+            color={hovered ? "#efe6d8" : "#ffffff"}
+            roughness={0.35}
+            metalness={0.06}
+            transmission={0.25}
+            thickness={0.8}
+            ior={1.42}
           />
         </mesh>
 
-        <group position={[0, 0, 0.5]}>
-          <Html transform distanceFactor={1.5} pointerEvents="none">
-            <div className={`transition-all duration-300 ${hovered ? 'text-white scale-110' : 'text-black/20'}`}>
-              <Icon size={24} strokeWidth={2} />
-            </div>
-          </Html>
-        </group>
-
-        <Text
-          position={[0, -0.7, 0]}
-          fontSize={0.12}
-          color={hovered ? "#000" : "#bbb"}
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.1}
-        >
-          {label.toUpperCase()}
-        </Text>
+        <Html transform distanceFactor={7} pointerEvents="none">
+          <div className="flex min-w-[110px] items-center justify-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#3c332a]">
+            <Icon size={14} />
+            <span>{label}</span>
+          </div>
+        </Html>
       </group>
     </Float>
-  );
-}
-
-function InteriorStudio() {
-  return (
-    <group position={[0, -2, -2]}>
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#ffffff" roughness={1} />
-      </mesh>
-
-      {/* Modern Back Wall */}
-      <mesh position={[0, 5, -10]} receiveShadow>
-        <planeGeometry args={[50, 25]} />
-        <meshStandardMaterial color="#fcfcfc" />
-      </mesh>
-
-      {/* Side Column */}
-      <group position={[-12, 4, -5]}>
-        <mesh castShadow receiveShadow>
-          <boxGeometry args={[1, 12, 4]} />
-          <meshStandardMaterial color="#f8f8f8" />
-        </mesh>
-      </group>
-
-      {/* Sofa */}
-      <group position={[8, 0.4, -4]} rotation={[0, -0.6, 0]}>
-        <mesh castShadow receiveShadow>
-          <boxGeometry args={[6, 1, 2.5]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-        <mesh position={[0, 1, -0.9]} castShadow receiveShadow>
-          <boxGeometry args={[6, 2, 0.5]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-      </group>
-
-      {/* Coffee Table */}
-      <mesh position={[5, 0.2, -1]} castShadow receiveShadow>
-        <boxGeometry args={[2, 0.4, 2]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.1} />
-      </mesh>
-
-      {/* Wall Measurement */}
-      <Text
-        position={[-11.4, 6, -3]}
-        rotation={[0, Math.PI / 2, 0]}
-        fontSize={0.2}
-        color="#0000ff"
-        material-opacity={0.3}
-        material-transparent
-      >
-        H: 2.8m
-      </Text>
-
-      <BlueprintGrid />
-    </group>
   );
 }
 
 function SceneContent({ onAction }: { onAction: (id: string) => void }) {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 4, 18]} fov={38} />
-
-      {/* Performance Optimized Lighting */}
-      <ambientLight intensity={0.8} />
-      <Environment preset="studio" />
-
+      <color attach="background" args={["#f7f0e6"]} />
+      <PerspectiveCamera makeDefault position={[0, 3.2, 11.6]} fov={34} />
+      <ambientLight intensity={0.9} />
       <directionalLight
-        position={[15, 25, 15]}
-        intensity={0.8}
+        position={[6, 12, 10]}
+        intensity={1}
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-bias={-0.0001}
       />
+      <Environment preset="apartment" />
 
-      <InteriorStudio />
+      <GridPlane />
 
-      {/* 3D Extruded Logo */}
-      <Float speed={1} rotationIntensity={0.05} floatIntensity={0.05}>
-        <group position={[0, 6, -6]}>
-          <Center top>
-            <Text3D
-              font={FONT_URL}
-              size={1.6}
-              height={0.2}
-              curveSegments={12}
-              bevelEnabled
-              bevelThickness={0.02}
-              bevelSize={0.02}
-              bevelOffset={0}
-              bevelSegments={5}
-            >
-              PLAN2SPACE
-              <meshPhysicalMaterial
-                color="#1a1a1a"
-                roughness={0.1}
-                metalness={0.1}
-              />
-            </Text3D>
-          </Center>
-          <Text
-            position={[0, -0.7, 0.4]}
-            fontSize={0.2}
-            color="#999999"
-            anchorX="center"
-            anchorY="middle"
-            letterSpacing={1.2}
-            font="https://fonts.gstatic.com/s/cormorantgaramond/v11/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpHtK.woff"
-          >
-            B U I L D E R   E D I T O R   W A L K
-          </Text>
-        </group>
-      </Float>
+      <group position={[0, 1.2, -3]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[8.4, 4.6, 0.15]} />
+          <meshStandardMaterial color="#f2e8dc" />
+        </mesh>
 
-      {/* Menu buttons */}
-      <group position={[0, 1, 5]}>
-        <FloatingButton position={[-2.5, 1, 0]} label="Builder" icon={DraftingCompass} onClick={() => onAction('new')} />
-        <FloatingButton position={[0, 1, 0]} label="Studio" icon={LayoutDashboard} onClick={() => onAction('dashboard')} />
-        <FloatingButton position={[2.5, 1, 0]} label="Community" icon={Users} onClick={() => onAction('community')} />
+        <mesh position={[-3.2, -0.8, 0.7]} castShadow receiveShadow>
+          <boxGeometry args={[1.9, 0.5, 1.2]} />
+          <meshStandardMaterial color="#dfcfbb" roughness={0.8} />
+        </mesh>
+        <mesh position={[-0.7, -1.02, 1.1]} castShadow receiveShadow>
+          <boxGeometry args={[1.05, 0.26, 1.05]} />
+          <meshStandardMaterial color="#d8c6b0" roughness={0.6} />
+        </mesh>
+        <mesh position={[2.3, -0.7, 0.6]} castShadow receiveShadow>
+          <boxGeometry args={[1.3, 1.1, 0.6]} />
+          <meshStandardMaterial color="#e9ddd1" roughness={0.75} />
+        </mesh>
+
+        <Text
+          position={[0, 1.7, 0.12]}
+          fontSize={0.36}
+          color="#453a2e"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.06}
+        >
+          PLAN2SPACE STUDIO
+        </Text>
+        <Text
+          position={[0, 1.2, 0.12]}
+          fontSize={0.11}
+          color="#8d7a66"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.16}
+        >
+          BUILDER FIRST INTERIOR WORKFLOW
+        </Text>
       </group>
 
-      <ContactShadows position={[0, -2, 0]} opacity={0.1} scale={40} blur={4} far={15} />
+      <group position={[0, -0.4, 2.5]}>
+        <FloatingAction
+          position={[-2.3, 0, 0]}
+          label="Builder"
+          icon={DraftingCompass}
+          onClick={() => onAction("new")}
+        />
+        <FloatingAction
+          position={[0, 0, 0]}
+          label="Studio"
+          icon={LayoutDashboard}
+          onClick={() => onAction("dashboard")}
+        />
+        <FloatingAction
+          position={[2.3, 0, 0]}
+          label="Community"
+          icon={Users}
+          onClick={() => onAction("community")}
+        />
+      </group>
 
+      <ContactShadows position={[0, -1.48, 0]} opacity={0.22} scale={24} blur={2.5} far={8} />
       <AdaptiveDpr pixelated />
       <Preload all />
     </>
   );
 }
 
-export function LandingHeroCanvas({ onAction }: { onAction: (id: string) => void }) {
+export function LandingHeroCanvas({ onAction, layout = "fullscreen" }: LandingHeroCanvasProps) {
+  const isFramed = layout === "framed";
+
+  const content = (
+    <Canvas
+      shadows
+      dpr={[1, 1.6]}
+      performance={{ min: 0.5 }}
+      gl={{ antialias: true, stencil: false, depth: true, alpha: true }}
+    >
+      <Suspense fallback={null}>
+        <SceneContent onAction={onAction} />
+      </Suspense>
+    </Canvas>
+  );
+
+  if (isFramed) {
+    return (
+      <div className="overflow-hidden rounded-[30px] border border-[#e2d7c8] bg-[#f7f0e6] shadow-[0_28px_72px_rgba(84,65,39,0.12)]">
+        <div className="border-b border-[#e8decf] px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8c7a65]">
+          Interactive Builder Preview
+        </div>
+        <div className="aspect-[4/3]">{content}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 bg-[#fdfdfc]" style={{ zIndex: 0 }}>
-      <Canvas
-        shadows
-        dpr={[1, 1.5]}
-        performance={{ min: 0.5 }}
-        gl={{ antialias: true, stencil: false, depth: true, alpha: false }}
-      >
-        <Suspense fallback={null}>
-          <SceneContent onAction={onAction} />
-        </Suspense>
-      </Canvas>
+    <div className="fixed inset-0 bg-[#f7f0e6]" style={{ zIndex: 0 }}>
+      {content}
     </div>
   );
 }

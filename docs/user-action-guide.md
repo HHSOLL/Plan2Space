@@ -107,7 +107,8 @@ MESHY_STATUS_URL=
 - Vercel Preview는 `NEXT_PUBLIC_APP_URL`을 비워 preview host 자체로 OAuth를 시작하게 유지
 - Railway API CORS에 Vercel 프로덕션/프리뷰 도메인 포함
 - Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
-- OAuth는 반드시 `plan2space.vercel.app`에서 시작하고 `/auth/callback`도 같은 host로 돌아오는지 확인
+- OAuth는 시작 host와 `/auth/callback` host가 반드시 동일해야 함(브라우저 PKCE verifier same-origin)
+- `/auth/callback`은 브라우저 client에서 code exchange를 수행하므로 로그인 직후 redirect 중 탭/스토리지 정리가 없도록 확인
 - 브라우저에서 `Invalid Refresh Token`이 보이면 기존 `sb-*` 쿠키/스토리지를 정리한 뒤 재로그인
 
 ## 4) 운영 확인 시나리오
@@ -277,6 +278,16 @@ Updated:
 
 Removed/Deprecated:
 - deprecated Next parse endpoint를 eval 기본 경로로 가정하는 운영 방식.
+
+## 18) 2026-04-09 변경 동기화 (OAuth PKCE Callback)
+Added:
+- `/auth/callback` 브라우저 code exchange 운영 체크 항목.
+
+Updated:
+- OAuth 점검 규칙을 `production host 고정`보다 `시작 host = callback host` same-origin 검증 중심으로 강화.
+
+Removed/Deprecated:
+- `/auth/callback` server handler가 verifier를 직접 읽어도 된다는 운영 가정.
 
 ## 18) 2026-04-08 변경 동기화 (Builder-First Entry Flow)
 Added:
