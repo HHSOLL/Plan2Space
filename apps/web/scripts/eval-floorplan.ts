@@ -173,9 +173,14 @@ function parseArgs(argv: string[]): Options {
     values.set(key, rest.join("="));
   }
 
-  const apiUrl = values.get("api") || process.env.E2E_RAILWAY_API_URL || process.env.NEXT_PUBLIC_RAILWAY_API_URL;
+  const apiUrl =
+    values.get("api") ||
+    process.env.E2E_RAILWAY_API_URL ||
+    process.env.RAILWAY_API_URL;
   if (!apiUrl) {
-    throw new Error("Missing Railway API URL. Pass --api=... or set E2E_RAILWAY_API_URL / NEXT_PUBLIC_RAILWAY_API_URL.");
+    throw new Error(
+      "Missing Railway API URL. Pass --api=... or set E2E_RAILWAY_API_URL / RAILWAY_API_URL."
+    );
   }
 
   return {

@@ -1,12 +1,12 @@
 "use client";
 
-import { Compass, LayoutGrid, Package, Search, Sparkles, Star } from "lucide-react";
+import { LayoutGrid, Package, Search, Sparkles, Star } from "lucide-react";
 import type {
   LibraryCatalogCategory,
   LibraryCatalogCategoryId,
   LibraryCatalogItem
 } from "../../lib/builder/catalog";
-import { getCatalogToneClasses } from "../../lib/builder/catalog";
+import { getCatalogPreviewClasses } from "../../lib/builder/catalog";
 
 type BuilderLibraryShelfProps = {
   items: LibraryCatalogItem[];
@@ -25,6 +25,13 @@ type BuilderLibraryShelfProps = {
   onAddItem: (item: LibraryCatalogItem) => void;
 };
 
+function getSurfaceSupportLabel(item: LibraryCatalogItem) {
+  const surfaceCount = item.supportProfile?.surfaces.length ?? 0;
+  if (surfaceCount <= 0) return "Floor ready";
+  if (surfaceCount === 1) return "Surface aware";
+  return `${surfaceCount} support zones`;
+}
+
 function AssetCard({
   item,
   placed,
@@ -36,41 +43,62 @@ function AssetCard({
   actionLabel: string;
   onAdd: (item: LibraryCatalogItem) => void;
 }) {
-  const tone = getCatalogToneClasses(item.tone);
+  const preview = getCatalogPreviewClasses(item.tone);
+  const supportLabel = getSurfaceSupportLabel(item);
   return (
-    <div className={`rounded-[24px] border p-4 transition hover:border-white/30 hover:bg-white/[0.08] ${tone.tile}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">{item.category}</p>
-            <span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] ${tone.badge}`}>
-              {item.collection}
-            </span>
-          </div>
-          <h3 className="mt-2 text-base font-medium text-white">{item.label}</h3>
+    <article className="group flex min-h-[268px] flex-col overflow-hidden rounded-[22px] border border-black/10 bg-white shadow-[0_12px_30px_rgba(30,24,18,0.07)] transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-[0_18px_42px_rgba(30,24,18,0.12)]">
+      <div className={`relative aspect-[4/3] overflow-hidden border-b border-black/5 ${preview.surface}`}>
+        <div className="absolute inset-x-5 bottom-4 h-8 rounded-full bg-black/10 blur-xl transition group-hover:bg-black/15" />
+        <div
+          className={`absolute left-4 top-4 max-w-[calc(100%-2rem)] rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] backdrop-blur ${preview.chip}`}
+        >
+          {item.collection}
         </div>
-        <div className="flex flex-col items-end gap-2">
-          {placed ? (
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-200">
-              In Room
-            </span>
-          ) : null}
-          {item.assetId.startsWith("placeholder:") ? (
-            <span className="rounded-full border border-white/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
-              Prototype
-            </span>
-          ) : null}
+        <div className="absolute right-4 top-4 rounded-full border border-black/10 bg-white/60 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#5e554b] backdrop-blur">
+          {supportLabel}
         </div>
+        <div className="absolute inset-x-6 bottom-6 h-10 rounded-[16px] border border-black/10 bg-white/50" />
+        <div className="absolute bottom-9 left-1/2 h-12 w-12 -translate-x-1/2 rounded-[16px] border border-black/10 bg-white/60 shadow-[0_12px_24px_rgba(0,0,0,0.12)]" />
       </div>
-      <p className="mt-3 text-sm leading-6 text-white/55">{item.description}</p>
-      <button
-        type="button"
-        onClick={() => onAdd(item)}
-        className="mt-4 inline-flex items-center justify-center rounded-full border border-white/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-black transition hover:bg-white/90"
-      >
-        {actionLabel}
-      </button>
-    </div>
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">{item.category}</p>
+            <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold leading-6 text-[#171411]">{item.label}</h3>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {placed ? (
+              <span className="rounded-full border border-emerald-800/15 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-800">
+                Placed
+              </span>
+            ) : null}
+            {item.assetId.startsWith("placeholder:") ? (
+              <span className="rounded-full border border-black/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#8a8177]">
+                Prototype
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#625a51]">{item.description}</p>
+        <dl className="mt-4 grid grid-cols-2 gap-2 rounded-[18px] border border-black/5 bg-[#f7f3ec] p-3">
+          <div>
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Collection</dt>
+            <dd className="mt-1 text-[11px] font-medium text-[#473f35]">{item.collection}</dd>
+          </div>
+          <div>
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Placement</dt>
+            <dd className="mt-1 text-[11px] font-medium text-[#473f35]">{supportLabel}</dd>
+          </div>
+        </dl>
+        <button
+          type="button"
+          onClick={() => onAdd(item)}
+          className="mt-4 inline-flex w-full items-center justify-center rounded-[16px] bg-[#171411] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-black"
+        >
+          {actionLabel}
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -90,58 +118,37 @@ export function BuilderLibraryShelf({
   onAddStarterSet,
   onAddItem
 }: BuilderLibraryShelfProps) {
-  const spotlightTone = spotlightItem ? getCatalogToneClasses(spotlightItem.tone) : null;
+  const spotlightPreview = spotlightItem ? getCatalogPreviewClasses(spotlightItem.tone) : null;
+  const activeCategoryMeta = categories.find((category) => category.id === activeCategory) ?? categories[0] ?? null;
   const isPlaced = (item: LibraryCatalogItem) => placedItemKeys.has(item.id) || placedItemKeys.has(item.assetId);
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.24em] text-white/45">
-          <Package className="h-4 w-4" />
-          Curated Library
+    <div className="flex h-full flex-col overflow-hidden rounded-[28px] bg-[#f5f2ec] text-[#171411]">
+      <div className="border-b border-black/10 bg-white/95 px-4 py-4 shadow-[0_8px_24px_rgba(30,24,18,0.06)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a8177]">
+              <Package className="h-4 w-4" />
+              Product shelf
+            </div>
+            <p className="mt-2 text-sm leading-6 text-[#625a51]">
+              Browse by room category, compare support behavior, and add pieces without leaving the editor.
+            </p>
+          </div>
+          <div className="shrink-0 rounded-[18px] border border-black/10 bg-[#f7f4ee] px-3 py-2 text-right">
+            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Placed</div>
+            <div className="mt-1 text-lg font-semibold leading-none">{assetCount}</div>
+          </div>
         </div>
-        <p className="mt-3 text-sm text-white/55">
-          Browse the room kit, drop in a starter layout, or refine the shelf by category and search.
-        </p>
 
         <div className="mt-4 grid gap-3">
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Starter Set
-                </div>
-                <div className="mt-2 text-base font-medium text-white">Stage the room in one move</div>
-              </div>
-              <button
-                type="button"
-                onClick={onAddStarterSet}
-                className="rounded-full border border-white/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-black transition hover:bg-white/90"
-              >
-                Add Set
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-[18px] border border-white/10 bg-black/20 p-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-white/35">Catalog</div>
-                <div className="mt-2 text-lg font-medium text-white">{catalogCount}</div>
-              </div>
-              <div className="rounded-[18px] border border-white/10 bg-black/20 p-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-white/35">Placed</div>
-                <div className="mt-2 text-lg font-medium text-white">{assetCount}</div>
-              </div>
-            </div>
-          </div>
-
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8177]" />
             <input
               type="text"
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder="Search chairs, tables, lighting..."
-              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-white/25"
+              className="w-full rounded-[18px] border border-black/10 bg-[#f7f4ee] py-3 pl-10 pr-4 text-sm text-[#171411] outline-none transition placeholder:text-[#8a8177] focus:border-black/25 focus:bg-white focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
             />
           </div>
 
@@ -151,63 +158,99 @@ export function BuilderLibraryShelf({
                 key={category.id}
                 type="button"
                 onClick={() => onCategoryChange(category.id)}
-                className={`shrink-0 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                className={`shrink-0 rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
                   activeCategory === category.id
-                    ? "bg-white text-black"
-                    : "border border-white/10 bg-white/[0.04] text-white/65 hover:border-white/30"
+                    ? "border-[#171411] bg-[#171411] text-white shadow-[0_10px_24px_rgba(29,24,18,0.18)]"
+                    : "border-black/10 bg-white text-[#625a51] hover:border-black/20 hover:text-[#171411]"
                 }`}
               >
                 {category.label} {category.count}
               </button>
             ))}
           </div>
+
+          <div className="flex items-start justify-between gap-3 rounded-[20px] border border-black/10 bg-[#f7f3ec] px-4 py-3">
+            <div className="min-w-0">
+              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">Current shelf</div>
+              <p className="mt-1 text-sm font-semibold text-[#171411]">
+                {activeCategoryMeta?.label ?? "All products"}
+                {query.trim().length > 0 ? ` matching "${query.trim()}"` : ""}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[#625a51]">
+                {activeCategoryMeta?.description ?? "Everything currently available on the shelf."}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">Results</div>
+              <div className="mt-1 text-lg font-semibold leading-none text-[#171411]">{items.length}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onAddStarterSet}
+            className="rounded-[22px] border border-black/10 bg-[#171411] p-4 text-left text-white shadow-[0_10px_26px_rgba(30,24,18,0.12)] transition hover:bg-black"
+          >
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">
+              <Sparkles className="h-3.5 w-3.5" />
+              Starter
+            </div>
+            <div className="mt-2 text-sm font-semibold leading-5">Add room set</div>
+            <p className="mt-2 text-xs leading-5 text-white/70">Place a curated starter mix to block out the room quickly.</p>
+          </button>
+          <div className="rounded-[22px] border border-black/10 bg-white p-4">
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Catalog</div>
+            <div className="mt-2 text-2xl font-semibold leading-none">{catalogCount}</div>
+            <div className="mt-1 text-xs text-[#625a51]">{items.length} visible right now</div>
+          </div>
+        </div>
+
         {spotlightItem ? (
-          <div className={`rounded-[28px] border p-5 ${spotlightTone?.tile ?? "border-white/10 bg-white/[0.04]"}`}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#dbc8a7]">
-                <Compass className="h-3.5 w-3.5" />
-                Spotlight Pick
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
-                  {spotlightItem.category}
-                </span>
-                <span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] ${spotlightTone?.badge ?? ""}`}>
+          <section className="overflow-hidden rounded-[22px] border border-black/10 bg-white shadow-[0_10px_28px_rgba(30,24,18,0.08)]">
+            <div className={`px-4 py-5 ${spotlightPreview?.surface ?? "bg-[#f7f4ee] text-[#171411]"}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-65">
+                  Spotlight pick
+                </div>
+                <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] ${spotlightPreview?.chip ?? "border-black/10 bg-white/60 text-[#625a51]"}`}>
                   {spotlightItem.collection}
                 </span>
               </div>
+              <h3 className="mt-3 text-lg font-semibold leading-tight">{spotlightItem.label}</h3>
+              <p className="mt-2 line-clamp-2 text-sm leading-6 opacity-75">{spotlightItem.description}</p>
             </div>
-            <h3 className="mt-4 text-xl font-medium text-white">{spotlightItem.label}</h3>
-            <p className="mt-3 text-sm leading-6 text-white/60">{spotlightItem.description}</p>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2 p-3">
               {isPlaced(spotlightItem) ? (
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200">
-                  Already in room
+                <span className="rounded-full border border-emerald-800/15 bg-emerald-50 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800">
+                  Placed
                 </span>
               ) : null}
+              <span className="rounded-full border border-black/10 bg-[#f7f3ec] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#625a51]">
+                {getSurfaceSupportLabel(spotlightItem)}
+              </span>
               <button
                 type="button"
                 onClick={() => onAddItem(spotlightItem)}
-                className="rounded-full border border-white/10 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-black transition hover:bg-white/90"
+                className="ml-auto rounded-[14px] bg-[#171411] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-black"
               >
-                Add To Room
+                Add
               </button>
             </div>
-          </div>
+          </section>
         ) : null}
 
         {!hasActiveFilters && featuredItems.length > 0 ? (
           <section className="space-y-3">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">
               <Star className="h-3.5 w-3.5" />
               Featured Picks
             </div>
-            <div className="grid gap-3">
-              {featuredItems.slice(0, 3).map((item) => (
+            <div className="grid grid-cols-2 gap-3">
+              {featuredItems.slice(0, 4).map((item) => (
                 <AssetCard
                   key={item.id}
                   item={item}
@@ -222,15 +265,15 @@ export function BuilderLibraryShelf({
 
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">
               <LayoutGrid className="h-3.5 w-3.5" />
               Shelf Results
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">{items.length} items</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">{items.length} items</span>
           </div>
 
           {items.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {items.map((item) => (
                 <AssetCard
                   key={item.id}
@@ -242,8 +285,8 @@ export function BuilderLibraryShelf({
               ))}
             </div>
           ) : (
-            <div className="rounded-[22px] border border-dashed border-white/15 bg-white/[0.03] p-6 text-center text-sm leading-6 text-white/45">
-              <LayoutGrid className="mx-auto h-5 w-5 text-white/30" />
+            <div className="rounded-[22px] border border-dashed border-black/15 bg-white p-6 text-center text-sm leading-6 text-[#625a51]">
+              <LayoutGrid className="mx-auto h-5 w-5 text-[#8a8177]" />
               <p className="mt-3">No assets match this filter. Clear the search or switch categories.</p>
             </div>
           )}

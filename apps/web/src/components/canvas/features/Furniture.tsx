@@ -91,6 +91,12 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
 
   const position = useMemo(() => new THREE.Vector3(...asset.position), [asset.position]);
 
+  const handleReadOnlySelect = (event: ThreeEvent<PointerEvent>) => {
+    if (!readOnly) return;
+    event.stopPropagation();
+    setSelectedAssetId(asset.id);
+  };
+
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     if (viewMode !== "top" || isTransforming || readOnly) return;
     event.stopPropagation();
@@ -121,7 +127,8 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
       {
         position: [snap(intersection.x), asset.position[1], snap(intersection.z)],
         rotation: asset.rotation,
-        anchorType: asset.anchorType
+        anchorType: asset.anchorType,
+        supportAssetId: asset.supportAssetId
       },
       {
         walls,
@@ -133,6 +140,7 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
     );
     updateFurniture(asset.id, {
       anchorType: anchoredPlacement.anchorType,
+      supportAssetId: anchoredPlacement.supportAssetId,
       position: anchoredPlacement.position,
       rotation: anchoredPlacement.rotation
     });
@@ -147,7 +155,11 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
   );
 
   const groupProps =
-    viewMode === "top" && !readOnly
+    readOnly
+      ? {
+          onPointerDown: handleReadOnlySelect
+        }
+      : viewMode === "top"
       ? {
           onPointerDown: handlePointerDown,
           onPointerUp: handlePointerUp,

@@ -19,6 +19,11 @@ type MoveState = {
 const WALK_SPEED = 3.5;
 const BODY_Y = 1;
 const EYE_HEIGHT = 0.6;
+const ZOOM_EVENT_NAME = "plan2space:zoom";
+
+function clampValue(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
 
 function computeBounds(walls: { start: [number, number]; end: [number, number] }[], scale: number) {
   if (walls.length === 0) {
@@ -150,12 +155,15 @@ export default function CameraRig() {
   const [isTouch, setIsTouch] = useState(false);
 
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);
+  const mapControlsRef = useRef<any>(null);
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerZ = (bounds.minZ + bounds.maxZ) / 2;
   const radius = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ, 1);
   const topHeight = Math.max(6, radius);
   const zoom = Math.max(30, 120 / radius);
+  const builderDistance = Math.max(3.4, radius * 1.15);
+  const builderHeight = Math.max(2.4, radius * 0.72);
 
   const initialPosition = useMemo((): [number, number, number] => {
     const preferredAnchor =
@@ -205,14 +213,74 @@ export default function CameraRig() {
     }
   }, [centerX, centerZ, topHeight, viewMode]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleZoomEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ direction?: "in" | "out" }>;
+      const direction = customEvent.detail?.direction;
+      if (direction !== "in" && direction !== "out") return;
+
+      if (viewMode === "top" && orthoRef.current) {
+        const factor = direction === "in" ? 1.15 : 1 / 1.15;
+        orthoRef.current.zoom = clampValue(orthoRef.current.zoom * factor, 18, 320);
+        orthoRef.current.updateProjectionMatrix();
+        return;
+      }
+
+      if (viewMode === "builder-preview" && mapControlsRef.current) {
+        if (direction === "in") {
+          mapControlsRef.current.dollyIn?.(1.15);
+        } else {
+          mapControlsRef.current.dollyOut?.(1.15);
+        }
+        mapControlsRef.current.update?.();
+      }
+    };
+
+    window.addEventListener(ZOOM_EVENT_NAME, handleZoomEvent as EventListener);
+    return () => {
+      window.removeEventListener(ZOOM_EVENT_NAME, handleZoomEvent as EventListener);
+    };
+  }, [viewMode]);
+
   if (viewMode === "walk") {
     return <WalkRig initialPosition={initialPosition} isTouch={isTouch} />;
+  }
+
+  if (viewMode === "builder-preview") {
+    return (
+      <>
+        <PerspectiveCamera
+          makeDefault
+          fov={42}
+          near={0.1}
+          far={2000}
+          position={[centerX + builderDistance * 0.62, builderHeight, centerZ + builderDistance * 0.72]}
+        />
+        <MapControls
+          ref={mapControlsRef}
+          target={[centerX, 0.6, centerZ]}
+          enabled={!isTransforming}
+          enableRotate
+          enablePan
+          enableZoom
+          enableDamping
+          dampingFactor={0.08}
+          minPolarAngle={Math.PI * 0.18}
+          maxPolarAngle={Math.PI * 0.46}
+          minDistance={Math.max(2, radius * 0.45)}
+          maxDistance={Math.max(16, radius * 3.2)}
+        />
+      </>
+    );
   }
 
   return (
     <>
       <OrthographicCamera ref={orthoRef} makeDefault zoom={zoom} near={0.1} far={2000} />
       <MapControls
+        ref={mapControlsRef}
         target={[centerX, 0, centerZ]}
         enabled={!isTransforming}
         enableRotate={false}

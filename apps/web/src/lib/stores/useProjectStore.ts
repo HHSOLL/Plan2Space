@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { backendFetch } from "../backend/client";
 
 export interface Project {
   id: string;
@@ -12,9 +11,35 @@ export interface Project {
   created_at: string;
   updated_at: string;
   metadata?: Record<string, unknown>;
+  current_version_id?: string | null;
   source_layout_revision_id?: string | null;
   resolution_state?: "reused" | "generated" | "reuse_invalidated" | null;
   created_from_intake_session_id?: string | null;
+}
+
+async function requestJson<T>(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers ?? {});
+  if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(path, {
+    ...init,
+    headers,
+    credentials: "include"
+  });
+
+  if (response.status === 204) {
+    return null as T;
+  }
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const details = payload && typeof payload === "object" ? (payload as { error?: string }).error : null;
+    throw new Error(details || `Request failed (${response.status})`);
+  }
+
+  return payload as T;
 }
 
 type ProjectState = {
@@ -37,8 +62,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   loadProjects: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await backendFetch<{ items: Project[]; total?: number; nextCursor?: string | null }>(
-        "/v1/projects?limit=100"
+      const response = await requestJson<{ items: Project[]; total?: number; nextCursor?: string | null }>(
+        "/api/v1/projects?limit=100"
       );
       const projects = Array.isArray(response.items) ? response.items : [];
       set((state) => ({
@@ -60,7 +85,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   loadProject: async (projectId) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await backendFetch<{ project: Project }>(`/v1/projects/${projectId}`);
+      const response = await requestJson<{ project: Project }>(`/api/v1/projects/${projectId}`);
       const project = response.project;
       set((state) => {
         const existingIndex = state.projects.findIndex((item) => item.id === project.id);
@@ -91,7 +116,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   deleteProject: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await backendFetch(`/v1/projects/${id}`, { method: "DELETE" });
+      await requestJson<null>(`/api/v1/projects/${id}`, { method: "DELETE" });
       set((state) => ({
         projects: state.projects.filter((project) => project.id !== id),
         currentProject: state.currentProject?.id === id ? null : state.currentProject,

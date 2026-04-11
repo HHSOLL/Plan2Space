@@ -66,22 +66,22 @@ export function BuilderInspectorPanel({
 
   return (
     <aside
-      className={`absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,320px)] flex-col rounded-[28px] border border-white/10 bg-black/50 backdrop-blur-2xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
+      className={`absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,340px)] flex-col rounded-[28px] border border-black/10 bg-[#f7f5f1]/95 shadow-[0_18px_44px_rgba(17,19,22,0.18)] backdrop-blur-xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
         visible ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[108%] opacity-0"
       }`}
     >
-      <div className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.24em] text-white/45">
+      <div className="border-b border-black/10 px-5 py-4">
+        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f665b]">
           <SlidersHorizontal className="h-4 w-4" />
           Inspector
         </div>
-        <p className="mt-3 text-sm text-white/55">
+        <p className="mt-3 text-sm text-[#5f574d]">
           Tune finishes, selected asset placement, and transform mode.
         </p>
       </div>
       <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Transform mode</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Transform mode</p>
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: "translate", label: "Move" },
@@ -93,8 +93,8 @@ export function BuilderInspectorPanel({
                 onClick={() => onTransformModeChange(mode.id as TransformMode)}
                 className={`rounded-2xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
                   transformMode === mode.id
-                    ? "bg-white text-black"
-                    : "border border-white/10 bg-white/[0.04] text-white/70 hover:border-white/30"
+                    ? "bg-[#1c1a17] text-white"
+                    : "border border-black/10 bg-white text-[#4e473d] hover:border-black/20"
                 }`}
               >
                 {mode.label}
@@ -104,7 +104,7 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Wall finish</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Wall finish</p>
           <div className="flex flex-wrap gap-2">
             {builderWallFinishes.map((finish) => (
               <button
@@ -113,8 +113,8 @@ export function BuilderInspectorPanel({
                 onClick={() => onWallMaterialChange(finish.id)}
                 className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
                   wallMaterialIndex === finish.id
-                    ? "bg-white text-black"
-                    : "border border-white/10 bg-white/[0.04] text-white/65 hover:border-white/30"
+                    ? "bg-[#1c1a17] text-white"
+                    : "border border-black/10 bg-white text-[#5f584e] hover:border-black/20"
                 }`}
               >
                 {finish.name}
@@ -124,7 +124,7 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Floor finish</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Floor finish</p>
           <div className="flex flex-wrap gap-2">
             {builderFloorFinishes.map((finish) => (
               <button
@@ -133,8 +133,8 @@ export function BuilderInspectorPanel({
                 onClick={() => onFloorMaterialChange(finish.id)}
                 className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
                   floorMaterialIndex === finish.id
-                    ? "bg-white text-black"
-                    : "border border-white/10 bg-white/[0.04] text-white/65 hover:border-white/30"
+                    ? "bg-[#1c1a17] text-white"
+                    : "border border-black/10 bg-white text-[#5f584e] hover:border-black/20"
                 }`}
               >
                 {finish.name}
@@ -143,9 +143,9 @@ export function BuilderInspectorPanel({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Lighting</p>
-          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+        <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Lighting</p>
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
             Ambient
             <input
               type="range"
@@ -156,10 +156,10 @@ export function BuilderInspectorPanel({
               onChange={(event) => onLightingChange({ ambientIntensity: Number(event.target.value) })}
               onMouseUp={onLightingCommit}
               onTouchEnd={onLightingCommit}
-              className="w-full accent-white"
+              className="w-full accent-[#1c1a17]"
             />
           </label>
-          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
             Hemisphere
             <input
               type="range"
@@ -170,10 +170,10 @@ export function BuilderInspectorPanel({
               onChange={(event) => onLightingChange({ hemisphereIntensity: Number(event.target.value) })}
               onMouseUp={onLightingCommit}
               onTouchEnd={onLightingCommit}
-              className="w-full accent-white"
+              className="w-full accent-[#1c1a17]"
             />
           </label>
-          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
             Sun
             <input
               type="range"
@@ -184,10 +184,10 @@ export function BuilderInspectorPanel({
               onChange={(event) => onLightingChange({ directionalIntensity: Number(event.target.value) })}
               onMouseUp={onLightingCommit}
               onTouchEnd={onLightingCommit}
-              className="w-full accent-white"
+              className="w-full accent-[#1c1a17]"
             />
           </label>
-          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+          <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
             Environment Blur
             <input
               type="range"
@@ -198,14 +198,14 @@ export function BuilderInspectorPanel({
               onChange={(event) => onLightingChange({ environmentBlur: Number(event.target.value) })}
               onMouseUp={onLightingCommit}
               onTouchEnd={onLightingCommit}
-              className="w-full accent-white"
+              className="w-full accent-[#1c1a17]"
             />
           </label>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Room summary</p>
-          <div className="space-y-2 text-sm text-white/70">
+        <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Room summary</p>
+          <div className="space-y-2 text-sm text-[#4f473d]">
             <div className="flex items-center justify-between">
               <span>Walls</span>
               <span>{wallsCount}</span>
@@ -221,27 +221,27 @@ export function BuilderInspectorPanel({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Selection</p>
+        <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Selection</p>
           {selectedAsset ? (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-medium text-white">
+                <div className="text-sm font-medium text-[#1f1b16]">
                   {selectedAssetMeta?.label ?? formatAssetLabel(selectedAsset.assetId)}
                 </div>
                 {selectedAssetMeta ? (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
+                    <span className="rounded-full border border-black/10 bg-[#faf9f7] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#6f665a]">
                       {selectedAssetMeta.category}
                     </span>
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
+                    <span className="rounded-full border border-black/10 bg-[#faf9f7] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#6f665a]">
                       {selectedAssetMeta.collection}
                     </span>
                   </div>
                 ) : null}
-                <div className="mt-1 text-xs text-white/45">{selectedAsset.id}</div>
+                <div className="mt-1 text-xs text-[#83796d]">{selectedAsset.id}</div>
               </div>
-              <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+              <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                 Anchor
                 <select
                   value={selectedAsset.anchorType ?? "floor"}
@@ -250,7 +250,7 @@ export function BuilderInspectorPanel({
                       anchorType: event.target.value as SceneAnchorType
                     })
                   }
-                  className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none"
+                  className="w-full rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-sm text-[#2f2921] outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
                 >
                   {SCENE_ANCHOR_TYPES.map((anchorType) => (
                     <option key={anchorType} value={anchorType}>
@@ -260,7 +260,7 @@ export function BuilderInspectorPanel({
                 </select>
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                   X
                   <input
                     type="number"
@@ -275,10 +275,10 @@ export function BuilderInspectorPanel({
                         ]
                       })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none"
+                    className="w-full rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-sm text-[#2f2921] outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
                   />
                 </label>
-                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                   Z
                   <input
                     type="number"
@@ -293,10 +293,10 @@ export function BuilderInspectorPanel({
                         ]
                       })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none"
+                    className="w-full rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-sm text-[#2f2921] outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
                   />
                 </label>
-                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                   Y
                   <input
                     type="number"
@@ -312,12 +312,14 @@ export function BuilderInspectorPanel({
                         ]
                       })
                     }
-                    className={`w-full rounded-xl border border-white/10 px-3 py-2 text-sm outline-none ${
-                      isYManagedByAnchor ? "cursor-not-allowed bg-black/45 text-white/45" : "bg-black/25 text-white"
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35 ${
+                      isYManagedByAnchor
+                        ? "cursor-not-allowed border-black/10 bg-[#efede8] text-[#9b9287]"
+                        : "border-black/10 bg-[#faf9f7] text-[#2f2921]"
                     }`}
                   />
                 </label>
-                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                   Rotate Y
                   <input
                     type="number"
@@ -333,12 +335,14 @@ export function BuilderInspectorPanel({
                         ]
                       })
                     }
-                    className={`w-full rounded-xl border border-white/10 px-3 py-2 text-sm outline-none ${
-                      isRotationManagedByAnchor ? "cursor-not-allowed bg-black/45 text-white/45" : "bg-black/25 text-white"
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35 ${
+                      isRotationManagedByAnchor
+                        ? "cursor-not-allowed border-black/10 bg-[#efede8] text-[#9b9287]"
+                        : "border-black/10 bg-[#faf9f7] text-[#2f2921]"
                     }`}
                   />
                 </label>
-                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                   Scale
                   <input
                     type="number"
@@ -350,12 +354,12 @@ export function BuilderInspectorPanel({
                         scale: [nextValue, nextValue, nextValue]
                       });
                     }}
-                    className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none"
+                    className="w-full rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-sm text-[#2f2921] outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
                   />
                 </label>
               </div>
               {isYManagedByAnchor || isRotationManagedByAnchor ? (
-                <div className="text-[10px] uppercase tracking-[0.14em] text-white/45">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-[#8b8277]">
                   Current anchor manages
                   {isYManagedByAnchor ? " height" : ""}
                   {isYManagedByAnchor && isRotationManagedByAnchor ? " and" : ""}
@@ -365,14 +369,14 @@ export function BuilderInspectorPanel({
               <button
                 type="button"
                 onClick={() => onRemoveAsset(selectedAsset.id)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-red-100 transition hover:bg-red-500/20"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-300/60 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-red-700 transition hover:border-red-400 hover:bg-red-100"
               >
                 <Trash2 className="h-4 w-4" />
                 Remove asset
               </button>
             </div>
           ) : (
-            <div className="text-sm leading-6 text-white/50">
+            <div className="text-sm leading-6 text-[#6f665b]">
               Select a placed asset in top view to edit its position, rotation, and scale.
             </div>
           )}

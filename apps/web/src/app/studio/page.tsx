@@ -29,25 +29,25 @@ export default function StudioPage() {
           <div className="rounded-[34px] bg-[#191512] p-8 text-[#f9f4ec] shadow-[0_34px_90px_rgba(0,0,0,0.22)] sm:p-10">
             <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d8baa0]">
               <Sparkles className="h-4 w-4" />
-              <span>Studio pivot</span>
+              <span>My Rooms</span>
             </div>
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-8 text-5xl font-cormorant font-light tracking-tight sm:text-6xl"
-            >
-              Builder-first rooms.
+            className="mt-8 text-5xl font-cormorant font-light tracking-tight sm:text-6xl"
+          >
+              Projects and saved rooms.
               <br />
-              Editor-ready immediately.
+              Start a new room when you are ready.
             </motion.h1>
             <p className="mt-6 max-w-2xl text-sm leading-7 text-[#d7cbc1]">
-              Start from a clean shell, choose finishes, then open the full 3D editor. Existing projects stay here, but
-              the new main path begins with the room builder.
+              Your saved rooms, drafts, and published scene snapshots live here. New creation starts in the builder,
+              then opens directly in the 3D editor.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <button
                 type="button"
-                onClick={() => router.push("/studio/builder")}
+                onClick={() => router.push("/studio/builder?intent=custom")}
                 className="inline-flex items-center gap-3 rounded-full bg-[#f7e8d7] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#1b1714] transition hover:bg-white"
               >
                 Start a room
@@ -65,15 +65,15 @@ export default function StudioPage() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Current rooms</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Saved rooms</div>
               <div className="mt-4 text-4xl font-cormorant">{projects.length}</div>
               <p className="mt-3 text-sm leading-7 text-[#61574e]">Saved rooms, drafts, and shareable scenes in your studio.</p>
             </div>
             <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Primary path</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Create path</div>
               <div className="mt-4 flex items-center gap-3 text-2xl font-cormorant">
                 <Compass className="h-5 w-5 text-[#c06e3d]" />
-                Builder → Editor
+                Builder → Editor → Publish
               </div>
               <p className="mt-3 text-sm leading-7 text-[#61574e]">
                 Floorplan intake is now compatibility-only for older rooms and no longer appears in new project flow.
@@ -110,6 +110,14 @@ export default function StudioPage() {
           >
             <Box size={64} strokeWidth={0.5} />
             <p className="text-[10px] uppercase tracking-[0.5em] font-bold">Studio Empty</p>
+            <button
+              type="button"
+              onClick={() => router.push("/studio/builder?intent=custom")}
+              className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-white/80 px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2f261d] transition hover:border-black/35 hover:bg-white"
+            >
+              Create first room
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </motion.div>
         )}
 

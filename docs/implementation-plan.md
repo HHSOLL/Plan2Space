@@ -461,3 +461,200 @@ Updated:
 
 Removed/Deprecated:
 - desk/shelf surface 앵커가 단순 Y값 프리셋만 적용하고 실제 지지 표면을 찾지 않는 완료 기준.
+
+## 2026-04-10 변경 동기화 (Project API Migration Slice)
+Added:
+- Phase 5 API migration 범위에 `apps/web` Route Handler project CRUD 경로를 추가한다.
+  - `GET/POST /api/v1/projects`
+  - `GET/DELETE /api/v1/projects/:projectId`
+- Phase 5 API migration 범위에 `POST /api/v1/projects/:projectId/versions`를 추가해 builder/editor 저장 루프를 Vercel route로 전환한다.
+
+Updated:
+- Railway cost reduction 3차 범위는 `public read(showcase) -> auth read(versions/latest) -> auth write(project CRUD/save)` 순서로 이동하는 것으로 정의한다.
+- active web 저장 경로 완료 기준은 Railway `/v1/projects/:projectId/versions` 직접 호출 제거를 포함한다.
+
+Removed/Deprecated:
+- project CRUD와 version save를 Railway API의 필수 의존으로 유지하는 완료 기준.
+
+## 2026-04-10 변경 동기화 (Catalog/Template BFF + Domain Adapter Slice)
+Added:
+- Phase 5 API migration 범위에 lightweight browse route를 추가한다.
+  - `GET /api/v1/catalog`
+  - `GET /api/v1/room-templates`
+- Phase 5 domain cleanup 범위에 `SceneDocument` 어댑터 레이어를 추가해 editor/shared bootstrap을 제품 도메인 타입으로 정렬한다.
+
+Updated:
+- catalog/template source-of-truth는 browser static file read가 아니라 `Vercel route -> server helper` 경로를 기본으로 사용한다.
+- editor/shared viewer는 legacy floorplan mapper를 직접 소비하지 않고 `SceneDocument` 매핑 레이어를 거쳐 scene store patch를 생성한다.
+- builder hydration은 API 응답 템플릿 기본 치수를 최초 동기화하되, 장애 시 local constant fallback으로 흐름을 유지한다.
+
+Removed/Deprecated:
+- `useAssetCatalog`가 `/assets/catalog/manifest.json`을 클라이언트에서 직접 읽는 완료 기준.
+- editor/shared bootstrap에서 floorplan 결과 타입을 직접 제품 도메인으로 간주하는 완료 기준.
+
+## 2026-04-10 변경 동기화 (Showcase Archive Pagination Slice)
+Added:
+- Phase 5 browsing hardening 범위에 `showcase` cursor pagination(`nextCursor`,`hasMore`)을 추가한다.
+- `/gallery`, `/community`는 URL cursor trail 기반 `Load more` archive UX를 완료 기준으로 포함한다.
+
+Updated:
+- gallery/community 완료 기준은 `latest 240` 샘플링이 아니라 paginated archive browse를 기준으로 한다.
+- 필터(`room`,`tone`,`density`) 변경 시 pagination cursor가 자동 초기화되고, 동일 필터에서는 cursor 누적으로 archive가 확장되는 동작을 검증 항목에 포함한다.
+- 남은 리스크는 “archive 전체 노출 부재”에서 “deep archive 검색/정렬 고도화”로 낮춘다.
+
+Removed/Deprecated:
+- latest slice를 전제로 한 client-side filtering 임시 기준.
+
+## 2026-04-10 변경 동기화 (Surface Anchor Persistence Hardening Slice)
+Added:
+- Phase 5 placement 완료 범위에 `SceneAsset.supportAssetId` 영속화와 restore 계약을 추가한다(`customization.sceneDocument`, legacy `customization.furniture` 양쪽 저장/복원).
+- desk/shelf/furniture surface 앵커 계산에 support footprint 회전(yaw) 반영과 표면 clamp 규칙을 추가한다.
+- 지지 가구 이동/회전 시 종속 asset(`supportAssetId` 참조) 자동 재앵커링과 지지 가구 삭제 시 dangling reference 정리 경로를 추가한다.
+
+Updated:
+- 표면 인지 배치 완료 기준은 “상판 스냅”뿐 아니라 `support 이동`, `support 전환`, `support 삭제` 시 일관된 재정렬을 포함한다.
+- starter set 일괄 배치는 고정 초기 scene snapshot이 아니라, 누적된 배치 상태를 기준으로 surface anchor를 재계산한다.
+
+Removed/Deprecated:
+- `supportAssetId`가 지정되면 다른 지지 가구로 전환되지 않는 hard lock 기준.
+- 삭제된 지지 가구를 참조하는 `supportAssetId`를 저장본에 그대로 남기는 기준.
+
+## 2026-04-10 변경 동기화 (Web Assets/Jobs BFF + Railway Lightweight Gate Slice)
+Added:
+- Phase 5 API migration 범위에 worker enqueue/status BFF 경로를 추가한다.
+  - `POST /api/v1/assets/generate`
+  - `GET /api/v1/jobs/:jobId`
+- Phase 5 API migration 범위에 `GET /api/v1/projects/:projectId/versions` 목록 경로를 추가한다.
+- Railway API env에 `ENABLE_LIGHTWEIGHT_API_ROUTES`를 추가하고 기본값을 `false`로 고정한다.
+
+Updated:
+- asset generation happy path는 `browser -> web route handler -> Railway /v1/assets/generate -> worker` 순서로 강제한다.
+- job polling 기본 경로는 Railway legacy route 의존 대신 web route handler owner-scope 조회를 기준으로 한다.
+- Railway API 기본 공개면은 `health + assets enqueue` 중심으로 축소하고, `projects/catalog/showcase`는 compatibility flag에서만 노출한다.
+
+Removed/Deprecated:
+- 브라우저에서 Railway URL을 직접 호출해 enqueue/poll을 처리하는 기준.
+- Railway에서 lightweight browse/read 라우트를 기본 상시 노출하는 기준.
+
+## 2026-04-10 변경 동기화 (Deployment Boundary Hardening Slice)
+Added:
+- Phase 5 infra hardening 범위에 web/runtime public Railway URL 회귀 검사(`npm run check:web-boundary`)를 추가한다.
+- Railway 수동 배포 컨텍스트 최적화를 위해 `.railwayignore`에서 `apps/web/public` 제외 규칙을 기본값으로 추가한다.
+- API route ownership 검증을 위해 `apps/api/src/app.route-gates.test.ts`와 `npm --workspace apps/api run test:route-gates`를 추가한다.
+
+Updated:
+- web server route 및 E2E/eval/smoke 스크립트는 `RAILWAY_API_URL`만 사용하도록 통일한다.
+- `check:web-boundary`는 `NEXT_PUBLIC_RAILWAY_API_URL`, allowlist 외 `process.env.RAILWAY_API_URL`, hardcoded `*.railway.app` host 문자열을 차단한다.
+- 환경 변수 템플릿(`.env.example`, `apps/web/.env.local.example`)은 server-only 프록시 모델을 기준으로 정렬한다.
+- Vercel env 설명에서 `SUPABASE_SERVICE_ROLE_KEY`를 production/preview 필수 항목으로 명시한다.
+
+Removed/Deprecated:
+- `NEXT_PUBLIC_RAILWAY_API_URL`을 web runtime 또는 운영 스크립트 fallback으로 유지하는 기준.
+
+## 2026-04-10 변경 동기화 (Railway Jobs Legacy Gate Reassignment)
+Added:
+- API gate 검증 범위에 `/v1/jobs/:jobId` 및 `/v1/jobs/:jobId/retry`의 legacy gate 제어 계약을 추가한다.
+
+Updated:
+- Railway route ownership을 `lightweight(projects/catalog/showcase)`와 `legacy(jobs/intake/floorplans/revisions/scenes)`로 재정렬한다.
+- active web job polling 기본 경로는 계속 `GET /api/v1/jobs/:jobId`(Vercel Route Handler owner-scope read)로 유지한다.
+
+Removed/Deprecated:
+- `/v1/jobs*`를 `ENABLE_LIGHTWEIGHT_API_ROUTES`에서 열어두는 compatibility 기준.
+
+## 2026-04-10 변경 동기화 (SceneDocument Legacy Mapper Isolation Slice)
+Added:
+- 도메인 계층에 legacy floorplan fallback 전용 mapper(`lib/domain/legacy-floorplan-document.ts`)를 추가한다.
+
+Updated:
+- `mapProjectVersionToSceneDocument`는 `customization.sceneDocument`를 1차 canonical source로 처리하고, legacy floorplan 변환은 분리된 compatibility 모듈로 위임한다.
+- active scene 도메인 파일(`lib/domain/scene-document.ts`)에서 floorplan/result mapper 직접 의존을 제거한다.
+
+Removed/Deprecated:
+- `SceneDocument` 도메인 파일이 floorplan-first mapper를 직접 import하는 결합 구조.
+
+## 2026-04-10 변경 동기화 (SceneDocument Save Contract Hardening Slice)
+Added:
+- Phase 5 domain cleanup 범위에 editor/builder save payload `roomShell` 승격(`ceilings`, `rooms`, `cameraAnchors`, `navGraph`, `entranceId`)을 추가한다.
+- `CustomizationData.sceneDocument` 타입 계약을 명시해 `customization.sceneDocument` 단일 canonical 저장 경로를 유지한다.
+
+Updated:
+- version 저장 시 `buildSceneDocument`는 `topology-only` 조립 대신 `roomShell` payload를 우선 반영한다.
+- latest version bootstrap 기준은 `projects.current_version_id` 우선 조회 후 최신 version fallback으로 정렬한다.
+- project API 응답은 `current_version_id`와 revision metadata를 포함해 bootstrap 포인터 단절 리스크를 줄인다.
+
+Removed/Deprecated:
+- 저장 시 `ceilings/rooms/cameraAnchors/navGraph`를 빈 배열로 강제하는 `topology-only` 직렬화 기준.
+
+## 2026-04-10 변경 동기화 (Shared Viewer Scene Envelope Slice)
+Added:
+- Phase 5 viewer hardening 범위에 public payload `sceneBootstrap` 정규화 계약을 추가한다.
+
+Updated:
+- shared viewer bootstrap은 raw latest version row가 아니라 서버 정규화 `SceneDocument` envelope를 기본 입력으로 사용한다.
+
+Removed/Deprecated:
+- shared route에서 version row(`customization`, `floor_plan`)를 클라이언트 매퍼가 직접 해석하는 기준.
+
+## 2026-04-10 변경 동기화 (Scene Store Derived Invalidation Slice)
+Added:
+- Phase 5 domain cleanup 범위에 topology 수정 시 파생 scene 필드 invalidation 규칙(`ceilings`, `rooms`, `cameraAnchors`, `navGraph`)을 추가한다.
+
+Updated:
+- `setScene` partial merge 완료 기준은 “값 덮어쓰기”가 아니라 topology/derived 경계를 인지한 reset 동작을 포함한다.
+- `entranceId`는 openings 변경과 함께 재계산하는 것을 기본 기준으로 한다.
+
+Removed/Deprecated:
+- topology만 수정한 뒤 이전 파생값을 계속 유지하는 store merge 기준.
+
+## 2026-04-10 변경 동기화 (Project Bootstrap Revision Fallback Slice)
+Added:
+- Phase 5 domain/API migration 범위에 `GET /api/v1/projects/:projectId/bootstrap` 경로를 추가한다.
+- bootstrap 응답은 `current_version`, `latest_version`, `revision_layout`, `none` source를 포함한다.
+
+Updated:
+- editor 진입 완료 기준은 `latest version` 단독 조회가 아니라 `current/latest -> source_layout_revision_id fallback` 체인으로 정렬한다.
+- revision fallback은 same-origin route에서 owner-scope 검증 후 `layout_revisions`를 읽어 SceneDocument로 정규화한다.
+
+Removed/Deprecated:
+- saved version 부재 시 revision pin을 무시하고 empty 상태로만 부트스트랩하는 기준.
+
+## 2026-04-10 변경 동기화 (Viewer Product Inspection + Surface Anchor Safety Slice)
+Added:
+- Phase 4 viewer 품질 기준에 shared viewport in-scene product marker 기반 inspection(장면 직접 선택)을 추가한다.
+- Phase 4 viewer drawer 완료 기준에 selected product metadata(카탈로그/자산 식별자, 위치, 확장 메타 필드) 노출을 추가한다.
+
+Updated:
+- surface-aware placement 완료 기준은 “anchor 타입 보존”만이 아니라 support surface 부재 시 바닥 높이 안전 클램프 및 nested support 후보 탐색까지 포함한다.
+- read-only viewer inspection은 우측 패널 목록 의존이 아니라 scene click + drawer 동기화를 포함하는 것으로 상향한다.
+
+Removed/Deprecated:
+- support가 없는 surface-anchor 자산을 공중 default 높이로 유지하는 동작을 허용하는 완료 기준.
+
+## 2026-04-11 변경 동기화 (Public Viewer Product Inspection Polish Slice)
+Added:
+- Phase 4 viewer 완성 기준에 `selected product 중심 inspection rail`(선택 카드 -> hotspot 리스트 -> room mix) 정보 계층을 추가한다.
+- viewer hotspot 완료 기준에 top/walk 공통 marker 노출과 번호 badge 기반 식별 규칙을 추가한다.
+
+Updated:
+- shared viewer 품질 기준은 raw scene/debug 메타 노출보다 제품 메타(브랜드/재질/가격/링크) 우선 구조를 기본으로 한다.
+- public presentation card(community/gallery)는 `published snapshot` 기능 문구 중심이 아니라 showroom/editorial 톤의 카피와 계층을 기준으로 정렬한다.
+
+Removed/Deprecated:
+- shared viewer selected panel에서 좌표(position) 등 디버그성 필드를 기본 inspection 정보로 노출하는 기준.
+- top 모드에서만 hotspot을 보여 walk 탐색 흐름이 단절되는 기준.
+
+## 2026-04-11 변경 동기화 (Axes 1/2/3 Closure Slice)
+Added:
+- Phase 5 infra hardening 완료 기준에 CI optional preview-runtime smoke(`smoke:preview-runtime`)를 포함한다.
+- Phase 5 domain cleanup 완료 기준에 `deriveBlankRoomShell` 기반 builder roomShell 생성(rooms/ceilings/anchors/navGraph 포함)을 추가한다.
+- 축 2 검증 산출물로 `docs/visual-qa-evidence.md` 12장 캡처 체크리스트를 추가한다.
+
+Updated:
+- share 생성의 canonical version pointer를 `latest(version)` 단순 정렬에서 `current_version_id 우선 + fallback` 해석으로 정렬한다.
+- shared preview asset summary는 project-level meta 우선이 아니라 pinned version scene 기준으로 계산한다.
+- active scene mapping은 `customization.sceneDocument` 단일 경로를 유지하고 legacy floorplan fallback을 활성 경로에서 제거한다.
+
+Removed/Deprecated:
+- CI에서 static boundary check만으로 runtime boundary가 충분히 검증된다고 보는 기준.
+- builder starter 저장에서 파생 shell 필드를 빈 배열로 남겨 후속 heuristic에 의존하는 기준.

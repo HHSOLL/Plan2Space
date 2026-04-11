@@ -28,8 +28,27 @@ const COPY = {
     heroTitle: "Design a desk and room story with editorial calm.",
     heroBody:
       "Plan2Space now opens like a premium interior collection. Start from a room shell, explore desk setups, then move into builder and editor with the same scene.",
-    heroPrimary: "Start Room Builder",
-    heroSecondary: "Open Studio",
+    heroPrimary: "Template Quick Start",
+    heroSecondary: "Custom Room Builder",
+    entryEyebrow: "How to start",
+    entryTitle: "Choose one primary path and enter the builder flow.",
+    entryCards: [
+      {
+        title: "Start from template",
+        body: "Pick a pre-composed room shell and go straight into the 4-step builder.",
+        button: "Choose template",
+        image: "/home/img5.jpg",
+        nextPath: "/studio/builder?intent=template"
+      },
+      {
+        title: "Create custom room",
+        body: "Start with shape and dimensions, then define openings and finishes manually.",
+        button: "Create room",
+        image: "/home/img3.jpg",
+        nextPath: "/studio/builder?intent=custom"
+      }
+    ],
+    entryTertiary: "Open projects",
     heroCardEyebrow: "Featured setup",
     heroCardTitle: "Quiet tech corner",
     heroCardBody: "Warm wood, diffuse light, and layered display surfaces for focused deskterior composition.",
@@ -71,8 +90,27 @@ const COPY = {
     heroTitle: "에디토리얼 무드로 방과 데스크 장면을 함께 설계하세요.",
     heroBody:
       "이제 Plan2Space 홈은 프리미엄 인테리어 컬렉션처럼 시작합니다. 방 shell을 먼저 만들고, 데스크 구성을 참고한 뒤 같은 scene 위에서 builder와 editor로 이어집니다.",
-    heroPrimary: "Room Builder 시작",
-    heroSecondary: "Studio 열기",
+    heroPrimary: "템플릿으로 빠르게 시작",
+    heroSecondary: "커스텀 방 만들기",
+    entryEyebrow: "시작하는 방법",
+    entryTitle: "먼저 하나의 시작 경로를 선택하고 builder 흐름으로 들어가세요.",
+    entryCards: [
+      {
+        title: "템플릿으로 시작하기",
+        body: "구성된 room shell을 선택하고 4단계 builder로 바로 이동합니다.",
+        button: "공간 선택",
+        image: "/home/img5.jpg",
+        nextPath: "/studio/builder?intent=template"
+      },
+      {
+        title: "커스텀 공간 만들기",
+        body: "모양, 치수, 문/창문, 스타일을 직접 지정해 방을 생성합니다.",
+        button: "공간 만들기",
+        image: "/home/img3.jpg",
+        nextPath: "/studio/builder?intent=custom"
+      }
+    ],
+    entryTertiary: "내 프로젝트 열기",
     heroCardEyebrow: "Featured setup",
     heroCardTitle: "조용한 테크 코너",
     heroCardBody: "우드 톤, 확산 조명, 레이어드 선반 구조로 집중감 있는 deskterior를 만듭니다.",
@@ -157,7 +195,7 @@ export default function HomePage() {
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                       <button
                         type="button"
-                        onClick={() => requireAuth("/studio/builder")}
+                        onClick={() => requireAuth("/studio/builder?intent=template")}
                         className="inline-flex items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1d1711] transition-transform hover:-translate-y-0.5"
                       >
                         {copy.heroPrimary}
@@ -165,12 +203,20 @@ export default function HomePage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => requireAuth("/studio")}
+                        onClick={() => requireAuth("/studio/builder?intent=custom")}
                         className="inline-flex items-center justify-center gap-3 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/18"
                       >
                         {copy.heroSecondary}
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => requireAuth("/studio")}
+                      className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/75 transition hover:text-white"
+                    >
+                      {copy.entryTertiary}
+                      <MoveUpRight className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -194,6 +240,41 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section className="mt-10 rounded-[34px] border border-[#d7c9b7] bg-white/70 p-6 shadow-[0_20px_56px_rgba(68,52,34,0.08)] backdrop-blur sm:p-8">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7d6f5f]">{copy.entryEyebrow}</div>
+            <h2 className="mt-3 font-cormorant text-4xl font-light text-[#17120d] sm:text-5xl">{copy.entryTitle}</h2>
+            <div className="mt-8 grid gap-5 lg:grid-cols-2">
+              {copy.entryCards.map((card) => (
+                <article
+                  key={card.title}
+                  className="group overflow-hidden rounded-[28px] border border-black/10 bg-[#f8f4ee] shadow-[0_14px_36px_rgba(60,39,17,0.08)]"
+                >
+                  <div className="relative aspect-[16/9] overflow-hidden">
+                    <Image
+                      src={card.image}
+                      alt={card.title}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                  <div className="space-y-4 px-6 py-6">
+                    <h3 className="font-cormorant text-4xl font-light text-[#17120d]">{card.title}</h3>
+                    <p className="text-sm leading-7 text-[#5f5245]">{card.body}</p>
+                    <button
+                      type="button"
+                      onClick={() => requireAuth(card.nextPath)}
+                      className="inline-flex items-center gap-2 rounded-full border border-[#17120d] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#17120d] transition hover:bg-[#17120d] hover:text-white"
+                    >
+                      {card.button}
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
 
@@ -316,7 +397,7 @@ export default function HomePage() {
               </div>
               <button
                 type="button"
-                onClick={() => router.push("/community")}
+                onClick={() => router.push("/gallery")}
                 className="inline-flex items-center gap-2 self-start rounded-full border border-white/18 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/10"
               >
                 {copy.showcaseCta}

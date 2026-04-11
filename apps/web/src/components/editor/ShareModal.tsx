@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Link2, Trash2, X } from "lucide-react";
 import { getCatalogPreviewClasses, getProjectAssetSummary } from "../../lib/builder/catalog";
 import { resolveShareCapabilities, type SharePermission } from "../../lib/share/permissions";
-import { buildSharePreviewMeta, getSharePreviewMeta } from "../../lib/share/preview";
-import { getSupabaseClient } from "../../lib/supabase/client";
+import { getSharePreviewMeta } from "../../lib/share/preview";
 import type { Project } from "../../lib/stores/useProjectStore";
 import type { Database } from "../../../../../types/database";
 
@@ -20,8 +19,26 @@ interface ShareModalProps {
   onClose: () => void;
 }
 
-const generateToken = () =>
-  Math.random().toString(36).slice(2, 15) + Math.random().toString(36).slice(2, 15);
+async function requestJson<T>(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers ?? {});
+  if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(path, {
+    ...init,
+    headers,
+    credentials: "include"
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const details = payload && typeof payload === "object" ? (payload as { error?: string }).error : null;
+    throw new Error(details || `Request failed (${response.status})`);
+  }
+
+  return payload as T;
+}
 
 export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalProps) {
   const [shareType, setShareType] = useState<"temporary" | "permanent">("temporary");
@@ -32,15 +49,13 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
   const assetSummary = getProjectAssetSummary(project?.metadata);
   const previewTheme = getCatalogPreviewClasses(assetSummary?.primaryTone ?? "sand");
 
-  const supabase = useMemo(() => getSupabaseClient(), []);
-
   const { data: sharedLinks = [], isLoading } = useQuery<SharedProject[]>({
     queryKey: ["shared-links", projectId],
     queryFn: async () => {
-      if (!supabase) return [];
-      const { data, error } = await supabase.from("shared_projects").select("*").eq("project_id", projectId);
-      if (error) throw error;
-      return data ?? [];
+      const payload = await requestJson<{ items: SharedProject[] }>(`/api/v1/projects/${projectId}/shares`, {
+        method: "GET"
+      });
+      return payload.items ?? [];
     },
     enabled: isOpen
   });
@@ -55,54 +70,15 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
 
   const createShareMutation = useMutation({
     mutationFn: async () => {
-      if (!supabase) throw new Error("Supabase is not configured.");
-      const token = generateToken();
-      const expiresAt =
-        shareType === "temporary" ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null;
-      const { data: auth } = await supabase.auth.getUser();
-      const userId = auth.user?.id;
-      if (!userId) {
-        throw new Error("User not authenticated.");
-      }
-
-      const { data: latestVersion, error: latestVersionError } = await supabase
-        .from("project_versions")
-        .select("id, version")
-        .eq("project_id", projectId)
-        .order("version", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (latestVersionError) throw latestVersionError;
-      if (!latestVersion?.id) {
-        throw new Error("Save the room once before creating a snapshot link.");
-      }
-
-      const previewMeta = buildSharePreviewMeta({
-        projectName: project?.name?.trim() || "Untitled Room",
-        projectDescription: project?.description ?? null,
-        versionNumber: typeof latestVersion.version === "number" ? latestVersion.version : null,
-        assetSummary
-      });
-
-      const { data, error } = await supabase
-        .from("shared_projects")
-        .insert({
-          project_id: projectId,
-          project_version_id: latestVersion.id,
-          token,
+      const payload = await requestJson<{ share: SharedProject }>(`/api/v1/projects/${projectId}/shares`, {
+        method: "POST",
+        body: JSON.stringify({
+          shareType,
           permissions,
-          expires_at: expiresAt,
-          is_gallery_visible: canPublishToGallery && publishToGallery,
-          published_at: canPublishToGallery && publishToGallery ? new Date().toISOString() : null,
-          created_by: userId,
-          preview_meta: previewMeta
+          publishToGallery
         })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      });
+      return payload.share;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shared-links", projectId] });
@@ -111,16 +87,13 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
 
   const togglePublishMutation = useMutation({
     mutationFn: async ({ id, nextVisible }: { id: string; nextVisible: boolean }) => {
-      if (!supabase) throw new Error("Supabase is not configured.");
-      const { error } = await supabase
-        .from("shared_projects")
-        .update({
-          is_gallery_visible: nextVisible,
-          published_at: nextVisible ? new Date().toISOString() : null
+      const payload = await requestJson<{ share: SharedProject }>(`/api/v1/projects/${projectId}/shares/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          isGalleryVisible: nextVisible
         })
-        .eq("id", id);
-      if (error) throw error;
-      return { id, nextVisible };
+      });
+      return payload.share;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shared-links", projectId] });
@@ -129,9 +102,9 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
 
   const deleteShareMutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!supabase) throw new Error("Supabase is not configured.");
-      const { error } = await supabase.from("shared_projects").delete().eq("id", id);
-      if (error) throw error;
+      await requestJson<{ id: string }>(`/api/v1/projects/${projectId}/shares/${id}`, {
+        method: "DELETE"
+      });
       return id;
     },
     onSuccess: () => {

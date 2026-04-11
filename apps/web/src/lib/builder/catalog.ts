@@ -1,3 +1,9 @@
+import {
+  inferAssetSupportProfile,
+  normalizeAssetSupportProfile,
+  type AssetSupportProfile
+} from "../scene/support-profiles";
+
 export type LibraryCatalogCategoryId =
   | "all"
   | "seating"
@@ -19,6 +25,7 @@ export type LibraryCatalogItem = {
   assetId: string;
   scale: [number, number, number];
   description: string;
+  supportProfile?: AssetSupportProfile | null;
 };
 
 export type ProjectAssetSummaryItem = {
@@ -238,7 +245,7 @@ function resolveCategoryId(record: Record<string, unknown>) {
   return "decor";
 }
 
-function normalizeCatalogItem(item: unknown) {
+function normalizeCatalogItem(item: unknown): LibraryCatalogItem | null {
   if (!item || typeof item !== "object") return null;
   const record = item as Record<string, unknown>;
   const scale =
@@ -271,13 +278,22 @@ function normalizeCatalogItem(item: unknown) {
     description:
       typeof record.description === "string" && record.description.trim().length > 0
         ? record.description.trim()
-        : meta.description
+        : meta.description,
+    supportProfile:
+      normalizeAssetSupportProfile(record.supportProfile) ??
+      inferAssetSupportProfile({
+        catalogItemId: typeof record.id === "string" ? record.id : null,
+        assetId: record.assetId,
+        label: typeof record.label === "string" ? record.label : undefined,
+        category: typeof record.category === "string" ? record.category : undefined,
+        description: typeof record.description === "string" ? record.description : undefined
+      })
   } satisfies LibraryCatalogItem;
 }
 
 export const DEFAULT_CATALOG: LibraryCatalogItem[] = DEFAULT_CATALOG_SOURCE.map((item) =>
   normalizeCatalogItem(item)
-).filter((item): item is LibraryCatalogItem => Boolean(item));
+).filter((item): item is LibraryCatalogItem => item !== null);
 
 export function normalizeCatalog(input: unknown) {
   if (!Array.isArray(input)) {
@@ -286,7 +302,7 @@ export function normalizeCatalog(input: unknown) {
 
   const normalized = input
     .map((item) => normalizeCatalogItem(item))
-    .filter((item): item is LibraryCatalogItem => Boolean(item));
+    .filter((item): item is LibraryCatalogItem => item !== null);
 
   return normalized.length > 0 ? normalized : DEFAULT_CATALOG;
 }

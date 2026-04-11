@@ -1,7 +1,8 @@
 # Asset Guide (Railway Worker Asset Generation)
 
 Plan2Space는 이미지 → GLB 생성을 Railway API/Worker 경로로 처리합니다.
-웹은 `/v1/assets/generate`로 job을 enqueue하고, Railway worker가 TripoSR 또는 Meshy를 호출한 뒤 결과 GLB를 Supabase Storage에 저장합니다.
+웹은 `/api/v1/assets/generate`로 job을 enqueue하고, Vercel Route Handler가 Railway `/v1/assets/generate`로 프록시합니다.
+Railway worker가 TripoSR 또는 Meshy를 호출한 뒤 결과 GLB를 Supabase Storage에 저장합니다.
 
 ## 환경 변수
 
@@ -23,7 +24,7 @@ MESHY_STATUS_URL=
 
 ## API 사용
 
-`POST /v1/assets/generate`
+`POST /api/v1/assets/generate`
 
 ```json
 {
@@ -42,7 +43,7 @@ MESHY_STATUS_URL=
 }
 ```
 
-완료 결과는 `GET /v1/jobs/:jobId`의 `result.asset`에서 조회합니다.
+완료 결과는 `GET /api/v1/jobs/:jobId`의 `result.asset`에서 조회합니다.
 
 ```json
 {

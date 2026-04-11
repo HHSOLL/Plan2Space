@@ -22,29 +22,29 @@ export function MobileEditorControls({
   if (!visible) return null;
 
   return (
-    <div className="absolute left-3 right-3 top-3 z-[25] flex items-center justify-between gap-3 xl:hidden">
-      <div className="flex items-center gap-2">
+    <div className="absolute left-3 right-3 top-3 z-[25] flex items-center justify-between gap-2 overflow-x-auto xl:hidden">
+      <div className="flex shrink-0 items-center gap-2 rounded-full border border-black/10 bg-white/92 p-1 shadow-[0_12px_28px_rgba(19,21,24,0.16)] backdrop-blur-xl">
         <button
           type="button"
           onClick={onToggleLibrary}
-          className="rounded-full border border-white/10 bg-black/45 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 backdrop-blur-xl"
+          className="rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#3d352b] transition hover:bg-[#f2eee7]"
         >
           Library
         </button>
         <button
           type="button"
           onClick={onToggleInspector}
-          className="rounded-full border border-white/10 bg-black/45 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 backdrop-blur-xl"
+          className="rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#3d352b] transition hover:bg-[#f2eee7]"
         >
           Inspector
         </button>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 rounded-full border border-black/10 bg-white/92 p-1 shadow-[0_12px_28px_rgba(19,21,24,0.16)] backdrop-blur-xl">
         <button
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
-          className="rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur-xl disabled:opacity-30"
+          className="rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#3d352b] transition hover:bg-[#f2eee7] disabled:opacity-30"
         >
           Undo
         </button>
@@ -52,7 +52,7 @@ export function MobileEditorControls({
           type="button"
           onClick={onRedo}
           disabled={!canRedo}
-          className="rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur-xl disabled:opacity-30"
+          className="rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#3d352b] transition hover:bg-[#f2eee7] disabled:opacity-30"
         >
           Redo
         </button>

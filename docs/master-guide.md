@@ -55,6 +55,9 @@
   - intake 상태 전이(queued/analyzing/review_required/resolved_generated/failed)
 
 ## 핵심 API 기준 (Railway `/v1`)
+- 기본 공개면(default)은 `health` + `assets/generate`(worker enqueue) 중심으로 유지한다.
+- lightweight browse/read(`projects`, `catalog`, `showcase`)는 `ENABLE_LIGHTWEIGHT_API_ROUTES=true`일 때만 compatibility로 노출한다.
+- legacy surface(`jobs`, `intake`, `floorplans`, `revisions`, `scenes`)는 `ENABLE_LEGACY_API_ROUTES=true`일 때만 노출한다.
 - `POST /v1/projects`
 - `GET /v1/projects`
 - `POST /v1/assets/generate`
@@ -73,12 +76,18 @@
 - `GET /v1/projects/:projectId/scene/latest`
 
 ## 프론트엔드 API 기준
-- `NEXT_PUBLIC_RAILWAY_API_URL` 기반으로 Railway API 호출.
-- `Authorization: Bearer <supabase access token>` 헤더 전달.
-- active builder-first web surface는 `projects`, `project versions`, `shared`, `showcase` 중심으로 동작하고, intake/floorplan/revision fetch는 compatibility 또는 ops 경계에서만 사용한다.
-- public showcase read surface(`gallery`, `community`)는 Vercel Route Handler(`/api/v1/showcase`)에서 60초 재검증 캐시를 사용하고, upstream source는 Railway `/v1/showcase`를 유지한다.
-- `GET /v1/projects/:projectId/versions/latest`는 active editor/viewer가 latest saved snapshot을 읽는 기본 경로다.
+- active builder-first web surface는 `projects`, `project versions(save/latest)`, `shared`, `showcase`를 Vercel Route Handler(`/api/v1/*`)로 우선 호출한다.
+- 인증은 Supabase server session(cookie) 기준으로 route handler에서 검증하며, 브라우저에서 Railway access token을 직접 붙이는 경로를 줄인다.
+- public showcase read surface(`gallery`, `community`)는 Vercel Route Handler(`/api/v1/showcase`)에서 60초 재검증 캐시를 사용한다.
+- `GET /api/v1/projects/:projectId/versions/latest`는 active editor/viewer가 latest saved snapshot을 읽는 기본 경로다.
+- `GET /api/v1/projects/:projectId/bootstrap`는 editor 초기 진입 시 `current/latest version -> revision pin fallback` 순서로 scene bootstrap을 제공한다.
+- `GET /api/v1/projects/:projectId/versions`는 editor revision drawer/history 목록 조회의 기본 경로다.
+- `GET /api/v1/catalog`는 editor shelf/shared viewer hotspot 매칭의 기본 browse 경로이며, web은 static manifest를 직접 읽지 않는다.
+- `GET /api/v1/room-templates`는 builder wizard 템플릿/마감재 browse의 기본 경로다.
+- `POST /api/v1/assets/generate`는 web route handler에서 session 인증 후 Railway worker enqueue endpoint(`/v1/assets/generate`)로 프록시한다.
+- `GET /api/v1/jobs/:jobId`는 web route handler에서 owner-scoped job status를 읽는 기본 폴링 경로다.
 - `GET /v1/projects/:projectId/scene/latest`는 archived room bootstrap과 ops 검증용 compatibility 경로로만 유지한다.
+- 브라우저에서 Railway URL을 직접 호출하지 않고, heavy 경로도 반드시 web route handler(`/api/v1/*`)를 통해 접근한다.
 - Next.js 내부 도메인/파싱 API(`/api/ai/parse-floorplan`, `/api/projects/*`, `/api/furnitures/*`, `/api/assets/generate`)는 사용하지 않는다.
 
 ## 데이터 테이블 기준
@@ -177,7 +186,7 @@ Added:
 - Railway worker가 TripoSR/Meshy 호출, GLB 저장, `assets` row 생성까지 담당하는 경계.
 
 Updated:
-- AssetPanel의 custom asset 생성 경로를 `Vercel route -> Railway API enqueue -> worker process -> /v1/jobs poll`로 전환.
+- AssetPanel의 custom asset 생성 경로를 `Vercel route -> Railway API enqueue -> worker process -> /api/v1/jobs poll`로 전환.
 - asset provider 키와 bucket 설정을 worker 전용 환경 변수로 이동.
 
 Removed/Deprecated:
@@ -402,7 +411,7 @@ Removed/Deprecated:
 
 ## 2026-04-09 변경 동기화 (Latest Version Cutover + Legacy Backfill Ops)
 Added:
-- active web는 `GET /v1/projects/:projectId/versions/latest`로 latest saved version만 hydrate한다.
+- active web는 `GET /api/v1/projects/:projectId/versions/latest`로 latest saved version만 hydrate한다.
 - `apps/api/scripts/backfill-legacy-project-versions.ts`와 `npm --workspace apps/api run backfill:legacy-project-versions -- --dry-run --limit <n>` 운영 절차를 추가한다.
 
 Updated:
@@ -428,11 +437,11 @@ Removed/Deprecated:
 ## 2026-04-09 변경 동기화 (Showcase Read Path on Vercel Route Handler)
 Added:
 - `apps/web`에 public showcase read 전용 Vercel Route Handler(`/api/v1/showcase`)를 추가한다.
-- route handler는 Railway `/v1/showcase`를 upstream으로 사용하면서 `revalidate=60` 캐시를 적용한다.
+- route handler는 web server helper(Supabase query)를 통해 feed를 구성하고 `revalidate=60` 캐시를 적용한다.
 
 Updated:
 - `/gallery`, `/community`는 direct client helper 대신 server-side showcase helper를 사용하고, page-level `revalidate=60`을 적용한다.
-- public showcase traffic은 `browser -> vercel route cache -> railway showcase` 순서로 단순화한다.
+- public showcase traffic은 `browser -> vercel route cache -> supabase` 순서로 단순화한다.
 
 Removed/Deprecated:
 - public showcase read를 항상 `no-store`로 Railway API에 직접 요청하는 기준.
@@ -464,7 +473,7 @@ Removed/Deprecated:
 ## 2026-04-09 변경 동기화 (Versions Latest Read on Vercel Route)
 Added:
 - `apps/web`에 auth 기반 `GET /api/v1/projects/:projectId/versions/latest` Route Handler를 추가한다.
-- editor bootstrap client는 local route read를 우선 사용하고, 실패 시 기존 Railway `/v1/projects/:projectId/versions/latest`로 fallback한다.
+- editor bootstrap client는 local route read만 사용하고 Railway direct latest-version fallback을 두지 않는다.
 
 Updated:
 - `latest version` 조회 트래픽은 `browser -> vercel route -> supabase`를 우선 경로로 사용해 Railway API 의존을 줄인다.
@@ -475,7 +484,8 @@ Removed/Deprecated:
 ## 2026-04-09 변경 동기화 (Lighting Persistence + Legacy Route Gating)
 Added:
 - scene 저장 계약에 `lighting`(ambient/hemisphere/directional/environment blur) 값을 포함하고 project version customization defaults로 저장/복원한다.
-- API 서버는 `ENABLE_LEGACY_API_ROUTES=false` 기본값에서 intake/floorplan/jobs/revisions/scenes 라우트를 마운트하지 않는다.
+- API 서버는 `ENABLE_LEGACY_API_ROUTES=false` 기본값에서 jobs/intake/floorplan/revisions/scenes 라우트를 마운트하지 않는다.
+- `/v1/jobs/:jobId`와 `/v1/jobs/:jobId/retry`는 legacy gate(`ENABLE_LEGACY_API_ROUTES`)에서 제어한다.
 
 Updated:
 - editor inspector는 finish 조정과 함께 조명 슬라이더를 제공하며, 변경값은 autosave를 통해 버전 스냅샷에 남는다.
@@ -484,3 +494,200 @@ Updated:
 Removed/Deprecated:
 - active editor 조명값이 런타임에서만 반영되고 저장본에는 남지 않는 계약.
 - legacy floorplan-first 라우트를 API 기본 동작으로 항상 노출하는 기준.
+
+## 2026-04-10 변경 동기화 (Project CRUD + Version Save on Vercel Routes)
+Added:
+- `apps/web` Route Handler에 auth 기반 project CRUD 경로를 추가한다.
+  - `GET/POST /api/v1/projects`
+  - `GET/DELETE /api/v1/projects/:projectId`
+- `POST /api/v1/projects/:projectId/versions` Route Handler를 추가해 editor/builder save path를 Vercel route + Supabase RPC(`create_project_version`)로 이전한다.
+- 프로젝트 저장 server helper(`lib/server/project-versions.ts`)를 추가해 thumbnail 업로드, asset summary 메타 반영, version snapshot 생성 로직을 통합한다.
+
+Updated:
+- active save/read path는 `browser -> vercel route -> supabase`를 기본으로 사용하며, Railway API의 lightweight project CRUD 의존을 제거한다.
+- `saveProject` client helper는 Railway `/v1/projects/:id/versions` 대신 local `/api/v1/projects/:id/versions`를 호출한다.
+
+Removed/Deprecated:
+- builder/editor의 기본 저장 루프가 Railway `/v1/projects/:projectId/versions`를 직접 호출하는 기준.
+
+## 2026-04-10 변경 동기화 (Template/Catalog BFF + SceneDocument Adapter)
+Added:
+- `GET /api/v1/catalog`, `GET /api/v1/room-templates` Route Handler를 추가해 template/catalog browse를 Vercel stateless API로 제공한다.
+- `lib/domain/scene-document.ts`를 추가해 `RoomShell`, `SceneDocument`, `SceneNode`, `MaterialOverride`, `LightInstance`, hotspot 타입을 web domain 계층으로 명시한다.
+
+Updated:
+- `useAssetCatalog`는 static manifest 직접 fetch 대신 `/api/v1/catalog`를 페이지네이션 누적으로 읽어 전체 카탈로그를 기준으로 shelf/search/hotspot 매칭을 수행한다.
+- builder wizard는 `/api/v1/room-templates` 응답을 hydration하고, 선택 템플릿 기본 치수를 초기 동기화한다(실패 시 local constants fallback).
+- editor/shared viewer bootstrap은 `features/floorplan/result-mapper` 직접 참조 대신 `SceneDocument` 어댑터(`mapProjectVersionToSceneDocument`)를 통해 scene state를 복원한다.
+
+Removed/Deprecated:
+- active builder/editor/viewer surface에서 `/assets/catalog/manifest.json`을 브라우저가 직접 source-of-truth로 읽는 기준.
+- editor/shared route에서 floorplan mapper 타입을 직접 제품 도메인 타입으로 사용하는 기준.
+
+## 2026-04-10 변경 동기화 (Showcase Archive Cursor Pagination Slice)
+Added:
+- `GET /api/v1/showcase` 계약에 `cursor`, `nextCursor`, `hasMore`를 추가하고, keyset 정렬(`published_at desc`, `id desc`) 기반 archive pagination을 도입한다.
+- gallery/community는 URL query(`room`,`tone`,`density`,`cursor`) 기반으로 archive 페이지를 누적 로드할 수 있는 `Load more` 흐름을 사용한다.
+
+Updated:
+- public browsing source-of-truth는 `lib/server/showcase.ts` 단일 helper와 route contract로 통일한다.
+- filter 조합은 latest-slice client filtering이 아니라 server helper의 cursor-aware 필터 경로를 통해 archive 전체를 탐색한다.
+- showcase read 캐시는 기존과 동일하게 Vercel route `revalidate=60` + `s-maxage=60` 정책을 유지한다.
+
+Removed/Deprecated:
+- gallery/community 페이지에 Supabase query/thumbnail signing 로직을 중복 구현하는 기준.
+- `latest 240` 고정 슬라이스를 archive browse의 임시 기본 동작으로 유지하는 기준.
+
+## 2026-04-10 변경 동기화 (Surface Anchor Persistence Hardening Slice)
+Added:
+- `SceneAsset` 계약에 `supportAssetId`, `supportProfile`를 포함하고 editor save/load 경로(`customization.sceneDocument`, `customization.furniture`)에서 양방향 보존한다.
+- surface anchor solver는 support asset yaw를 반영한 회전 footprint clamp를 사용하며, desk/shelf/furniture 표면 top 오프셋 기준으로 Y를 재계산한다.
+- scene store는 support asset 변경 시 종속 asset을 재앵커링하고, support 삭제 시 참조를 정리한 뒤 재배치한다.
+
+Updated:
+- surface-aware placement는 단순 nearest-center + fixed Y 규칙이 아니라 `support profile -> rotated footprint -> anchor constraint` 순서로 계산한다.
+- starter-set 및 drag/transform/inspector 수정은 동일한 anchor solver를 경유해 `supportAssetId`를 일관되게 갱신한다.
+- support stickiness는 유지하되, 새로운 support 후보가 충분히 가까우면 자동으로 전환되도록 조정한다.
+
+Removed/Deprecated:
+- surface anchor가 support 회전을 무시한 axis-aligned clamp만 수행하는 기준.
+- support가 이동/삭제되어도 종속 asset reference를 보정하지 않는 기준.
+
+## 2026-04-10 변경 동기화 (Vercel/Railway Boundary Hardening)
+Added:
+- web/runtime 경계 회귀를 막기 위해 `npm run check:web-boundary` 정적 검증을 추가한다.
+- Railway 수동 배포 컨텍스트에서 대용량 `apps/web/public`을 제외하도록 `.railwayignore` 규칙을 추가한다.
+- API 게이트 ownership 고정을 위해 `apps/api/src/app.route-gates.test.ts`를 추가하고 flags 조합별 `401/404` 계약을 검증한다.
+
+Updated:
+- web route handler와 E2E/eval/smoke 스크립트는 `RAILWAY_API_URL` server env 단일 소스를 사용한다.
+- `check:web-boundary`는 `NEXT_PUBLIC_RAILWAY_API_URL`, allowlist 외 `process.env.RAILWAY_API_URL`, hardcoded `*.railway.app` host를 모두 차단한다.
+- 운영 환경 변수 템플릿은 `NEXT_PUBLIC_RAILWAY_API_URL` 없이 same-origin BFF 경로를 기본으로 유지한다.
+- `SUPABASE_SERVICE_ROLE_KEY`는 production/preview에서 snapshot upload/signing 및 owner-scope job read 보강 경로를 위해 필수로 둔다.
+
+Removed/Deprecated:
+- web runtime에서 `NEXT_PUBLIC_RAILWAY_API_URL` fallback을 참조하는 경계.
+
+## 2026-04-10 변경 동기화 (Railway Jobs Gate Ownership Correction)
+Added:
+- `apps/api/src/app.route-gates.test.ts`에 `/v1/jobs/:jobId` gate ownership 검증(legacy gate 전용)을 추가한다.
+
+Updated:
+- Railway compatibility gate는 `projects/catalog/showcase`만 lightweight로 유지하고, `jobs`는 legacy gate에서만 노출한다.
+- active web job status는 `GET /api/v1/jobs/:jobId` route handler를 canonical read path로 유지한다.
+
+Removed/Deprecated:
+- `/v1/jobs/:jobId`를 lightweight gate(`ENABLE_LIGHTWEIGHT_API_ROUTES`)에 포함하는 운영 기준.
+
+## 2026-04-10 변경 동기화 (SceneDocument Canonicalization Hardening)
+Added:
+- `apps/web/src/lib/domain/legacy-floorplan-document.ts`를 추가해 floorplan-first 변환을 compatibility seam으로 분리한다.
+
+Updated:
+- `apps/web/src/lib/domain/scene-document.ts`는 `customization.sceneDocument` 중심 도메인 매핑 파일로 유지하고, legacy floorplan 변환은 별도 모듈로 위임한다.
+- builder/editor/shared active path의 source-of-truth 설명은 `customization.sceneDocument` 우선, legacy fallback은 이관/호환 전용으로 제한한다.
+
+Removed/Deprecated:
+- SceneDocument 도메인 레이어가 floorplan/result mapper를 직접 import하는 구조.
+
+## 2026-04-10 변경 동기화 (SceneDocument Save Contract Hardening Slice)
+Added:
+- editor/builder 저장 payload에 `roomShell`(`ceilings`, `rooms`, `cameraAnchors`, `navGraph`, `entranceId` 포함)을 추가해 save 시점에 파생 shell 데이터를 함께 전송한다.
+- `types/database.ts`의 `CustomizationData`에 `sceneDocument` 타입을 명시해 web/server 계약에서 canonical 저장 위치를 고정한다.
+
+Updated:
+- `apps/web/src/lib/server/project-versions.ts`는 `roomShell` payload가 있으면 이를 우선 사용해 `customization.sceneDocument.roomShell`을 직렬화한다.
+- `GET /api/v1/projects/:projectId/versions/latest` 내부 조회는 `projects.current_version_id`를 우선 사용하고, 없을 때만 최신 version fallback을 사용한다.
+- `apps/web/src/lib/server/projects.ts`는 `current_version_id` 및 revision 관련 metadata(`source_layout_revision_id`, `resolution_state`, `created_from_intake_session_id`)를 project 응답에 노출한다.
+
+Removed/Deprecated:
+- 저장 시 `topology(scale/walls/openings/floors)`만 반영해 `SceneDocument.roomShell` 파생 필드를 비우는 기준.
+
+## 2026-04-10 변경 동기화 (Shared Viewer Scene Envelope Slice)
+Added:
+- shared public payload에 `sceneBootstrap`(정규화된 `SceneDocument` + entrance/diagnostics)을 포함해 viewer 입력 계약을 명시한다.
+
+Updated:
+- `fetchPublicSceneByToken`는 raw version row를 그대로 넘기지 않고 서버에서 `mapProjectVersionToSceneDocument`를 먼저 수행해 정규화 결과를 전달한다.
+- `SharedProjectClient`는 `latestVersion` row 의존을 제거하고 `sceneBootstrap`을 직접 사용한다.
+
+Removed/Deprecated:
+- shared viewer가 `customization/floor_plan` raw row를 클라이언트에서 다시 매핑하는 기준.
+
+## 2026-04-10 변경 동기화 (Scene Store Derived Invalidation Slice)
+Added:
+- scene store에 topology 변경(`walls/openings/floors/scale`) 시 파생 필드(`ceilings`, `rooms`, `cameraAnchors`, `navGraph`)를 invalidation 하는 규칙을 추가한다.
+
+Updated:
+- `setScene`는 topology partial patch가 들어오고 파생 필드가 함께 오지 않으면 기존 파생값을 유지하지 않고 reset한다.
+- entrance pointer(`entranceId`)는 openings 기준으로 재계산해 stale entrance 참조를 줄인다.
+
+Removed/Deprecated:
+- topology 변경 이후에도 이전 파생 결과를 그대로 유지해 저장 payload에 stale scene 파생값이 섞이는 기준.
+
+## 2026-04-10 변경 동기화 (Project Bootstrap Revision Fallback Slice)
+Added:
+- `GET /api/v1/projects/:projectId/bootstrap` Route Handler를 추가해 editor bootstrap을 same-origin 단일 경로로 통합한다.
+- route handler는 `latest/current version`이 없을 때 `source_layout_revision_id`를 사용해 `layout_revisions`에서 scene bootstrap을 구성한다.
+
+Updated:
+- `/project/[id]` editor 초기화는 `/versions/latest` 단독 조회 대신 `/bootstrap` 응답(`current_version -> latest_version -> revision_layout`)을 사용한다.
+- revision fallback은 브라우저 직접 호출이 아니라 Vercel route + Supabase(service role) owner-scope 검증으로 처리한다.
+
+Removed/Deprecated:
+- saved version이 없으면 무조건 empty builder 상태로만 진입하는 bootstrap 기준.
+
+## 2026-04-10 변경 동기화 (Viewer Product Inspection + Surface Anchor Safety Slice)
+Added:
+- shared read-only viewer viewport에 in-scene product marker(`ViewerProductHotspots`)를 추가해 장면에서 직접 제품을 선택할 수 있는 inspect 경로를 제공한다.
+- shared product drawer에 selected product metadata 카드(`catalog/asset id`, `position`, `sku/vendor/material/variant/price`, `productUrl`)를 노출하는 규칙을 추가한다.
+
+Updated:
+- read-only 모드에서도 furniture mesh pointer selection을 허용해 “리스트 선택 전용”이 아닌 scene-first inspection 동작을 기본으로 한다.
+- `desk_surface/shelf_surface/furniture_surface` 배치는 유효 support surface를 찾지 못하면 default 높이 고정 대신 바닥 높이(`y=0`)로 안전 클램프하고 anchor semantic은 유지한다.
+
+Removed/Deprecated:
+- support surface가 없는 상태에서도 surface-anchor 오브젝트를 공중 높이에 유지하는 배치 기준.
+- shared viewer 제품 inspection을 우측 리스트 클릭으로만 제한하는 상호작용 기준.
+
+## 2026-04-11 변경 동기화 (Builder Opening Authoring Stability Slice)
+Added:
+- builder Step 3 opening 정규화에 same-wall overlap 해소 규칙(최소 간격 + 과밀 시 폭 축소/제외)을 추가한다.
+- builder shell 변경(템플릿/치수 변경) 시 기존 opening draft를 wall index 기반으로 remap해 편집 연속성을 유지한다.
+
+Updated:
+- Step 3의 door/window style preset은 기존 opening을 강제 덮어쓰는 글로벌 동기화가 아니라 “신규 opening 기본값” 기준으로 동작한다.
+- shell geometry 변경 시 opening source-of-truth는 `baseScene defaults` 일괄 리셋이 아니라 `manual openingDraft remap -> normalize` 우선 경로를 사용한다.
+
+Removed/Deprecated:
+- preset 토글 변경만으로 사용자가 수동 편집한 opening 폭/개수를 즉시 재동기화(파괴적 overwrite)하는 기준.
+
+## 2026-04-11 변경 동기화 (Public Viewer Product Inspection Polish Slice)
+Added:
+- shared viewer 우측 패널은 `Selected product`, `Hotspot list`, `Room mix` 3단 inspection 계층을 기본 구조로 사용한다.
+- `ViewerProductHotspots`는 read-only top/walk 모드 모두에서 marker를 노출하고 번호 badge를 포함해 제품 탐색 연속성을 유지한다.
+
+Updated:
+- selected product 패널은 카테고리/컬렉션/anchor + vendor/material/variant/price + external product link 중심으로 구성한다.
+- viewer 상단/카드 카피는 내부 구현 용어(`pinned builder snapshot`)보다 public showroom 톤으로 정리한다.
+
+Removed/Deprecated:
+- selected panel에 위치 좌표 같은 디버그성 필드를 기본 노출하는 기준.
+- walk 모드에서 hotspot marker를 숨기는 기준.
+
+## 2026-04-11 변경 동기화 (Boundary + Canonical Snapshot Alignment Slice)
+Added:
+- `lib/domain/room-shell.ts`를 추가해 builder topology로부터 `rooms`, `ceilings`, `cameraAnchors`, `navGraph`, `entranceId`를 일관 생성하는 canonical helper를 도입한다.
+- share 생성 시 pinned version의 `sceneDocument.nodes` 기준으로 preview asset summary를 재계산해 viewer rail 메타를 버전 스코프로 고정한다.
+- CI web job에 optional preview runtime smoke(`smoke:preview-runtime`)를 추가해 Vercel bundle의 Railway URL 비노출 경계를 지속 검증한다.
+
+Updated:
+- `createProjectShare`는 최신 version 번호 직접 조회가 아니라 `current_version_id` 우선 해석을 따르는 version resolver를 사용한다.
+- builder save/preview scene는 empty 파생 필드 대신 `deriveBlankRoomShell` 결과를 사용해 walk spawn/inspection 품질을 안정화한다.
+- `mapProjectVersionToSceneDocument`는 active path에서 `customization.sceneDocument` 단일 경로만 사용하고 legacy floorplan fallback 의존을 제거한다.
+- top-level 운영 문서/템플릿(`README`, `.env.example`)은 boundary 검증 명령과 worker 필수 env를 명시해 운영 오차를 줄인다.
+
+Removed/Deprecated:
+- share pinning에서 `latest(version)` 기준으로 별도 선택되어 editor bootstrap 포인터와 불일치할 수 있는 기준.
+- builder starter save에서 `rooms/ceilings/cameraAnchors/navGraph`를 빈 배열로 저장하는 기준.
+- active scene 매핑 경로에서 `legacy-floorplan-document` fallback을 유지하는 기준.

@@ -2,21 +2,148 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Link2, MessagesSquare, Sparkles, Users } from "lucide-react";
 import { PublishedSnapshotCard } from "../../components/project/PublishedSnapshotCard";
 import { getCatalogPreviewClasses } from "../../lib/builder/catalog";
-import { fetchShowcaseSnapshotResultServer } from "../../lib/server/showcase";
+import {
+  normalizeShowcaseFilters,
+  type ShowcaseDensityFilter,
+  type ShowcaseFilters,
+  type ShowcaseRoomFilter,
+  type ShowcaseSnapshotItem,
+  type ShowcaseToneFilter
+} from "../../lib/api/showcase";
+import { fetchShowcaseSnapshotFeed } from "../../lib/server/showcase";
 
 export const revalidate = 60;
+
+type SearchParams = Record<string, string | string[] | undefined>;
+type ShowcaseArchiveResult = {
+  items: ShowcaseSnapshotItem[];
+  total: number;
+  nextCursor: string | null;
+  hasMore: boolean;
+  error: string | null;
+};
+
+const PAGE_SIZE = 24;
+
+const roomFilterOptions: Array<{ id: ShowcaseRoomFilter; label: string }> = [
+  { id: "all", label: "All rooms" },
+  { id: "living", label: "Living" },
+  { id: "workspace", label: "Workspace" },
+  { id: "bedroom", label: "Bedroom" },
+  { id: "flex", label: "Flexible" }
+];
+
+const toneFilterOptions: Array<{ id: ShowcaseToneFilter; label: string }> = [
+  { id: "all", label: "All tones" },
+  { id: "sand", label: "Warm sand" },
+  { id: "olive", label: "Olive" },
+  { id: "slate", label: "Slate" },
+  { id: "ember", label: "Ember" }
+];
+
+const densityFilterOptions: Array<{ id: ShowcaseDensityFilter; label: string }> = [
+  { id: "all", label: "Any fill" },
+  { id: "minimal", label: "Quiet" },
+  { id: "layered", label: "Layered" },
+  { id: "collected", label: "Collected" }
+];
+
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? undefined : value;
+}
+
+function parseTotalHint(rawValue: string | null) {
+  if (!rawValue) return null;
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.trunc(parsed);
+}
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString();
 }
 
-export default async function CommunityPage() {
-  const { items: snapshots, error: showcaseError } = await fetchShowcaseSnapshotResultServer(18);
-  const featured = snapshots[0] ?? null;
-  const feed = snapshots.slice(1, 7);
-  const archive = snapshots.slice(7, 13);
+function buildFilterHref(pathname: string, filters: ShowcaseFilters, patch: Partial<ShowcaseFilters>) {
+  const nextFilters = normalizeShowcaseFilters({ ...filters, ...patch });
+  const params = new URLSearchParams();
+
+  if (nextFilters.room !== "all") params.set("room", nextFilters.room);
+  if (nextFilters.tone !== "all") params.set("tone", nextFilters.tone);
+  if (nextFilters.density !== "all") params.set("density", nextFilters.density);
+
+  const query = params.toString();
+  return query.length > 0 ? `${pathname}?${query}` : pathname;
+}
+
+function buildPageHref(pathname: string, filters: ShowcaseFilters, cursor: string | null, totalHint: number) {
+  const params = new URLSearchParams();
+
+  if (filters.room !== "all") params.set("room", filters.room);
+  if (filters.tone !== "all") params.set("tone", filters.tone);
+  if (filters.density !== "all") params.set("density", filters.density);
+  if (cursor) {
+    params.set("cursor", cursor);
+  }
+  params.set("total", String(totalHint));
+
+  const query = params.toString();
+  return query.length > 0 ? `${pathname}?${query}` : pathname;
+}
+
+async function fetchShowcaseArchivePage(
+  cursor: string | null,
+  totalHint: number | null,
+  filters: ShowcaseFilters
+): Promise<ShowcaseArchiveResult> {
+  try {
+    const feed = await fetchShowcaseSnapshotFeed({
+      limit: PAGE_SIZE,
+      cursor,
+      totalHint,
+      room: filters.room,
+      tone: filters.tone,
+      density: filters.density
+    });
+
+    return {
+      items: feed.items,
+      total: feed.total,
+      nextCursor: feed.nextCursor,
+      hasMore: feed.hasMore,
+      error: null
+    };
+  } catch {
+    return {
+      items: [],
+      total: 0,
+      nextCursor: null,
+      hasMore: false,
+      error: "Showcase feed is unavailable right now."
+    };
+  }
+}
+
+export default async function CommunityPage({ searchParams }: { searchParams?: SearchParams }) {
+  const filters = normalizeShowcaseFilters({
+    room: firstValue(searchParams?.room),
+    tone: firstValue(searchParams?.tone),
+    density: firstValue(searchParams?.density)
+  });
+  const currentCursor = firstValue(searchParams?.cursor) ?? null;
+  const totalHint = parseTotalHint(firstValue(searchParams?.total) ?? null);
+  const {
+    items: snapshots,
+    total: totalPublished,
+    nextCursor,
+    hasMore,
+    error: showcaseError
+  } = await fetchShowcaseArchivePage(currentCursor, totalHint, filters);
+  const filteredSnapshots = snapshots;
+  const featured = filteredSnapshots[0] ?? null;
+  const feed = filteredSnapshots.slice(1, 7);
+  const archive = filteredSnapshots.slice(7, 13);
   const collectionPulse = Array.from(
-    snapshots
+    filteredSnapshots
       .flatMap((snapshot) => snapshot.previewMeta?.assetSummary?.collections ?? [])
       .reduce<Map<string, number>>((map, collection) => {
         map.set(collection.label, (map.get(collection.label) ?? 0) + collection.count);
@@ -28,10 +155,15 @@ export default async function CommunityPage() {
     .sort((left, right) => right.count - left.count)
     .slice(0, 6);
   const activeCollections = new Set(
-    snapshots.flatMap((snapshot) => snapshot.previewMeta?.assetSummary?.collections.map((collection) => collection.label) ?? [])
+    filteredSnapshots.flatMap((snapshot) => snapshot.previewMeta?.assetSummary?.collections.map((collection) => collection.label) ?? [])
   ).size;
-  const latestPublish = snapshots[0]?.published_at ?? null;
+  const latestPublish = filteredSnapshots[0]?.published_at ?? null;
   const featuredTheme = getCatalogPreviewClasses(featured?.previewMeta?.assetSummary?.primaryTone ?? "sand");
+  const activeFilterCount =
+    Number(filters.room !== "all") + Number(filters.tone !== "all") + Number(filters.density !== "all");
+  const loadedCount = snapshots.length;
+  const matchesLoadedCount = filteredSnapshots.length;
+  const loadMoreHref = nextCursor ? buildPageHref("/community", filters, nextCursor, totalPublished) : null;
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] px-4 pb-20 pt-24 text-[#171411] sm:px-6 lg:px-10">
@@ -69,11 +201,19 @@ export default async function CommunityPage() {
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
             <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
               <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Rooms in circulation</div>
-              <div className="mt-4 text-4xl font-cormorant">{showcaseError ? "Unavailable" : snapshots.length}</div>
+              <div className="mt-4 text-4xl font-cormorant">
+                {showcaseError ? "Unavailable" : totalPublished}
+              </div>
               <p className="mt-3 text-sm leading-7 text-[#61574e]">
                 {showcaseError
                   ? "The public feed could not be loaded, so circulation cannot be measured right now."
-                  : "Permanent view-only builder snapshots currently visible to everyone."}
+                  : activeFilterCount > 0
+                    ? hasMore
+                      ? `Showing ${matchesLoadedCount} matches on this page (of ${totalPublished} published rooms).`
+                      : `${matchesLoadedCount} matches across ${totalPublished} published rooms.`
+                    : hasMore
+                      ? `Showing ${loadedCount} rooms on this page of ${totalPublished} published rooms.`
+                      : "Permanent view-only builder snapshots currently visible to everyone."}
               </p>
             </div>
             <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
@@ -82,7 +222,7 @@ export default async function CommunityPage() {
               <p className="mt-3 text-sm leading-7 text-[#61574e]">
                 {showcaseError
                   ? "Collection analytics are hidden until the showcase feed is healthy again."
-                  : "Collection families currently represented across the public builder catalog."}
+                  : "Collection families represented by the currently visible community slice."}
               </p>
             </div>
             <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
@@ -96,6 +236,83 @@ export default async function CommunityPage() {
           </div>
         </header>
 
+        <section className="mt-8 rounded-[30px] border border-black/10 bg-white/74 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.08)]">
+          <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">
+            <Sparkles className="h-4 w-4" />
+            <span>Filter circulation</span>
+            {activeFilterCount > 0 ? (
+              <Link
+                href="/community"
+                className="ml-auto text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f6358] transition hover:text-[#171411]"
+              >
+                Clear filters
+              </Link>
+            ) : null}
+          </div>
+
+          <div className="mt-5 space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8177]">
+              <span className="mr-2">Room type</span>
+              {roomFilterOptions.map((option) => {
+                const isActive = filters.room === option.id;
+                return (
+                  <Link
+                    key={option.id}
+                    href={buildFilterHref("/community", filters, { room: option.id })}
+                    className={`rounded-full px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
+                      isActive
+                        ? "bg-[#171411] text-white"
+                        : "border border-black/10 bg-[#faf7f2] text-[#625a51] hover:border-black/20 hover:bg-white"
+                    }`}
+                  >
+                    {option.label}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8177]">
+              <span className="mr-2">Tone</span>
+              {toneFilterOptions.map((option) => {
+                const isActive = filters.tone === option.id;
+                return (
+                  <Link
+                    key={option.id}
+                    href={buildFilterHref("/community", filters, { tone: option.id })}
+                    className={`rounded-full px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
+                      isActive
+                        ? "bg-[#171411] text-white"
+                        : "border border-black/10 bg-[#faf7f2] text-[#625a51] hover:border-black/20 hover:bg-white"
+                    }`}
+                  >
+                    {option.label}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8177]">
+              <span className="mr-2">Scene fill</span>
+              {densityFilterOptions.map((option) => {
+                const isActive = filters.density === option.id;
+                return (
+                  <Link
+                    key={option.id}
+                    href={buildFilterHref("/community", filters, { density: option.id })}
+                    className={`rounded-full px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
+                      isActive
+                        ? "bg-[#171411] text-white"
+                        : "border border-black/10 bg-[#faf7f2] text-[#625a51] hover:border-black/20 hover:bg-white"
+                    }`}
+                  >
+                    {option.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {showcaseError ? (
           <section className="mt-14 rounded-[34px] border border-[#c06e3d]/20 bg-[#fff8f3] p-10 shadow-[0_24px_80px_rgba(58,40,20,0.08)]">
             <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#b56a3e]">Community unavailable</div>
@@ -103,6 +320,36 @@ export default async function CommunityPage() {
             <p className="mt-4 max-w-3xl text-sm leading-7 text-[#61574e]">
               {showcaseError} Treat this as a publish pipeline or API problem, not as an empty community.
             </p>
+          </section>
+        ) : filteredSnapshots.length === 0 && snapshots.length > 0 ? (
+          <section className="mt-14 rounded-[34px] border border-dashed border-black/12 bg-white/76 p-10 shadow-[0_24px_80px_rgba(58,40,20,0.06)]">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
+              {hasMore ? "No matches loaded yet" : "No matching rooms"}
+            </div>
+            <h2 className="mt-4 text-4xl font-cormorant font-light text-[#171411]">
+              {hasMore ? "The current filters have not matched the loaded archive pages yet." : "Nothing in circulation matches these filters."}
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-[#61574e]">
+              {hasMore
+                ? "Load more archive pages to continue scanning the public feed, or clear filters to widen the visible view."
+                : "Widen the room type, tone, or scene fill to bring more published snapshots back into view."}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {hasMore && nextCursor ? (
+                <Link
+                  href={loadMoreHref}
+                  className="inline-flex rounded-full border border-black/10 bg-[#faf7f2] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#52483f] transition hover:border-black/20 hover:bg-white"
+                >
+                  Load more
+                </Link>
+              ) : null}
+              <Link
+                href="/community"
+                className="inline-flex rounded-full border border-black/10 bg-[#faf7f2] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#52483f] transition hover:border-black/20 hover:bg-white"
+              >
+                Clear filters
+              </Link>
+            </div>
           </section>
         ) : featured ? (
           <section className="mt-14 grid gap-8 xl:grid-cols-[1.06fr_0.94fr]">
@@ -186,9 +433,7 @@ export default async function CommunityPage() {
                       key={collection.label}
                       className="rounded-[22px] border border-black/10 bg-[#f7f2ea] px-4 py-4 text-[#4f463d]"
                     >
-                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8a7c70]">
-                        {collection.label}
-                      </div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8a7c70]">{collection.label}</div>
                       <div className="mt-2 text-2xl font-cormorant">{collection.count}</div>
                     </div>
                   ))}
@@ -205,8 +450,7 @@ export default async function CommunityPage() {
                   Pinned public feed
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[#61574e]">
-                  This is not a mock forum anymore. Community now reflects the same pinned share snapshots that power
-                  the public viewer and showcase archive.
+                  This feed stays grounded in the same pinned share snapshots that power the public viewer and gallery archive.
                 </p>
               </div>
             </div>
@@ -261,28 +505,25 @@ export default async function CommunityPage() {
                 ))}
               </div>
             ) : (
-              <div className="mt-6 rounded-[24px] border border-dashed border-black/12 bg-[#fbf8f2] p-8 text-sm leading-7 text-[#61574e]">
-                No published community rooms yet. Create a permanent view-only share link from the editor and publish it
-                to start the feed.
+              <div className="mt-6 rounded-[24px] border border-dashed border-black/12 bg-[#faf7f2] p-8 text-sm leading-7 text-[#61574e]">
+                {hasMore
+                  ? "Load more archive pages to surface additional recent rooms under the current filters."
+                  : "Recent room cards appear here once the current filters leave more than one published match."}
               </div>
             )}
           </div>
 
-          <div>
-            <div className="mb-8 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
+          <div className="rounded-[34px] border border-black/10 bg-white/76 p-8 shadow-[0_24px_80px_rgba(58,40,20,0.08)]">
+            <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
               <Sparkles className="h-4 w-4" />
               <span>Archive picks</span>
             </div>
             {showcaseError ? (
-              <div className="rounded-[34px] border border-[#c06e3d]/20 bg-[#fff8f3] p-12 text-center shadow-[0_16px_44px_rgba(68,52,34,0.08)]">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#b56a3e]">Archive unavailable</div>
-                <h2 className="mt-4 text-4xl font-cormorant font-light">Pinned rooms could not be loaded.</h2>
-                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
-                  Fix the showcase transport before treating the archive as empty.
-                </p>
+              <div className="mt-6 rounded-[24px] border border-[#c06e3d]/20 bg-[#fff8f3] p-8 text-sm leading-7 text-[#61574e]">
+                Fix the showcase transport before treating the archive as empty.
               </div>
             ) : archive.length > 0 ? (
-              <div className="grid gap-8 sm:grid-cols-2">
+              <div className="mt-6 grid gap-6 md:grid-cols-2">
                 {archive.map((snapshot) => (
                   <PublishedSnapshotCard
                     key={snapshot.id}
@@ -294,16 +535,35 @@ export default async function CommunityPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-[34px] border border-dashed border-black/12 bg-white/70 p-12 text-center shadow-[0_16px_44px_rgba(68,52,34,0.08)]">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Archive empty</div>
-                <h2 className="mt-4 text-4xl font-cormorant font-light">Pinned rooms appear here next.</h2>
-                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
-                  Once a few rooms are published, the broader archive will branch out beneath the main community feed.
-                </p>
+              <div className="mt-6 rounded-[24px] border border-dashed border-black/12 bg-[#faf7f2] p-8 text-sm leading-7 text-[#61574e]">
+                {hasMore
+                  ? "Load more archive pages to find additional archive picks under the current filters."
+                  : "Archive picks return as soon as the current filter view contains more published rooms."}
               </div>
             )}
           </div>
         </section>
+
+        {!showcaseError && matchesLoadedCount > 0 && hasMore && Boolean(loadMoreHref) ? (
+          <div className="mt-10 flex justify-center">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {loadMoreHref ? (
+                <Link
+                  href={loadMoreHref}
+                  className="inline-flex items-center rounded-full border border-black/10 bg-white/86 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#52483f] transition hover:border-black/20 hover:bg-white"
+                >
+                  Next page
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {!showcaseError && matchesLoadedCount > 0 && !hasMore ? (
+          <p className="mt-10 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7c70]">
+            End of published archive
+          </p>
+        ) : null}
       </div>
     </div>
   );

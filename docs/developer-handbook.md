@@ -58,12 +58,12 @@ Plan2Space는 실내 공간을 만들고 편집하고 공유하는 웹 서비스
 ```mermaid
 flowchart LR
   A["User"] --> B["/studio/builder"]
-  B --> C["POST /v1/projects"]
+  B --> C["POST /api/v1/projects"]
   C --> D["Project created"]
-  D --> E["POST /v1/projects/:id/versions"]
+  D --> E["POST /api/v1/projects/:id/versions"]
   E --> F["project_versions saved"]
   F --> G["/project/[id]"]
-  G --> H["GET /v1/projects/:id/versions/latest"]
+  G --> H["GET /api/v1/projects/:id/versions/latest"]
   H --> I["Top View / Walk Mode"]
   I --> J["Share modal"]
   J --> K["shared_projects pinned snapshot"]
@@ -389,7 +389,7 @@ legacy project 운영과 AI pipeline에서는 여전히 중요합니다.
 ### 7.2 Editor 흐름
 
 1. `/project/[id]` 진입
-2. `GET /v1/projects/:id/versions/latest`
+2. `GET /api/v1/projects/:id/versions/latest`
 3. saved version을 scene state로 변환
 4. Top View에서 가구/마감재 편집
 5. autosave 또는 manual save
@@ -476,8 +476,8 @@ npm run dev:web
 
 주의:
 
-- `NEXT_PUBLIC_RAILWAY_API_URL`이 없으면 `/gallery`, `/community`, showcase 관련 검증은 empty state가 아니라 unavailable state로 보이게 된다.
-- 즉 local smoke test에서 showcase가 비어 보인다면, 먼저 데이터가 없는지보다 API URL env가 빠졌는지 확인해야 한다.
+- `RAILWAY_API_URL`이 없으면 web route handler의 worker proxy(`/api/v1/assets/generate`)가 실패한다.
+- showcase는 Supabase 기반 route handler(`/api/v1/showcase`)를 사용하므로, unavailable state 디버깅 시 Railway URL보다 Supabase/session/query 오류를 먼저 확인한다.
 
 ### 9.2 전체 서비스 개발 모드
 
@@ -487,7 +487,7 @@ npm run dev:web
 npm run dev:web
 ```
 
-또는 showcase/share까지 같이 검증하려면 `apps/web/.env.local`에 `NEXT_PUBLIC_RAILWAY_API_URL`을 넣고 시작한다.
+custom asset enqueue/e2e를 같이 검증하려면 `apps/web/.env.local`에 `RAILWAY_API_URL`을 넣고 시작한다.
 
 터미널 2:
 
@@ -515,7 +515,9 @@ npm --workspace apps/worker run typecheck
 
 ```bash
 npm --workspace apps/api run backfill:legacy-project-versions -- --dry-run --limit 20
-npm --workspace apps/web run smoke:preview-runtime -- --url=<preview-url> --expected=<railway-url>
+npm --workspace apps/api run test:route-gates
+npm run check:web-boundary
+npm --workspace apps/web run smoke:preview-runtime -- --url=<preview-url> --mode=must-not-embed --expected=<railway-url>
 npm --workspace apps/web run e2e:intake -- --api=<railway-url>
 ```
 

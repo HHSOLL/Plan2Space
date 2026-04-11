@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { normalizeSceneAnchorType, type SceneAnchorType } from "../scene/anchor-types";
+import { constrainPlacementToAnchor } from "../scene/anchors";
+import {
+  normalizeAssetSupportProfile,
+  type AssetSupportProfile
+} from "../scene/support-profiles";
 
 export type Vector2 = [number, number];
 export type Vector3 = [number, number, number];
@@ -132,6 +137,8 @@ export type SceneAsset = {
   assetId: string;
   catalogItemId?: string | null;
   anchorType?: SceneAnchorType;
+  supportAssetId?: string | null;
+  supportProfile?: AssetSupportProfile | null;
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
@@ -295,6 +302,79 @@ const createId = () => {
   return `asset-${Math.random().toString(36).slice(2, 10)}`;
 };
 
+function normalizeSupportAssetId(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function normalizeSceneAsset(asset: SceneAsset): SceneAsset {
+  return {
+    ...asset,
+    catalogItemId: typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0 ? asset.catalogItemId : null,
+    anchorType: normalizeSceneAnchorType(asset.anchorType),
+    supportAssetId: normalizeSupportAssetId(asset.supportAssetId),
+    supportProfile: normalizeAssetSupportProfile(asset.supportProfile)
+  };
+}
+
+function isSurfaceAnchor(anchorType: SceneAnchorType | undefined): boolean {
+  return (
+    anchorType === "desk_surface" ||
+    anchorType === "shelf_surface" ||
+    anchorType === "furniture_surface"
+  );
+}
+
+function reanchorDependentsForSupport(
+  assets: SceneAsset[],
+  supportId: string,
+  context: {
+    walls: Wall[];
+    ceilings: Ceiling[];
+    scale: number;
+  }
+) {
+  if (!assets.some((asset) => asset.supportAssetId === supportId)) {
+    return assets;
+  }
+
+  let nextAssets = assets;
+  nextAssets.forEach((asset, index) => {
+    if (asset.supportAssetId !== supportId || !isSurfaceAnchor(asset.anchorType)) {
+      return;
+    }
+
+    const anchoredPlacement = constrainPlacementToAnchor(
+      {
+        position: asset.position,
+        rotation: asset.rotation,
+        anchorType: asset.anchorType,
+        supportAssetId: asset.supportAssetId
+      },
+      {
+        walls: context.walls,
+        ceilings: context.ceilings,
+        scale: context.scale,
+        sceneAssets: nextAssets,
+        activeAssetId: asset.id
+      }
+    );
+
+    nextAssets = nextAssets.map((candidate, candidateIndex) =>
+      candidateIndex === index
+        ? normalizeSceneAsset({
+            ...candidate,
+            anchorType: anchoredPlacement.anchorType,
+            supportAssetId: anchoredPlacement.supportAssetId,
+            position: anchoredPlacement.position,
+            rotation: anchoredPlacement.rotation
+          })
+        : candidate
+    );
+  });
+
+  return nextAssets;
+}
+
 function buildSnapshot(
   state: SceneDataState,
   label?: string,
@@ -356,11 +436,47 @@ function applySnapshot(snapshot: ProjectSnapshot) {
   };
 }
 
+function createEmptyNavGraph(): NavGraph {
+  return {
+    nodes: [],
+    edges: []
+  };
+}
+
+function createDerivedSceneReset() {
+  return {
+    ceilings: [] as Ceiling[],
+    rooms: [] as RoomZone[],
+    cameraAnchors: [] as CameraAnchor[],
+    navGraph: createEmptyNavGraph()
+  };
+}
+
+function resolveEntranceId(openings: Opening[]) {
+  const entrance = openings.find((opening) => opening.isEntrance);
+  return entrance?.id ?? null;
+}
+
 export const useSceneStore = create<SceneState>((set) => ({
   ...initialSceneState,
-  setWalls: (walls) => set({ walls }),
-  setOpenings: (openings) => set({ openings }),
-  setFloors: (floors) => set({ floors }),
+  setWalls: (walls) =>
+    set((state) => ({
+      walls,
+      ...createDerivedSceneReset(),
+      entranceId: resolveEntranceId(state.openings)
+    })),
+  setOpenings: (openings) =>
+    set(() => ({
+      openings,
+      ...createDerivedSceneReset(),
+      entranceId: resolveEntranceId(openings)
+    })),
+  setFloors: (floors) =>
+    set((state) => ({
+      floors,
+      ...createDerivedSceneReset(),
+      entranceId: resolveEntranceId(state.openings)
+    })),
   setCeilings: (ceilings) => set({ ceilings }),
   setRooms: (rooms) => set({ rooms }),
   setCameraAnchors: (cameraAnchors) => set({ cameraAnchors }),
@@ -369,7 +485,8 @@ export const useSceneStore = create<SceneState>((set) => ({
   setScale: (scale, scaleInfo) =>
     set((state) => ({
       scale,
-      scaleInfo: scaleInfo ? { ...scaleInfo, value: scale } : { ...state.scaleInfo, value: scale }
+      scaleInfo: scaleInfo ? { ...scaleInfo, value: scale } : { ...state.scaleInfo, value: scale },
+      ...createDerivedSceneReset()
     })),
   setScaleInfo: (scaleInfo) =>
     set(() => ({
@@ -390,7 +507,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     set((state) => {
       const newAssets = [
         ...state.assets,
-        {
+        normalizeSceneAsset({
           id: asset.id ?? createId(),
           assetId: asset.assetId,
           catalogItemId:
@@ -398,19 +515,21 @@ export const useSceneStore = create<SceneState>((set) => ({
               ? asset.catalogItemId
               : null,
           anchorType: normalizeSceneAnchorType(asset.anchorType),
+          supportAssetId: normalizeSupportAssetId(asset.supportAssetId),
+          supportProfile: normalizeAssetSupportProfile(asset.supportProfile),
           position: asset.position,
           rotation: asset.rotation,
           scale: asset.scale,
           materialId: asset.materialId ?? null
-        }
+        })
       ];
       return { assets: newAssets };
     }),
   updateFurniture: (id, updates) =>
-    set((state) => ({
-      assets: state.assets.map((asset) =>
+    set((state) => {
+      let nextAssets = state.assets.map((asset) =>
         asset.id === id
-          ? {
+          ? normalizeSceneAsset({
               ...asset,
               ...updates,
               catalogItemId:
@@ -418,16 +537,63 @@ export const useSceneStore = create<SceneState>((set) => ({
                 (updates.catalogItemId ?? asset.catalogItemId)?.length
                   ? (updates.catalogItemId ?? asset.catalogItemId)
                   : null,
-              anchorType: normalizeSceneAnchorType(updates.anchorType ?? asset.anchorType)
-            }
+              anchorType: normalizeSceneAnchorType(updates.anchorType ?? asset.anchorType),
+              supportAssetId:
+                updates.supportAssetId !== undefined ? normalizeSupportAssetId(updates.supportAssetId) : asset.supportAssetId,
+              supportProfile:
+                updates.supportProfile !== undefined
+                  ? normalizeAssetSupportProfile(updates.supportProfile)
+                  : asset.supportProfile ?? null
+            })
           : asset
-      )
-    })),
+      );
+
+      nextAssets = reanchorDependentsForSupport(nextAssets, id, {
+        walls: state.walls,
+        ceilings: state.ceilings,
+        scale: state.scale
+      });
+
+      return { assets: nextAssets };
+    }),
   removeFurniture: (id) =>
-    set((state) => ({
-      assets: state.assets.filter((asset) => asset.id !== id),
-      selectedAssetId: state.selectedAssetId === id ? null : state.selectedAssetId
-    })),
+    set((state) => {
+      const remainingAssets = state.assets.filter((asset) => asset.id !== id);
+      const nextAssets = remainingAssets.map((asset) => {
+        if (asset.supportAssetId !== id || !isSurfaceAnchor(asset.anchorType)) {
+          return asset;
+        }
+
+        const anchoredPlacement = constrainPlacementToAnchor(
+          {
+            position: asset.position,
+            rotation: asset.rotation,
+            anchorType: asset.anchorType,
+            supportAssetId: null
+          },
+          {
+            walls: state.walls,
+            ceilings: state.ceilings,
+            scale: state.scale,
+            sceneAssets: remainingAssets,
+            activeAssetId: asset.id
+          }
+        );
+
+        return normalizeSceneAsset({
+          ...asset,
+          anchorType: anchoredPlacement.anchorType,
+          supportAssetId: anchoredPlacement.supportAssetId,
+          position: anchoredPlacement.position,
+          rotation: anchoredPlacement.rotation
+        });
+      });
+
+      return {
+        assets: nextAssets,
+        selectedAssetId: state.selectedAssetId === id ? null : state.selectedAssetId
+      };
+    }),
   upsertMaterial: (material) =>
     set((state) => ({
       materials: { ...state.materials, [material.id]: material }
@@ -534,16 +700,22 @@ export const useSceneStore = create<SceneState>((set) => ({
       const nextScaleInfo =
         scene.scaleInfo ??
         (typeof scene.scale === "number" ? { ...state.scaleInfo, value: scene.scale } : state.scaleInfo);
+      const topologyChanged =
+        scene.walls !== undefined ||
+        scene.openings !== undefined ||
+        scene.floors !== undefined ||
+        scene.scale !== undefined ||
+        scene.scaleInfo !== undefined;
+      const derivedProvided =
+        scene.ceilings !== undefined ||
+        scene.rooms !== undefined ||
+        scene.cameraAnchors !== undefined ||
+        scene.navGraph !== undefined;
+      const derivedReset = topologyChanged && !derivedProvided ? createDerivedSceneReset() : {};
+      const nextOpenings = scene.openings ?? state.openings;
       const nextAssets =
         Array.isArray(scene.assets) && scene.assets.length > 0
-          ? scene.assets.map((asset) => ({
-              ...asset,
-              catalogItemId:
-                typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
-                  ? asset.catalogItemId
-                  : null,
-              anchorType: normalizeSceneAnchorType(asset.anchorType)
-            }))
+          ? scene.assets.map((asset) => normalizeSceneAsset(asset))
           : scene.assets;
       const nextLighting = scene.lighting
         ? {
@@ -551,12 +723,20 @@ export const useSceneStore = create<SceneState>((set) => ({
             ...scene.lighting
           }
         : state.lighting;
+      const nextEntranceId =
+        scene.entranceId !== undefined
+          ? scene.entranceId
+          : topologyChanged
+            ? resolveEntranceId(nextOpenings)
+            : state.entranceId;
       return {
         ...scene,
+        ...derivedReset,
         assets: nextAssets,
         lighting: nextLighting,
         scale: nextScale,
-        scaleInfo: nextScaleInfo
+        scaleInfo: nextScaleInfo,
+        entranceId: nextEntranceId
       };
     }),
   resetScene: () => set({ ...initialSceneState })

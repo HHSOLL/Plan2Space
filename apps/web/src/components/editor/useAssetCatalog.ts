@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { fetchAssetCatalog } from "../../lib/api/catalog";
 import {
   DEFAULT_CATALOG,
   filterCatalogItems,
   getCatalogSpotlight,
   getFeaturedCatalogItems,
   getLibraryCategories,
-  normalizeCatalog,
   type LibraryCatalogCategoryId,
   type LibraryCatalogItem
 } from "../../lib/builder/catalog";
@@ -20,11 +20,10 @@ export function useAssetCatalog() {
   useEffect(() => {
     let active = true;
 
-    fetch("/assets/catalog/manifest.json")
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Asset catalog missing"))))
-      .then((data) => {
+    fetchAssetCatalog()
+      .then((items) => {
         if (!active) return;
-        setCatalog(normalizeCatalog(data));
+        setCatalog(items);
       })
       .catch(() => {
         if (active) {

@@ -1,5 +1,6 @@
 "use client";
 
+import "../../lib/polyfills/progress-event";
 import { Canvas } from "@react-three/fiber";
 import type { ReactNode, ComponentProps } from "react";
 import { Suspense } from "react";
@@ -18,6 +19,7 @@ import InteractiveLights from "../canvas/features/InteractiveLights";
 import InteractionManager from "../canvas/interaction/InteractionManager";
 import AssetTransformControls from "../canvas/interaction/AssetTransformControls";
 import EditorHotkeys from "../canvas/interaction/EditorHotkeys";
+import ViewerProductHotspots from "../canvas/interaction/ViewerProductHotspots";
 import Crosshair from "../overlay/hud/Crosshair";
 import MobileControls from "../overlay/hud/MobileControls";
 import MobileTouchHint from "../overlay/hud/MobileTouchHint";
@@ -30,6 +32,8 @@ type SceneViewportProps = {
   toneMappingExposure?: number;
   modeBadge?: ReactNode;
   bottomNotice?: ReactNode;
+  chromeTone?: "dark" | "light";
+  showHud?: boolean;
 };
 
 export function SceneViewport({
@@ -46,10 +50,17 @@ export function SceneViewport({
   includeEditorTools = false,
   toneMappingExposure = 1.08,
   modeBadge,
-  bottomNotice
+  bottomNotice,
+  chromeTone = "dark",
+  showHud = true
 }: SceneViewportProps) {
+  const isLightTone = chromeTone === "light";
   return (
-    <div className={`relative h-full w-full overflow-hidden rounded-[28px] border border-white/10 bg-[#050505] shadow-2xl ${className}`.trim()}>
+    <div
+      className={`relative h-full w-full overflow-hidden rounded-[28px] ${
+        isLightTone ? "border border-black/10 bg-[#d7d7d5] shadow-[0_18px_48px_rgba(16,18,22,0.18)]" : "border border-white/10 bg-[#050505] shadow-2xl"
+      } ${className}`.trim()}
+    >
       <Canvas
         shadows
         dpr={[1, 2]}
@@ -68,7 +79,7 @@ export function SceneViewport({
           }
         }}
       >
-        <color attach="background" args={["#0a0a0b"]} />
+        <color attach="background" args={[isLightTone ? "#d0d0ce" : "#0a0a0b"]} />
         <Suspense fallback={null}>
           <PhysicsWorld>
             <Lights />
@@ -87,24 +98,41 @@ export function SceneViewport({
               <InteractiveDoors />
               <InteractiveLights />
               <Furniture />
+              <ViewerProductHotspots />
             </InteractionManager>
           </PhysicsWorld>
           <PostEffects />
         </Suspense>
       </Canvas>
 
-      <Crosshair />
-      <MobileTouchHint />
-      <MobileControls />
+      {showHud ? (
+        <>
+          <Crosshair />
+          <MobileTouchHint />
+          <MobileControls />
+        </>
+      ) : null}
 
       {modeBadge ? (
-        <div className="pointer-events-none absolute left-4 top-4 rounded-full border border-white/10 bg-black/45 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/70 backdrop-blur-xl">
+        <div
+          className={`pointer-events-none absolute left-4 top-4 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] backdrop-blur-xl ${
+            isLightTone
+              ? "border border-black/10 bg-white/85 text-[#4e463d]"
+              : "border border-white/10 bg-black/45 text-white/70"
+          }`}
+        >
           {modeBadge}
         </div>
       ) : null}
 
       {bottomNotice ? (
-        <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-[20px] border border-amber-300/25 bg-amber-200/10 px-4 py-3 text-sm text-amber-50 backdrop-blur-xl sm:right-auto sm:max-w-md">
+        <div
+          className={`pointer-events-none absolute bottom-4 left-4 right-4 rounded-[20px] px-4 py-3 text-sm backdrop-blur-xl sm:right-auto sm:max-w-md ${
+            isLightTone
+              ? "border border-amber-500/30 bg-amber-50/90 text-[#6c4b1f]"
+              : "border border-amber-300/25 bg-amber-200/10 text-amber-50"
+          }`}
+        >
           {bottomNotice}
         </div>
       ) : null}

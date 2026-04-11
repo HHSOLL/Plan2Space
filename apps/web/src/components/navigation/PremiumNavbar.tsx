@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
-import { Heart, LogOut, Menu, Search, UserRound, X } from "lucide-react";
+import { LogOut, Menu, Search, UserRound, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
 import { useLanguageStore } from "../../lib/stores/useLanguageStore";
@@ -37,7 +37,7 @@ export function PremiumNavbar() {
 
     const handleAction = (action: string) => {
         setIsMobileMenuOpen(false);
-        const requiresAuth = action === 'builder' || action === 'studio';
+        const requiresAuth = action === 'builder' || action === 'projects';
         if (!isAuthenticated && requiresAuth) {
             setAuthNextPath(action === 'builder' ? "/studio/builder" : "/studio");
             setIsAuthOpen(true);
@@ -48,7 +48,7 @@ export function PremiumNavbar() {
             case 'builder':
                 router.push("/studio/builder");
                 break;
-            case 'studio':
+            case 'projects':
                 router.push("/studio");
                 break;
             case 'gallery':
@@ -77,15 +77,14 @@ export function PremiumNavbar() {
                     <div className={`hidden md:flex items-center ${isHome ? 'gap-8 text-[10px] font-semibold tracking-[0.18em] text-[#6e6255]' : 'gap-12 text-[10px] font-bold uppercase tracking-[0.2em] text-[#666666]'}`}>
                         {[
                             { name: 'Home', action: 'home' },
-                            { name: 'Builder', action: 'builder' },
-                            { name: 'Studio', action: 'studio' },
-                            { name: 'Gallery', action: 'gallery' },
-                            { name: 'Community', action: 'community' }
+                            { name: 'Create Room', action: 'builder' },
+                            { name: 'Projects', action: 'projects' },
+                            { name: 'Gallery', action: 'gallery' }
                         ].map((item) => (
                             <button
                                 key={item.name}
                                 onClick={() => item.action === 'home' ? router.push("/") : handleAction(item.action)}
-                                className={`transition-colors hover:text-black ${pathname === (item.action === 'home' ? '/' : item.action === 'studio' ? '/studio' : item.action === 'builder' ? '/studio/builder' : '/' + item.action) ? 'text-black' : ''}`}
+                                className={`transition-colors hover:text-black ${pathname === (item.action === 'home' ? '/' : item.action === 'projects' ? '/studio' : item.action === 'builder' ? '/studio/builder' : '/' + item.action) ? 'text-black' : ''}`}
                             >
                                 {item.name}
                             </button>
@@ -105,15 +104,7 @@ export function PremiumNavbar() {
                                 </button>
                                 <button
                                     type="button"
-                                    aria-label="Open community"
-                                    onClick={() => router.push("/community")}
-                                    className="rounded-full border border-[#e7ddd0] p-2.5 text-[#47392a] transition-colors hover:bg-[#f3ece2]"
-                                >
-                                    <Heart className="h-4 w-4" />
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label={isAuthenticated ? "Open studio" : "Sign in"}
+                                    aria-label={isAuthenticated ? "Open projects" : "Sign in"}
                                     onClick={() => {
                                         if (isAuthenticated) {
                                             router.push("/studio");
@@ -152,7 +143,7 @@ export function PremiumNavbar() {
                         {isAuthenticated ? (
                             <div className="flex items-center gap-4">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999]">
-                                    {user?.name ?? user?.email ?? "Studio"}
+                                    {user?.name ?? user?.email ?? "Projects"}
                                 </span>
                                 <button onClick={() => void logout()} className="p-2 hover:bg-black/5 rounded-full transition-colors group">
                                     <LogOut className="w-4 h-4 text-black/20 group-hover:text-red-400" />
@@ -188,10 +179,9 @@ export function PremiumNavbar() {
                         <div className="grid grid-cols-1 gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#666666]">
                             {[
                                 { name: 'Home', action: 'home' },
-                                { name: 'Builder', action: 'builder' },
-                                { name: 'Studio', action: 'studio' },
-                                { name: 'Gallery', action: 'gallery' },
-                                { name: 'Community', action: 'community' }
+                                { name: 'Create Room', action: 'builder' },
+                                { name: 'Projects', action: 'projects' },
+                                { name: 'Gallery', action: 'gallery' }
                             ].map((item) => (
                                 <button
                                     key={item.name}
@@ -226,7 +216,7 @@ export function PremiumNavbar() {
                         {isAuthenticated ? (
                             <div className="flex items-center justify-between gap-3 pt-2">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#777777] truncate">
-                                    {user?.name ?? user?.email ?? "Studio"}
+                                    {user?.name ?? user?.email ?? "Projects"}
                                 </span>
                                 <button
                                     type="button"

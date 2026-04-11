@@ -9,12 +9,17 @@
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_RAILWAY_API_URL=
+RAILWAY_API_URL=
 NEXT_PUBLIC_APP_URL=
+E2E_RAILWAY_API_URL=
+FLOORPLAN_UPLOAD_BUCKET=floor-plans
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 빠른 시작:
 - `cp apps/web/.env.local.example apps/web/.env.local`
+- `SUPABASE_SERVICE_ROLE_KEY`는 project version snapshot 업로드/서명 및 owner-scope job 조회 보강 경로 때문에 production/preview에 필수입니다.
+- `FLOORPLAN_UPLOAD_BUCKET`은 API/worker/web에서 동일하게 맞춰야 snapshot thumbnail signing mismatch를 피할 수 있습니다.
 
 ### Railway API (`apps/api`)
 ```
@@ -24,6 +29,8 @@ SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 CORS_ORIGINS=http://localhost:3100,http://127.0.0.1:3100,https://plan2space.vercel.app,https://plan2-space-web-*.vercel.app,https://plan2space-*.vercel.app
 FLOORPLAN_UPLOAD_BUCKET=floor-plans
+ENABLE_LIGHTWEIGHT_API_ROUTES=false
+ENABLE_LEGACY_API_ROUTES=false
 ```
 
 빠른 시작:
@@ -33,6 +40,8 @@ FLOORPLAN_UPLOAD_BUCKET=floor-plans
 - Railway 런타임에서는 `PORT`가 자동 주입되며, API는 이를 우선 사용합니다.
 - `CORS_ORIGINS`는 exact origin과 `*` 와일드카드를 함께 사용할 수 있습니다.
 - Vercel preview는 `https://plan2-space-web-*.vercel.app`, `https://plan2space-*.vercel.app` 패턴으로 맞춥니다.
+- `ENABLE_LIGHTWEIGHT_API_ROUTES`는 기본 `false`를 유지하고, 호환성 검증이 필요한 경우에만 일시적으로 `true`로 엽니다.
+- `NODE_ENV=production`에서는 API가 `ENABLE_LIGHTWEIGHT_API_ROUTES=true`로 부팅되지 않도록 차단됩니다.
 
 ### Railway Worker (`apps/worker`)
 ```
@@ -106,7 +115,8 @@ MESHY_STATUS_URL=
 - Vercel Production `NEXT_PUBLIC_APP_URL`을 `https://plan2space.vercel.app`로 고정
 - Vercel Preview는 `NEXT_PUBLIC_APP_URL`을 비워 preview host 자체로 OAuth를 시작하게 유지
 - Railway API CORS에 Vercel 프로덕션/프리뷰 도메인 포함
-- Vercel `NEXT_PUBLIC_RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
+- Vercel `RAILWAY_API_URL`은 Production/Preview/Development 모두 동일한 Railway API URL로 동기화
+- 브라우저 번들은 Railway URL을 직접 포함하지 않고, same-origin `/api/v1/*`만 사용해야 함
 - OAuth는 시작 host와 `/auth/callback` host가 반드시 동일해야 함(브라우저 PKCE verifier same-origin cookie storage)
 - callback 직후에는 `/auth/callback` page가 세션 생성 완료를 잠시 기다린 뒤 이동하므로, 중간 redirect를 브라우저 확장/프록시가 가로채지 않는지 확인
 - 브라우저에서 `Invalid Refresh Token`이 보이면 기존 `sb-*` 쿠키/스토리지를 정리한 뒤 재로그인
@@ -120,11 +130,13 @@ MESHY_STATUS_URL=
 6. `review_required` 또는 `resolved_generated` 상태 확인
 7. finalize 후 project가 `source_layout_revision_id`를 가지는지 확인
 8. preview 배포 검증:
-   - `npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --expected=https://api-production-473bd.up.railway.app`
+   - `npm run check:web-boundary`
+   - `npm --workspace apps/api run test:route-gates`
+   - `npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --mode=must-not-embed --expected=https://api-production-473bd.up.railway.app`
 9. 실환경 intake E2E 검증:
    - `npm --workspace apps/web run e2e:intake -- --api=https://api-production-473bd.up.railway.app`
 10. custom asset generation 경로 검증:
-   - `/v1/assets/generate` 호출 후 `GET /v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
+   - `/api/v1/assets/generate` 호출 후 `GET /api/v1/jobs/:jobId`가 `result.asset`를 반환하는지 확인
 11. benchmark fixture 검수:
    - `apps/web/fixtures/floorplans/manifest.json`에 `channel`, `sourcePolicy`, `qualityTags`, `complexityTier`를 기록
    - `manifest.example.json -> manifest.json -> fixtures:floorplan:validate -> fixtures:floorplan:blind-gate -> eval:floorplan -> eval:floorplan:gate` 순서로 운영
@@ -174,7 +186,7 @@ Added:
 - preview 번들 Railway API 연결 여부를 확인하는 smoke 검증 절차.
 
 Updated:
-- `NEXT_PUBLIC_RAILWAY_API_URL`를 Preview까지 동일하게 맞추는 절차 명시.
+- `RAILWAY_API_URL`를 Preview까지 동일하게 맞추는 절차로 업데이트하고, web/runtime에서 public Railway URL env를 제거.
 
 Removed/Deprecated:
 - Preview 도메인을 exact URL만으로 수동 관리하는 방식.
@@ -459,8 +471,8 @@ Removed/Deprecated:
 
 ## 30) 2026-04-09 변경 동기화 (Latest Version Cutover + Backfill Ops QA)
 Added:
-- saved version이 있는 project를 열었을 때 network 기준으로 `GET /v1/projects/:projectId/versions/latest`가 먼저 호출되고, 같은 진입에서 `scene/latest`는 호출되지 않는지 확인한다.
-- web local route가 활성인 배포에서는 `GET /api/v1/projects/:projectId/versions/latest`가 먼저 호출되고, 실패 시에만 Railway `/v1/projects/:projectId/versions/latest`로 fallback 되는지 확인한다.
+- saved version이 있는 project를 열었을 때 network 기준으로 `GET /api/v1/projects/:projectId/versions/latest`가 먼저 호출되고, 같은 진입에서 `scene/latest`는 호출되지 않는지 확인한다.
+- active web editor/viewer path에 Railway `/v1/projects/:projectId/versions/latest` direct read가 남아있지 않은지 확인한다.
 - Railway production `api` env에서 `backfill:legacy-project-versions -- --dry-run --limit 20` 결과 remaining candidate가 `0`인지 확인한다.
 - ops dry-run으로 `npm --workspace apps/api run backfill:legacy-project-versions -- --dry-run --limit 20`를 실행해 candidate/source/action이 예상대로 나오는지 확인한다.
 
@@ -500,10 +512,48 @@ Removed/Deprecated:
 Added:
 - editor inspector에서 Ambient/Hemisphere/Sun/Environment Blur 슬라이더를 조절했을 때 뷰포트 조명이 즉시 반영되는지 확인한다.
 - 조명을 조절한 뒤 저장/새로고침/재진입 시 동일 조명값이 복원되는지 확인한다.
-- `ENABLE_LEGACY_API_ROUTES=false` 배포에서 `/v1/intake-sessions`, `/v1/floorplans`, `/v1/jobs`, `/v1/revisions`, `/v1/projects/:id/scene/latest` 호출이 404 또는 비노출 상태인지 확인한다.
+- `ENABLE_LEGACY_API_ROUTES=false` 배포에서 `/v1/jobs/:jobId`, `/v1/intake-sessions`, `/v1/floorplans`, `/v1/revisions`, `/v1/projects/:id/scene/latest` 호출이 404 또는 비노출 상태인지 확인한다.
+- `ENABLE_LIGHTWEIGHT_API_ROUTES=false` 배포에서 browse compatibility surface(`/v1/projects`, `/v1/catalog/search`, `/v1/showcase`)가 비노출(404)인지 확인한다.
 
 Updated:
 - editor QA 범위에 finish/asset 편집뿐 아니라 조명값의 저장/복원 일관성을 포함한다.
 
 Removed/Deprecated:
 - legacy 라우트를 항상 켜둔 상태에서만 운영 검수를 수행하는 절차.
+
+## 34) 2026-04-11 변경 동기화 (Builder Opening Authoring Stability QA)
+Added:
+- `/studio/builder` Step 3에서 같은 벽에 문/창을 여러 개 추가했을 때 opening이 서로 겹치지 않고 최소 간격을 유지하는지 확인한다.
+- Step 3에서 opening을 수동 조정한 뒤 Step 2로 이동해 치수를 변경하고 다시 돌아왔을 때 opening draft가 전부 초기값으로 사라지지 않고 합리적으로 재배치되는지 확인한다.
+- Door/Window default preset을 변경한 뒤 기존 opening의 폭/개수가 즉시 덮어써지지 않고, 새로 추가한 opening에만 기본값이 반영되는지 확인한다.
+
+Updated:
+- builder QA는 “생성 가능 여부”만이 아니라 opening authoring의 편집 연속성(치수 변경 후 보존)과 충돌 회피 규칙까지 포함한다.
+
+Removed/Deprecated:
+- preset 토글만으로 기존 opening이 강제 재작성되어도 정상으로 간주하는 검수 절차.
+
+## 35) 2026-04-11 변경 동기화 (Public Viewer Product Inspection Polish QA)
+Added:
+- `/shared/[token]`에서 top/walk 모드를 각각 전환했을 때 두 모드 모두 hotspot marker가 보이고, marker 클릭 시 선택 제품 카드가 즉시 갱신되는지 확인한다.
+- 선택 제품 카드에서 debug 좌표 대신 제품 메타(브랜드/재질/variant/가격/링크)가 우선 노출되는지 확인한다.
+- hotspot 리스트 카드에서 번호 badge, 컬렉션/anchor 태그, 가격/브랜드(있는 경우)가 일관되게 보이는지 확인한다.
+
+Updated:
+- viewer QA는 단순 링크 열림/카운트 확인을 넘어서 “scene marker -> selected card -> external product link” inspection 연속 흐름까지 포함한다.
+
+Removed/Deprecated:
+- shared viewer에서 top 모드에서만 hotspot을 확인하고 walk 모드는 검수하지 않는 절차.
+
+## 36) 2026-04-11 변경 동기화 (Boundary + Visual Evidence QA)
+Added:
+- CI 또는 수동 검증에서 `npm run check:web-boundary`, `npm --workspace apps/api run test:route-gates`, `npm --workspace apps/web run smoke:preview-runtime -- --url=<preview> --mode=must-not-embed --expected=<railway>`를 순서대로 실행한다.
+- builder 생성 후 저장한 프로젝트를 share로 publish했을 때 shared rail의 product summary가 실제 pinned scene의 자산 구성과 일치하는지 확인한다.
+- visual surface 검수는 `docs/visual-qa-evidence.md`의 12장 캡처 세트를 기준으로 수행하고 증적을 날짜 폴더(`docs/evidence/visual-qa/<YYYY-MM-DD>/`)에 보관한다.
+
+Updated:
+- 배포 검수는 static lint/build 중심이 아니라 runtime boundary smoke까지 포함하는 절차로 상향한다.
+- viewer/community/gallery 검수는 단일 페이지 스모크가 아니라 “builder -> editor -> share -> shared viewer -> community/gallery” end-to-end 경로를 기준으로 진행한다.
+
+Removed/Deprecated:
+- 축 2 시각 품질 검수를 ad-hoc 단일 스크린샷으로 대체하는 절차.

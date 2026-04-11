@@ -41,14 +41,14 @@ export function EditorStatusBadge({
       return {
         icon: AlertTriangle,
         label: "Save failed",
-        className: "border-red-300/25 bg-red-500/10 text-red-50"
+        className: "border-red-200 bg-red-50 text-red-700"
       };
     }
     if (isSaving) {
       return {
         icon: Loader2,
         label: "Saving...",
-        className: "border-white/10 bg-white/10 text-white/80",
+        className: "border-[#dfd5c8] bg-[#f7f2ea] text-[#6a5a47]",
         iconClassName: "animate-spin"
       };
     }
@@ -56,20 +56,20 @@ export function EditorStatusBadge({
       return {
         icon: AlertTriangle,
         label: "Unsaved changes",
-        className: "border-amber-300/25 bg-amber-200/10 text-amber-50"
+        className: "border-amber-200 bg-amber-50 text-amber-700"
       };
     }
     if (lastSavedAt) {
       return {
         icon: CheckCircle2,
         label: formatSavedLabel(lastSavedAt),
-        className: "border-emerald-300/25 bg-emerald-300/10 text-emerald-50"
+        className: "border-emerald-200 bg-emerald-50 text-emerald-700"
       };
     }
     return {
       icon: CheckCircle2,
       label: "Ready",
-      className: "border-white/10 bg-white/10 text-white/70"
+      className: "border-[#dfd5c8] bg-[#f7f2ea] text-[#6a5a47]"
     };
   }, [isDirty, isSaving, lastSavedAt, saveError]);
 
@@ -77,7 +77,7 @@ export function EditorStatusBadge({
 
   return (
     <div
-      className={`hidden items-center gap-2 rounded-full border px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] backdrop-blur-xl lg:flex ${status.className}`}
+      className={`hidden items-center gap-2 rounded-full border px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] shadow-[0_10px_24px_rgba(29,24,18,0.08)] backdrop-blur-xl lg:flex ${status.className}`}
     >
       <Icon className={`h-4 w-4 ${status.iconClassName ?? ""}`.trim()} />
       <span>{status.label}</span>

@@ -36,14 +36,14 @@ export function BuilderLaunchState({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.28em] text-white/50">
               <Sparkles className="h-3.5 w-3.5" />
-              Builder-first workflow
+              Recovery state
             </div>
             <h2 className="mt-8 max-w-3xl text-3xl font-light tracking-tight sm:text-5xl font-outfit">
-              Start with a room shell and open the editor immediately.
+              This project is missing a room shell.
             </h2>
             <p className="mt-5 max-w-2xl text-sm leading-7 text-white/55 sm:text-base">
-              New rooms no longer enter through floorplan analysis. Create a room in the builder, then switch between
-              top and walk views from the same editing shell while archived floorplan rooms stay in compatibility mode.
+              Open the builder to generate a valid room envelope, then return to this editor for placement, styling,
+              and publish-ready snapshots.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button
@@ -51,7 +51,7 @@ export function BuilderLaunchState({
                 onClick={onOpenBuilder}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-[10px] font-bold uppercase tracking-[0.24em] text-black transition hover:bg-white/90"
               >
-                Open Room Builder
+                Recover in Builder
                 <ArrowRight className="h-4 w-4" />
               </button>
               <button
@@ -59,7 +59,7 @@ export function BuilderLaunchState({
                 onClick={onBrowseStudio}
                 className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.24em] text-white/75 transition hover:border-white/30 hover:bg-white/10"
               >
-                Browse Studio
+                Open Projects
               </button>
             </div>
           </div>
@@ -84,13 +84,13 @@ export function BuilderLaunchState({
                 Curated Room Kit
               </p>
               <h3 className="mt-2 text-xl font-light font-outfit">
-                Builder, shelf, and viewer are now the core surface.
+                Missing geometry blocks editor mode.
               </h3>
             </div>
           </div>
           <p className="mt-4 text-sm leading-6 text-white/45">
-            The editor now assumes a room shell already exists. Start in the builder, then place assets, tune
-            finishes, and share the saved result through the viewer-first flow.
+            This panel appears only when the editor cannot find walls/floors for the current project snapshot.
+            Recovery routes you back to builder or projects without dropping your account context.
           </p>
 
           <div className="mt-6">

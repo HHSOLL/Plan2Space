@@ -2,6 +2,7 @@ import type { ScaleInfo, ScaleSource, Vector2 } from "../stores/useSceneStore";
 
 export const MIN_VALID_SCALE = 0.0005;
 export const MAX_VALID_SCALE = 0.2;
+const MAX_DIRECT_METER_SCALE = 10;
 export const MIN_SCALE_CONFIDENCE = 0.6;
 const MIN_EVIDENCE_SCALE = 0.0001;
 const MAX_EVIDENCE_SCALE = 0.5;
@@ -168,7 +169,8 @@ export function getScaleGateMessage(scale: number, scaleInfo: ScaleInfo): string
   if (!scaleInfo || scaleInfo.source === "unknown") {
     return "Scale source is unknown. Measure a known distance or confirm scale before entering 3D.";
   }
-  if (!Number.isFinite(scale) || scale < MIN_VALID_SCALE || scale > MAX_VALID_SCALE) {
+  const isDirectMeterScale = scaleInfo.source === "user_measure" && scale > MAX_VALID_SCALE && scale <= MAX_DIRECT_METER_SCALE;
+  if (!Number.isFinite(scale) || scale <= 0 || (!isDirectMeterScale && (scale < MIN_VALID_SCALE || scale > MAX_VALID_SCALE))) {
     return "Scale value is out of range. Measure a known distance before entering 3D.";
   }
   if (scaleInfo.confidence < MIN_SCALE_CONFIDENCE) {

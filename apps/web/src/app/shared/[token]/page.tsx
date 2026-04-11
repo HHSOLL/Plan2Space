@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
-import { normalizeSharePermission } from "../../../lib/share/permissions";
-import { getSharePreviewMeta } from "../../../lib/share/preview";
-import { createSupabaseServerClient } from "../../../lib/supabase/server";
+import { fetchPublicSceneByToken, PublicSceneError } from "../../../lib/server/public-scenes";
 import { SharedProjectClient } from "./SharedProjectClient";
 
 interface SharedProjectPageProps {
@@ -9,49 +7,52 @@ interface SharedProjectPageProps {
 }
 
 export default async function SharedProjectPage({ params }: SharedProjectPageProps) {
-  const supabase = createSupabaseServerClient();
-
-  const { data: sharedProject, error: shareError } = await supabase
-    .from("shared_projects")
-    .select("*, projects(*)")
-    .eq("token", params.token)
-    .maybeSingle();
-
-  if (shareError || !sharedProject || !sharedProject.projects) {
-    notFound();
+  let scene: Awaited<ReturnType<typeof fetchPublicSceneByToken>> | null = null;
+  let isExpired = false;
+  try {
+    scene = await fetchPublicSceneByToken(params.token);
+  } catch (error) {
+    if (error instanceof PublicSceneError) {
+      if (error.status === 404) {
+        notFound();
+      }
+      if (error.status === 410) {
+        isExpired = true;
+      } else {
+        throw error;
+      }
+    } else {
+      throw error;
+    }
   }
 
-  if (sharedProject.expires_at && new Date(sharedProject.expires_at) < new Date()) {
-    notFound();
+  if (isExpired) {
+    return (
+      <div className="min-h-screen bg-[#f5f1e8] px-4 pb-20 pt-24 text-[#171411] sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-3xl rounded-[30px] border border-black/10 bg-white/80 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Link expired</div>
+          <h1 className="mt-4 text-4xl font-cormorant font-light">This shared scene is no longer available.</h1>
+          <p className="mt-4 text-sm leading-7 text-[#61574e]">
+            The viewer token has expired. Ask the owner to publish a new permanent link from the editor.
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  if (!sharedProject.project_version_id) {
-    notFound();
-  }
-
-  const project = sharedProject.projects;
-  const previewMeta = getSharePreviewMeta(sharedProject.preview_meta);
-  const { data: versionData, error: versionError } = await supabase
-    .from("project_versions")
-    .select("id, version, message, customization, floor_plan")
-    .eq("id", sharedProject.project_version_id)
-    .maybeSingle();
-
-  if (versionError || !versionData) {
+  if (!scene) {
     notFound();
   }
 
   return (
     <SharedProjectClient
-      projectName={previewMeta?.projectName ?? project.name}
-      projectDescription={previewMeta?.projectDescription ?? project.description}
-      latestVersion={versionData ? (versionData as Record<string, unknown>) : null}
-      linkPermission={normalizeSharePermission(sharedProject.permissions)}
-      expiresAt={sharedProject.expires_at}
-      pinnedVersionNumber={
-        previewMeta?.versionNumber ?? (typeof versionData.version === "number" ? versionData.version : null)
-      }
-      previewAssetSummary={previewMeta?.assetSummary ?? null}
+      projectName={scene.projectName}
+      projectDescription={scene.projectDescription}
+      sceneBootstrap={scene.sceneBootstrap}
+      linkPermission={scene.linkPermission}
+      expiresAt={scene.expiresAt}
+      pinnedVersionNumber={scene.pinnedVersionNumber}
+      previewAssetSummary={scene.previewAssetSummary}
     />
   );
 }

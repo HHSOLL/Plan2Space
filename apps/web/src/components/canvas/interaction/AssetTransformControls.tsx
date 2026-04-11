@@ -53,7 +53,8 @@ export default function AssetTransformControls() {
       {
         position: vector3ToTuple(target.position),
         rotation: eulerToTuple(target.rotation),
-        anchorType: selectedAsset.anchorType
+        anchorType: selectedAsset.anchorType,
+        supportAssetId: selectedAsset.supportAssetId
       },
       {
         walls,
@@ -68,6 +69,7 @@ export default function AssetTransformControls() {
     target.rotation.set(...anchoredPlacement.rotation);
     updateFurniture(selectedAssetId, {
       anchorType: anchoredPlacement.anchorType,
+      supportAssetId: anchoredPlacement.supportAssetId,
       position: anchoredPlacement.position,
       rotation: anchoredPlacement.rotation,
       scale: vector3ToTuple(target.scale)

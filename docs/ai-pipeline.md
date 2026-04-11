@@ -176,7 +176,8 @@ Removed/Deprecated:
 
 ## 11) 2026-03-12 변경 동기화 (Intake Runtime + Geometry Revision Enrichment)
 Added:
-- web client가 `POST /v1/intake-sessions`, `.../resolve`, `.../select-candidate`, `.../review-complete`, `.../finalize-project`, `GET /v1/catalog/search`를 실제 업로드/검색 진입점으로 사용.
+- web active surface는 same-origin Route Handler(`/api/v1/*`)를 우선 사용하고, worker/intake 계열은 server-side에서 Railway `/v1/*` 계약으로 브리지한다.
+- legacy intake/검색 플로우는 필요 시 Railway `/v1/intake-sessions*`, `/v1/catalog/search`를 compatibility/ops 경계에서 유지한다.
 - worker geometry 단계에서 `exteriorShell`, `roomPolygons`, `roomAdjacency`를 복원하고 `derived_scene_json.floors`를 생성.
 - finalize RPC가 `resolution_payload`를 참조해 `reused/generated` 상태를 정확히 복원하는 규약.
 
