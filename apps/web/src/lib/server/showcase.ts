@@ -1,4 +1,12 @@
 import { getSharePreviewMeta } from "../share/preview";
+import { createSupabaseServerClient } from "../supabase/server";
+import {
+  getShowcaseSnapshotProfileFromPreviewMeta,
+  normalizeShowcaseFilters,
+  type ShowcaseDensityFilter,
+  type ShowcaseRoomFilter,
+  type ShowcaseToneFilter
+} from "../api/showcase";
 
 export type ShowcaseSnapshot = {
   id: string;
@@ -13,58 +21,363 @@ export type ShowcaseSnapshot = {
 export type ShowcaseSnapshotItem = ShowcaseSnapshot & {
   previewMeta: ReturnType<typeof getSharePreviewMeta>;
 };
-
-type ShowcasePayload = {
-  items?: ShowcaseSnapshot[];
+export type ShowcaseSnapshotFeed = {
+  items: ShowcaseSnapshotItem[];
+  total: number;
+  nextCursor: string | null;
+  hasMore: boolean;
 };
 
-function resolveRailwayApiUrl() {
-  const baseUrl = process.env.RAILWAY_API_URL ?? process.env.NEXT_PUBLIC_RAILWAY_API_URL;
-  if (!baseUrl || baseUrl.trim().length === 0) {
-    throw new Error("Showcase transport is not configured.");
-  }
-  return baseUrl.replace(/\/$/, "");
-}
+type ShowcaseProjectRow = {
+  meta: Record<string, unknown> | null;
+  thumbnail_path: string | null;
+};
+type ShowcaseVersionRow = {
+  snapshot_path: string | null;
+};
+
+type ShowcaseRow = {
+  id: string;
+  token: string;
+  project_id: string;
+  project_version_id: string | null;
+  preview_meta: unknown;
+  published_at: string | null;
+  updated_at: string;
+  projects: ShowcaseProjectRow | ShowcaseProjectRow[] | null;
+  project_versions: ShowcaseVersionRow | ShowcaseVersionRow[] | null;
+};
+
+type ShowcaseFeedInput = {
+  limit?: number;
+  cursor?: string | null;
+  totalHint?: number | null;
+  room?: ShowcaseRoomFilter | null;
+  tone?: ShowcaseToneFilter | null;
+  density?: ShowcaseDensityFilter | null;
+};
+
+type ShowcaseCursorPayload = {
+  publishedAt: string;
+  id: string;
+};
+
+type ShowcaseBatchRow = ShowcaseRow & {
+  published_at: string;
+};
 
 function clampLimit(limit: number) {
-  return Math.min(Math.max(limit, 1), 60);
+  return Math.min(Math.max(limit, 1), 240);
 }
 
-export async function fetchShowcaseSnapshotsViaRailway(limit = 24, revalidateSeconds = 60): Promise<ShowcaseSnapshotItem[]> {
-  const normalizedLimit = clampLimit(limit);
-  const response = await fetch(`${resolveRailwayApiUrl()}/v1/showcase?limit=${normalizedLimit}`, {
-    next: { revalidate: revalidateSeconds }
+function resolveThumbnailBucket(metadata: Record<string, unknown> | null) {
+  if (metadata && typeof metadata.thumbnailBucket === "string" && metadata.thumbnailBucket.length > 0) {
+    return metadata.thumbnailBucket;
+  }
+  return process.env.FLOORPLAN_UPLOAD_BUCKET ?? process.env.NEXT_PUBLIC_FLOORPLAN_UPLOAD_BUCKET ?? "floor-plans";
+}
+
+async function resolveProjectThumbnail(thumbnailPath: string | null, metadata: Record<string, unknown> | null) {
+  if (!thumbnailPath) return undefined;
+
+  const supabase = createSupabaseServerClient();
+  const signed = await supabase.storage
+    .from(resolveThumbnailBucket(metadata))
+    .createSignedUrl(thumbnailPath, 60 * 60);
+
+  if (signed.error || !signed.data?.signedUrl) {
+    return undefined;
+  }
+
+  return signed.data.signedUrl;
+}
+
+function resolveProjectRow(value: ShowcaseProjectRow | ShowcaseProjectRow[] | null) {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function resolveVersionRow(value: ShowcaseVersionRow | ShowcaseVersionRow[] | null) {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function hasActiveFilters(input: ReturnType<typeof normalizeShowcaseFilters>) {
+  return input.room !== "all" || input.tone !== "all" || input.density !== "all";
+}
+
+function encodeCursor(payload: ShowcaseCursorPayload) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodeCursor(cursor: string | null | undefined): ShowcaseCursorPayload | null | "invalid" {
+  if (!cursor) return null;
+
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Partial<ShowcaseCursorPayload>;
+    if (typeof decoded.publishedAt !== "string" || typeof decoded.id !== "string") {
+      return "invalid";
+    }
+    if (!decoded.publishedAt || !decoded.id) {
+      return "invalid";
+    }
+    const parsedDate = new Date(decoded.publishedAt);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "invalid";
+    }
+    return {
+      publishedAt: parsedDate.toISOString(),
+      id: decoded.id
+    };
+  } catch {
+    return "invalid";
+  }
+}
+
+function getItemCursor(row: Pick<ShowcaseBatchRow, "published_at" | "id">) {
+  const parsedDate = new Date(row.published_at);
+  return {
+    publishedAt: Number.isNaN(parsedDate.getTime()) ? row.published_at : parsedDate.toISOString(),
+    id: row.id
+  } satisfies ShowcaseCursorPayload;
+}
+
+function matchesFilters(row: ShowcaseRow, filters: ReturnType<typeof normalizeShowcaseFilters>) {
+  if (!hasActiveFilters(filters)) {
+    return true;
+  }
+
+  const profile = getShowcaseSnapshotProfileFromPreviewMeta(getSharePreviewMeta(row.preview_meta));
+  if (filters.room !== "all" && profile.room !== filters.room) {
+    return false;
+  }
+  if (filters.tone !== "all" && profile.tone !== filters.tone) {
+    return false;
+  }
+  if (filters.density !== "all" && profile.density !== filters.density) {
+    return false;
+  }
+  return true;
+}
+
+function buildBaseShowcaseQuery() {
+  const supabase = createSupabaseServerClient();
+  return supabase
+    .from("shared_projects")
+    .select(
+      "id, token, project_id, project_version_id, preview_meta, published_at, updated_at, projects!inner(meta, thumbnail_path), project_versions(snapshot_path)"
+    )
+    .eq("is_gallery_visible", true)
+    .eq("permissions", "view")
+    .is("expires_at", null)
+    .not("project_version_id", "is", null)
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("id", { ascending: false });
+}
+
+function applyCursor<T extends ReturnType<typeof buildBaseShowcaseQuery>>(
+  query: T,
+  cursor: ShowcaseCursorPayload | null
+) {
+  if (!cursor) {
+    return query;
+  }
+
+  return query.or(`published_at.lt.${cursor.publishedAt},and(published_at.eq.${cursor.publishedAt},id.lt.${cursor.id})`);
+}
+
+async function countAllShowcaseRows() {
+  const supabase = createSupabaseServerClient();
+  const lookup = await supabase
+    .from("shared_projects")
+    .select("id", { count: "exact", head: true })
+    .eq("is_gallery_visible", true)
+    .eq("permissions", "view")
+    .is("expires_at", null)
+    .not("project_version_id", "is", null)
+    .not("published_at", "is", null);
+
+  if (lookup.error) {
+    throw new Error(lookup.error.message);
+  }
+
+  return lookup.count ?? 0;
+}
+
+async function fetchShowcaseBatch(cursor: ShowcaseCursorPayload | null, limit: number): Promise<ShowcaseBatchRow[]> {
+  const lookup = await applyCursor(buildBaseShowcaseQuery(), cursor).limit(limit);
+
+  if (lookup.error) {
+    throw new Error(lookup.error.message);
+  }
+
+  return (lookup.data ?? []) as ShowcaseBatchRow[];
+}
+
+async function collectFilteredPageRows(
+  filters: ReturnType<typeof normalizeShowcaseFilters>,
+  cursor: ShowcaseCursorPayload | null,
+  limit: number
+) {
+  const matches: ShowcaseBatchRow[] = [];
+  let batchCursor = cursor;
+  const batchSize = Math.max(Math.min(limit * 3, 120), 60);
+
+  while (matches.length < limit + 1) {
+    const batch = await fetchShowcaseBatch(batchCursor, batchSize);
+    if (batch.length === 0) {
+      break;
+    }
+
+    for (const row of batch) {
+      if (matchesFilters(row, filters)) {
+        matches.push(row);
+        if (matches.length >= limit + 1) {
+          break;
+        }
+      }
+    }
+
+    if (batch.length < batchSize) {
+      break;
+    }
+
+    batchCursor = getItemCursor(batch[batch.length - 1]);
+  }
+
+  return matches;
+}
+
+async function mapShowcaseRows(rows: ShowcaseBatchRow[]) {
+  return Promise.all(
+    rows.map(async (item) => {
+      const project = resolveProjectRow(item.projects);
+      const version = resolveVersionRow(item.project_versions);
+      return {
+        id: item.id,
+        token: item.token,
+        project_id: item.project_id,
+        project_version_id: item.project_version_id,
+        preview_meta: item.preview_meta,
+        published_at: item.published_at,
+        thumbnail: await resolveProjectThumbnail(
+          version?.snapshot_path ?? project?.thumbnail_path ?? null,
+          project?.meta ?? null
+        ),
+        previewMeta: getSharePreviewMeta(item.preview_meta)
+      } satisfies ShowcaseSnapshotItem;
+    })
+  );
+}
+
+function resolveFeedInput(input: number | ShowcaseFeedInput) {
+  if (typeof input === "number") {
+    return {
+      limit: input,
+      cursor: null,
+      totalHint: null,
+      room: "all" as const,
+      tone: "all" as const,
+      density: "all" as const
+    };
+  }
+
+    return {
+      limit: input.limit ?? 24,
+      cursor: input.cursor ?? null,
+      totalHint: input.totalHint ?? null,
+      room: input.room ?? "all",
+      tone: input.tone ?? "all",
+      density: input.density ?? "all"
+    };
+}
+
+function normalizeTotalHint(totalHint: number | null) {
+  if (typeof totalHint !== "number") return null;
+  if (!Number.isFinite(totalHint) || totalHint < 0) return null;
+  return Math.trunc(totalHint);
+}
+
+export async function fetchShowcaseSnapshotFeed(input: number | ShowcaseFeedInput = 24): Promise<ShowcaseSnapshotFeed> {
+  const resolved = resolveFeedInput(input);
+  const normalizedLimit = clampLimit(resolved.limit);
+  const filters = normalizeShowcaseFilters({
+    room: resolved.room,
+    tone: resolved.tone,
+    density: resolved.density
   });
+  const decodedCursor = decodeCursor(resolved.cursor);
+  if (decodedCursor === "invalid") {
+    throw new Error("Invalid showcase cursor.");
+  }
+  const cursor = decodedCursor;
 
-  const payload = (await response.json().catch(() => null)) as ShowcasePayload | null;
+  const hintedTotal = normalizeTotalHint(resolved.totalHint);
+  const total = hintedTotal ?? (await countAllShowcaseRows());
 
-  if (!response.ok) {
-    throw new Error(`Showcase request failed (${response.status})`);
+  if (!hasActiveFilters(filters)) {
+    const batch = await fetchShowcaseBatch(cursor, normalizedLimit + 1);
+    const pageRows = batch.slice(0, normalizedLimit);
+    const items = await mapShowcaseRows(pageRows);
+    const hasMore = batch.length > normalizedLimit;
+    const nextCursor = hasMore && pageRows.length > 0 ? encodeCursor(getItemCursor(pageRows[pageRows.length - 1])) : null;
+
+    return {
+      items,
+      total,
+      nextCursor,
+      hasMore
+    };
   }
 
-  return (payload?.items ?? []).map((item) => ({
-    ...item,
-    previewMeta: getSharePreviewMeta(item.preview_meta)
-  }));
+  const filteredRows = await collectFilteredPageRows(filters, cursor, normalizedLimit);
+  const pageRows = filteredRows.slice(0, normalizedLimit);
+  const items = await mapShowcaseRows(pageRows);
+  const hasMore = filteredRows.length > normalizedLimit;
+  const nextCursor = hasMore && pageRows.length > 0 ? encodeCursor(getItemCursor(pageRows[pageRows.length - 1])) : null;
+
+  return {
+    items,
+    total,
+    nextCursor,
+    hasMore
+  };
 }
 
-function toShowcaseErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.includes("configured")) {
-    return "Showcase transport is not configured for this environment.";
-  }
+export async function fetchShowcaseSnapshots(limit = 24): Promise<ShowcaseSnapshotItem[]> {
+  const feed = await fetchShowcaseSnapshotFeed(limit);
+  return feed.items;
+}
+
+function toShowcaseErrorMessage(_error: unknown) {
   return "Showcase feed is unavailable right now.";
 }
 
 export async function fetchShowcaseSnapshotResultServer(limit = 24): Promise<{
   items: ShowcaseSnapshotItem[];
+  total: number;
+  nextCursor: string | null;
+  hasMore: boolean;
   error: string | null;
 }> {
   try {
-    const items = await fetchShowcaseSnapshotsViaRailway(limit, 60);
-    return { items, error: null };
+    const feed = await fetchShowcaseSnapshotFeed(limit);
+    return {
+      items: feed.items,
+      total: feed.total,
+      nextCursor: feed.nextCursor,
+      hasMore: feed.hasMore,
+      error: null
+    };
   } catch (error) {
     return {
       items: [],
+      total: 0,
+      nextCursor: null,
+      hasMore: false,
       error: toShowcaseErrorMessage(error)
     };
   }

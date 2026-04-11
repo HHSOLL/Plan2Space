@@ -8,7 +8,7 @@ import { createAssetGenerationJobForOwner } from "../services/asset-service";
 
 export const assetsRouter = Router();
 
-assetsRouter.post("/assets/generate", async (request, response, next) => {
+assetsRouter.post("/generate", async (request, response, next) => {
   try {
     const ownerId = request.user?.id;
     if (!ownerId) throw new ApiError(401, "Unauthorized");

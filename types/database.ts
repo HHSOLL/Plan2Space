@@ -115,10 +115,27 @@ export interface FurnitureItem {
   metadata?: Json;
 }
 
+export interface SceneDocumentData {
+  schemaVersion: 1;
+  roomShell: Json;
+  nodes: Json[];
+  materialOverride?: {
+    wallMaterialIndex?: number;
+    floorMaterialIndex?: number;
+  };
+  lighting?: {
+    ambientIntensity?: number;
+    hemisphereIntensity?: number;
+    directionalIntensity?: number;
+    environmentBlur?: number;
+  };
+}
+
 export interface CustomizationData {
   schemaVersion: 1;
   furniture: FurnitureItem[];
   surfaceMaterials: Record<SurfaceId, SurfaceMaterialAssignment>;
+  sceneDocument?: SceneDocumentData;
   defaults?: {
     floor?: SurfaceMaterialAssignment;
     wall?: SurfaceMaterialAssignment;

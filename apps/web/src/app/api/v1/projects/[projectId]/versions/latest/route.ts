@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "../../../../../../../lib/supabase/server";
+import {
+  getLatestProjectVersion,
+  ProjectVersionApiError
+} from "../../../../../../../lib/server/project-versions";
 
 type LatestVersionResponse = {
   version: Record<string, unknown> | null;
@@ -7,6 +11,14 @@ type LatestVersionResponse = {
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+function toErrorResponse(error: unknown) {
+  if (error instanceof ProjectVersionApiError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+  const message = error instanceof Error ? error.message : "Unexpected server error.";
+  return NextResponse.json({ error: message }, { status: 500 });
+}
 
 export async function GET(
   _request: Request,
@@ -18,46 +30,27 @@ export async function GET(
   }
 
   const supabase = createSupabaseServerClient();
-  const auth = await supabase.auth.getUser();
-  if (auth.error || !auth.data.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const ownerId = auth.data.user.id;
-
-  const projectLookup = await supabase
-    .from("projects")
-    .select("id")
-    .eq("id", projectId)
-    .eq("owner_id", ownerId)
-    .maybeSingle();
-
-  if (projectLookup.error) {
-    return NextResponse.json({ error: projectLookup.error.message }, { status: 500 });
-  }
-  if (!projectLookup.data) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
-
-  const versionLookup = await supabase
-    .from("project_versions")
-    .select("id, project_id, version, created_by, message, floor_plan, customization, snapshot_path, created_at, updated_at")
-    .eq("project_id", projectId)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (versionLookup.error) {
-    return NextResponse.json({ error: versionLookup.error.message }, { status: 500 });
-  }
-
-  const payload: LatestVersionResponse = {
-    version: versionLookup.data ? (versionLookup.data as Record<string, unknown>) : null
-  };
-  return NextResponse.json(payload, {
-    status: 200,
-    headers: {
-      "Cache-Control": "private, no-store, max-age=0"
+  try {
+    const auth = await supabase.auth.getUser();
+    if (auth.error || !auth.data.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-  });
+
+    const version = await getLatestProjectVersion(supabase, {
+      projectId,
+      ownerId: auth.data.user.id
+    });
+
+    const payload: LatestVersionResponse = {
+      version: version ? (version as Record<string, unknown>) : null
+    };
+    return NextResponse.json(payload, {
+      status: 200,
+      headers: {
+        "Cache-Control": "private, no-store, max-age=0"
+      }
+    });
+  } catch (error) {
+    return toErrorResponse(error);
+  }
 }

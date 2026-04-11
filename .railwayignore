@@ -11,6 +11,7 @@ vercel-labs
 apps/web/.next
 apps/web/node_modules
 apps/web/.cache
+apps/web/public
 
 apps/api/node_modules
 apps/worker/node_modules

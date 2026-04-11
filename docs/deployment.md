@@ -23,11 +23,12 @@
 - 사용자-facing Next.js 앱
 - builder, editor, viewer, share, gallery, community 렌더링
 - Supabase auth session 사용
-- `NEXT_PUBLIC_RAILWAY_API_URL`을 통해 Railway API 호출
+- same-origin `/api/v1/*` Route Handler 경로를 통해 backend 액세스
+- worker enqueue는 server env `RAILWAY_API_URL`을 사용해 Railway API로 프록시
 
 중요:
 - provider 키는 Vercel에 두지 않습니다.
-- `NEXT_PUBLIC_RAILWAY_API_URL`이 빠지면 `/gallery`, `/community`는 empty state가 아니라 unavailable state를 표시합니다.
+- `RAILWAY_API_URL`이 빠지면 worker enqueue 프록시(`/api/v1/assets/generate`)가 동작하지 않습니다.
 
 ### Railway API (`apps/api`)
 
@@ -58,14 +59,19 @@
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_RAILWAY_API_URL=
+RAILWAY_API_URL=
 NEXT_PUBLIC_APP_URL=
+E2E_RAILWAY_API_URL=
+FLOORPLAN_UPLOAD_BUCKET=floor-plans
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 운영 규칙:
 - Production `NEXT_PUBLIC_APP_URL=https://plan2space.vercel.app`
 - Preview는 `NEXT_PUBLIC_APP_URL`을 비워 preview host 자체로 OAuth 시작
-- Production/Preview/Development 모두 `NEXT_PUBLIC_RAILWAY_API_URL`은 동일한 Railway API URL로 맞춤
+- Production/Preview/Development 모두 `RAILWAY_API_URL`은 동일한 Railway API URL로 맞춤
+- `FLOORPLAN_UPLOAD_BUCKET`은 API/worker/web이 동일 값을 사용해야 snapshot thumbnail signing/upload mismatch를 피할 수 있다.
+- `SUPABASE_SERVICE_ROLE_KEY`는 project version snapshot 업로드/서명 및 owner-scope job 조회 보강 경로 때문에 production/preview에 필수로 둔다.
 
 두지 말아야 하는 값:
 - `ANTHROPIC_API_KEY`
@@ -82,6 +88,7 @@ SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 CORS_ORIGINS=http://localhost:3100,http://127.0.0.1:3100,https://plan2space.vercel.app,https://plan2-space-web-*.vercel.app,https://plan2space-*.vercel.app
 FLOORPLAN_UPLOAD_BUCKET=floor-plans
+ENABLE_LIGHTWEIGHT_API_ROUTES=false
 ENABLE_LEGACY_API_ROUTES=false
 ```
 
@@ -89,7 +96,9 @@ ENABLE_LEGACY_API_ROUTES=false
 - Railway 런타임에서는 `PORT`가 자동 주입되며 API는 이를 우선 사용
 - `CORS_ORIGINS`는 exact origin과 `*` wildcard를 함께 지원
 - Vercel preview 도메인 패턴을 반드시 포함
-- `ENABLE_LEGACY_API_ROUTES`는 기본 `false`로 두고, intake/floorplan/jobs/revisions/scenes가 필요한 ops 기간에만 `true`로 연다
+- `ENABLE_LIGHTWEIGHT_API_ROUTES`는 기본 `false`로 유지하고, (`projects`,`catalog`,`showcase`) 호환성 검증 시에만 일시적으로 `true`
+- `NODE_ENV=production`에서는 `ENABLE_LIGHTWEIGHT_API_ROUTES=true`로 부팅되지 않도록 API env 검증에서 차단한다.
+- `ENABLE_LEGACY_API_ROUTES`는 기본 `false`로 두고, (`jobs`,`intake`,`floorplans`,`revisions`,`scenes`)가 필요한 ops 기간에만 `true`로 연다
 
 ### Railway Worker (`apps/worker`)
 
@@ -185,14 +194,14 @@ MESHY_STATUS_URL=
 - Build Command: `npm run build`
 
 배포 후 필수 확인:
-- `NEXT_PUBLIC_RAILWAY_API_URL`이 production/preview env에 모두 들어갔는지 확인
-- preview bundle이 Railway API를 가리키는지 smoke 검증
+- `RAILWAY_API_URL`이 production/preview env에 모두 들어갔는지 확인
+- preview bundle에 Railway URL이 노출되지 않는지 smoke 검증
 - public showcase read는 `apps/web` Route Handler(`/api/v1/showcase`)에서 `revalidate=60` 캐시를 사용한다.
 
 예시:
 
 ```bash
-npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --expected=https://api-production-473bd.up.railway.app
+npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --mode=must-not-embed --expected=https://api-production-473bd.up.railway.app
 ```
 
 ### 5.2 Railway API (`apps/api`)
@@ -202,7 +211,7 @@ npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url>
 
 실제 운영 확인 포인트:
 - `/v1/health`가 `200`
-- `/v1/showcase?limit=3`가 `200`
+- (`ENABLE_LIGHTWEIGHT_API_ROUTES=true`일 때) `/v1/showcase?limit=3`가 `200`
 
 ### 5.3 Railway Worker (`apps/worker`)
 
@@ -217,7 +226,7 @@ npm --workspace apps/worker run provider:floorplan:check -- --strictCommercializ
 
 ### 5.4 Railway 수동 배포 주의
 
-이 저장소는 `apps/web/public` 자산이 커서, repo root 전체로 `railway up`을 실행하면 업로드 크기 한도로 실패할 수 있습니다.
+이 저장소는 `apps/web/public` 자산이 매우 크며, `.railwayignore`에서 해당 경로를 제외해 deploy context를 줄였습니다. 다만 수동 배포 시에는 여전히 context 점검이 필요합니다.
 
 권장 순서:
 - Git 기반 Railway 배포를 사용
@@ -228,10 +237,12 @@ npm --workspace apps/worker run provider:floorplan:check -- --strictCommercializ
 ### 6.1 API/Worker 기본 확인
 
 1. `GET /v1/health`
-2. `GET /v1/showcase?limit=3`
+2. `GET /api/v1/showcase?limit=3`
 3. `https://plan2space.vercel.app/api/v1/showcase?limit=3`
 4. (로그인 세션 기준) `GET /api/v1/projects/:projectId/versions/latest`
 5. worker 로그에서 polling 시작 확인
+6. repo 경계 검증: `npm run check:web-boundary`
+7. API route gate 검증: `npm --workspace apps/api run test:route-gates`
 
 ### 6.2 Web 확인
 
@@ -263,6 +274,7 @@ railway run -- npm --workspace apps/api run backfill:legacy-project-versions -- 
 - `web`: `type-check`, `lint`, `build`
 - `api`: `typecheck`
 - `worker`: `typecheck`
+- `web` job optional smoke: `E2E_VERCEL_PREVIEW_URL` + `E2E_RAILWAY_API_URL`가 모두 있을 때 `smoke:preview-runtime` 실행
 
 기본 명령:
 
@@ -308,7 +320,7 @@ API는 Vercel로 옮기고, worker만 Railway에 둘 수 있는가?
 ### 주의사항
 
 - 이 작업은 단순 env 변경이 아니라 API 런타임 이식 작업입니다.
-- 현재 web은 `NEXT_PUBLIC_RAILWAY_API_URL`을 기준으로 backend를 호출하므로, same-origin Vercel API로 옮기면 client fetch 경계도 같이 바꿔야 합니다.
+- web은 브라우저 기준 same-origin `/api/v1/*`만 호출해야 하며 Railway URL direct 호출은 금지합니다.
 - legacy intake/floorplan ops 경로를 모두 Vercel로 옮길지, worker와 가까운 Railway에 남길지도 결정해야 합니다.
 - 비용만 보면 API를 Vercel로 옮겨 Railway 서비스를 `worker only`로 줄일 수 있지만, migration 공수가 있습니다.
 
@@ -338,7 +350,7 @@ Updated:
 - active web surface와 compatibility/ops 경계를 분리해서 설명
 - worker 역할을 long-running/background 경계 기준으로 재정의
 - `gallery/community` showcase read path를 `no-store` direct fetch에서 `vercel cache layer -> railway source` 흐름으로 조정
-- editor bootstrap latest-version read path를 `railway direct`에서 `vercel route 우선 + railway fallback`으로 조정
+- editor bootstrap latest-version read path를 `vercel route only`로 조정
 - API default mount 정책을 `legacy routes disabled by default`로 조정(`ENABLE_LEGACY_API_ROUTES=false`)
 
 Removed/Deprecated:

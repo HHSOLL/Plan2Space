@@ -1,7 +1,7 @@
 # Plan2Space
 
-Plan2Space는 **도면 업로드 → AI 구조 파싱 → 2D 보정 → 절차적 3D 생성** 파이프라인으로
-실내 공간을 빠르게 구성하고, 탑뷰/워크 모드를 전환하며 편집할 수 있는 스튜디오입니다.
+Plan2Space는 **Builder → Editor → Publish → Viewer** 흐름을 중심으로 한 3D 룸/데스크 빌더입니다.
+도면 기반 AI 파이프라인은 worker 중심의 보조 경로로 유지되며, 메인 UX는 직접 공간 생성/편집에 맞춰져 있습니다.
 
 ## 빠른 시작
 
@@ -20,21 +20,18 @@ npm run dev:web
 필수:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_RAILWAY_API_URL` (`/gallery`, `/community`, shared/showcase API 복원에 필요)
+- `RAILWAY_API_URL` (Next.js Route Handler에서 Railway API 프록시에 필요)
+- `SUPABASE_SERVICE_ROLE_KEY` (version snapshot upload/signing, owner-scope job 조회 안정화)
 
 권장:
-- `SUPABASE_SERVICE_ROLE_KEY` (캐시/서버 작업)
-- `FLOORPLAN_PROVIDER_ORDER` (예: `snaptrude,anthropic,openai`)
-- `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`
-- `ANTHROPIC_MODEL` / `OPENAI_MODEL`
-- `SNAPTRUDE_API_URL` / `SNAPTRUDE_API_KEY`
+- `E2E_RAILWAY_API_URL` (실환경 e2e/eval 스크립트 전용 override)
 
 선택:
-- `FLOORPLAN_CACHE_BUCKET` (Supabase Storage 캐시)
-- `ASSET_STORAGE_BUCKET` (기본값: `assets-glb`)
-- `TRIPOSR_API_URL`, `TRIPOSR_API_KEY`, `TRIPOSR_STATUS_URL`
+- `FLOORPLAN_UPLOAD_BUCKET` (기본값: `floor-plans`)
 - `NEXT_PUBLIC_DRACO_DECODER_PATH`
 - 전처리/정규화 튜닝 값은 `docs/ai-pipeline.md` 참고
+
+Worker/API 전용(provider) 환경 변수는 `apps/worker/.env.example`, `apps/api/.env.example`를 사용합니다.
 
 ## Supabase 초기 설정
 
@@ -49,6 +46,9 @@ npm run dev:web     # 앱 개발 서버
 npm run type-check  # 타입 체크
 npm run assets:download
 npm run assets:draco
+npm run check:web-boundary
+npm --workspace apps/api run test:route-gates
+npm --workspace apps/web run smoke:preview-runtime -- --url=<vercel-preview-url> --mode=must-not-embed --expected=<railway-api-url>
 ```
 
 ## 문서
