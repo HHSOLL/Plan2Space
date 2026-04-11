@@ -30,13 +30,14 @@ async function fetchText(url) {
 
 async function main() {
   const pageUrl = getArg("url", "");
-  const expected = getArg("expected", process.env.NEXT_PUBLIC_RAILWAY_API_URL || "");
+  const mode = getArg("mode", "must-not-embed");
+  const expected = getArg("expected", process.env.RAILWAY_API_URL || "");
 
   if (!pageUrl) {
     throw new Error("Missing --url=<preview-or-production-url>.");
   }
-  if (!expected) {
-    throw new Error("Missing --expected=<railway-api-url>.");
+  if (mode === "must-embed" && !expected) {
+    throw new Error("Missing --expected=<railway-api-url> for mode=must-embed.");
   }
 
   const html = await fetchText(pageUrl);
@@ -46,27 +47,43 @@ async function main() {
   }
 
   const assetUrls = [...new Set(scriptMatches.map((match) => toAbsoluteUrl(pageUrl, match[1])))];
-  let matchedAsset = null;
+  const matches = [];
 
   for (const assetUrl of assetUrls) {
     const script = await fetchText(assetUrl);
-    if (script.includes(expected)) {
-      matchedAsset = assetUrl;
-      break;
+    if (expected) {
+      if (script.includes(expected)) {
+        matches.push(assetUrl);
+      }
+      continue;
+    }
+
+    if (script.includes("up.railway.app")) {
+      matches.push(assetUrl);
     }
   }
 
-  if (!matchedAsset) {
-    throw new Error(`Expected API URL ${expected} was not found in any client bundle.`);
+  if (mode === "must-embed") {
+    if (matches.length === 0) {
+      throw new Error(`Expected API URL ${expected} was not found in any client bundle.`);
+    }
+  } else if (mode === "must-not-embed") {
+    if (matches.length > 0) {
+      const target = expected || "up.railway.app";
+      throw new Error(`Railway URL (${target}) must not be embedded in client bundle. matched=${matches.join(",")}`);
+    }
+  } else {
+    throw new Error(`Unsupported --mode value: ${mode}`);
   }
 
   console.log(
     JSON.stringify(
       {
         ok: true,
+        mode,
         pageUrl,
         expected,
-        matchedAsset
+        matchedAssets: matches
       },
       null,
       2

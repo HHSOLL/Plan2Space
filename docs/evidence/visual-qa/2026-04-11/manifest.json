@@ -1,0 +1,22 @@
+{
+  "generatedAt": "2026-04-11T11:46:53.783Z",
+  "baseURL": "http://127.0.0.1:3100",
+  "projectId": "48534112-fd2b-4d2f-8a39-50b9a8b1bec1",
+  "liveToken": "904aff3196c045919b7e6dbb53d1256d6d4f3b26c4454b9b90fdebc13cdae39b",
+  "expiredToken": "da46a658bef24177ac3d38f4b24795d3859d45b80eed470ab51409fab5315961",
+  "captures": [
+    "01-studio-create.png",
+    "02-builder-step1.png",
+    "03-builder-step3-openings.png",
+    "04-builder-step4-style.png",
+    "05-editor-top-view.png",
+    "06-editor-walk-view.png",
+    "07-editor-share-modal.png",
+    "08-shared-top-view.png",
+    "09-shared-walk-hotspots.png",
+    "10-community.png",
+    "11-gallery.png",
+    "12-shared-expired.png"
+  ],
+  "fallbackNotes": []
+}

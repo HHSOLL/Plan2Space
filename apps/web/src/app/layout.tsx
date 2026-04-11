@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "../lib/server/runtime-polyfills";
 import "../styles/globals.css";
 import { Inter, Outfit, Cormorant_Garamond } from "next/font/google";
 import { SonnerToaster } from "../components/sonner-toaster";

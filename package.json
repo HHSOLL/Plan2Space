@@ -11,6 +11,8 @@
     "dev:worker": "npm --workspace apps/worker run dev",
     "type-check": "npm --workspace apps/web run type-check",
     "type-check:all": "npm --workspace apps/web run type-check && npm --workspace apps/api run typecheck && npm --workspace apps/worker run typecheck",
+    "check:web-boundary": "node scripts/check-web-boundary.mjs",
+    "qa:visual:capture": "node scripts/capture-visual-qa.mjs",
     "assets:download": "node scripts/assets-download.mjs",
     "assets:draco": "node scripts/draco-compress.mjs"
   },
@@ -19,10 +21,11 @@
     "jspdf": "^3.0.4"
   },
   "devDependencies": {
-    "@types/html2canvas": "^0.5.35",
     "@gltf-transform/core": "^3.10.1",
     "@gltf-transform/extensions": "^3.10.1",
     "@gltf-transform/functions": "^3.10.1",
+    "@playwright/test": "^1.54.2",
+    "@types/html2canvas": "^0.5.35",
     "draco3dgltf": "^1.5.7"
   }
 }

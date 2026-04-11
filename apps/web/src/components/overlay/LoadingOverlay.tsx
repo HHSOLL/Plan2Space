@@ -9,6 +9,17 @@ export function LoadingOverlay() {
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    const qaBypassEnabled =
+      typeof window !== "undefined" &&
+      ((window as Window & { __PLAN2SPACE_DISABLE_LOADING_OVERLAY__?: boolean })
+        .__PLAN2SPACE_DISABLE_LOADING_OVERLAY__ === true ||
+        new URLSearchParams(window.location.search).get("qaNoLoader") === "1");
+    if (qaBypassEnabled) {
+      setProgress(100);
+      setIsVisible(false);
+      return;
+    }
+
     // Safety timeout: ensure loader disappears after 5 seconds max
     const safetyTimer = setTimeout(() => {
       setIsVisible(false);
