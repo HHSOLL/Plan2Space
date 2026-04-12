@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { loadEnvConfig } from "@next/env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../../types/database";
 import { createProjectVersion } from "../src/lib/server/project-versions";
@@ -15,6 +16,12 @@ const ROUTES = [
   { name: "gallery", path: "/gallery" },
   { name: "community", path: "/community" }
 ];
+
+const FLOW_REQUIRED_ENVS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY"
+] as const;
 
 type Mode = "smoke" | "contract" | "flow";
 
@@ -71,6 +78,48 @@ function loadEnvFile(filePath: string) {
     if (!key || (process.env[key] !== undefined && process.env[key] !== "")) continue;
     const value = line.slice(idx + 1).trim();
     process.env[key] = value;
+  }
+}
+
+function isEnvMissing(name: (typeof FLOW_REQUIRED_ENVS)[number]) {
+  const value = process.env[name];
+  return !value || value.trim().length === 0;
+}
+
+function normalizeEnvRawValue(value: string) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+function loadFlowEnvFallback() {
+  if (!FLOW_REQUIRED_ENVS.some((key) => isEnvMissing(key))) return;
+
+  const candidates = [
+    path.join(WEB_ROOT, ".env.local"),
+    path.join(path.resolve(WEB_ROOT, ".."), ".env.local"),
+    path.join(path.resolve(WEB_ROOT, "..", ".."), ".env.local"),
+    path.join(process.cwd(), ".env.local"),
+    path.join(process.cwd(), "apps", "web", ".env.local")
+  ];
+
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate)) continue;
+    const raw = fs.readFileSync(candidate, "utf8");
+    for (const line of raw.split(/\r?\n/)) {
+      if (!line || line.trim().startsWith("#")) continue;
+      const envMatch = line.match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if (!envMatch) continue;
+      const key = envMatch[1] as (typeof FLOW_REQUIRED_ENVS)[number];
+      if (!FLOW_REQUIRED_ENVS.includes(key)) continue;
+      if (!isEnvMissing(key)) continue;
+      process.env[key] = normalizeEnvRawValue(envMatch[2] ?? "");
+    }
   }
 }
 
@@ -420,9 +469,12 @@ async function runRouteChecks(baseUrl: URL) {
 }
 
 async function main() {
+  // Match Next.js env resolution so standalone E2E runs behave like the app.
+  loadEnvConfig(WEB_ROOT);
   loadEnvFile(path.join(WEB_ROOT, ".env.local"));
   loadEnvFile(path.join(process.cwd(), ".env.local"));
   loadEnvFile(path.join(process.cwd(), "apps/web/.env.local"));
+  loadFlowEnvFallback();
 
   const baseUrlInput = getArg("base-url", process.env.E2E_ROOM_FLOW_BASE_URL || "http://127.0.0.1:3100");
   const mode = parseMode(getArg("mode", "smoke"));
