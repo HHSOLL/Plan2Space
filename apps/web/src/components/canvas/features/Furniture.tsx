@@ -7,7 +7,13 @@ import type { ThreeEvent } from "@react-three/fiber";
 import { useGLBAsset } from "../../../lib/loaders/AssetLoader";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore, type SceneAsset } from "../../../lib/stores/useSceneStore";
+import {
+  useAssetSelector,
+  usePublishSelector,
+  useSelectionSelector,
+  useShellSelector
+} from "../../../lib/stores/scene-slices";
+import type { SceneAsset } from "../../../lib/stores/useSceneStore";
 
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const GRID_SNAP = 0.25;
@@ -78,14 +84,14 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const readOnly = useEditorStore((state) => state.readOnly);
-  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
-  const walls = useSceneStore((state) => state.walls);
-  const ceilings = useSceneStore((state) => state.ceilings);
-  const scale = useSceneStore((state) => state.scale);
-  const sceneAssets = useSceneStore((state) => state.assets);
-  const updateFurniture = useSceneStore((state) => state.updateFurniture);
-  const recordSnapshot = useSceneStore((state) => state.recordSnapshot);
-  const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
+  const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
+  const setSelectedAssetId = useSelectionSelector((slice) => slice.setSelectedAssetId);
+  const walls = useShellSelector((slice) => slice.walls);
+  const ceilings = useShellSelector((slice) => slice.ceilings);
+  const scale = useShellSelector((slice) => slice.scale);
+  const sceneAssets = useAssetSelector((slice) => slice.assets);
+  const updateFurniture = useAssetSelector((slice) => slice.updateFurniture);
+  const recordSnapshot = usePublishSelector((slice) => slice.recordSnapshot);
   const [isDragging, setIsDragging] = useState(false);
   const isSelected = selectedAssetId === asset.id;
 
@@ -198,7 +204,7 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
 }
 
 export default function Furniture() {
-  const assets = useSceneStore((state) => state.assets);
+  const assets = useAssetSelector((slice) => slice.assets);
 
   return (
     <group>

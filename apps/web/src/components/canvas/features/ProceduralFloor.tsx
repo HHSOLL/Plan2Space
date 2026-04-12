@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 import { buildExteriorPolygon, buildFallbackShape } from "../../../lib/geometry/floor-shape";
 
 type TextureManifestEntry = {
@@ -39,11 +39,11 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 
 export default function ProceduralFloor() {
   const viewMode = useEditorStore((state) => state.viewMode);
-  const walls = useSceneStore((state) => state.walls);
-  const floors = useSceneStore((state) => state.floors);
-  const scale = useSceneStore((state) => state.scale);
-  const floorMaterialIndex = useSceneStore((state) => state.floorMaterialIndex);
-  const setFloorMaterialIndex = useSceneStore((state) => state.setFloorMaterialIndex);
+  const walls = useShellSelector((slice) => slice.walls);
+  const floors = useShellSelector((slice) => slice.floors);
+  const scale = useShellSelector((slice) => slice.scale);
+  const floorMaterialIndex = useShellSelector((slice) => slice.floorMaterialIndex);
+  const setFloorMaterialIndex = useShellSelector((slice) => slice.setFloorMaterialIndex);
 
   const [manifest, setManifest] = useState<TextureManifestEntry[]>([]);
 

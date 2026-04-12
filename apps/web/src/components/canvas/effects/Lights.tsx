@@ -1,9 +1,9 @@
 "use client";
 
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 
 export default function Lights() {
-  const lighting = useSceneStore((state) => state.lighting);
+  const lighting = useShellSelector((slice) => slice.lighting);
 
   return (
     <>

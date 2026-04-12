@@ -5,7 +5,7 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { SceneAsset } from "../../lib/stores/useSceneStore";
 import { getAssetPublicUrl } from "../../lib/storage";
-import { useSceneStore } from "../../lib/stores/useSceneStore";
+import { useSelectionSelector } from "../../lib/stores/scene-slices";
 
 type FurnitureMeshProps = {
   item: SceneAsset;
@@ -276,8 +276,9 @@ const FurnitureMeshInner = forwardRef<THREE.Group, FurnitureMeshProps>(function 
   { item, interactive = true },
   ref
 ) {
-  const isSelected = useSceneStore((s) => s.selectedAssetId === item.id);
-  const setSelectedAssetId = useSceneStore((s) => s.setSelectedAssetId);
+  const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
+  const setSelectedAssetId = useSelectionSelector((slice) => slice.setSelectedAssetId);
+  const isSelected = selectedAssetId === item.id;
 
   const kind = useMemo(() => inferProceduralKind(item), [item]);
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Environment as DreiEnvironment, ContactShadows } from "@react-three/drei";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 
 type HdriEntry = {
   id: string;
@@ -17,7 +17,7 @@ type EnvironmentSource =
 const FALLBACK_ENVIRONMENT: EnvironmentSource = { type: "preset", value: "apartment" };
 
 export default function SceneEnvironment() {
-  const lighting = useSceneStore((state) => state.lighting);
+  const lighting = useShellSelector((slice) => slice.lighting);
   const [environment, setEnvironment] = useState<EnvironmentSource>(FALLBACK_ENVIRONMENT);
 
   useEffect(() => {

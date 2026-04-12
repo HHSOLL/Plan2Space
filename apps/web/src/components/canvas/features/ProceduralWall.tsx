@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
 import { Geometry, Base, Subtraction } from "@react-three/csg";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 
 type TextureManifestEntry = {
   id: string;
@@ -21,9 +21,10 @@ function WallMesh({
   materialTemplate: THREE.Material;
   onToggle: () => void;
 }) {
-  const wall = useSceneStore((state) => state.walls.find((item) => item.id === wallId));
-  const openings = useSceneStore((state) => state.openings);
-  const scale = useSceneStore((state) => state.scale);
+  const walls = useShellSelector((slice) => slice.walls);
+  const openings = useShellSelector((slice) => slice.openings);
+  const scale = useShellSelector((slice) => slice.scale);
+  const wall = useMemo(() => walls.find((item) => item.id === wallId), [wallId, walls]);
   const material = useMemo(() => materialTemplate.clone(), [materialTemplate]);
 
   const wallOpenings = useMemo(() => openings.filter((opening) => opening.wallId === wallId), [openings, wallId]);
@@ -117,9 +118,9 @@ function WallMesh({
 
 export default function ProceduralWall() {
   const viewMode = useEditorStore((state) => state.viewMode);
-  const wallMaterialIndex = useSceneStore((state) => state.wallMaterialIndex);
-  const setWallMaterialIndex = useSceneStore((state) => state.setWallMaterialIndex);
-  const walls = useSceneStore((state) => state.walls);
+  const wallMaterialIndex = useShellSelector((slice) => slice.wallMaterialIndex);
+  const setWallMaterialIndex = useShellSelector((slice) => slice.setWallMaterialIndex);
+  const walls = useShellSelector((slice) => slice.walls);
 
   const [manifest, setManifest] = useState<TextureManifestEntry[]>([]);
 

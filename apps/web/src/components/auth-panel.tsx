@@ -75,7 +75,7 @@ export function AuthPanel({ className }: { className?: string }) {
     <div className={`rounded-[28px] border border-stone-200/80 bg-white/70 p-7 shadow-[0_22px_70px_-55px_rgba(0,0,0,0.45)] backdrop-blur ${className ?? ""}`}>
       <div>
         <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-stone-500">Account</div>
-        <h2 className="mt-3 font-serif text-2xl text-stone-900">Sign in to Plan2Space</h2>
+        <h2 className="mt-3 font-sans text-2xl font-semibold text-stone-900">Plan2Space 로그인</h2>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
           프로젝트 저장 및 개인 폴더(Storage) 접근을 위해 로그인이 필요합니다.
         </p>
@@ -99,7 +99,7 @@ export function AuthPanel({ className }: { className?: string }) {
             onClick={handleSignOut}
             className="w-full rounded-full border border-stone-300 bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.28em] text-stone-800 transition-all duration-300 hover:bg-stone-100 disabled:opacity-40"
           >
-            Sign out
+            로그아웃
           </button>
         </div>
       ) : null}
@@ -113,7 +113,7 @@ export function AuthPanel({ className }: { className?: string }) {
             className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-stone-300 bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.28em] text-stone-800 transition-all duration-300 hover:bg-stone-100 disabled:opacity-40"
           >
             <GoogleIcon />
-            Continue with Google
+            Google로 계속하기
           </button>
           <button
             type="button"

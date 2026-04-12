@@ -16,8 +16,8 @@ export function SaveButton({
   isSaving = false,
   disabled = false,
   className,
-  label = "Archive",
-  savingLabel = "Archiving..."
+  label = "저장",
+  savingLabel = "저장 중..."
 }: SaveButtonProps) {
   return (
     <button

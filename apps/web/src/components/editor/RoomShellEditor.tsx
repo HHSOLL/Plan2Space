@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Stage, Layer, Line, Circle, Image as KonvaImage, Group, Text } from "react-konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { Check, RotateCcw, Plus, Trash2, DoorOpen, MousePointer2, Ruler } from "lucide-react";
-import { useSceneStore } from "../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../lib/stores/scene-slices";
 import { createDoorHeuristicScaleInfo, createUserMeasureScaleInfo } from "../../lib/ai/scaleInfo";
 
 type ToolMode = "select" | "add-wall" | "add-opening" | "measure";
@@ -12,13 +12,6 @@ type ToolMode = "select" | "add-wall" | "add-opening" | "measure";
 type DragTarget =
   | { kind: "wall-endpoint"; wallId: string; endpoint: "start" | "end" }
   | { kind: "opening"; openingId: string; grabOffset: number };
-
-interface FloorplanEditorProps {
-  image: string;
-  onConfirm: () => void;
-  confirmLabel?: string;
-  showConfirmButton?: boolean;
-}
 
 const DEFAULT_WALL_THICKNESS = 12;
 const DEFAULT_WALL_HEIGHT = 2.8;
@@ -74,13 +67,20 @@ function toWallLocal(point: [number, number], wall: { start: [number, number]; e
   return { localX, localY, length, cos, sin };
 }
 
-export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmButton = true }: FloorplanEditorProps) {
-  const walls = useSceneStore((state) => state.walls);
-  const openings = useSceneStore((state) => state.openings);
-  const setWalls = useSceneStore((state) => state.setWalls);
-  const setOpenings = useSceneStore((state) => state.setOpenings);
-  const sceneScale = useSceneStore((state) => state.scale);
-  const setSceneScale = useSceneStore((state) => state.setScale);
+interface RoomShellEditorProps {
+  image: string;
+  onConfirm: () => void;
+  confirmLabel?: string;
+  showConfirmButton?: boolean;
+}
+
+export function RoomShellEditor({ image, onConfirm, confirmLabel, showConfirmButton = true }: RoomShellEditorProps) {
+  const walls = useShellSelector((slice) => slice.walls);
+  const openings = useShellSelector((slice) => slice.openings);
+  const setWalls = useShellSelector((slice) => slice.setWalls);
+  const setOpenings = useShellSelector((slice) => slice.setOpenings);
+  const sceneScale = useShellSelector((slice) => slice.scale);
+  const setSceneScale = useShellSelector((slice) => slice.setScale);
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<any>(null);
 
@@ -189,18 +189,18 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
 
   const applyScaleFromMeasurement = () => {
     if (!measurement) {
-      setScaleMessage("Select two points to measure.");
+      setScaleMessage("측정할 두 점을 선택해 주세요.");
       return;
     }
     const mmValue = Number(measureInput);
     if (!Number.isFinite(mmValue) || mmValue <= 0) {
-      setScaleMessage("Enter a valid length in mm.");
+      setScaleMessage("mm 단위의 올바른 길이를 입력해 주세요.");
       return;
     }
     const meters = mmValue / 1000;
     const nextScale = meters / measurement.distance;
     if (!Number.isFinite(nextScale) || nextScale <= 0) {
-      setScaleMessage("Invalid scale computed. Check points and length.");
+      setScaleMessage("스케일 계산에 실패했습니다. 측정 점과 길이를 확인해 주세요.");
       return;
     }
     setSceneScale(
@@ -213,7 +213,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
         p2: measurement.end
       })
     );
-    setScaleMessage(`Scale set: ${nextScale.toFixed(4)} m/px`);
+    setScaleMessage(`스케일 설정: ${nextScale.toFixed(4)} m/px`);
   };
 
   const applyScaleFromDoors = () => {
@@ -221,14 +221,14 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
       .filter((opening) => opening.type === "door" && opening.width > 10)
       .map((opening) => ({ id: opening.id, width: opening.width }));
     if (doorCandidates.length === 0) {
-      setScaleMessage("No doors found for auto-scale.");
+      setScaleMessage("자동 스케일에 사용할 문을 찾지 못했습니다.");
       return;
     }
     const doorWidths = doorCandidates.map((entry) => entry.width);
     const avgWidth = doorWidths.reduce((sum, value) => sum + value, 0) / doorWidths.length;
     const nextScale = DEFAULT_DOOR_METERS / avgWidth;
     if (!Number.isFinite(nextScale) || nextScale <= 0) {
-      setScaleMessage("Auto-scale failed. Check door widths.");
+      setScaleMessage("자동 스케일 계산에 실패했습니다. 문 너비를 확인해 주세요.");
       return;
     }
     setSceneScale(
@@ -240,7 +240,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
         openingId: doorCandidates[0]?.id
       })
     );
-    setScaleMessage(`Auto-scale: ${nextScale.toFixed(4)} m/px (low confidence, verify with measurement)`);
+    setScaleMessage(`자동 스케일: ${nextScale.toFixed(4)} m/px (신뢰도 낮음, 실측으로 확인 필요)`);
   };
 
   useEffect(() => {
@@ -491,9 +491,9 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3 sm:p-4 lg:p-6 glass-dark border-b border-white/5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 lg:gap-6 min-w-0">
           <div className="space-y-1">
-            <h3 className="text-lg font-outfit font-medium">Verify Floorplan</h3>
+            <h3 className="text-lg font-outfit font-medium">공간 껍데기 보정</h3>
             <p className="text-[10px] text-white/40 uppercase tracking-[0.2em]">
-              Adjust walls and openings before 3D generation
+              3D 진입 전 벽과 개구부를 보정합니다
             </p>
           </div>
           <div className="hidden sm:block w-[1px] h-8 bg-white/10" />
@@ -504,7 +504,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setActiveTool("select");
                 setPendingWallStart(null);
               }}
-              title="Select"
+              title="선택"
               className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "select" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <MousePointer2 className="w-4 h-4 text-white/40 group-hover:text-white" />
@@ -515,7 +515,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setActiveTool((prev) => (prev === "add-wall" ? "select" : "add-wall"));
                 setPendingWallStart(null);
               }}
-              title="Add wall"
+              title="벽 추가"
               className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "add-wall" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <Plus className="w-4 h-4 text-white/40 group-hover:text-white" />
@@ -526,7 +526,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setActiveTool((prev) => (prev === "add-opening" ? "select" : "add-opening"));
                 setPendingWallStart(null);
               }}
-              title="Add opening (door/window)"
+              title="개구부 추가(문/창문)"
               className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "add-opening" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <DoorOpen className="w-4 h-4 text-white/40 group-hover:text-white" />
@@ -537,7 +537,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setActiveTool((prev) => (prev === "measure" ? "select" : "measure"));
                 setPendingWallStart(null);
               }}
-              title="Measure and set scale"
+              title="측정 후 스케일 설정"
               className={`p-2.5 sm:p-3 rounded-xl transition-colors group shrink-0 ${activeTool === "measure" ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <Ruler className="w-4 h-4 text-white/40 group-hover:text-white" />
@@ -551,7 +551,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setWalls(nextWalls);
                 setOpenings(openings.filter((opening) => wallIds.has(opening.wallId)));
               }}
-              title="Delete last wall"
+              title="마지막 벽 삭제"
               className="p-2.5 sm:p-3 rounded-xl hover:bg-white/5 transition-colors group shrink-0"
             >
               <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-300" />
@@ -564,7 +564,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 setPendingWallStart(null);
                 setActiveTool("select");
               }}
-              title="Clear all"
+              title="전체 초기화"
               className="p-2.5 sm:p-3 rounded-xl hover:bg-white/5 transition-colors group shrink-0"
             >
               <RotateCcw className="w-4 h-4 text-white/40 group-hover:text-white" />
@@ -574,7 +574,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
         <div className="flex w-full lg:w-auto items-stretch sm:items-center gap-3 sm:gap-4 flex-col sm:flex-row">
           <div className="flex flex-col sm:items-end gap-2">
             <div className="text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-right">
-              Scale: {sceneScale.toFixed(4)} m/px ({(sceneScale * 1000).toFixed(1)} mm/px)
+              스케일: {sceneScale.toFixed(4)} m/px ({(sceneScale * 1000).toFixed(1)} mm/px)
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
@@ -584,7 +584,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                   value={measureInput}
                   onChange={(event) => setMeasureInput(event.target.value)}
                   className="w-24 sm:w-[120px] bg-transparent text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80 outline-none"
-                  placeholder="Length (mm)"
+                  placeholder="실측 길이(mm)"
                 />
                 <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">mm</span>
               </div>
@@ -593,14 +593,14 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
                 onClick={applyScaleFromMeasurement}
                 className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 transition hover:text-white"
               >
-                Set scale
+                스케일 적용
               </button>
               <button
                 type="button"
                 onClick={applyScaleFromDoors}
                 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.3em] text-white/60 transition hover:text-white"
               >
-                Auto door
+                문 기준 자동
               </button>
             </div>
             {scaleMessage ? (
@@ -613,7 +613,7 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
               className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-[#0a0a0b] font-bold text-xs uppercase tracking-[0.2em] rounded-xl hover:scale-105 transition-all"
             >
               <Check className="w-4 h-4" />
-              {confirmLabel ?? "Confirm 3D Generation"}
+              {confirmLabel ?? "3D 편집으로 이동"}
             </button>
           )}
         </div>
@@ -701,24 +701,24 @@ export function FloorplanEditor({ image, onConfirm, confirmLabel, showConfirmBut
         <div className="absolute bottom-3 left-3 right-3 sm:bottom-8 sm:right-8 sm:left-auto sm:w-auto p-3 sm:p-4 glass-dark rounded-2xl pointer-events-none">
           <div className="flex items-center gap-3 text-[10px] text-white/60 tracking-widest uppercase">
             <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            {activeTool === "add-wall" && "Click two points to add a wall"}
-            {activeTool === "add-opening" && "Click wall to add door (Shift = window)"}
-            {activeTool === "measure" && "Click two points to measure and set scale"}
+            {activeTool === "add-wall" && "두 점을 클릭해 벽을 추가하세요"}
+            {activeTool === "add-opening" && "벽을 클릭해 문을 추가하세요 (Shift + 클릭: 창문)"}
+            {activeTool === "measure" && "두 점을 클릭해 실측 후 스케일을 적용하세요"}
             {activeTool === "select" &&
-              (walls.length === 0 ? "No walls detected - use + to add" : "Drag endpoints or openings to refine")}
+              (walls.length === 0 ? "벽이 감지되지 않았습니다. + 버튼으로 추가하세요" : "모서리 또는 개구부를 드래그해 보정하세요")}
           </div>
           {activeTool === "select" && (lowConfidenceWalls > 0 || lowConfidenceOpenings > 0) && (
             <div className="mt-2 text-[10px] uppercase tracking-[0.2em] text-red-300/90">
-              Low confidence: walls {lowConfidenceWalls}, openings {lowConfidenceOpenings}
+              신뢰도 낮음: 벽 {lowConfidenceWalls}, 개구부 {lowConfidenceOpenings}
             </div>
           )}
         </div>
         <div className="absolute bottom-20 left-3 right-3 sm:bottom-8 sm:left-8 sm:right-auto p-3 sm:p-4 glass-dark rounded-2xl pointer-events-none">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-white/70">Confidence</div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-white/70">신뢰도</div>
           <div className="mt-2 flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-white/60">
-            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />High</span>
-            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#eab308]" />Medium</span>
-            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#ef4444]" />Low</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />높음</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#eab308]" />중간</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[#ef4444]" />낮음</span>
           </div>
         </div>
       </div>

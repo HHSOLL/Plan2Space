@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 import { useInteractionRegistry } from "../interaction/InteractionManager";
 
 type LightSpec = {
@@ -81,8 +81,8 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 }
 
 export default function InteractiveLights() {
-  const walls = useSceneStore((state) => state.walls);
-  const scale = useSceneStore((state) => state.scale);
+  const walls = useShellSelector((slice) => slice.walls);
+  const scale = useShellSelector((slice) => slice.scale);
 
   const fixtures = useMemo(() => {
     const bounds = computeBounds(walls, scale);

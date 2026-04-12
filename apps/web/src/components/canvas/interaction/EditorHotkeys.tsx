@@ -2,7 +2,11 @@
 
 import { useEffect } from "react";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import {
+  useAssetSelector,
+  usePublishSelector,
+  useSelectionSelector
+} from "../../../lib/stores/scene-slices";
 
 const ROTATE_STEP = Math.PI / 2;
 
@@ -10,10 +14,10 @@ export default function EditorHotkeys() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const setTransformMode = useEditorStore((state) => state.setTransformMode);
   const readOnly = useEditorStore((state) => state.readOnly);
-  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
-  const assets = useSceneStore((state) => state.assets);
-  const updateFurniture = useSceneStore((state) => state.updateFurniture);
-  const recordSnapshot = useSceneStore((state) => state.recordSnapshot);
+  const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
+  const assets = useAssetSelector((slice) => slice.assets);
+  const updateFurniture = useAssetSelector((slice) => slice.updateFurniture);
+  const recordSnapshot = usePublishSelector((slice) => slice.recordSnapshot);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

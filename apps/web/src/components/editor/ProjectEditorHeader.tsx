@@ -29,11 +29,11 @@ export function ProjectEditorHeader({
   saveError,
   lastSavedAt
 }: ProjectEditorHeaderProps) {
-  const modeLabel = viewMode === "walk" ? "Walk" : "Top";
+  const modeLabel = viewMode === "walk" ? "워크뷰" : "상단뷰";
   const modeDescription =
     viewMode === "walk"
-      ? "Walkthrough review mode active."
-      : "Top-view editing mode active.";
+      ? "워크뷰 검토 모드가 활성화되었습니다."
+      : "상단뷰 편집 모드가 활성화되었습니다.";
 
   return (
     <div className="pointer-events-none fixed inset-x-3 top-3 z-[100] flex items-start justify-between gap-3 sm:inset-x-8 sm:top-6 sm:items-center">
@@ -42,7 +42,7 @@ export function ProjectEditorHeader({
           type="button"
           onClick={onBack}
           className="group rounded-[18px] border border-black/10 bg-white/95 p-3 shadow-[0_14px_30px_rgba(29,24,18,0.12)] transition hover:border-black/20 hover:bg-[#f7f1e7] active:scale-95"
-          aria-label="Back to projects"
+          aria-label="프로젝트 목록으로 이동"
         >
           <ChevronLeft className="h-5 w-5 text-[#625a51] transition-colors group-hover:text-[#171411]" />
         </button>
@@ -54,7 +54,7 @@ export function ProjectEditorHeader({
         >
           <div className="flex items-center justify-between gap-3">
             <span className="truncate text-[9px] font-bold uppercase tracking-[0.2em] text-[#8a8177] sm:text-[10px]">
-              Room planner
+              공간 편집기
             </span>
             <span className="rounded-full border border-black/10 bg-[#f6f1e9] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#6b6258]">
               {modeLabel}
@@ -82,7 +82,7 @@ export function ProjectEditorHeader({
             className="hidden items-center gap-2 rounded-[18px] border border-black/10 bg-white/95 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51] shadow-[0_14px_30px_rgba(29,24,18,0.12)] transition hover:border-black/20 hover:bg-[#f7f1e7] hover:text-[#171411] sm:flex"
           >
             <Share2 className="h-4 w-4" />
-            <span>Share</span>
+            <span>공유</span>
           </button>
           <div className="hidden sm:block">
             <SaveButton
@@ -90,8 +90,8 @@ export function ProjectEditorHeader({
               isSaving={isSaving}
               disabled={!isDirty && !saveError}
               className="flex items-center gap-2 rounded-[18px] bg-[#171411] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-[0_14px_30px_rgba(29,24,18,0.16)] transition hover:bg-black disabled:opacity-45 active:scale-95"
-              label="Save"
-              savingLabel="Saving"
+              label="저장"
+              savingLabel="저장 중"
             />
           </div>
         </div>

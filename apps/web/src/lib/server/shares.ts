@@ -99,7 +99,7 @@ export async function createProjectShare(
     ownerId: input.ownerId
   });
   if (!selectedVersion?.id) {
-    throw new ShareApiError(400, "Save the room once before creating a snapshot link.");
+    throw new ShareApiError(400, "공유 링크를 만들기 전에 공간을 한 번 저장해 주세요.");
   }
 
   const canPublishToGallery = input.shareType === "permanent" && permission === "view" && input.publishToGallery;
@@ -120,7 +120,7 @@ export async function createProjectShare(
       : fallbackAssetSummary;
 
   const previewMeta = buildSharePreviewMeta({
-    projectName: project.name.trim() || "Untitled Room",
+    projectName: project.name.trim() || "제목 없는 공간",
     projectDescription: project.description ?? null,
     versionNumber: typeof selectedVersion.version === "number" ? selectedVersion.version : null,
     assetSummary: versionScopedSummary

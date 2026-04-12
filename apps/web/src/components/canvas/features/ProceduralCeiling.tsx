@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 import { buildExteriorPolygon, buildFallbackShape } from "../../../lib/geometry/floor-shape";
 
 const DEFAULT_HEIGHT = 2.8;
@@ -34,10 +34,10 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 
 export default function ProceduralCeiling() {
   const viewMode = useEditorStore((state) => state.viewMode);
-  const walls = useSceneStore((state) => state.walls);
-  const floors = useSceneStore((state) => state.floors);
-  const ceilings = useSceneStore((state) => state.ceilings);
-  const scale = useSceneStore((state) => state.scale);
+  const walls = useShellSelector((slice) => slice.walls);
+  const floors = useShellSelector((slice) => slice.floors);
+  const ceilings = useShellSelector((slice) => slice.ceilings);
+  const scale = useShellSelector((slice) => slice.scale);
 
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const exterior = useMemo(() => buildExteriorPolygon(walls, scale), [walls, scale]);

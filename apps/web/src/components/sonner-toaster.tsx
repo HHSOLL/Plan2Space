@@ -12,7 +12,7 @@ export function SonnerToaster() {
         classNames: {
           toast:
             "rounded-2xl border border-stone-200 bg-white/90 text-stone-900 shadow-[0_18px_60px_-40px_rgba(0,0,0,0.45)] backdrop-blur",
-          title: "font-serif text-sm text-stone-900",
+          title: "font-sans text-sm font-semibold text-stone-900",
           description: "text-xs text-stone-600",
           icon: "text-stone-700",
           actionButton:
@@ -26,4 +26,3 @@ export function SonnerToaster() {
     />
   );
 }
-

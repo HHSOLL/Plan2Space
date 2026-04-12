@@ -27,9 +27,9 @@ type BuilderLibraryShelfProps = {
 
 function getSurfaceSupportLabel(item: LibraryCatalogItem) {
   const surfaceCount = item.supportProfile?.surfaces.length ?? 0;
-  if (surfaceCount <= 0) return "Floor ready";
-  if (surfaceCount === 1) return "Surface aware";
-  return `${surfaceCount} support zones`;
+  if (surfaceCount <= 0) return "바닥 배치";
+  if (surfaceCount === 1) return "표면 인식";
+  return `지원 면 ${surfaceCount}개`;
 }
 
 function AssetCard({
@@ -69,12 +69,12 @@ function AssetCard({
           <div className="flex shrink-0 flex-col items-end gap-1">
             {placed ? (
               <span className="rounded-full border border-emerald-800/15 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-800">
-                Placed
+                배치됨
               </span>
             ) : null}
             {item.assetId.startsWith("placeholder:") ? (
               <span className="rounded-full border border-black/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#8a8177]">
-                Prototype
+                프로토타입
               </span>
             ) : null}
           </div>
@@ -82,11 +82,11 @@ function AssetCard({
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#625a51]">{item.description}</p>
         <dl className="mt-4 grid grid-cols-2 gap-2 rounded-[18px] border border-black/5 bg-[#f7f3ec] p-3">
           <div>
-            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Collection</dt>
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">컬렉션</dt>
             <dd className="mt-1 text-[11px] font-medium text-[#473f35]">{item.collection}</dd>
           </div>
           <div>
-            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Placement</dt>
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">배치 기준</dt>
             <dd className="mt-1 text-[11px] font-medium text-[#473f35]">{supportLabel}</dd>
           </div>
         </dl>
@@ -128,14 +128,14 @@ export function BuilderLibraryShelf({
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a8177]">
               <Package className="h-4 w-4" />
-              Product shelf
+              제품 목록
             </div>
             <p className="mt-2 text-sm leading-6 text-[#625a51]">
-              Browse by room category, compare support behavior, and add pieces without leaving the editor.
+              카테고리별로 제품을 탐색하고 현재 장면에 바로 배치할 수 있습니다.
             </p>
           </div>
           <div className="shrink-0 rounded-[18px] border border-black/10 bg-[#f7f4ee] px-3 py-2 text-right">
-            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Placed</div>
+            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">배치 수</div>
             <div className="mt-1 text-lg font-semibold leading-none">{assetCount}</div>
           </div>
         </div>
@@ -147,7 +147,7 @@ export function BuilderLibraryShelf({
               type="text"
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Search chairs, tables, lighting..."
+              placeholder="제품명 또는 카테고리 검색"
               className="w-full rounded-[18px] border border-black/10 bg-[#f7f4ee] py-3 pl-10 pr-4 text-sm text-[#171411] outline-none transition placeholder:text-[#8a8177] focus:border-black/25 focus:bg-white focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
             />
           </div>
@@ -171,17 +171,17 @@ export function BuilderLibraryShelf({
 
           <div className="flex items-start justify-between gap-3 rounded-[20px] border border-black/10 bg-[#f7f3ec] px-4 py-3">
             <div className="min-w-0">
-              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">Current shelf</div>
+              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">현재 목록</div>
               <p className="mt-1 text-sm font-semibold text-[#171411]">
-                {activeCategoryMeta?.label ?? "All products"}
-                {query.trim().length > 0 ? ` matching "${query.trim()}"` : ""}
+                {activeCategoryMeta?.label ?? "전체 제품"}
+                {query.trim().length > 0 ? ` · "${query.trim()}" 검색 결과` : ""}
               </p>
               <p className="mt-1 text-xs leading-5 text-[#625a51]">
-                {activeCategoryMeta?.description ?? "Everything currently available on the shelf."}
+                {activeCategoryMeta?.description ?? "현재 조건에서 배치 가능한 제품 목록입니다."}
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">Results</div>
+              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">결과 수</div>
               <div className="mt-1 text-lg font-semibold leading-none text-[#171411]">{items.length}</div>
             </div>
           </div>
@@ -197,15 +197,15 @@ export function BuilderLibraryShelf({
           >
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">
               <Sparkles className="h-3.5 w-3.5" />
-              Starter
+              빠른 시작
             </div>
-            <div className="mt-2 text-sm font-semibold leading-5">Add room set</div>
-            <p className="mt-2 text-xs leading-5 text-white/70">Place a curated starter mix to block out the room quickly.</p>
+            <div className="mt-2 text-sm font-semibold leading-5">추천 세트 추가</div>
+            <p className="mt-2 text-xs leading-5 text-white/70">기본 배치 세트를 한 번에 추가해 공간 구성을 시작합니다.</p>
           </button>
           <div className="rounded-[22px] border border-black/10 bg-white p-4">
-            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">Catalog</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">카탈로그</div>
             <div className="mt-2 text-2xl font-semibold leading-none">{catalogCount}</div>
-            <div className="mt-1 text-xs text-[#625a51]">{items.length} visible right now</div>
+            <div className="mt-1 text-xs text-[#625a51]">현재 {items.length}개 표시 중</div>
           </div>
         </div>
 
@@ -214,7 +214,7 @@ export function BuilderLibraryShelf({
             <div className={`px-4 py-5 ${spotlightPreview?.surface ?? "bg-[#f7f4ee] text-[#171411]"}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-65">
-                  Spotlight pick
+                  추천 제품
                 </div>
                 <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] ${spotlightPreview?.chip ?? "border-black/10 bg-white/60 text-[#625a51]"}`}>
                   {spotlightItem.collection}
@@ -226,7 +226,7 @@ export function BuilderLibraryShelf({
             <div className="flex flex-wrap items-center gap-2 p-3">
               {isPlaced(spotlightItem) ? (
                 <span className="rounded-full border border-emerald-800/15 bg-emerald-50 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800">
-                  Placed
+                  배치됨
                 </span>
               ) : null}
               <span className="rounded-full border border-black/10 bg-[#f7f3ec] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#625a51]">
@@ -237,7 +237,7 @@ export function BuilderLibraryShelf({
                 onClick={() => onAddItem(spotlightItem)}
                 className="ml-auto rounded-[14px] bg-[#171411] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-black"
               >
-                Add
+                추가
               </button>
             </div>
           </section>
@@ -247,7 +247,7 @@ export function BuilderLibraryShelf({
           <section className="space-y-3">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">
               <Star className="h-3.5 w-3.5" />
-              Featured Picks
+              추천 목록
             </div>
             <div className="grid grid-cols-2 gap-3">
               {featuredItems.slice(0, 4).map((item) => (
@@ -255,7 +255,7 @@ export function BuilderLibraryShelf({
                   key={item.id}
                   item={item}
                   placed={isPlaced(item)}
-                  actionLabel="Quick Add"
+                  actionLabel="빠른 추가"
                   onAdd={onAddItem}
                 />
               ))}
@@ -267,9 +267,9 @@ export function BuilderLibraryShelf({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">
               <LayoutGrid className="h-3.5 w-3.5" />
-              Shelf Results
+              전체 결과
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">{items.length} items</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8177]">{items.length}개</span>
           </div>
 
           {items.length > 0 ? (
@@ -279,7 +279,7 @@ export function BuilderLibraryShelf({
                   key={item.id}
                   item={item}
                   placed={isPlaced(item)}
-                  actionLabel="Add"
+                  actionLabel="추가"
                   onAdd={onAddItem}
                 />
               ))}
@@ -287,7 +287,7 @@ export function BuilderLibraryShelf({
           ) : (
             <div className="rounded-[22px] border border-dashed border-black/15 bg-white p-6 text-center text-sm leading-6 text-[#625a51]">
               <LayoutGrid className="mx-auto h-5 w-5 text-[#8a8177]" />
-              <p className="mt-3">No assets match this filter. Clear the search or switch categories.</p>
+              <p className="mt-3">조건에 맞는 제품이 없습니다. 검색어를 지우거나 카테고리를 변경해 주세요.</p>
             </div>
           )}
         </section>

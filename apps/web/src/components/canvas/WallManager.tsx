@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
-import { useSceneStore } from "../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../lib/stores/scene-slices";
 
 type BuiltWall = {
   id: string;
@@ -403,9 +403,9 @@ function createRoomFloorMesh(room: { id: string; outline: [number, number][]; ma
 }
 
 export function WallManager() {
-  const walls = useSceneStore((s) => s.walls);
-  const openings = useSceneStore((s) => s.openings);
-  const floors = useSceneStore((s) => s.floors);
+  const walls = useShellSelector((slice) => slice.walls);
+  const openings = useShellSelector((slice) => slice.openings);
+  const floors = useShellSelector((slice) => slice.floors);
 
   const wood = useMemo(() => createWoodTextureSet(512), []);
   const plaster = useMemo(() => createPlasterTextureSet(512), []);

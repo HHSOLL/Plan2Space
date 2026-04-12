@@ -8,7 +8,11 @@ import { JSONUIProvider, Renderer, useDataValue, type ComponentRenderProps } fro
 import { aiAssistantStub } from "../../../lib/ai-ui/stub";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import {
+  useAssetSelector,
+  useSelectionSelector,
+  useShellSelector
+} from "../../../lib/stores/scene-slices";
 
 const WALL_MATERIAL_COUNT = 3;
 const FLOOR_MATERIAL_COUNT = 3;
@@ -23,7 +27,7 @@ const Panel = ({ element, children }: ComponentRenderProps<PanelProps>) => (
   <div className="flex flex-col gap-5">
     <div>
       <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-black/40">Assistant</div>
-      <h3 className="mt-2 text-2xl font-cormorant font-light text-black">
+      <h3 className="mt-2 text-2xl font-light text-black">
         {element.props.title}
       </h3>
       {element.props.subtitle ? (
@@ -111,18 +115,18 @@ function createId() {
 
 export default function AIAssistantPanel() {
   const viewMode = useEditorStore((state) => state.viewMode);
-  const walls = useSceneStore((state) => state.walls);
-  const ceilings = useSceneStore((state) => state.ceilings);
-  const openings = useSceneStore((state) => state.openings);
-  const assets = useSceneStore((state) => state.assets);
-  const scale = useSceneStore((state) => state.scale);
-  const wallMaterialIndex = useSceneStore((state) => state.wallMaterialIndex);
-  const floorMaterialIndex = useSceneStore((state) => state.floorMaterialIndex);
-  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
-  const setWallMaterialIndex = useSceneStore((state) => state.setWallMaterialIndex);
-  const setFloorMaterialIndex = useSceneStore((state) => state.setFloorMaterialIndex);
-  const addFurniture = useSceneStore((state) => state.addFurniture);
-  const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
+  const walls = useShellSelector((slice) => slice.walls);
+  const ceilings = useShellSelector((slice) => slice.ceilings);
+  const openings = useShellSelector((slice) => slice.openings);
+  const scale = useShellSelector((slice) => slice.scale);
+  const wallMaterialIndex = useShellSelector((slice) => slice.wallMaterialIndex);
+  const floorMaterialIndex = useShellSelector((slice) => slice.floorMaterialIndex);
+  const setWallMaterialIndex = useShellSelector((slice) => slice.setWallMaterialIndex);
+  const setFloorMaterialIndex = useShellSelector((slice) => slice.setFloorMaterialIndex);
+  const assets = useAssetSelector((slice) => slice.assets);
+  const addFurniture = useAssetSelector((slice) => slice.addFurniture);
+  const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
+  const setSelectedAssetId = useSelectionSelector((slice) => slice.setSelectedAssetId);
 
   const [isOpen, setIsOpen] = useState(false);
 

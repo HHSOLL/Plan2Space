@@ -69,7 +69,7 @@ export function LoadingOverlay() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.6, ease: "easeOut" }}
-            className="mt-12 font-cormorant text-4xl tracking-[0.1em] uppercase"
+            className="mt-12 text-4xl tracking-[0.1em] uppercase"
           >
             Plan2Space
           </motion.div>

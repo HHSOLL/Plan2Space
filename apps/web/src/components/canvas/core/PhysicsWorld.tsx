@@ -3,7 +3,7 @@
 import { Physics, CuboidCollider, RigidBody } from "@react-three/rapier";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 
 type PhysicsWorldProps = {
   children: ReactNode;
@@ -38,9 +38,9 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 }
 
 export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
-  const walls = useSceneStore((state) => state.walls);
-  const openings = useSceneStore((state) => state.openings);
-  const scale = useSceneStore((state) => state.scale);
+  const walls = useShellSelector((slice) => slice.walls);
+  const openings = useShellSelector((slice) => slice.openings);
+  const scale = useShellSelector((slice) => slice.scale);
 
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const width = Math.max(1, bounds.maxX - bounds.minX + 2);

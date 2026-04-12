@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { PointerLockControls as PointerLockControlsImpl } from "three-stdlib";
-import { useSceneStore } from "../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../lib/stores/scene-slices";
 
 type KeyState = {
   forward: boolean;
@@ -30,9 +30,9 @@ export function FirstPersonController({
   sprintMultiplier?: number;
 }) {
   const { camera } = useThree();
-  const walls = useSceneStore((s) => s.walls);
-  const floors = useSceneStore((s) => s.floors);
-  const scale = useSceneStore((s) => s.scale);
+  const walls = useShellSelector((slice) => slice.walls);
+  const floors = useShellSelector((slice) => slice.floors);
+  const scale = useShellSelector((slice) => slice.scale);
 
   const keysRef = useRef<KeyState>({
     forward: false,

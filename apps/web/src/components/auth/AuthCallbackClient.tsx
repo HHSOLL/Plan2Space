@@ -8,7 +8,7 @@ import { clearInvalidBrowserSession, isRecoverableSessionError } from "../../lib
 import { getSupabaseClient } from "../../lib/supabase/client";
 
 function resolveNext(nextParam: string | null) {
-  return nextParam && nextParam.startsWith("/") ? nextParam : "/studio";
+  return nextParam && nextParam.startsWith("/") ? nextParam : "/";
 }
 
 function withAuthStatus(origin: string, nextPath: string, status: "success" | "error", message?: string) {
@@ -66,6 +66,7 @@ export function AuthCallbackClient({ code, error, errorDescription, nextPath }: 
         if (sessionError) {
           if (isRecoverableSessionError(sessionError)) {
             await clearInvalidBrowserSession(supabase!);
+            return false;
           }
           redirectWithStatus("error", sessionError.message);
           return true;
@@ -111,6 +112,22 @@ export function AuthCallbackClient({ code, error, errorDescription, nextPath }: 
         return;
       }
 
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      if (exchangeError) {
+        if (await resolveExistingSession()) {
+          subscription.unsubscribe();
+          return;
+        }
+        redirectWithStatus("error", exchangeError.message);
+        subscription.unsubscribe();
+        return;
+      }
+
+      if (await resolveExistingSession()) {
+        subscription.unsubscribe();
+        return;
+      }
+
       timeoutId = window.setTimeout(async () => {
         if (await resolveExistingSession()) {
           subscription.unsubscribe();
@@ -119,7 +136,7 @@ export function AuthCallbackClient({ code, error, errorDescription, nextPath }: 
         await clearInvalidBrowserSession(supabase);
         redirectWithStatus("error", "로그인 세션을 확인하지 못했습니다. 다시 시도해주세요.");
         subscription.unsubscribe();
-      }, 5000);
+      }, 8000);
 
       return () => {
         if (timeoutId) {

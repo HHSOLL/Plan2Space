@@ -7,6 +7,18 @@ import { toast } from "sonner";
 import { resolveBrowserAppOrigin, resolveCanonicalBrowserHref } from "../../lib/auth/browser-origin";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
 
+const OAUTH_CALLBACK_QUERY_KEYS = [
+    "code",
+    "error",
+    "error_description",
+    "state",
+    "access_token",
+    "refresh_token",
+    "token_type",
+    "expires_in",
+    "expires_at",
+] as const;
+
 export function Providers({ children }: { children: ReactNode }) {
     const [queryClient] = useState(() => new QueryClient({
         defaultOptions: {
@@ -30,19 +42,20 @@ export function Providers({ children }: { children: ReactNode }) {
         if (url.pathname === "/auth/callback") {
             return;
         }
-        const code = url.searchParams.get("code");
-        if (code && url.pathname !== "/auth/callback") {
+        const hasOauthCallbackParams = OAUTH_CALLBACK_QUERY_KEYS.some((key) => url.searchParams.has(key));
+        if (hasOauthCallbackParams && url.pathname !== "/auth/callback") {
             const callbackBase = resolveBrowserAppOrigin() ?? window.location.origin;
             const callbackUrl = new URL("/auth/callback", callbackBase);
-            callbackUrl.searchParams.set("code", code);
+            OAUTH_CALLBACK_QUERY_KEYS.forEach((key) => {
+                const value = url.searchParams.get(key);
+                if (value) {
+                    callbackUrl.searchParams.set(key, value);
+                }
+            });
             const strippedUrl = new URL(url.toString());
-            ["code", "error", "error_description"].forEach((key) => strippedUrl.searchParams.delete(key));
-            const nextTarget = `${strippedUrl.pathname}${strippedUrl.search}${strippedUrl.hash}` || "/studio";
-            callbackUrl.searchParams.set("next", nextTarget === "/" ? "/studio" : nextTarget);
-            const error = url.searchParams.get("error");
-            if (error) callbackUrl.searchParams.set("error", error);
-            const errorDescription = url.searchParams.get("error_description");
-            if (errorDescription) callbackUrl.searchParams.set("error_description", errorDescription);
+            OAUTH_CALLBACK_QUERY_KEYS.forEach((key) => strippedUrl.searchParams.delete(key));
+            const nextTarget = `${strippedUrl.pathname}${strippedUrl.search}${strippedUrl.hash}`;
+            callbackUrl.searchParams.set("next", nextTarget || "/");
             window.location.replace(callbackUrl.toString());
             return;
         }

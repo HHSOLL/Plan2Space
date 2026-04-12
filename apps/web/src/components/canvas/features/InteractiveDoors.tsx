@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useShellSelector } from "../../../lib/stores/scene-slices";
 import { useInteractionRegistry } from "../interaction/InteractionManager";
 
 type DoorSpec = {
@@ -59,9 +59,9 @@ function DoorLeaf({ door }: { door: DoorSpec }) {
 }
 
 export default function InteractiveDoors() {
-  const walls = useSceneStore((state) => state.walls);
-  const openings = useSceneStore((state) => state.openings);
-  const scale = useSceneStore((state) => state.scale);
+  const walls = useShellSelector((slice) => slice.walls);
+  const openings = useShellSelector((slice) => slice.openings);
+  const scale = useShellSelector((slice) => slice.scale);
 
   const doors = useMemo(() => {
     return openings

@@ -1,7 +1,7 @@
 "use client";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1"]);
-const AUTH_QUERY_KEYS = ["code", "error", "error_description", "auth", "auth_message"];
+const AUTH_QUERY_KEYS = ["code", "error", "error_description", "state", "auth", "auth_message"];
 
 function toUrl(value: string | undefined | null): URL | null {
   if (!value) return null;
@@ -42,8 +42,20 @@ export function buildBrowserAuthRedirectUrl(nextPath?: string) {
   const origin = resolveBrowserAppOrigin();
   if (!origin) return undefined;
   const callbackUrl = new URL("/auth/callback", origin);
-  if (nextPath && nextPath.startsWith("/")) {
-    callbackUrl.searchParams.set("next", nextPath);
-  }
+  const resolvedNextPath = (() => {
+    if (nextPath && nextPath.startsWith("/")) {
+      return nextPath;
+    }
+    if (typeof window === "undefined") {
+      return "/";
+    }
+
+    const current = new URL(window.location.href);
+    AUTH_QUERY_KEYS.forEach((key) => current.searchParams.delete(key));
+    const derivedPath = `${current.pathname}${current.search}${current.hash}`;
+    return derivedPath.startsWith("/") ? derivedPath : "/";
+  })();
+
+  callbackUrl.searchParams.set("next", resolvedNextPath);
   return callbackUrl.toString();
 }

@@ -8,15 +8,50 @@
     --background: 60 20% 99%;
     --foreground: 20 10% 10%;
     --border: 40 5% 90%;
+    --p2s-accent: #171411;
+    --p2s-surface: #f7f4ef;
+    --p2s-viewport: #d2d2cf;
   }
 
   body {
     @apply bg-[#fdfdfc] text-[#1a1a1a] antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
+
+  .font-cormorant,
+  .font-serif,
+  .font-outfit {
+    font-family: var(--font-inter), sans-serif !important;
+  }
 }
 
 @layer components {
+  .p2s-panel {
+    @apply border border-black/10 bg-[#f7f4ef];
+  }
+
+  .p2s-viewport {
+    @apply bg-[#d2d2cf];
+  }
+
+  .p2s-action {
+    @apply bg-[#171411] text-white;
+  }
+
+  .p2s-workspace-shell {
+    @apply grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)];
+  }
+
+  .p2s-workspace-panel {
+    @apply rounded-[30px] border border-black/10 shadow-[0_22px_60px_rgba(68,52,34,0.12)] backdrop-blur;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .p2s-workspace-viewport {
+    @apply rounded-[30px] border border-black/10 shadow-[0_24px_70px_rgba(68,52,34,0.12)] backdrop-blur;
+    background-color: rgba(255, 255, 255, 0.72);
+  }
+
   .glass {
     @apply bg-white/40 backdrop-blur-md border border-black/5;
     box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.05);

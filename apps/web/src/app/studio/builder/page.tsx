@@ -2,21 +2,18 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  DoorOpen,
-  Paintbrush,
-  Plus,
-  Ruler,
-  Sparkles,
-  Trash2
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AuthPopup } from "../../../components/overlay/AuthPopup";
-import { SceneViewport } from "../../../components/editor/SceneViewport";
+import { StudioWorkspacePanel, StudioWorkspaceShell } from "../../../components/layout/StudioWorkspaceShell";
+import { BuilderFooter } from "../../../features/builder/BuilderFooter";
+import { BuilderPreviewPane } from "../../../features/builder/BuilderPreviewPane";
+import { BuilderStepHeader } from "../../../features/builder/BuilderStepHeader";
+import { BuilderDimensionsStep } from "../../../features/builder/steps/BuilderDimensionsStep";
+import { BuilderOpeningsStep } from "../../../features/builder/steps/BuilderOpeningsStep";
+import { BuilderShapeStep } from "../../../features/builder/steps/BuilderShapeStep";
+import { BuilderStyleStep } from "../../../features/builder/steps/BuilderStyleStep";
+import type { BuilderStepMeta, DoorStyle, WindowStyle } from "../../../features/builder/types";
 import { fetchRoomTemplateConfig, type BuilderFinishOption } from "../../../lib/api/room-templates";
 import { createProjectDraft, saveProject } from "../../../lib/api/project";
 import {
@@ -28,51 +25,44 @@ import {
 } from "../../../lib/builder/templates";
 import { deriveBlankRoomShell } from "../../../lib/domain/room-shell";
 import { useAuthStore } from "../../../lib/stores/useAuthStore";
-import { useSceneStore, type Opening, type Wall } from "../../../lib/stores/useSceneStore";
+import { useCameraStore, useShellStore } from "../../../lib/stores/scene-slices";
+import type { Opening, Wall } from "../../../lib/stores/useSceneStore";
 import { useEditorStore, type EditorViewMode } from "../../../lib/stores/useEditorStore";
 
-type BuilderStep = {
-  label: string;
-  title: string;
-  description: string;
-};
-
-type DoorStyle = "single" | "double" | "french";
-type WindowStyle = "single" | "wide";
 type BuilderPreviewMode = Extract<EditorViewMode, "top" | "builder-preview">;
 
-const BUILDER_STEPS: BuilderStep[] = [
+const BUILDER_STEPS: BuilderStepMeta[] = [
   {
-    label: "1/4",
-    title: "Choose room shape",
-    description: "Select a shell template first. You can fine-tune dimensions in the next step."
+    label: "1/4단계",
+    title: "모양 및 크기 설정하기",
+    description: "방 형태를 먼저 선택하고 다음 단계에서 치수를 조정합니다."
   },
   {
-    label: "2/4",
-    title: "Set dimensions",
-    description: "Adjust width, depth, and niche values to match your room envelope."
+    label: "2/4단계",
+    title: "치수 조정하기",
+    description: "선택한 방의 가로/세로와 세부 치수를 실제 공간에 맞게 조정합니다."
   },
   {
-    label: "3/4",
-    title: "Author openings",
-    description: "Place doors and windows wall-by-wall. Tune offsets, widths, and heights directly."
+    label: "3/4단계",
+    title: "문과 창문 추가하기",
+    description: "벽 기준으로 문/창문을 배치하고 위치와 폭을 조정합니다."
   },
   {
-    label: "4/4",
-    title: "Pick style and name",
-    description: "Set finishes and name the room before entering the editor."
+    label: "4/4단계",
+    title: "방 스타일 선택하기",
+    description: "벽/바닥 스타일을 선택하고 프로젝트 정보를 확인합니다."
   }
 ];
 
 const DOOR_STYLE_LABEL: Record<DoorStyle, string> = {
-  single: "Single door",
-  double: "Double door",
-  french: "French door"
+  single: "싱글 패널 도어",
+  double: "이중 패널 도어",
+  french: "프렌치 양문형 도어"
 };
 
 const WINDOW_STYLE_LABEL: Record<WindowStyle, string> = {
-  single: "Single window",
-  wide: "Wide window"
+  single: "유리창 싱글",
+  wide: "유리창 와이드"
 };
 
 const WALL_FINISH_SWATCH: Record<number, string> = {
@@ -365,8 +355,8 @@ export default function StudioBuilderPage() {
   const { session } = useAuthStore();
   const isAuthenticated = Boolean(session?.user);
 
-  const [projectName, setProjectName] = useState("Template Room");
-  const [projectDescription, setProjectDescription] = useState("Builder-authored interior concept");
+  const [projectName, setProjectName] = useState("새 공간 디자인");
+  const [projectDescription, setProjectDescription] = useState("빌더에서 생성한 기본 공간");
   const [templateId, setTemplateId] = useState<BuilderTemplateId>("rect-studio");
   const [width, setWidth] = useState(6.4);
   const [depth, setDepth] = useState(4.8);
@@ -388,8 +378,8 @@ export default function StudioBuilderPage() {
   const [wallFinishOptions, setWallFinishOptions] = useState<BuilderFinishOption[]>([...builderWallFinishes]);
   const [floorFinishOptions, setFloorFinishOptions] = useState<BuilderFinishOption[]>([...builderFloorFinishes]);
 
-  const setScene = useSceneStore((state) => state.setScene);
-  const resetScene = useSceneStore((state) => state.resetScene);
+  const { setScene, resetScene } = useShellStore();
+  const { setEntranceId } = useCameraStore();
   const applyShellPreset = useEditorStore((state) => state.applyShellPreset);
   const resetShellState = useEditorStore((state) => state.resetShellState);
   const setViewMode = useEditorStore((state) => state.setViewMode);
@@ -399,8 +389,8 @@ export default function StudioBuilderPage() {
     const nextIntent = new URLSearchParams(window.location.search).get("intent") === "custom" ? "custom" : "template";
     setIntent(nextIntent);
     setProjectName((current) => {
-      if (current === "Template Room" || current === "Custom Room") {
-        return nextIntent === "custom" ? "Custom Room" : "Template Room";
+      if (current === "새 공간 디자인" || current === "맞춤 공간 디자인") {
+        return nextIntent === "custom" ? "맞춤 공간 디자인" : "새 공간 디자인";
       }
       return current;
     });
@@ -627,10 +617,8 @@ export default function StudioBuilderPage() {
       }
     });
 
-    useSceneStore.setState({
-      entranceId: derivedRoomShell.entranceId
-    });
-  }, [derivedRoomShell, floorMaterialIndex, setScene, wallMaterialIndex]);
+    setEntranceId(derivedRoomShell.entranceId);
+  }, [derivedRoomShell, floorMaterialIndex, setEntranceId, setScene, wallMaterialIndex]);
 
   const setOpeningPatch = useCallback(
     (openingId: string, patch: Partial<Opening>) => {
@@ -685,7 +673,7 @@ export default function StudioBuilderPage() {
         baseScene.walls[0];
 
       if (!targetWall) {
-        toast.error("No wall available for opening placement.");
+      toast.error("개구부를 배치할 벽이 없습니다.");
         return;
       }
 
@@ -730,7 +718,7 @@ export default function StudioBuilderPage() {
     }
 
     if (!projectName.trim()) {
-      toast.error("Project name is required.");
+      toast.error("프로젝트 이름을 입력해 주세요.");
       return;
     }
 
@@ -738,7 +726,7 @@ export default function StudioBuilderPage() {
     try {
       const project = await createProjectDraft({
         name: projectName.trim(),
-        description: projectDescription.trim() || "Builder-authored interior concept"
+        description: projectDescription.trim() || "빌더에서 생성한 기본 공간"
       });
 
       await saveProject(project.id, {
@@ -763,13 +751,13 @@ export default function StudioBuilderPage() {
         },
         thumbnailDataUrl: previewDataUrl,
         projectName: projectName.trim(),
-        projectDescription: projectDescription.trim() || "Builder-authored interior concept",
-        message: "Builder starter scene"
+        projectDescription: projectDescription.trim() || "빌더에서 생성한 기본 공간",
+        message: "빌더 초기 장면"
       });
 
       router.push(`/project/${project.id}?origin=builder`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create room.");
+      toast.error(error instanceof Error ? error.message : "공간 생성에 실패했습니다.");
     } finally {
       setIsCreating(false);
     }
@@ -802,591 +790,113 @@ export default function StudioBuilderPage() {
             className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4d443b] transition hover:border-black/40 hover:text-black"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Projects
+            프로젝트 목록
           </button>
           <div className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a6f64]">
-            {intent === "template" ? "Template Quick Start" : "Custom Builder"}
+            {intent === "template" ? "템플릿 빠른 시작" : "맞춤 빌더"}
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[460px_minmax(0,1fr)]">
-          <aside className="rounded-[30px] border border-black/10 bg-white/78 p-6 shadow-[0_22px_60px_rgba(68,52,34,0.12)] backdrop-blur sm:p-8">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-              <Sparkles className="h-4 w-4" />
-              Guided room builder
-            </div>
-            <div className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">{activeStep.label}</div>
-            <h1 className="mt-2 font-cormorant text-4xl font-light text-[#1b1510]">{activeStep.title}</h1>
-            <p className="mt-3 text-sm leading-7 text-[#5c5044]">{activeStep.description}</p>
-
-            <div className="mt-6 grid grid-cols-4 gap-2">
-              {BUILDER_STEPS.map((step, index) => (
-                <button
-                  key={step.label}
-                  type="button"
-                  onClick={() => setStepIndex(index)}
-                  className={`rounded-full border px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.2em] transition ${
-                    stepIndex === index
-                      ? "border-[#1b1510] bg-[#1b1510] text-white"
-                      : index < stepIndex
-                        ? "border-[#1b1510]/20 bg-[#efe8de] text-[#3c3228]"
-                        : "border-black/10 bg-white text-[#7d6f61]"
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
+        <StudioWorkspaceShell className="mt-6">
+          <StudioWorkspacePanel className="p-6 sm:p-8">
+            <BuilderStepHeader
+              activeStep={activeStep}
+              steps={BUILDER_STEPS}
+              stepIndex={stepIndex}
+              onStepChange={setStepIndex}
+            />
 
             <div className="mt-8 space-y-6">
               {stepIndex === 0 ? (
-                <div className="space-y-3">
-                  {templateOptions.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      onClick={() => handleTemplateSelect(template.id)}
-                      className={`w-full rounded-[22px] border px-5 py-5 text-left transition ${
-                        templateId === template.id
-                          ? "border-black/30 bg-[#f2ebe2]"
-                          : "border-black/10 bg-[#fbf8f3] hover:border-black/30"
-                      }`}
-                    >
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#887a6d]">
-                        {template.eyebrow}
-                      </div>
-                      <div className="mt-2 font-cormorant text-3xl font-light text-[#1d1611]">{template.name}</div>
-                      <p className="mt-2 text-sm leading-6 text-[#5a4f44]">{template.description}</p>
-                    </button>
-                  ))}
-                </div>
+                <BuilderShapeStep
+                  templateOptions={templateOptions}
+                  templateId={templateId}
+                  onSelectTemplate={handleTemplateSelect}
+                />
               ) : null}
 
               {stepIndex === 1 ? (
-                <div className="space-y-5">
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                      <span>Room width</span>
-                      <span>{width.toFixed(1)} m</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={4}
-                      max={10}
-                      step={0.2}
-                      value={width}
-                      onChange={(event) => setWidth(Number(event.target.value))}
-                      className="mt-3 w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                      <span>Room depth</span>
-                      <span>{depth.toFixed(1)} m</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={3.6}
-                      max={8}
-                      step={0.2}
-                      value={depth}
-                      onChange={(event) => setDepth(Number(event.target.value))}
-                      className="mt-3 w-full"
-                    />
-                  </div>
-
-                  {templateId === "corner-suite" ? (
-                    <>
-                      <div>
-                        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                          <span>Nook width</span>
-                          <span>{nookWidth.toFixed(1)} m</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={1.6}
-                          max={4}
-                          step={0.1}
-                          value={nookWidth}
-                          onChange={(event) => setNookWidth(Number(event.target.value))}
-                          className="mt-3 w-full"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                          <span>Nook depth</span>
-                          <span>{nookDepth.toFixed(1)} m</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={1.4}
-                          max={3.6}
-                          step={0.1}
-                          value={nookDepth}
-                          onChange={(event) => setNookDepth(Number(event.target.value))}
-                          className="mt-3 w-full"
-                        />
-                      </div>
-                    </>
-                  ) : null}
-                </div>
+                <BuilderDimensionsStep
+                  templateId={templateId}
+                  width={width}
+                  depth={depth}
+                  nookWidth={nookWidth}
+                  nookDepth={nookDepth}
+                  onWidthChange={setWidth}
+                  onDepthChange={setDepth}
+                  onNookWidthChange={setNookWidth}
+                  onNookDepthChange={setNookDepth}
+                />
               ) : null}
 
               {stepIndex === 2 ? (
-                <div className="space-y-5">
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                      Door default (new doors)
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(Object.keys(DOOR_STYLE_LABEL) as DoorStyle[]).map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => setDoorStyle(style)}
-                          className={`rounded-full border px-4 py-2 text-[11px] font-semibold transition ${
-                            doorStyle === style
-                              ? "border-black bg-black text-white"
-                              : "border-black/10 bg-[#fcfaf6] text-[#51483f] hover:border-black/30"
-                          }`}
-                        >
-                          {DOOR_STYLE_LABEL[style]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                      Window default (new windows)
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(Object.keys(WINDOW_STYLE_LABEL) as WindowStyle[]).map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => setWindowStyle(style)}
-                          className={`rounded-full border px-4 py-2 text-[11px] font-semibold transition ${
-                            windowStyle === style
-                              ? "border-black bg-black text-white"
-                              : "border-black/10 bg-[#fcfaf6] text-[#51483f] hover:border-black/30"
-                          }`}
-                        >
-                          {WINDOW_STYLE_LABEL[style]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <label className="flex items-center gap-3 rounded-[18px] border border-black/10 bg-[#fbf8f3] px-4 py-3 text-sm text-[#53483d]">
-                    <input
-                      type="checkbox"
-                      checked={addSecondaryWindow}
-                      onChange={(event) => setAddSecondaryWindow(event.target.checked)}
-                      className="h-4 w-4 rounded border-black/20"
-                    />
-                    Include second window in fresh template defaults
-                  </label>
-                  <p className="-mt-2 text-xs text-[#75695d]">Existing openings remain unchanged when you switch defaults.</p>
-
-                  <div className="rounded-[20px] border border-black/10 bg-[#faf7f1] p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">Wall targeting</div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => addOpening("door")}
-                          className="inline-flex items-center gap-1 rounded-full border border-black/15 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2f251d]"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Door
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => addOpening("window")}
-                          className="inline-flex items-center gap-1 rounded-full border border-black/15 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2f251d]"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Window
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {wallEntries.map((wall) => (
-                        <button
-                          key={wall.id}
-                          type="button"
-                          onClick={() => setSelectedWallId(wall.id)}
-                          className={`rounded-full border px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] transition ${
-                            selectedWallId === wall.id
-                              ? "border-black bg-black text-white"
-                              : "border-black/10 bg-white text-[#574c41] hover:border-black/25"
-                          }`}
-                        >
-                          {wall.label} · {wall.length.toFixed(2)}m
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 space-y-2">
-                      {selectedWallOpenings.length > 0 ? (
-                        selectedWallOpenings.map((opening) => (
-                          <button
-                            key={opening.id}
-                            type="button"
-                            onClick={() => setSelectedOpeningId(opening.id)}
-                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition ${
-                              selectedOpeningId === opening.id
-                                ? "border-black/25 bg-white"
-                                : "border-black/10 bg-[#fcfaf6] hover:border-black/20"
-                            }`}
-                          >
-                            <span className="font-medium text-[#30261d]">
-                              {opening.type === "door" ? "Door" : "Window"} · {opening.id.replace("opening-", "")}
-                            </span>
-                            <span className="text-[#6e6256]">{opening.width.toFixed(2)}m</span>
-                          </button>
-                        ))
-                      ) : (
-                        <p className="text-sm text-[#6e6256]">No openings on this wall yet.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedOpening ? (
-                    <div className="rounded-[20px] border border-black/10 bg-[#faf7f1] p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">Selected opening</div>
-                        <button
-                          type="button"
-                          onClick={() => deleteOpening(selectedOpening.id)}
-                          className="inline-flex items-center gap-1 rounded-full border border-red-900/20 bg-red-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-800"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </button>
-                      </div>
-
-                      <div className="mt-4 grid gap-3">
-                        <label className="space-y-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b7f72]">
-                          Opening wall
-                          <select
-                            value={selectedOpening.wallId}
-                            onChange={(event) => {
-                              const wallId = event.target.value;
-                              setSelectedWallId(wallId);
-                              setOpeningPatch(selectedOpening.id, { wallId });
-                            }}
-                            className="w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm font-medium text-[#30261d]"
-                          >
-                            {wallEntries.map((wall) => (
-                              <option key={wall.id} value={wall.id}>
-                                {wall.label} ({wall.length.toFixed(2)}m)
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label className="space-y-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b7f72]">
-                          Width · {selectedOpening.width.toFixed(2)}m
-                          <input
-                            type="range"
-                            min={selectedOpening.type === "door" ? 0.72 : 0.92}
-                            max={Math.max(
-                              selectedOpening.type === "door" ? 0.72 : 0.92,
-                              (selectedOpeningWall ? getWallLength(selectedOpeningWall) : 1) - 0.64
-                            )}
-                            step={0.01}
-                            value={selectedOpening.width}
-                            onChange={(event) => setOpeningPatch(selectedOpening.id, { width: Number(event.target.value) })}
-                            className="w-full"
-                          />
-                        </label>
-
-                        <label className="space-y-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b7f72]">
-                          Offset · {selectedOpening.offset.toFixed(2)}m
-                          <input
-                            type="range"
-                            min={0.3}
-                            max={Math.max(
-                              0.3,
-                              (selectedOpeningWall ? getWallLength(selectedOpeningWall) : 1) - selectedOpening.width - 0.3
-                            )}
-                            step={0.01}
-                            value={selectedOpening.offset}
-                            onChange={(event) => setOpeningPatch(selectedOpening.id, { offset: Number(event.target.value) })}
-                            className="w-full"
-                          />
-                        </label>
-
-                        <label className="space-y-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b7f72]">
-                          Height · {selectedOpening.height.toFixed(2)}m
-                          <input
-                            type="range"
-                            min={selectedOpening.type === "door" ? 1.9 : 0.82}
-                            max={selectedOpening.type === "door" ? 2.4 : 2.1}
-                            step={0.01}
-                            value={selectedOpening.height}
-                            onChange={(event) => setOpeningPatch(selectedOpening.id, { height: Number(event.target.value) })}
-                            className="w-full"
-                          />
-                        </label>
-
-                        {selectedOpening.type === "window" ? (
-                          <label className="space-y-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b7f72]">
-                            Sill height · {(selectedOpening.sillHeight ?? 0.9).toFixed(2)}m
-                            <input
-                              type="range"
-                              min={0.25}
-                              max={1.45}
-                              step={0.01}
-                              value={selectedOpening.sillHeight ?? 0.9}
-                              onChange={(event) =>
-                                setOpeningPatch(selectedOpening.id, { sillHeight: Number(event.target.value) })
-                              }
-                              className="w-full"
-                            />
-                          </label>
-                        ) : (
-                          <div className="space-y-3">
-                            <label className="space-y-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b7f72]">
-                              Door rise · {(selectedOpening.verticalOffset ?? 0).toFixed(2)}m
-                              <input
-                                type="range"
-                                min={0}
-                                max={0.42}
-                                step={0.01}
-                                value={selectedOpening.verticalOffset ?? 0}
-                                onChange={(event) =>
-                                  setOpeningPatch(selectedOpening.id, { verticalOffset: Number(event.target.value) })
-                                }
-                                className="w-full"
-                              />
-                            </label>
-
-                            <label className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-3 py-3 text-sm text-[#3f3429]">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(selectedOpening.isEntrance)}
-                                onChange={() => setEntranceOpening(selectedOpening.id)}
-                                className="h-4 w-4 rounded border-black/20"
-                              />
-                              Mark as entrance door
-                            </label>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
+                <BuilderOpeningsStep
+                  doorStyle={doorStyle}
+                  windowStyle={windowStyle}
+                  addSecondaryWindow={addSecondaryWindow}
+                  doorStyleLabels={DOOR_STYLE_LABEL}
+                  windowStyleLabels={WINDOW_STYLE_LABEL}
+                  wallEntries={wallEntries}
+                  selectedWallId={selectedWallId}
+                  selectedWallOpenings={selectedWallOpenings}
+                  selectedOpeningId={selectedOpeningId}
+                  selectedOpening={selectedOpening}
+                  selectedOpeningWall={selectedOpeningWall}
+                  onDoorStyleChange={setDoorStyle}
+                  onWindowStyleChange={setWindowStyle}
+                  onAddSecondaryWindowChange={setAddSecondaryWindow}
+                  onSelectWall={setSelectedWallId}
+                  onSelectOpening={setSelectedOpeningId}
+                  onAddOpening={addOpening}
+                  onDeleteOpening={deleteOpening}
+                  onPatchOpening={setOpeningPatch}
+                  onSetEntrance={setEntranceOpening}
+                  getWallLength={getWallLength}
+                />
               ) : null}
 
               {stepIndex === 3 ? (
-                <div className="space-y-6">
-                  <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                      Project name
-                    </label>
-                    <input
-                      type="text"
-                      value={projectName}
-                      onChange={(event) => setProjectName(event.target.value)}
-                      className="mt-3 w-full rounded-[18px] border border-black/10 bg-[#fcfaf6] px-4 py-4 text-sm outline-none transition focus:border-black/40"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">
-                      Description
-                    </label>
-                    <textarea
-                      value={projectDescription}
-                      onChange={(event) => setProjectDescription(event.target.value)}
-                      rows={4}
-                      className="mt-3 w-full rounded-[18px] border border-black/10 bg-[#fcfaf6] px-4 py-4 text-sm outline-none transition focus:border-black/40"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">Wall finish</div>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {wallFinishOptions.map((finish) => (
-                        <button
-                          key={finish.id}
-                          type="button"
-                          onClick={() => setWallMaterialIndex(finish.id)}
-                          className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
-                            wallMaterialIndex === finish.id
-                              ? "border-black/30 bg-[#f2ebe2]"
-                              : "border-black/10 bg-[#fcfaf6] hover:border-black/25"
-                          }`}
-                        >
-                          <span
-                            className="h-7 w-7 rounded-md border border-black/10"
-                            style={{ background: WALL_FINISH_SWATCH[finish.id] ?? "#ece6dc" }}
-                          />
-                          <span className="text-sm font-semibold text-[#3a3026]">{finish.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">Floor finish</div>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {floorFinishOptions.map((finish) => (
-                        <button
-                          key={finish.id}
-                          type="button"
-                          onClick={() => setFloorMaterialIndex(finish.id)}
-                          className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
-                            floorMaterialIndex === finish.id
-                              ? "border-black/30 bg-[#f2ebe2]"
-                              : "border-black/10 bg-[#fcfaf6] hover:border-black/25"
-                          }`}
-                        >
-                          <span
-                            className="h-7 w-7 rounded-md border border-black/10"
-                            style={{ background: FLOOR_FINISH_SWATCH[finish.id] ?? "#b79d7e" }}
-                          />
-                          <span className="text-sm font-semibold text-[#3a3026]">{finish.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <BuilderStyleStep
+                  projectName={projectName}
+                  projectDescription={projectDescription}
+                  wallMaterialIndex={wallMaterialIndex}
+                  floorMaterialIndex={floorMaterialIndex}
+                  wallFinishOptions={wallFinishOptions}
+                  floorFinishOptions={floorFinishOptions}
+                  wallFinishSwatch={WALL_FINISH_SWATCH}
+                  floorFinishSwatch={FLOOR_FINISH_SWATCH}
+                  onProjectNameChange={setProjectName}
+                  onProjectDescriptionChange={setProjectDescription}
+                  onWallMaterialIndexChange={setWallMaterialIndex}
+                  onFloorMaterialIndexChange={setFloorMaterialIndex}
+                />
               ) : null}
             </div>
 
-            <div className="mt-8 flex items-center gap-3 border-t border-black/10 pt-6">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={stepIndex === 0}
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-black/15 bg-white px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#2e251d] transition disabled:opacity-35"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={isCreating}
-                className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-full bg-[#11100e] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isFinalStep ? (isCreating ? "Creating room..." : "Create room and open editor") : "Next"}
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </aside>
+            <BuilderFooter
+              stepIndex={stepIndex}
+              isFinalStep={isFinalStep}
+              isCreating={isCreating}
+              onBack={handleBack}
+              onNext={handleNext}
+            />
+          </StudioWorkspacePanel>
 
-          <motion.section
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-[30px] border border-black/10 bg-white/72 p-4 shadow-[0_24px_70px_rgba(68,52,34,0.12)] backdrop-blur sm:p-6"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">Live preview</div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("builder-preview")}
-                  className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] ${
-                    previewMode === "builder-preview"
-                      ? "border-black bg-black text-white"
-                      : "border-black/10 bg-[#f5efe5] text-[#5f5448]"
-                  }`}
-                >
-                  Perspective
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("top")}
-                  className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] ${
-                    previewMode === "top"
-                      ? "border-black bg-black text-white"
-                      : "border-black/10 bg-[#f5efe5] text-[#5f5448]"
-                  }`}
-                >
-                  Plan
-                </button>
-                <div className="rounded-full border border-black/10 bg-[#f5efe5] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#5f5448]">
-                  {activeTemplate.name}
-                </div>
-              </div>
-            </div>
-
-            <div className="relative mt-3 overflow-hidden rounded-[24px] border border-black/10 bg-[#d7d7d3]">
-              <SceneViewport
-                className="h-[58vh] rounded-none border-0 shadow-none"
-                camera={{ fov: 46, position: [8, 5, 8] }}
-                toneMappingExposure={1.02}
-                chromeTone="light"
-                showHud={false}
-                modeBadge={previewMode === "top" ? "Plan preview" : "3D preview"}
-              />
-              <div className="pointer-events-none absolute inset-y-0 right-4 z-[24] hidden items-center md:flex">
-                <div className="flex flex-col overflow-hidden rounded-full border border-black/10 bg-white/92 shadow-[0_10px_26px_rgba(19,21,24,0.14)]">
-                  <button
-                    type="button"
-                    onClick={() => triggerZoomControl("in")}
-                    className="pointer-events-auto px-4 py-3 text-center text-sm font-bold text-[#393229] transition hover:bg-[#f2eee7]"
-                    aria-label="Zoom in preview"
-                  >
-                    +
-                  </button>
-                  <div className="h-px w-full bg-black/10" />
-                  <button
-                    type="button"
-                    onClick={() => triggerZoomControl("out")}
-                    className="pointer-events-auto px-4 py-3 text-center text-sm font-bold text-[#393229] transition hover:bg-[#f2eee7]"
-                    aria-label="Zoom out preview"
-                  >
-                    -
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[20px] border border-black/10 bg-[#fbf8f2] p-4">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-[#887a6d]">Footprint</div>
-                <div className="mt-2 text-2xl font-cormorant">{width.toFixed(1)}m × {depth.toFixed(1)}m</div>
-              </div>
-              <div className="rounded-[20px] border border-black/10 bg-[#fbf8f2] p-4">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-[#887a6d]">Openings</div>
-                <div className="mt-2 text-2xl font-cormorant">{scene.openings.length}</div>
-              </div>
-              <div className="rounded-[20px] border border-black/10 bg-[#fbf8f2] p-4">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-[#887a6d]">Status</div>
-                <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#2f251d]">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Step {stepIndex + 1} active
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-[24px] bg-[#1e1915] p-5 text-[#f2e8dc]">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d4b99f]">Builder summary</div>
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span className="inline-flex items-center gap-2 text-[#ccbaaa]"><Ruler className="h-4 w-4" /> Dimensions</span>
-                  <span>{width.toFixed(1)}m × {depth.toFixed(1)}m</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span className="inline-flex items-center gap-2 text-[#ccbaaa]"><DoorOpen className="h-4 w-4" /> Openings</span>
-                  <span>{scene.openings.filter((opening) => opening.type === "door").length} doors / {scene.openings.filter((opening) => opening.type === "window").length} windows</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-2 text-[#ccbaaa]"><Paintbrush className="h-4 w-4" /> Finishes</span>
-                  <span>{activeWallFinish.name} / {activeFloorFinish.name}</span>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        </div>
+          <BuilderPreviewPane
+            previewMode={previewMode}
+            activeTemplateName={activeTemplate.name}
+            width={width}
+            depth={depth}
+            openingCount={scene.openings.length}
+            stepIndex={stepIndex}
+            wallFinishName={activeWallFinish.name}
+            floorFinishName={activeFloorFinish.name}
+            doorCount={scene.openings.filter((opening) => opening.type === "door").length}
+            windowCount={scene.openings.filter((opening) => opening.type === "window").length}
+            onPreviewModeChange={setPreviewMode}
+            onZoomControl={triggerZoomControl}
+          />
+        </StudioWorkspaceShell>
       </div>
 
       <AuthPopup

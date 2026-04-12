@@ -83,7 +83,7 @@ export function useEditorSaveSession({
         setLastSavedAt(Date.now());
         setPersistedSaveCount((count) => count + 1);
         if (reason === "manual") {
-          toast.success("Design Archive Synchronized");
+          toast.success("디자인 저장이 동기화되었습니다");
         }
         return true;
       } catch (error) {

@@ -6,7 +6,7 @@ import { CapsuleCollider, type RapierRigidBody, RigidBody } from "@react-three/r
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useCameraSelector, useShellSelector } from "../../../lib/stores/scene-slices";
 import { useMobileControlsStore } from "../../../lib/stores/useMobileControlsStore";
 
 type MoveState = {
@@ -151,7 +151,11 @@ function WalkRig({
 export default function CameraRig() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
-  const { walls, openings, entranceId, scale, cameraAnchors } = useSceneStore();
+  const walls = useShellSelector((slice) => slice.walls);
+  const openings = useShellSelector((slice) => slice.openings);
+  const scale = useShellSelector((slice) => slice.scale);
+  const cameraAnchors = useShellSelector((slice) => slice.cameraAnchors);
+  const entranceId = useCameraSelector((slice) => slice.entranceId);
   const [isTouch, setIsTouch] = useState(false);
 
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);

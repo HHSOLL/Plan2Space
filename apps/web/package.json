@@ -8,12 +8,16 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit --incremental false",
+    "qa:primary": "npm run type-check && npm run lint && npm run build",
+    "primary:e2e:room-flow": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=smoke",
+    "primary:e2e:room-flow:strict": "E2E_ROOM_FLOW_STRICT=1 node --import tsx scripts/e2e-primary-room-flow.ts --mode=contract",
+    "primary:e2e:room-flow:full": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=flow --strict",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs",
-    "e2e:intake": "node --import tsx scripts/e2e-intake-flow.ts",
-    "fixtures:floorplan:validate": "node --import tsx scripts/validate-floorplan-fixtures.ts",
-    "fixtures:floorplan:blind-gate": "node --import tsx scripts/validate-floorplan-fixtures.ts --strictBlindSet=1 --minFixtures=100 --minKoreanComplexShare=0.2 --minPdfFixtures=20 --minWatermarkFixtures=20 --minPhoneOrCroppedFixtures=20",
-    "eval:floorplan": "node --import tsx scripts/eval-floorplan.ts",
-    "eval:floorplan:gate": "node --import tsx scripts/eval-floorplan-gate.ts"
+    "legacy:e2e:intake": "node --import tsx scripts/e2e-intake-flow.ts",
+    "legacy:fixtures:floorplan:validate": "node --import tsx scripts/validate-floorplan-fixtures.ts",
+    "legacy:fixtures:floorplan:blind-gate": "node --import tsx scripts/validate-floorplan-fixtures.ts --strictBlindSet=1 --minFixtures=100 --minKoreanComplexShare=0.2 --minPdfFixtures=20 --minWatermarkFixtures=20 --minPhoneOrCroppedFixtures=20",
+    "legacy:eval:floorplan": "node --import tsx scripts/eval-floorplan.ts",
+    "legacy:eval:floorplan:gate": "node --import tsx scripts/eval-floorplan-gate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

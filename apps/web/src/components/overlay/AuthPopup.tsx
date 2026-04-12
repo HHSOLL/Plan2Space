@@ -108,7 +108,7 @@ export function AuthPopup({ isOpen, onClose, nextPath }: AuthPopupProps) {
                         {/* Content */}
                         <div className="space-y-10">
                             <div className="space-y-4">
-                                <h2 id={titleId} className="text-4xl font-cormorant font-light text-black">Access Studio</h2>
+                                <h2 id={titleId} className="text-4xl font-light text-black">Access Studio</h2>
                                 <p id={descriptionId} className="text-[10px] text-[#999999] font-bold uppercase tracking-widest leading-relaxed">
                                     Continue with Google or Kakao to enter the studio.
                                 </p>

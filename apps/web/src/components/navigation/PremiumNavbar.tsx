@@ -5,24 +5,16 @@ import { useRouter, usePathname } from "next/navigation";
 import { LogOut, Menu, Search, UserRound, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
-import { useLanguageStore } from "../../lib/stores/useLanguageStore";
 import { AuthPopup } from "../overlay/AuthPopup";
 
 export function PremiumNavbar() {
     const router = useRouter();
     const pathname = usePathname();
     const { user, session, logout } = useAuthStore();
-    const { language, setLanguage } = useLanguageStore();
     const isAuthenticated = Boolean(session?.user);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [authNextPath, setAuthNextPath] = useState<string | undefined>(undefined);
-
-    // Hydration handling for persistent store
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     useEffect(() => {
         setIsMobileMenuOpen(false);
@@ -76,10 +68,11 @@ export function PremiumNavbar() {
 
                     <div className={`hidden md:flex items-center ${isHome ? 'gap-8 text-[10px] font-semibold tracking-[0.18em] text-[#6e6255]' : 'gap-12 text-[10px] font-bold uppercase tracking-[0.2em] text-[#666666]'}`}>
                         {[
-                            { name: 'Home', action: 'home' },
-                            { name: 'Create Room', action: 'builder' },
-                            { name: 'Projects', action: 'projects' },
-                            { name: 'Gallery', action: 'gallery' }
+                            { name: '홈', action: 'home' },
+                            { name: '방 만들기', action: 'builder' },
+                            { name: '내 공간', action: 'projects' },
+                            { name: '갤러리', action: 'gallery' },
+                            { name: '커뮤니티', action: 'community' }
                         ].map((item) => (
                             <button
                                 key={item.name}
@@ -96,7 +89,7 @@ export function PremiumNavbar() {
                             <>
                                 <button
                                     type="button"
-                                    aria-label="Open gallery"
+                                    aria-label="갤러리 열기"
                                     onClick={() => router.push("/gallery")}
                                     className="rounded-full border border-[#e7ddd0] p-2.5 text-[#47392a] transition-colors hover:bg-[#f3ece2]"
                                 >
@@ -104,13 +97,13 @@ export function PremiumNavbar() {
                                 </button>
                                 <button
                                     type="button"
-                                    aria-label={isAuthenticated ? "Open projects" : "Sign in"}
+                                    aria-label={isAuthenticated ? "내 공간 열기" : "로그인"}
                                     onClick={() => {
                                         if (isAuthenticated) {
                                             router.push("/studio");
                                             return;
                                         }
-                                        setAuthNextPath("/studio");
+                                        setAuthNextPath(pathname ?? "/");
                                         setIsAuthOpen(true);
                                     }}
                                     className="rounded-full border border-[#e7ddd0] p-2.5 text-[#47392a] transition-colors hover:bg-[#f3ece2]"
@@ -119,31 +112,10 @@ export function PremiumNavbar() {
                                 </button>
                             </>
                         )}
-                        {/* Language Toggle */}
-                        {mounted && (
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setLanguage('en')}
-                                    className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${language === 'en' ? 'text-black' : 'text-[#bbbbbb] hover:text-black'
-                                        }`}
-                                >
-                                    EN
-                                </button>
-                                <div className="w-[1px] h-2 bg-[#e5e5e0]" />
-                                <button
-                                    onClick={() => setLanguage('ko')}
-                                    className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${language === 'ko' ? 'text-black' : 'text-[#bbbbbb] hover:text-black'
-                                        }`}
-                                >
-                                    KR
-                                </button>
-                            </div>
-                        )}
-
                         {isAuthenticated ? (
                             <div className="flex items-center gap-4">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999]">
-                                    {user?.name ?? user?.email ?? "Projects"}
+                                    {user?.name ?? user?.email ?? "내 프로젝트"}
                                 </span>
                                 <button onClick={() => void logout()} className="p-2 hover:bg-black/5 rounded-full transition-colors group">
                                     <LogOut className="w-4 h-4 text-black/20 group-hover:text-red-400" />
@@ -157,7 +129,7 @@ export function PremiumNavbar() {
                                 }}
                                 className="px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
                             >
-                                Start Room
+                                방 만들기
                             </button>
                         ) : null}
                     </div>
@@ -166,7 +138,7 @@ export function PremiumNavbar() {
                         type="button"
                         onClick={() => setIsMobileMenuOpen((prev) => !prev)}
                         className={`md:hidden p-2 rounded-full border ${isHome ? 'border-[#e7ddd0] bg-white' : 'border-[#e5e5e0] bg-white/70'}`}
-                        aria-label="Toggle mobile menu"
+                        aria-label="모바일 메뉴 열기/닫기"
                     >
                         {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
                     </button>
@@ -178,10 +150,11 @@ export function PremiumNavbar() {
                         <div className={isHome ? 'rounded-[28px] border border-[#e5dbcf] bg-white/95 p-4 shadow-[0_18px_40px_rgba(49,34,16,0.12)] backdrop-blur-md' : ''}>
                         <div className="grid grid-cols-1 gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#666666]">
                             {[
-                                { name: 'Home', action: 'home' },
-                                { name: 'Create Room', action: 'builder' },
-                                { name: 'Projects', action: 'projects' },
-                                { name: 'Gallery', action: 'gallery' }
+                                { name: '홈', action: 'home' },
+                                { name: '방 만들기', action: 'builder' },
+                                { name: '내 공간', action: 'projects' },
+                                { name: '갤러리', action: 'gallery' },
+                                { name: '커뮤니티', action: 'community' }
                             ].map((item) => (
                                 <button
                                     key={item.name}
@@ -193,30 +166,10 @@ export function PremiumNavbar() {
                             ))}
                         </div>
 
-                        {mounted && (
-                            <div className="flex items-center gap-3 pt-1">
-                                <button
-                                    onClick={() => setLanguage('en')}
-                                    className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${language === 'en' ? 'text-black' : 'text-[#bbbbbb] hover:text-black'
-                                        }`}
-                                >
-                                    EN
-                                </button>
-                                <div className="w-[1px] h-2 bg-[#e5e5e0]" />
-                                <button
-                                    onClick={() => setLanguage('ko')}
-                                    className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${language === 'ko' ? 'text-black' : 'text-[#bbbbbb] hover:text-black'
-                                        }`}
-                                >
-                                    KR
-                                </button>
-                            </div>
-                        )}
-
                         {isAuthenticated ? (
                             <div className="flex items-center justify-between gap-3 pt-2">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#777777] truncate">
-                                    {user?.name ?? user?.email ?? "Projects"}
+                                    {user?.name ?? user?.email ?? "내 프로젝트"}
                                 </span>
                                 <button
                                     type="button"
@@ -238,7 +191,7 @@ export function PremiumNavbar() {
                                 }}
                                 className="w-full px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
                             >
-                                Start Room
+                                방 만들기
                             </button>
                         )}
                         </div>

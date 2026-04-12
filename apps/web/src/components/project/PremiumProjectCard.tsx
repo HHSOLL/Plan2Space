@@ -40,14 +40,14 @@ const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProj
                             <div className="flex h-full flex-col justify-between">
                                 <div className="flex items-start justify-between gap-3">
                                     <div className={`rounded-full border px-3 py-2 text-[9px] font-bold uppercase tracking-[0.24em] ${previewTheme.chip}`}>
-                                        {assetSummary?.primaryCollection ?? "Builder Room"}
+                                        {assetSummary?.primaryCollection ?? "빌더 공간"}
                                     </div>
                                     <Folder className="w-8 h-8 text-black/10" />
                                 </div>
                                 {assetSummary && assetSummary.highlightedItems.length > 0 ? (
                                     <div className="space-y-3">
                                         <div className="text-[10px] font-bold uppercase tracking-[0.22em] opacity-55">
-                                            Placed Pieces
+                                            배치 제품
                                         </div>
                                         <div className="space-y-2">
                                             {assetSummary.highlightedItems.slice(0, 2).map((item) => (
@@ -69,7 +69,7 @@ const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProj
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <span className="text-[9px] font-bold text-[#999999] tracking-[0.3em] uppercase">
-                                Project №{project.id.slice(0, 3).toUpperCase()}
+                                프로젝트 №{project.id.slice(0, 3).toUpperCase()}
                             </span>
                             <div className="flex items-center gap-1.5 text-black/20">
                                 <Clock className="w-3 h-3" />
@@ -80,11 +80,11 @@ const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProj
                         </div>
 
                         <div className="space-y-2">
-                            <h3 className="text-xl font-cormorant font-light group-hover:text-black transition-colors">
+                            <h3 className="text-xl font-light group-hover:text-black transition-colors">
                                 {project.name}
                             </h3>
                             <p className="text-[10px] text-[#666666] font-medium uppercase tracking-[0.1em] line-clamp-2 leading-relaxed h-10">
-                                {project.description || "No project description provided."}
+                                {project.description || "프로젝트 설명이 없습니다."}
                             </p>
                             {assetSummary ? (
                                 <div className="flex flex-wrap gap-2 pt-2">
@@ -106,7 +106,7 @@ const PremiumProjectCardComponent = React.forwardRef<HTMLDivElement, PremiumProj
                             onClick={() => onSelect(project.id)}
                             className="flex-1 py-4 border border-[#1a1a1a] text-[9px] font-bold uppercase tracking-[0.3em] hover:bg-[#1a1a1a] hover:text-white transition-all"
                         >
-                            View Case
+                            열기
                         </button>
                         <button
                             onClick={() => onDelete(project)}

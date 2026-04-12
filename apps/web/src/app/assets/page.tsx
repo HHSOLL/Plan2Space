@@ -70,7 +70,7 @@ export default function AssetsPage() {
                         <motion.h1
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-6xl font-cormorant font-light tracking-tight"
+                            className="text-6xl font-light tracking-tight"
                         >
                             CURATED ASSETS
                         </motion.h1>
@@ -110,7 +110,7 @@ export default function AssetsPage() {
                                 <div className="text-[10px] font-bold uppercase tracking-widest text-[#999999]">
                                     {asset.category}
                                 </div>
-                                <h3 className="text-2xl font-cormorant font-light">{asset.name}</h3>
+                                <h3 className="text-2xl font-light">{asset.name}</h3>
                                 <div className="flex items-center justify-between pt-4 border-t border-[#f3f3f1]">
                                     <span className="text-[10px] font-bold uppercase tracking-widest">{asset.price}</span>
                                     <button className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#999999] hover:text-black transition-colors">

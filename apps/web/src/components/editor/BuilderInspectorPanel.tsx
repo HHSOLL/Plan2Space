@@ -9,6 +9,8 @@ import type { LightingSettings, SceneAsset } from "../../lib/stores/useSceneStor
 
 type BuilderInspectorPanelProps = {
   visible: boolean;
+  layout?: "overlay" | "inline";
+  className?: string;
   transformMode: TransformMode;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
@@ -30,6 +32,8 @@ type BuilderInspectorPanelProps = {
 
 export function BuilderInspectorPanel({
   visible,
+  layout = "overlay",
+  className,
   transformMode,
   wallMaterialIndex,
   floorMaterialIndex,
@@ -49,12 +53,12 @@ export function BuilderInspectorPanel({
   formatAssetLabel
 }: BuilderInspectorPanelProps) {
   const anchorLabel: Record<SceneAnchorType, string> = {
-    floor: "Floor",
-    wall: "Wall",
-    ceiling: "Ceiling",
-    furniture_surface: "Furniture Surface",
-    desk_surface: "Desk Surface",
-    shelf_surface: "Shelf Surface"
+    floor: "바닥",
+    wall: "벽",
+    ceiling: "천장",
+    furniture_surface: "가구 표면",
+    desk_surface: "데스크 표면",
+    shelf_surface: "선반 표면"
   };
   const isYManagedByAnchor =
     selectedAsset?.anchorType === "floor" ||
@@ -63,29 +67,31 @@ export function BuilderInspectorPanel({
     selectedAsset?.anchorType === "furniture_surface" ||
     selectedAsset?.anchorType === "shelf_surface";
   const isRotationManagedByAnchor = selectedAsset?.anchorType === "wall";
+  const containerClassName =
+    layout === "inline"
+      ? `flex h-full min-h-0 flex-col ${className ?? ""}`.trim()
+      : `absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,340px)] flex-col rounded-[28px] border border-black/10 bg-[#f7f5f1]/95 shadow-[0_18px_44px_rgba(17,19,22,0.18)] backdrop-blur-xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
+          visible ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[108%] opacity-0"
+        } ${className ?? ""}`.trim();
 
   return (
-    <aside
-      className={`absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,340px)] flex-col rounded-[28px] border border-black/10 bg-[#f7f5f1]/95 shadow-[0_18px_44px_rgba(17,19,22,0.18)] backdrop-blur-xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
-        visible ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[108%] opacity-0"
-      }`}
-    >
+    <aside className={containerClassName}>
       <div className="border-b border-black/10 px-5 py-4">
         <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f665b]">
           <SlidersHorizontal className="h-4 w-4" />
-          Inspector
+          속성 패널
         </div>
         <p className="mt-3 text-sm text-[#5f574d]">
-          Tune finishes, selected asset placement, and transform mode.
+          마감재와 선택한 제품의 배치/변형 값을 조정합니다.
         </p>
       </div>
       <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Transform mode</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">변형 모드</p>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { id: "translate", label: "Move" },
-              { id: "rotate", label: "Rotate" }
+              { id: "translate", label: "이동" },
+              { id: "rotate", label: "회전" }
             ].map((mode) => (
               <button
                 key={mode.id}
@@ -104,7 +110,7 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Wall finish</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">벽 마감</p>
           <div className="flex flex-wrap gap-2">
             {builderWallFinishes.map((finish) => (
               <button
@@ -124,7 +130,7 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Floor finish</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">바닥 마감</p>
           <div className="flex flex-wrap gap-2">
             {builderFloorFinishes.map((finish) => (
               <button
@@ -144,9 +150,9 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Lighting</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">조명</p>
           <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-            Ambient
+            주변광
             <input
               type="range"
               min="0.05"
@@ -160,7 +166,7 @@ export function BuilderInspectorPanel({
             />
           </label>
           <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-            Hemisphere
+            하늘광
             <input
               type="range"
               min="0.05"
@@ -174,7 +180,7 @@ export function BuilderInspectorPanel({
             />
           </label>
           <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-            Sun
+            직사광
             <input
               type="range"
               min="0.2"
@@ -188,7 +194,7 @@ export function BuilderInspectorPanel({
             />
           </label>
           <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-            Environment Blur
+            환경 블러
             <input
               type="range"
               min="0"
@@ -204,25 +210,25 @@ export function BuilderInspectorPanel({
         </div>
 
         <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Room summary</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">공간 요약</p>
           <div className="space-y-2 text-sm text-[#4f473d]">
             <div className="flex items-center justify-between">
-              <span>Walls</span>
+              <span>벽</span>
               <span>{wallsCount}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>Floor zones</span>
+              <span>바닥 구역</span>
               <span>{floorsCount}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>Assets</span>
+              <span>제품</span>
               <span>{assetsCount}</span>
             </div>
           </div>
         </div>
 
         <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Selection</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">선택 항목</p>
           {selectedAsset ? (
             <div className="space-y-4">
               <div>
@@ -242,7 +248,7 @@ export function BuilderInspectorPanel({
                 <div className="mt-1 text-xs text-[#83796d]">{selectedAsset.id}</div>
               </div>
               <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                Anchor
+                기준면
                 <select
                   value={selectedAsset.anchorType ?? "floor"}
                   onChange={(event) =>
@@ -320,7 +326,7 @@ export function BuilderInspectorPanel({
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                  Rotate Y
+                  Y축 회전
                   <input
                     type="number"
                     step="0.1"
@@ -343,7 +349,7 @@ export function BuilderInspectorPanel({
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                  Scale
+                  크기 비율
                   <input
                     type="number"
                     step="0.1"
@@ -360,10 +366,11 @@ export function BuilderInspectorPanel({
               </div>
               {isYManagedByAnchor || isRotationManagedByAnchor ? (
                 <div className="text-[10px] uppercase tracking-[0.14em] text-[#8b8277]">
-                  Current anchor manages
-                  {isYManagedByAnchor ? " height" : ""}
-                  {isYManagedByAnchor && isRotationManagedByAnchor ? " and" : ""}
-                  {isRotationManagedByAnchor ? " yaw" : ""}.
+                  현재 기준면이
+                  {isYManagedByAnchor ? " 높이" : ""}
+                  {isYManagedByAnchor && isRotationManagedByAnchor ? " 및" : ""}
+                  {isRotationManagedByAnchor ? " 회전" : ""}
+                  값을 관리합니다.
                 </div>
               ) : null}
               <button
@@ -372,12 +379,12 @@ export function BuilderInspectorPanel({
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-300/60 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-red-700 transition hover:border-red-400 hover:bg-red-100"
               >
                 <Trash2 className="h-4 w-4" />
-                Remove asset
+                제품 삭제
               </button>
             </div>
           ) : (
             <div className="text-sm leading-6 text-[#6f665b]">
-              Select a placed asset in top view to edit its position, rotation, and scale.
+              상단뷰에서 배치된 제품을 선택하면 위치/회전/크기를 조정할 수 있습니다.
             </div>
           )}
         </div>

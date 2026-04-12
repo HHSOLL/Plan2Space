@@ -1,20 +1,22 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Link2, MessagesSquare, Sparkles, Users } from "lucide-react";
+import { MessagesSquare, Sparkles, Users } from "lucide-react";
 import { PublishedSnapshotCard } from "../../components/project/PublishedSnapshotCard";
-import { getCatalogPreviewClasses } from "../../lib/builder/catalog";
+import {
+  buildPageHref,
+  parseTotalHint,
+  readSearchParam,
+  ShowcaseFilterRail,
+  type ShowcaseSearchParams
+} from "../../components/showcase/ShowcaseFilterRail";
 import {
   normalizeShowcaseFilters,
-  type ShowcaseDensityFilter,
   type ShowcaseFilters,
-  type ShowcaseRoomFilter,
-  type ShowcaseSnapshotItem,
-  type ShowcaseToneFilter
+  type ShowcaseSnapshotItem
 } from "../../lib/api/showcase";
 import { fetchShowcaseSnapshotFeed } from "../../lib/server/showcase";
 
-export const revalidate = 60;
+export const revalidate = 0;
 
-type SearchParams = Record<string, string | string[] | undefined>;
 type ShowcaseArchiveResult = {
   items: ShowcaseSnapshotItem[];
   total: number;
@@ -25,69 +27,9 @@ type ShowcaseArchiveResult = {
 
 const PAGE_SIZE = 24;
 
-const roomFilterOptions: Array<{ id: ShowcaseRoomFilter; label: string }> = [
-  { id: "all", label: "All rooms" },
-  { id: "living", label: "Living" },
-  { id: "workspace", label: "Workspace" },
-  { id: "bedroom", label: "Bedroom" },
-  { id: "flex", label: "Flexible" }
-];
-
-const toneFilterOptions: Array<{ id: ShowcaseToneFilter; label: string }> = [
-  { id: "all", label: "All tones" },
-  { id: "sand", label: "Warm sand" },
-  { id: "olive", label: "Olive" },
-  { id: "slate", label: "Slate" },
-  { id: "ember", label: "Ember" }
-];
-
-const densityFilterOptions: Array<{ id: ShowcaseDensityFilter; label: string }> = [
-  { id: "all", label: "Any fill" },
-  { id: "minimal", label: "Quiet" },
-  { id: "layered", label: "Layered" },
-  { id: "collected", label: "Collected" }
-];
-
-function firstValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] ?? undefined : value;
-}
-
-function parseTotalHint(rawValue: string | null) {
-  if (!rawValue) return null;
-  const parsed = Number(rawValue);
-  if (!Number.isFinite(parsed) || parsed < 0) return null;
-  return Math.trunc(parsed);
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString();
-}
-
-function buildFilterHref(pathname: string, filters: ShowcaseFilters, patch: Partial<ShowcaseFilters>) {
-  const nextFilters = normalizeShowcaseFilters({ ...filters, ...patch });
-  const params = new URLSearchParams();
-
-  if (nextFilters.room !== "all") params.set("room", nextFilters.room);
-  if (nextFilters.tone !== "all") params.set("tone", nextFilters.tone);
-  if (nextFilters.density !== "all") params.set("density", nextFilters.density);
-
-  const query = params.toString();
-  return query.length > 0 ? `${pathname}?${query}` : pathname;
-}
-
-function buildPageHref(pathname: string, filters: ShowcaseFilters, cursor: string | null, totalHint: number) {
-  const params = new URLSearchParams();
-
-  if (filters.room !== "all") params.set("room", filters.room);
-  if (filters.tone !== "all") params.set("tone", filters.tone);
-  if (filters.density !== "all") params.set("density", filters.density);
-  if (cursor) {
-    params.set("cursor", cursor);
-  }
-  params.set("total", String(totalHint));
-
-  const query = params.toString();
-  return query.length > 0 ? `${pathname}?${query}` : pathname;
+function formatDate(value: string | null) {
+  if (!value) return "없음";
+  return new Date(value).toLocaleDateString("ko-KR");
 }
 
 async function fetchShowcaseArchivePage(
@@ -118,19 +60,30 @@ async function fetchShowcaseArchivePage(
       total: 0,
       nextCursor: null,
       hasMore: false,
-      error: "Showcase feed is unavailable right now."
+      error: "커뮤니티 장면 목록을 불러오지 못했습니다."
     };
   }
 }
 
-export default async function CommunityPage({ searchParams }: { searchParams?: SearchParams }) {
+function StatusCard({ label, value, description }: { label: string; value: string | number; description: string }) {
+  return (
+    <div className="rounded-[24px] border border-black/10 bg-white/78 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.08)]">
+      <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">{label}</div>
+      <div className="mt-4 text-3xl font-semibold text-[#171411]">{value}</div>
+      <p className="mt-3 text-sm leading-7 text-[#61574e]">{description}</p>
+    </div>
+  );
+}
+
+export default async function CommunityPage({ searchParams }: { searchParams?: ShowcaseSearchParams }) {
   const filters = normalizeShowcaseFilters({
-    room: firstValue(searchParams?.room),
-    tone: firstValue(searchParams?.tone),
-    density: firstValue(searchParams?.density)
+    room: readSearchParam(searchParams?.room),
+    tone: readSearchParam(searchParams?.tone),
+    density: readSearchParam(searchParams?.density)
   });
-  const currentCursor = firstValue(searchParams?.cursor) ?? null;
-  const totalHint = parseTotalHint(firstValue(searchParams?.total) ?? null);
+  const currentCursor = readSearchParam(searchParams?.cursor) ?? null;
+  const totalHint = parseTotalHint(readSearchParam(searchParams?.total) ?? null);
+
   const {
     items: snapshots,
     total: totalPublished,
@@ -138,393 +91,132 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
     hasMore,
     error: showcaseError
   } = await fetchShowcaseArchivePage(currentCursor, totalHint, filters);
-  const filteredSnapshots = snapshots;
-  const featured = filteredSnapshots[0] ?? null;
-  const feed = filteredSnapshots.slice(1, 7);
-  const archive = filteredSnapshots.slice(7, 13);
-  const collectionPulse = Array.from(
-    filteredSnapshots
+
+  const activeFilterCount =
+    Number(filters.room !== "all") + Number(filters.tone !== "all") + Number(filters.density !== "all");
+  const collections = Array.from(
+    snapshots
       .flatMap((snapshot) => snapshot.previewMeta?.assetSummary?.collections ?? [])
       .reduce<Map<string, number>>((map, collection) => {
         map.set(collection.label, (map.get(collection.label) ?? 0) + collection.count);
         return map;
       }, new Map())
       .entries()
-  )
-    .map(([label, count]) => ({ label, count }))
-    .sort((left, right) => right.count - left.count)
-    .slice(0, 6);
-  const activeCollections = new Set(
-    filteredSnapshots.flatMap((snapshot) => snapshot.previewMeta?.assetSummary?.collections.map((collection) => collection.label) ?? [])
-  ).size;
-  const latestPublish = filteredSnapshots[0]?.published_at ?? null;
-  const featuredTheme = getCatalogPreviewClasses(featured?.previewMeta?.assetSummary?.primaryTone ?? "sand");
-  const activeFilterCount =
-    Number(filters.room !== "all") + Number(filters.tone !== "all") + Number(filters.density !== "all");
-  const loadedCount = snapshots.length;
-  const matchesLoadedCount = filteredSnapshots.length;
+  );
+  const featuredSnapshots = snapshots.slice(0, Math.min(3, snapshots.length));
+  const recentSnapshots = snapshots.slice(featuredSnapshots.length);
+  const latestPublish = snapshots[0]?.published_at ?? null;
   const loadMoreHref = nextCursor ? buildPageHref("/community", filters, nextCursor, totalPublished) : null;
+  const statusDescription = showcaseError
+    ? "커뮤니티 목록을 확인할 수 없습니다."
+    : activeFilterCount > 0
+      ? `현재 조건에 맞는 장면 ${snapshots.length}개를 불러왔습니다.`
+      : `현재 공개된 발행 장면 ${totalPublished}개를 탐색할 수 있습니다.`;
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] px-4 pb-20 pt-24 text-[#171411] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-7xl">
-        <header className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="rounded-[34px] bg-[#191512] p-8 text-[#f9f4ec] shadow-[0_34px_90px_rgba(0,0,0,0.22)] sm:p-10">
-            <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d8baa0]">
-              <Users className="h-4 w-4" />
-              <span>Community circulation</span>
+    <div className="min-h-screen bg-[#f3efe8] px-4 pb-20 pt-24 text-[#171411] sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1440px]">
+        <header className="border-b border-black/8 pb-8">
+          <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a8177]">
+            <Users className="h-4 w-4" />
+            <span>커뮤니티</span>
+          </div>
+          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <h1 className="text-4xl font-semibold tracking-tight text-[#171411] sm:text-6xl">
+                커뮤니티에서 둘러보기
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#625a51]">
+                공개된 발행 장면을 큐레이션 기준으로 빠르게 탐색합니다. 모든 카드는 동일한 읽기 전용 뷰어를 엽니다.
+              </p>
             </div>
-            <h1 className="mt-8 text-5xl font-cormorant font-light tracking-tight sm:text-6xl">
-              Public rooms moving through the pinned viewer.
-            </h1>
-            <p className="mt-6 max-w-2xl text-sm leading-7 text-[#d7cbc1]">
-              Community is now grounded in real published snapshots. Every room here comes from the builder-first editor
-              and opens the exact read-only version that was shared.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/gallery"
-                className="inline-flex items-center gap-3 rounded-full bg-[#f7e8d7] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#1b1714] transition hover:bg-white"
-              >
-                Open archive
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/studio/builder"
-                className="inline-flex items-center gap-3 rounded-full border border-white/20 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#f7efe5] transition hover:border-white/50 hover:bg-white/5"
-              >
-                Publish a room
-              </Link>
+            <div className="rounded-lg border border-black/10 bg-white/78 px-4 py-3 text-sm text-[#625a51] shadow-[0_10px_30px_rgba(42,31,21,0.06)]">
+              {statusDescription}
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Rooms in circulation</div>
-              <div className="mt-4 text-4xl font-cormorant">
-                {showcaseError ? "Unavailable" : totalPublished}
-              </div>
-              <p className="mt-3 text-sm leading-7 text-[#61574e]">
-                {showcaseError
-                  ? "The public feed could not be loaded, so circulation cannot be measured right now."
-                  : activeFilterCount > 0
-                    ? hasMore
-                      ? `Showing ${matchesLoadedCount} matches on this page (of ${totalPublished} published rooms).`
-                      : `${matchesLoadedCount} matches across ${totalPublished} published rooms.`
-                    : hasMore
-                      ? `Showing ${loadedCount} rooms on this page of ${totalPublished} published rooms.`
-                      : "Permanent view-only builder snapshots currently visible to everyone."}
-              </p>
-            </div>
-            <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Active collections</div>
-              <div className="mt-4 text-4xl font-cormorant">{showcaseError ? "Unavailable" : activeCollections}</div>
-              <p className="mt-3 text-sm leading-7 text-[#61574e]">
-                {showcaseError
-                  ? "Collection analytics are hidden until the showcase feed is healthy again."
-                  : "Collection families represented by the currently visible community slice."}
-              </p>
-            </div>
-            <div className="rounded-[28px] border border-black/10 bg-white/70 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.1)] backdrop-blur">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">Publishing contract</div>
-              <div className="mt-4 text-xl font-cormorant">Pinned snapshot only</div>
-              <p className="mt-3 text-sm leading-7 text-[#61574e]">
-                Community entries stay fixed to their published version instead of following later draft edits.
-                {latestPublish ? ` Latest publish ${formatDate(latestPublish)}.` : null}
-              </p>
-            </div>
-          </div>
+          <ShowcaseFilterRail pathname="/community" filters={filters} activeFilterCount={activeFilterCount} />
         </header>
 
-        <section className="mt-8 rounded-[30px] border border-black/10 bg-white/74 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.08)]">
-          <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">
-            <Sparkles className="h-4 w-4" />
-            <span>Filter circulation</span>
-            {activeFilterCount > 0 ? (
-              <Link
-                href="/community"
-                className="ml-auto text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f6358] transition hover:text-[#171411]"
-              >
-                Clear filters
-              </Link>
-            ) : null}
-          </div>
-
-          <div className="mt-5 space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8177]">
-              <span className="mr-2">Room type</span>
-              {roomFilterOptions.map((option) => {
-                const isActive = filters.room === option.id;
-                return (
-                  <Link
-                    key={option.id}
-                    href={buildFilterHref("/community", filters, { room: option.id })}
-                    className={`rounded-full px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
-                      isActive
-                        ? "bg-[#171411] text-white"
-                        : "border border-black/10 bg-[#faf7f2] text-[#625a51] hover:border-black/20 hover:bg-white"
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8177]">
-              <span className="mr-2">Tone</span>
-              {toneFilterOptions.map((option) => {
-                const isActive = filters.tone === option.id;
-                return (
-                  <Link
-                    key={option.id}
-                    href={buildFilterHref("/community", filters, { tone: option.id })}
-                    className={`rounded-full px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
-                      isActive
-                        ? "bg-[#171411] text-white"
-                        : "border border-black/10 bg-[#faf7f2] text-[#625a51] hover:border-black/20 hover:bg-white"
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8177]">
-              <span className="mr-2">Scene fill</span>
-              {densityFilterOptions.map((option) => {
-                const isActive = filters.density === option.id;
-                return (
-                  <Link
-                    key={option.id}
-                    href={buildFilterHref("/community", filters, { density: option.id })}
-                    className={`rounded-full px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
-                      isActive
-                        ? "bg-[#171411] text-white"
-                        : "border border-black/10 bg-[#faf7f2] text-[#625a51] hover:border-black/20 hover:bg-white"
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <StatusCard
+            label="공개 장면"
+            value={showcaseError ? "-" : totalPublished}
+            description="커뮤니티와 갤러리에서 동일한 공유 스냅샷을 사용합니다."
+          />
+          <StatusCard
+            label="노출 컬렉션"
+            value={showcaseError ? "-" : collections.length}
+            description="현재 화면에 노출된 장면 기준으로 집계한 제품 컬렉션 수입니다."
+          />
+          <StatusCard
+            label="최근 발행"
+            value={formatDate(latestPublish)}
+            description="최근 발행 장면도 동일한 읽기 전용 뷰어 경로로 확인합니다."
+          />
         </section>
 
         {showcaseError ? (
-          <section className="mt-14 rounded-[34px] border border-[#c06e3d]/20 bg-[#fff8f3] p-10 shadow-[0_24px_80px_rgba(58,40,20,0.08)]">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#b56a3e]">Community unavailable</div>
-            <h2 className="mt-4 text-4xl font-cormorant font-light text-[#171411]">The public community feed could not be loaded.</h2>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-[#61574e]">
-              {showcaseError} Treat this as a publish pipeline or API problem, not as an empty community.
-            </p>
+          <section className="mt-10 rounded-[28px] border border-[#c06e3d]/18 bg-[#fff8f3] p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.06)]">
+            <div className="text-[10px] font-semibold tracking-[0.22em] text-[#b56a3e]">커뮤니티를 불러올 수 없습니다</div>
+            <h2 className="mt-4 text-3xl font-semibold">공개 장면 목록을 확인하지 못했습니다.</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">{showcaseError}</p>
           </section>
-        ) : filteredSnapshots.length === 0 && snapshots.length > 0 ? (
-          <section className="mt-14 rounded-[34px] border border-dashed border-black/12 bg-white/76 p-10 shadow-[0_24px_80px_rgba(58,40,20,0.06)]">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
-              {hasMore ? "No matches loaded yet" : "No matching rooms"}
-            </div>
-            <h2 className="mt-4 text-4xl font-cormorant font-light text-[#171411]">
-              {hasMore ? "The current filters have not matched the loaded archive pages yet." : "Nothing in circulation matches these filters."}
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-[#61574e]">
-              {hasMore
-                ? "Load more archive pages to continue scanning the public feed, or clear filters to widen the visible view."
-                : "Widen the room type, tone, or scene fill to bring more published snapshots back into view."}
+        ) : snapshots.length === 0 && hasMore ? (
+          <section className="mt-10 rounded-[28px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
+            <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">조건에 맞는 장면을 아직 찾지 못했습니다</div>
+            <h2 className="mt-4 text-3xl font-semibold">현재 불러온 범위에서는 결과가 없습니다.</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
+              더 많은 장면을 불러오거나 필터를 줄여서 다시 확인해 주세요.
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              {hasMore && nextCursor ? (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {loadMoreHref ? (
                 <Link
                   href={loadMoreHref}
-                  className="inline-flex rounded-full border border-black/10 bg-[#faf7f2] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#52483f] transition hover:border-black/20 hover:bg-white"
+                  className="inline-flex rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
                 >
-                  Load more
+                  더 보기
                 </Link>
               ) : null}
               <Link
                 href="/community"
-                className="inline-flex rounded-full border border-black/10 bg-[#faf7f2] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#52483f] transition hover:border-black/20 hover:bg-white"
+                className="inline-flex rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
               >
-                Clear filters
+                필터 초기화
               </Link>
             </div>
           </section>
-        ) : featured ? (
-          <section className="mt-14 grid gap-8 xl:grid-cols-[1.06fr_0.94fr]">
+        ) : snapshots.length === 0 && activeFilterCount > 0 ? (
+          <section className="mt-10 rounded-[28px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
+            <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">조건과 일치하는 장면이 없습니다</div>
+            <h2 className="mt-4 text-3xl font-semibold">필터 조합을 다시 선택해 주세요.</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
+              공간 유형, 톤, 밀도 조건을 조정하면 다른 커뮤니티 장면을 볼 수 있습니다.
+            </p>
             <Link
-              href={`/shared/${featured.token}`}
-              className="group overflow-hidden rounded-[34px] border border-black/10 bg-white/78 shadow-[0_24px_80px_rgba(58,40,20,0.1)] transition hover:-translate-y-1 hover:shadow-[0_32px_100px_rgba(58,40,20,0.14)]"
+              href="/community"
+              className="mt-6 inline-flex rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
             >
-              <div className="grid h-full md:grid-cols-[0.95fr_1.05fr]">
-                <div className="relative min-h-[320px] border-b border-black/8 md:min-h-full md:border-b-0 md:border-r">
-                  {featured.thumbnail ? (
-                    <img
-                      src={featured.thumbnail}
-                      alt={featured.previewMeta?.projectName ?? "Featured snapshot"}
-                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
-                    />
-                  ) : (
-                    <div className={`absolute inset-0 flex flex-col justify-between p-8 ${featuredTheme.surface}`}>
-                      <div className={`inline-flex w-fit rounded-full border px-3 py-2 text-[9px] font-bold uppercase tracking-[0.22em] ${featuredTheme.chip}`}>
-                        {featured.previewMeta?.assetSummary?.primaryCollection ?? "Featured Snapshot"}
-                      </div>
-                      <div className="space-y-3">
-                        {(featured.previewMeta?.assetSummary?.highlightedItems ?? []).slice(0, 3).map((item) => (
-                          <div key={item.catalogItemId ?? item.assetId} className="flex items-center justify-between gap-3 text-sm">
-                            <span className="line-clamp-1">{item.label}</span>
-                            <span className="text-[11px] font-semibold opacity-65">x{item.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/35 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur">
-                    <MessagesSquare className="h-3.5 w-3.5" />
-                    Featured room
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-between p-8">
-                  <div>
-                    <div className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-[0.24em] text-[#8a7c70]">
-                      <span>Latest circulation</span>
-                      <span>{formatDate(featured.published_at)}</span>
-                    </div>
-                    <h2 className="mt-5 text-4xl font-cormorant font-light leading-tight text-[#171411]">
-                      {featured.previewMeta?.projectName ?? "Shared Room"}
-                    </h2>
-                    <p className="mt-4 max-w-2xl text-sm leading-7 text-[#5f554b]">
-                      {featured.previewMeta?.projectDescription ?? "Pinned community-ready room snapshot from the builder-first editor."}
-                    </p>
-                    {(featured.previewMeta?.assetSummary?.collections?.length ?? 0) > 0 ? (
-                      <div className="mt-6 flex flex-wrap gap-2">
-                        {featured.previewMeta?.assetSummary?.collections.slice(0, 4).map((collection) => (
-                          <span
-                            key={collection.label}
-                            className="rounded-full border border-black/10 bg-[#f7f2ea] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#736659]"
-                          >
-                            {collection.label} {collection.count}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-8 flex items-center justify-between border-t border-black/10 pt-5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#52483f]">
-                    <span>Open pinned viewer</span>
-                    <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </div>
-                </div>
-              </div>
+              필터 초기화
             </Link>
-
-            <div className="rounded-[34px] border border-black/10 bg-white/76 p-8 shadow-[0_24px_80px_rgba(58,40,20,0.1)]">
-              <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
-                <Sparkles className="h-4 w-4" />
-                <span>Collection pulse</span>
-              </div>
-              {collectionPulse.length > 0 ? (
-                <div className="mt-6 flex flex-wrap gap-3">
-                  {collectionPulse.map((collection) => (
-                    <div
-                      key={collection.label}
-                      className="rounded-[22px] border border-black/10 bg-[#f7f2ea] px-4 py-4 text-[#4f463d]"
-                    >
-                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8a7c70]">{collection.label}</div>
-                      <div className="mt-2 text-2xl font-cormorant">{collection.count}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-6 text-sm leading-7 text-[#61574e]">
-                  Collection signals appear here once published rooms contain catalogued pieces.
-                </p>
-              )}
-
-              <div className="mt-8 rounded-[24px] border border-black/10 bg-[#fbf8f2] p-5">
-                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8a7c70]">
-                  <Link2 className="h-4 w-4" />
-                  Pinned public feed
-                </div>
-                <p className="mt-3 text-sm leading-7 text-[#61574e]">
-                  This feed stays grounded in the same pinned share snapshots that power the public viewer and gallery archive.
-                </p>
-              </div>
-            </div>
           </section>
-        ) : null}
-
-        <section className="mt-14 grid gap-8 xl:grid-cols-[0.88fr_1.12fr]">
-          <div className="rounded-[34px] border border-black/10 bg-white/76 p-8 shadow-[0_24px_80px_rgba(58,40,20,0.08)]">
-            <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
-              <MessagesSquare className="h-4 w-4" />
-              <span>Recent rooms</span>
-            </div>
-            {showcaseError ? (
-              <div className="mt-6 rounded-[24px] border border-[#c06e3d]/20 bg-[#fff8f3] p-8 text-sm leading-7 text-[#61574e]">
-                The recent room feed is unavailable because the showcase API did not respond correctly.
+        ) : snapshots.length === 0 ? (
+          <section className="mt-10 rounded-[28px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
+            <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">아직 공개된 장면이 없습니다</div>
+            <h2 className="mt-4 text-3xl font-semibold">커뮤니티에 노출된 장면이 없습니다.</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
+              장면이 발행되면 이 페이지에서 동일한 읽기 전용 뷰어로 탐색할 수 있습니다.
+            </p>
+          </section>
+        ) : (
+          <>
+            <section className="mt-10">
+              <div className="mb-6 flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a7c70]">
+                <Sparkles className="h-4 w-4" />
+                <span>추천 장면</span>
               </div>
-            ) : feed.length > 0 ? (
-              <div className="mt-6 space-y-4">
-                {feed.map((snapshot) => (
-                  <Link
-                    key={snapshot.id}
-                    href={`/shared/${snapshot.token}`}
-                    className="group block rounded-[24px] border border-black/10 bg-[#faf7f2] p-5 transition hover:border-black/20 hover:bg-white"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a7c70]">
-                          {formatDate(snapshot.published_at)}
-                        </div>
-                        <h3 className="mt-3 text-2xl font-cormorant font-light text-[#171411]">
-                          {snapshot.previewMeta?.projectName ?? "Shared Room"}
-                        </h3>
-                        <p className="mt-2 line-clamp-2 text-sm leading-7 text-[#61574e]">
-                          {snapshot.previewMeta?.projectDescription ?? "Pinned builder snapshot ready for community viewing."}
-                        </p>
-                      </div>
-                      <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[#5f554b] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </div>
-                    {(snapshot.previewMeta?.assetSummary?.collections?.length ?? 0) > 0 ? (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {snapshot.previewMeta?.assetSummary?.collections.slice(0, 3).map((collection) => (
-                          <span
-                            key={collection.label}
-                            className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#736659]"
-                          >
-                            {collection.label} {collection.count}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-6 rounded-[24px] border border-dashed border-black/12 bg-[#faf7f2] p-8 text-sm leading-7 text-[#61574e]">
-                {hasMore
-                  ? "Load more archive pages to surface additional recent rooms under the current filters."
-                  : "Recent room cards appear here once the current filters leave more than one published match."}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-[34px] border border-black/10 bg-white/76 p-8 shadow-[0_24px_80px_rgba(58,40,20,0.08)]">
-            <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8a7c70]">
-              <Sparkles className="h-4 w-4" />
-              <span>Archive picks</span>
-            </div>
-            {showcaseError ? (
-              <div className="mt-6 rounded-[24px] border border-[#c06e3d]/20 bg-[#fff8f3] p-8 text-sm leading-7 text-[#61574e]">
-                Fix the showcase transport before treating the archive as empty.
-              </div>
-            ) : archive.length > 0 ? (
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                {archive.map((snapshot) => (
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {featuredSnapshots.map((snapshot) => (
                   <PublishedSnapshotCard
                     key={snapshot.id}
                     token={snapshot.token}
@@ -534,34 +226,46 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
                   />
                 ))}
               </div>
-            ) : (
-              <div className="mt-6 rounded-[24px] border border-dashed border-black/12 bg-[#faf7f2] p-8 text-sm leading-7 text-[#61574e]">
-                {hasMore
-                  ? "Load more archive pages to find additional archive picks under the current filters."
-                  : "Archive picks return as soon as the current filter view contains more published rooms."}
-              </div>
-            )}
-          </div>
-        </section>
+            </section>
 
-        {!showcaseError && matchesLoadedCount > 0 && hasMore && Boolean(loadMoreHref) ? (
+            {recentSnapshots.length > 0 ? (
+              <section className="mt-12">
+                <div className="mb-6 flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a7c70]">
+                  <MessagesSquare className="h-4 w-4" />
+                  <span>최신 발행 장면</span>
+                </div>
+                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {recentSnapshots.map((snapshot) => (
+                    <PublishedSnapshotCard
+                      key={snapshot.id}
+                      token={snapshot.token}
+                      thumbnail={snapshot.thumbnail}
+                      previewMeta={snapshot.previewMeta}
+                      publishedAt={snapshot.published_at}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </>
+        )}
+
+        {!showcaseError && snapshots.length > 0 && hasMore && Boolean(loadMoreHref) ? (
           <div className="mt-10 flex justify-center">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {loadMoreHref ? (
-                <Link
-                  href={loadMoreHref}
-                  className="inline-flex items-center rounded-full border border-black/10 bg-white/86 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#52483f] transition hover:border-black/20 hover:bg-white"
-                >
-                  Next page
-                </Link>
-              ) : null}
-            </div>
+            {loadMoreHref ? (
+              <Link
+                href={loadMoreHref}
+                className="inline-flex items-center rounded-md border border-black/10 bg-white/88 px-5 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-white"
+              >
+                다음 장면 더 보기
+              </Link>
+            ) : null}
           </div>
         ) : null}
 
-        {!showcaseError && matchesLoadedCount > 0 && !hasMore ? (
-          <p className="mt-10 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7c70]">
-            End of published archive
+        {!showcaseError && snapshots.length > 0 && !hasMore ? (
+          <p className="mt-8 text-center text-[10px] font-semibold tracking-[0.2em] text-[#8a7c70]">
+            현재 공개된 장면을 모두 확인했습니다
           </p>
         ) : null}
       </div>

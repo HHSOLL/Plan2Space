@@ -6,7 +6,12 @@ import { useCallback, useEffect, useState } from "react";
 import * as THREE from "three";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import {
+  useAssetSelector,
+  usePublishSelector,
+  useSelectionSelector,
+  useShellSelector
+} from "../../../lib/stores/scene-slices";
 
 const GRID_SNAP = 0.25;
 const ROTATION_SNAP = Math.PI / 2;
@@ -25,13 +30,13 @@ export default function AssetTransformControls() {
   const transformMode = useEditorStore((state) => state.transformMode);
   const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
   const readOnly = useEditorStore((state) => state.readOnly);
-  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
-  const assets = useSceneStore((state) => state.assets);
-  const walls = useSceneStore((state) => state.walls);
-  const ceilings = useSceneStore((state) => state.ceilings);
-  const scale = useSceneStore((state) => state.scale);
-  const updateFurniture = useSceneStore((state) => state.updateFurniture);
-  const recordSnapshot = useSceneStore((state) => state.recordSnapshot);
+  const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
+  const assets = useAssetSelector((slice) => slice.assets);
+  const updateFurniture = useAssetSelector((slice) => slice.updateFurniture);
+  const walls = useShellSelector((slice) => slice.walls);
+  const ceilings = useShellSelector((slice) => slice.ceilings);
+  const scale = useShellSelector((slice) => slice.scale);
+  const recordSnapshot = usePublishSelector((slice) => slice.recordSnapshot);
 
   const [target, setTarget] = useState<THREE.Object3D | null>(null);
 

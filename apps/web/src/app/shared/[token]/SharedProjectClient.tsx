@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { ArrowUpRight, Box, Layers3, Link2, Play, Sparkles } from "lucide-react";
-import { SceneViewport } from "../../../components/editor/SceneViewport";
+import { Box, Link2, Play } from "lucide-react";
+import { ProductHotspotDrawer } from "../../../components/viewer/ProductHotspotDrawer";
+import { ReadOnlySceneViewport } from "../../../components/viewer/ReadOnlySceneViewport";
 import { StudioMetricGrid } from "../../../components/editor/StudioMetricGrid";
 import { StudioModeToggle } from "../../../components/editor/StudioModeToggle";
+import { StudioWorkspaceShell } from "../../../components/layout/StudioWorkspaceShell";
 import { useAssetCatalog } from "../../../components/editor/useAssetCatalog";
 import { getScaleGateMessage } from "../../../lib/ai/scaleInfo";
 import {
@@ -17,7 +19,8 @@ import { toSceneStorePatch, type SceneDocumentBootstrap } from "../../../lib/dom
 import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
 import { resolveShareCapabilities, type SharePermission } from "../../../lib/share/permissions";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore } from "../../../lib/stores/useSceneStore";
+import { useCameraStore, useSelectionStore, useShellStore } from "../../../lib/stores/scene-slices";
+import type { ProductHotspot } from "../../../lib/viewer/hotspots";
 
 type SharedProjectClientProps = {
   projectName: string;
@@ -27,19 +30,6 @@ type SharedProjectClientProps = {
   expiresAt: string | null;
   pinnedVersionNumber: number | null;
   previewAssetSummary: ProjectAssetSummary | null;
-};
-
-type ViewerHotspotCard = {
-  id: string;
-  label: string;
-  category: string;
-  collection: string;
-  tone: "sand" | "olive" | "slate" | "ember";
-  anchorType: string;
-  index: number;
-  vendor: string | null;
-  price: string | null;
-  imageUrl: string | null;
 };
 
 function toMetadataRecord(value: unknown): Record<string, unknown> | null {
@@ -85,11 +75,6 @@ function readMetadataPrice(record: Record<string, unknown> | null) {
   return null;
 }
 
-function formatPosition(position: [number, number, number] | null) {
-  if (!position) return null;
-  return `${position[0].toFixed(2)}, ${position[1].toFixed(2)}, ${position[2].toFixed(2)}`;
-}
-
 export function SharedProjectClient({
   projectName,
   projectDescription,
@@ -99,10 +84,9 @@ export function SharedProjectClient({
   pinnedVersionNumber,
   previewAssetSummary
 }: SharedProjectClientProps) {
-  const setScene = useSceneStore((state) => state.setScene);
-  const resetScene = useSceneStore((state) => state.resetScene);
-  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
-  const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
+  const { setScene, resetScene } = useShellStore();
+  const { selectedAssetId, setSelectedAssetId } = useSelectionStore();
+  const { setEntranceId } = useCameraStore();
   const applyShellPreset = useEditorStore((state) => state.applyShellPreset);
   const resetShellState = useEditorStore((state) => state.resetShellState);
   const setViewMode = useEditorStore((state) => state.setViewMode);
@@ -128,7 +112,7 @@ export function SharedProjectClient({
         source: "unknown" as const,
         confidence: 0,
         evidence: {
-          notes: "Shared project has no saved version yet."
+          notes: "저장된 장면 버전이 없습니다."
         }
       },
       wallMaterialIndex: 0,
@@ -165,13 +149,13 @@ export function SharedProjectClient({
       lighting: scenePayload.lighting
     });
     setSelectedAssetId(scenePayload.assets[0]?.id ?? null);
-    useSceneStore.setState({ entranceId: scenePayload.entranceId });
+    setEntranceId(scenePayload.entranceId);
     applyShellPreset("viewer");
     return () => {
       resetShellState();
       resetScene();
     };
-  }, [applyShellPreset, resetScene, resetShellState, scenePayload, setScene, setSelectedAssetId]);
+  }, [applyShellPreset, resetScene, resetShellState, scenePayload, setEntranceId, setScene, setSelectedAssetId]);
 
   const placedAssetSummary = useMemo(
     () => summarizePlacedCatalogItems(catalog, scenePayload.assets, 4),
@@ -191,16 +175,19 @@ export function SharedProjectClient({
         const metadata = toMetadataRecord(sceneNode?.metadata ?? null);
         return {
           id: asset.id,
-          label: catalogItem?.label ?? asset.assetId,
-          category: catalogItem?.category ?? "Uncatalogued",
-          collection: catalogItem?.collection ?? "Custom",
+          name: catalogItem?.label ?? asset.assetId,
+          category: catalogItem?.category ?? "미분류",
+          collection: catalogItem?.collection ?? "사용자 배치",
           tone: catalogItem?.tone ?? "slate",
           anchorType: normalizeSceneAnchorType(asset.anchorType),
           index,
-          vendor: readMetadataText(metadata, "vendor"),
+          brand: readMetadataText(metadata, "vendor"),
           price: readMetadataPrice(metadata),
-          imageUrl: readMetadataImageUrl(metadata)
-        } satisfies ViewerHotspotCard;
+          thumbnail: readMetadataImageUrl(metadata),
+          options: readMetadataText(metadata, "variant"),
+          externalUrl: readMetadataUrl(metadata, "productUrl"),
+          material: readMetadataText(metadata, "material")
+        } satisfies ProductHotspot;
       }),
     [catalog, mappedScene, scenePayload.assets]
   );
@@ -208,35 +195,10 @@ export function SharedProjectClient({
     () => assetHotspots.find((asset) => asset.id === selectedAssetId) ?? null,
     [assetHotspots, selectedAssetId]
   );
-  const selectedPreview = selectedHotspot ? getCatalogPreviewClasses(selectedHotspot.tone) : null;
-  const selectedSceneAsset = useMemo(
-    () => scenePayload.assets.find((asset) => asset.id === selectedAssetId) ?? null,
-    [scenePayload.assets, selectedAssetId]
-  );
-  const selectedSceneNode = useMemo(
-    () => mappedScene?.document.nodes.find((node) => node.id === selectedAssetId) ?? null,
-    [mappedScene, selectedAssetId]
-  );
-  const selectedMetadata = useMemo(
-    () => toMetadataRecord(selectedSceneNode?.metadata ?? null),
-    [selectedSceneNode]
-  );
-  const selectedProductFields = useMemo(
-    () => ({
-      position: formatPosition(selectedSceneAsset?.position ?? null),
-      sku: readMetadataText(selectedMetadata, "sku"),
-      vendor: readMetadataText(selectedMetadata, "vendor"),
-      material: readMetadataText(selectedMetadata, "material"),
-      variant: readMetadataText(selectedMetadata, "variant"),
-      price: readMetadataPrice(selectedMetadata),
-      productUrl: readMetadataUrl(selectedMetadata, "productUrl"),
-      imageUrl: readMetadataImageUrl(selectedMetadata)
-    }),
-    [selectedMetadata, selectedSceneAsset]
-  );
+  const selectedHotspotLabel = selectedHotspot?.name ?? null;
   const viewerModes = [
-    { id: "top", label: "Top View", icon: Box },
-    { id: "walk", label: "Walk", icon: Play, enabled: canEnterWalk }
+    { id: "top", label: "상단뷰", icon: Box },
+    { id: "walk", label: "워크뷰", icon: Play, enabled: canEnterWalk }
   ];
 
   if (isVersionMappingFailed) {
@@ -245,23 +207,23 @@ export function SharedProjectClient({
         <div className="mx-auto max-w-4xl rounded-[24px] border border-[#c06e3d]/20 bg-white p-8 shadow-[0_18px_46px_rgba(40,30,21,0.12)]">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#c06e3d]/25 bg-[#fff7f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#a75f37]">
             <Link2 className="h-3.5 w-3.5" />
-            Snapshot unavailable
+            스냅샷 로드 실패
           </div>
-          <h1 className="mt-5 text-4xl font-cormorant font-light tracking-tight text-[#1d1712] sm:text-5xl">
-            This shared snapshot cannot be rendered.
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-[#1d1712] sm:text-4xl">
+            공유 스냅샷을 렌더링할 수 없습니다.
           </h1>
           <p className="mt-4 text-sm leading-7 text-[#61574d]">
-            The saved version exists, but its scene data is incompatible with the current viewer mapper.
+            저장된 버전은 존재하지만 현재 viewer 매퍼와 장면 데이터가 호환되지 않습니다.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-[14px] border border-black/10 bg-[#faf7f2] p-4 text-sm text-[#5b5146]">
-              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">Project</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">프로젝트</div>
               <div className="mt-2 font-semibold text-[#1f1b16]">{projectName}</div>
             </div>
             <div className="rounded-[14px] border border-black/10 bg-[#faf7f2] p-4 text-sm text-[#5b5146]">
-              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">Pinned version</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">고정 버전</div>
               <div className="mt-2 font-semibold text-[#1f1b16]">
-                {pinnedVersionNumber ? `v${pinnedVersionNumber}` : "Unknown"}
+                {pinnedVersionNumber ? `v${pinnedVersionNumber}` : "알 수 없음"}
               </div>
             </div>
           </div>
@@ -278,23 +240,23 @@ export function SharedProjectClient({
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[#7e7367]">
               <Link2 className="h-4 w-4" />
-              Shared scene
+              공유 장면
             </div>
-            <h1 className="mt-4 text-4xl font-cormorant font-light tracking-tight text-[#18130f] sm:text-5xl">{projectName}</h1>
+            <h1 className="mt-4 text-4xl font-light tracking-tight text-[#18130f] sm:text-5xl">{projectName}</h1>
             {projectDescription ? (
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[#5f564b] sm:text-[15px]">{projectDescription}</p>
             ) : null}
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7e7367]">
-              <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">{shareCapabilities.accessLabel}</span>
-              <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">
-                {scenePayload.assets.length} products
-              </span>
+                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">{shareCapabilities.accessLabel}</span>
+                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">
+                  제품 {scenePayload.assets.length}개
+                </span>
               {pinnedVersionNumber ? (
-                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">Version {pinnedVersionNumber}</span>
+                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">버전 {pinnedVersionNumber}</span>
               ) : null}
               {expiresAt ? (
                 <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">
-                  Expires {new Date(expiresAt).toLocaleDateString()}
+                  만료 {new Date(expiresAt).toLocaleDateString()}
                 </span>
               ) : null}
             </div>
@@ -304,7 +266,7 @@ export function SharedProjectClient({
             <div className="flex flex-wrap items-center gap-3">
               {shareCapabilities.showPreviewNotice ? (
                 <div className="rounded-full border border-amber-500/30 bg-amber-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5a25]">
-                  View-only link
+                  읽기 전용 링크
                 </div>
               ) : null}
               <StudioModeToggle
@@ -318,23 +280,23 @@ export function SharedProjectClient({
             <StudioMetricGrid
               items={[
                 {
-                  label: "Snapshot",
-                  value: pinnedVersionNumber ? `Pinned v${pinnedVersionNumber}` : "Live shared scene"
+                  label: "스냅샷",
+                  value: pinnedVersionNumber ? `고정 v${pinnedVersionNumber}` : "공유 장면"
                 },
                 {
-                  label: "Products",
-                  value: `${scenePayload.assets.length} placed pieces`
+                  label: "배치 제품",
+                  value: `${scenePayload.assets.length}개`
                 },
                 {
-                  label: "Scene",
+                  label: "장면",
                   value:
                     scenePayload.rooms.length > 0
-                      ? `${scenePayload.rooms.length} room zones`
-                      : `${scenePayload.floors.length} floor surfaces`
+                      ? `${scenePayload.rooms.length}개 구역`
+                      : `${scenePayload.floors.length}개 바닥 면`
                 },
                 {
-                  label: "Access",
-                  value: shareCapabilities.showPreviewNotice ? "Read-only" : "Shared viewer"
+                  label: "권한",
+                  value: shareCapabilities.showPreviewNotice ? "읽기 전용" : "공유 뷰어"
                 }
               ]}
               gridClassName="grid w-full gap-3 sm:grid-cols-2 lg:min-w-[420px]"
@@ -346,221 +308,20 @@ export function SharedProjectClient({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_380px]">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7c70]">Viewer canvas</div>
-                <p className="mt-1 text-sm leading-6 text-[#665c51]">
-                  Inspect the furnished room in a calm read-only shell. Select hotspots to review products.
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/86 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#6e6458]">
-                <Layers3 className="h-4 w-4" />
-                Read-only presentation
-              </div>
-            </div>
-            <div className="overflow-hidden rounded-[30px] border border-black/10 bg-white shadow-[0_20px_54px_rgba(16,18,22,0.16)]">
-              <div className="flex items-center justify-between gap-3 border-b border-black/8 bg-[#fcfaf6] px-4 py-3 sm:px-5">
-                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7a7064]">
-                  {viewMode === "top" ? "Planner overview" : "Immersive walkthrough"}
-                </div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8e8377]">
-                  {selectedHotspot ? `Focused on ${selectedHotspot.label}` : "No product selected"}
-                </div>
-              </div>
-            <SceneViewport
-              className="h-[72vh] rounded-none border-0 shadow-none sm:h-[78vh]"
-              camera={{ fov: 45, position: [0, 8, 14] }}
-              toneMappingExposure={1.05}
-              chromeTone="light"
-              modeBadge={viewMode === "top" ? "Read-only top view" : "Read-only walkthrough"}
-              bottomNotice={
-                shareCapabilities.showPreviewNotice
-                  ? "This link opens in read-only mode for safe public viewing."
-                  : null
-              }
-            />
-          </div>
-          </div>
+        <StudioWorkspaceShell className="mt-6">
+          <ReadOnlySceneViewport
+            viewMode={viewMode === "walk" ? "walk" : "top"}
+            selectedLabel={selectedHotspotLabel}
+            showReadOnlyNotice={shareCapabilities.showPreviewNotice}
+          />
 
-          <aside className="rounded-[24px] border border-black/10 bg-[#faf8f4] p-4 shadow-[0_14px_34px_rgba(16,18,22,0.1)] sm:p-5 xl:sticky xl:top-8 xl:self-start">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e7367]">
-                  <Sparkles className="h-4 w-4" />
-                  Product inspection
-                </div>
-                <p className="mt-2 text-xs leading-6 text-[#6a6055]">
-                  Select markers in the room or choose items from the list.
-                </p>
-              </div>
-              <span className="rounded-full border border-black/10 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#695f55]">
-                {assetHotspots.length}
-              </span>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div className={`rounded-[20px] border border-black/10 p-4 ${selectedPreview?.surface ?? "bg-white"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7e7367]">Selected product</div>
-                  <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#6e6458]">
-                    {selectedHotspot ? `Hotspot #${selectedHotspot.index + 1}` : "Awaiting selection"}
-                  </span>
-                </div>
-                {selectedHotspot ? (
-                  <div className="mt-3">
-                    {selectedProductFields.imageUrl ? (
-                      <div className="mb-3 overflow-hidden rounded-[14px] border border-black/10 bg-white/70">
-                        <img
-                          src={selectedProductFields.imageUrl}
-                          alt={selectedHotspot.label}
-                          className="h-36 w-full object-cover"
-                        />
-                      </div>
-                    ) : null}
-                    <div className="text-lg font-semibold leading-tight text-[#1f1b16]">{selectedHotspot.label}</div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#6e6458]">
-                        {selectedHotspot.category}
-                      </span>
-                      <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#6e6458]">
-                        {selectedHotspot.collection}
-                      </span>
-                      <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#6e6458]">
-                        {selectedHotspot.anchorType.replaceAll("_", " ")}
-                      </span>
-                    </div>
-                    {selectedProductFields.price ? (
-                      <p className="mt-4 text-lg font-semibold text-[#1f1b16]">{selectedProductFields.price}</p>
-                    ) : null}
-                    <div className="mt-3 grid gap-2 text-[11px] text-[#5f564b]">
-                      {selectedProductFields.vendor ? (
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/70 px-2.5 py-2">
-                          <span className="uppercase tracking-[0.12em] text-[#84796d]">Vendor</span>
-                          <span className="font-semibold text-[#1f1b16]">{selectedProductFields.vendor}</span>
-                        </div>
-                      ) : null}
-                      {selectedProductFields.material ? (
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/70 px-2.5 py-2">
-                          <span className="uppercase tracking-[0.12em] text-[#84796d]">Material</span>
-                          <span className="font-semibold text-[#1f1b16]">{selectedProductFields.material}</span>
-                        </div>
-                      ) : null}
-                      {selectedProductFields.variant ? (
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/70 px-2.5 py-2">
-                          <span className="uppercase tracking-[0.12em] text-[#84796d]">Variant</span>
-                          <span className="font-semibold text-[#1f1b16]">{selectedProductFields.variant}</span>
-                        </div>
-                      ) : null}
-                      {selectedProductFields.sku ? (
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/70 px-2.5 py-2">
-                          <span className="uppercase tracking-[0.12em] text-[#84796d]">SKU</span>
-                          <span className="font-semibold text-[#1f1b16]">{selectedProductFields.sku}</span>
-                        </div>
-                      ) : null}
-                    </div>
-                    {selectedProductFields.productUrl ? (
-                      <a
-                        href={selectedProductFields.productUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-black/15 bg-[#f3eee5] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#1f1b16] transition hover:bg-[#ebe4d7]"
-                      >
-                        Open product page
-                        <ArrowUpRight className="h-4 w-4" />
-                      </a>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-[#61574d]">
-                    No product selected yet. Choose a hotspot from the canvas or product list to inspect details.
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-[18px] border border-black/10 bg-white p-4">
-                <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7e7367]">
-                  <span>Hotspot list</span>
-                  <span>{assetHotspots.length}</span>
-                </div>
-                {assetHotspots.length > 0 ? (
-                  <div className="mt-3 max-h-[340px] space-y-2.5 overflow-y-auto pr-1">
-                    {assetHotspots.map((hotspot) => {
-                      const preview = getCatalogPreviewClasses(hotspot.tone);
-                      const isActive = hotspot.id === selectedAssetId;
-                      return (
-                        <button
-                          key={hotspot.id}
-                          type="button"
-                          onClick={() => setSelectedAssetId(hotspot.id)}
-                          aria-pressed={isActive}
-                          aria-label={`Inspect hotspot ${hotspot.index + 1}: ${hotspot.label}`}
-                          className={`group flex w-full items-stretch gap-3 rounded-[18px] border p-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 ${
-                            isActive
-                              ? "border-black/15 bg-[#f8f4ed] shadow-[0_14px_30px_rgba(29,24,18,0.08)]"
-                              : "border-black/10 bg-[#fcfbf8] hover:border-black/20 hover:bg-white"
-                          }`}
-                        >
-                          <div className={`relative h-[86px] w-[92px] shrink-0 overflow-hidden rounded-[14px] border border-black/10 ${preview.surface}`}>
-                            {hotspot.imageUrl ? (
-                              <img src={hotspot.imageUrl} alt={hotspot.label} className="h-full w-full object-cover" />
-                            ) : (
-                              <>
-                                <div className="absolute inset-x-3 bottom-3 h-6 rounded-full bg-black/10 blur-md" />
-                                <div className="absolute inset-x-4 bottom-4 h-8 rounded-[14px] border border-black/10 bg-white/50" />
-                                <div className="absolute bottom-6 left-1/2 h-8 w-8 -translate-x-1/2 rounded-[12px] border border-black/10 bg-white/60" />
-                              </>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1 py-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold text-[#1f1b16]">{hotspot.label}</div>
-                                <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6f655a]">
-                                  {hotspot.collection}
-                                </div>
-                                {hotspot.vendor ? (
-                                  <div className="mt-1 truncate text-xs text-[#6f655a]">{hotspot.vendor}</div>
-                                ) : null}
-                              </div>
-                              <span
-                                className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] ${
-                                  isActive
-                                    ? "bg-[#171411] text-white"
-                                    : "border border-black/10 bg-white text-[#6f655a]"
-                                }`}
-                              >
-                                #{hotspot.index + 1}
-                              </span>
-                            </div>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              <span className="rounded-full border border-black/10 bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#736659]">
-                                {hotspot.category}
-                              </span>
-                              <span className="rounded-full border border-black/10 bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#736659]">
-                                {hotspot.anchorType.replaceAll("_", " ")}
-                              </span>
-                              {hotspot.price ? (
-                                <span className="rounded-full border border-black/10 bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#736659]">
-                                  {hotspot.price}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-[#61574d]">
-                    This room does not have visible hotspot products yet.
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-[18px] border border-black/10 bg-white p-4">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7e7367]">Room mix</div>
+          <ProductHotspotDrawer
+            hotspots={assetHotspots}
+            selectedHotspotId={selectedAssetId}
+            onSelectHotspot={setSelectedAssetId}
+          >
+            <div className="rounded-[18px] border border-black/10 bg-white p-4">
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7e7367]">배치 요약</div>
                 {summaryItemsForRail && summaryItemsForRail.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {summaryItemsForRail.map((item) => {
@@ -584,7 +345,7 @@ export function SharedProjectClient({
                     })}
                     {summaryUncataloguedCount > 0 ? (
                       <p className="text-xs leading-6 text-[#6a6055]">
-                        {summaryUncataloguedCount} uncatalogued piece{summaryUncataloguedCount > 1 ? "s" : ""} omitted from this list.
+                        목록에 매칭되지 않은 제품 {summaryUncataloguedCount}개는 요약에서 제외되었습니다.
                       </p>
                     ) : null}
                   </div>
@@ -608,13 +369,13 @@ export function SharedProjectClient({
                     })}
                     {placedAssetSummary.unmatchedCount > 0 ? (
                       <p className="text-xs leading-6 text-[#6a6055]">
-                        {placedAssetSummary.unmatchedCount} uncatalogued piece{placedAssetSummary.unmatchedCount > 1 ? "s" : ""} omitted from this list.
+                        목록에 매칭되지 않은 제품 {placedAssetSummary.unmatchedCount}개는 요약에서 제외되었습니다.
                       </p>
                     ) : null}
                   </div>
                 ) : (
                   <p className="mt-3 text-sm leading-6 text-[#61574d]">
-                    No catalogued products were found in this snapshot.
+                    카탈로그 매칭 제품이 없습니다.
                   </p>
                 )}
 
@@ -631,9 +392,8 @@ export function SharedProjectClient({
                   </div>
                 ) : null}
               </div>
-            </div>
-          </aside>
-        </div>
+          </ProductHotspotDrawer>
+        </StudioWorkspaceShell>
       </div>
     </div>
   );

@@ -1,78 +1,78 @@
 export const translations = {
-    en: {
-        hero: {
-            subtitle_1: "Generative Design",
-            subtitle_2: "Spatial Computing",
-            title: "Redefine\nYour Space",
-            cta_new: "Start Project",
-            cta_gallery: "View Gallery",
-        },
-        analysis: {
-            tag_1: "AI Analysis",
-            tag_2: "Real-time Render",
-            section_tag: "Spatial Intelligence",
-            title: "Smart Blueprint Analysis",
-            description: "Transform your 2D blueprints into 3D models instantly. Our AI interprets spatial semantics to convert floor plans into editable data in seconds.",
-            features: {
-                recognition: { label: "Recognition Depth", value: "High-Precision" },
-                texturing: { label: "Auto-Texturing", value: "Generative" },
-                physics: { label: "Physics Engine", value: "Real-time" },
-                cloud: { label: "Cloud Sync", value: "Instant" },
-            },
-        },
-        atmosphere: {
-            tag: "Materiality",
-            title: "Curated atmospheres, digitally mastered",
-            cta: "View Asset Library",
-        },
-        demo: {
-            tag: "Process",
-            title: "Watch our AI in motion",
-        },
-        footer: {
-            slogan: "Leading the convergence of spatial AI and architectural design.",
-            platform: "Platform",
-            social: "Social",
-            legal: "Legal",
-            copyright: "Made with Precision",
-        },
+  en: {
+    hero: {
+      subtitle_1: "Room builder",
+      subtitle_2: "Scene editor",
+      title: "Design your room\nwith practical controls",
+      cta_new: "Create room",
+      cta_gallery: "Open gallery"
     },
-    ko: {
-        hero: {
-            subtitle_1: "생성형 디자인",
-            subtitle_2: "공간 컴퓨팅",
-            title: "공간을 새롭게\n정의하다",
-            cta_new: "프로젝트 시작",
-            cta_gallery: "갤러리 보기",
-        },
-        analysis: {
-            tag_1: "AI 분석",
-            tag_2: "실시간 렌더링",
-            section_tag: "공간 지능",
-            title: "스마트 도면 분석",
-            description: "2D 도면을 순식간에 3D 모델로 변환하세요. AI가 공간의 의미를 해석하여 즉시 편집 가능한 데이터로 변환합니다.",
-            features: {
-                recognition: { label: "인식 정밀도", value: "초정밀" },
-                texturing: { label: "자동 텍스처링", value: "생성형 AI" },
-                physics: { label: "물리 엔진", value: "실시간" },
-                cloud: { label: "클라우드 동기화", value: "즉시 반영" },
-            },
-        },
-        atmosphere: {
-            tag: "마감재 & 분위기",
-            title: "디지털로 완성되는 감각적인 분위기",
-            cta: "에셋 라이브러리 보기",
-        },
-        demo: {
-            tag: "프로세스",
-            title: "AI 디자인 프로세스 미리보기",
-        },
-        footer: {
-            slogan: "공간 AI와 건축 디자인의 융합을 선도합니다.",
-            platform: "플랫폼",
-            social: "소셜",
-            legal: "법적 고지",
-            copyright: "정밀함으로 완성되다",
-        },
+    analysis: {
+      tag_1: "Room-first",
+      tag_2: "3D viewer",
+      section_tag: "Scene workflow",
+      title: "Builder to viewer workflow",
+      description: "Create a room shell, place products, publish a snapshot, and open it in read-only viewer surfaces.",
+      features: {
+        recognition: { label: "Room setup", value: "Guided" },
+        texturing: { label: "Style", value: "Wall & floor" },
+        physics: { label: "Placement", value: "Snap-aware" },
+        cloud: { label: "Sharing", value: "Published snapshot" }
+      }
     },
+    atmosphere: {
+      tag: "Products",
+      title: "Utility-first product placement",
+      cta: "Open asset library"
+    },
+    demo: {
+      tag: "Flow",
+      title: "Builder → Editor → Viewer"
+    },
+    footer: {
+      slogan: "Room-first interior planning platform.",
+      platform: "Platform",
+      social: "Social",
+      legal: "Legal",
+      copyright: "Plan2Space"
+    }
+  },
+  ko: {
+    hero: {
+      subtitle_1: "공간 빌더",
+      subtitle_2: "장면 편집",
+      title: "실용적인 도구로\n공간을 설계하세요",
+      cta_new: "공간 만들기",
+      cta_gallery: "갤러리 열기"
+    },
+    analysis: {
+      tag_1: "room-first",
+      tag_2: "3D 뷰어",
+      section_tag: "장면 워크플로",
+      title: "빌더에서 뷰어까지",
+      description: "방 껍데기를 만들고 제품을 배치한 뒤 장면을 발행하면, 읽기 전용 뷰어에서 동일하게 확인할 수 있습니다.",
+      features: {
+        recognition: { label: "공간 설정", value: "단계형" },
+        texturing: { label: "스타일", value: "벽/바닥" },
+        physics: { label: "배치", value: "스냅 지원" },
+        cloud: { label: "공유", value: "발행 스냅샷" }
+      }
+    },
+    atmosphere: {
+      tag: "제품",
+      title: "조작 중심 제품 배치",
+      cta: "제품 목록 열기"
+    },
+    demo: {
+      tag: "흐름",
+      title: "빌더 → 에디터 → 뷰어"
+    },
+    footer: {
+      slogan: "room-first 인테리어 설계 플랫폼",
+      platform: "플랫폼",
+      social: "소셜",
+      legal: "법적 고지",
+      copyright: "Plan2Space"
+    }
+  }
 };

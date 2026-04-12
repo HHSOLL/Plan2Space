@@ -6,7 +6,6 @@ import { useState } from "react";
 import { ArrowRight, DraftingCompass, Layers3, MoveUpRight, ShieldCheck, Sparkles, WandSparkles } from "lucide-react";
 import { AuthPopup } from "../components/overlay/AuthPopup";
 import { useAuthStore } from "../lib/stores/useAuthStore";
-import { useLanguageStore } from "../lib/stores/useLanguageStore";
 
 const CATEGORY_IMAGES = [
   "/home/img1.jpg",
@@ -24,14 +23,14 @@ const SHOWCASE_IMAGES = [
 
 const COPY = {
   en: {
-    heroEyebrow: "Deskterior-first builder",
-    heroTitle: "Design a desk and room story with editorial calm.",
+    heroEyebrow: "Room-first builder",
+    heroTitle: "Create a room, edit the scene, and publish in one flow.",
     heroBody:
-      "Plan2Space now opens like a premium interior collection. Start from a room shell, explore desk setups, then move into builder and editor with the same scene.",
-    heroPrimary: "Template Quick Start",
-    heroSecondary: "Custom Room Builder",
+      "Plan2Space starts with room setup. Define shape and dimensions, place openings, pick finishes, then continue to editor for furniture placement and sharing.",
+    heroPrimary: "Start from template",
+    heroSecondary: "Create custom room",
     entryEyebrow: "How to start",
-    entryTitle: "Choose one primary path and enter the builder flow.",
+    entryTitle: "Select a starting path and enter the 4-step builder.",
     entryCards: [
       {
         title: "Start from template",
@@ -49,55 +48,55 @@ const COPY = {
       }
     ],
     entryTertiary: "Open projects",
-    heroCardEyebrow: "Featured setup",
-    heroCardTitle: "Quiet tech corner",
-    heroCardBody: "Warm wood, diffuse light, and layered display surfaces for focused deskterior composition.",
+    heroCardEyebrow: "Published scene",
+    heroCardTitle: "Warm living room",
+    heroCardBody: "Room shell, opening placement, and material decisions are ready for editor and viewer.",
     benefits: [
       { title: "Builder-ready", body: "Room shell creation without upload friction.", icon: DraftingCompass },
-      { title: "Surface-aware", body: "Desk and shelf placement that feels intentional.", icon: Layers3 },
+      { title: "Placement-aware", body: "Furniture placement and scene editing stay in one canvas.", icon: Layers3 },
       { title: "Walk review", body: "Top view and spatial validation in one flow.", icon: Sparkles },
       { title: "Saved scenes", body: "Publishable snapshots with viewer-ready detail.", icon: ShieldCheck }
     ],
-    categoriesEyebrow: "Workspace directions",
-    categoriesTitle: "Choose a composition language before you place a single asset.",
+    categoriesEyebrow: "Room directions",
+    categoriesTitle: "Choose the room mood before you place products.",
     categories: [
-      { title: "Monochrome Focus", body: "Dark desktop, glass monitor stand, and plant-led contrast.", image: CATEGORY_IMAGES[0] },
-      { title: "Collector Shelf", body: "Layered desk objects, pegboard storage, and cozy utility.", image: CATEGORY_IMAGES[1] },
-      { title: "Warm Archive", body: "Soft lamp glow, framed prints, and calm brown timber.", image: CATEGORY_IMAGES[2] },
-      { title: "Clean Utility", body: "Bright wall system with tidy accessories and open breathing room.", image: CATEGORY_IMAGES[3] }
+      { title: "Calm Neutral", body: "Neutral walls and warm flooring for flexible furniture composition.", image: CATEGORY_IMAGES[0] },
+      { title: "Family Utility", body: "Storage-first layout with clear circulation zones.", image: CATEGORY_IMAGES[1] },
+      { title: "Warm Comfort", body: "Soft lighting and timber accents for living spaces.", image: CATEGORY_IMAGES[2] },
+      { title: "Clean Modern", body: "Bright surfaces and minimal clutter for high visibility.", image: CATEGORY_IMAGES[3] }
     ],
-    editorialEyebrow: "Editorial setup note",
-    editorialTitle: "Deskterior should feel curated, not randomly filled.",
+    editorialEyebrow: "Editor guide",
+    editorialTitle: "Use builder first, then place products in editor.",
     editorialBody:
-      "Use the builder to define envelope and circulation first, then stage objects with hierarchy. Screens, speakers, shelves, and task lighting should read like a composed system.",
-    editorialPrimary: "Launch Builder",
+      "After room setup, add products in editor, move/rotate for alignment, and publish for read-only viewer sharing.",
+    editorialPrimary: "Open builder",
     editorialSecondary: "View Gallery",
     showcaseEyebrow: "Highlighted scenes",
-    showcaseTitle: "A darker shelf for publishable setups.",
+    showcaseTitle: "Published scenes ready for read-only viewing.",
     showcaseCta: "View all",
-    showcaseButton: "Open in builder",
+    showcaseButton: "Open scene",
     showcaseCards: [
-      { title: "Daylight Utility", tag: "monitor shelf", image: SHOWCASE_IMAGES[0] },
-      { title: "Object Library", tag: "desk styling", image: SHOWCASE_IMAGES[1] },
-      { title: "Soft Studio Rack", tag: "speaker-focused", image: SHOWCASE_IMAGES[2] },
-      { title: "Sunlit Maker Desk", tag: "collector corner", image: SHOWCASE_IMAGES[3] }
+      { title: "Daylight Living", tag: "read-only viewer", image: SHOWCASE_IMAGES[0] },
+      { title: "Storage-forward Room", tag: "product placement", image: SHOWCASE_IMAGES[1] },
+      { title: "Compact Studio", tag: "camera review", image: SHOWCASE_IMAGES[2] },
+      { title: "Warm Family Space", tag: "published scene", image: SHOWCASE_IMAGES[3] }
     ],
     finalTitle: "Move from inspiration to an editable scene.",
-    finalBody: "Use the builder when you want control, and keep gallery/community public when you only want to browse."
+    finalBody: "Builder, editor, gallery, and community all connect to the same scene model and read-only viewer."
   },
   ko: {
-    heroEyebrow: "Deskterior-first builder",
-    heroTitle: "에디토리얼 무드로 방과 데스크 장면을 함께 설계하세요.",
+    heroEyebrow: "룸 빌더",
+    heroTitle: "방을 만들고, 편집하고, 발행하세요.",
     heroBody:
-      "이제 Plan2Space 홈은 프리미엄 인테리어 컬렉션처럼 시작합니다. 방 shell을 먼저 만들고, 데스크 구성을 참고한 뒤 같은 scene 위에서 builder와 editor로 이어집니다.",
+      "Plan2Space는 방 생성에서 시작합니다. 모양/치수/문창/스타일을 설정한 뒤 editor에서 가구를 배치하고 공유 링크로 발행합니다.",
     heroPrimary: "템플릿으로 빠르게 시작",
     heroSecondary: "커스텀 방 만들기",
     entryEyebrow: "시작하는 방법",
-    entryTitle: "먼저 하나의 시작 경로를 선택하고 builder 흐름으로 들어가세요.",
+    entryTitle: "시작 경로를 선택하고 4단계 빌더로 진입하세요.",
     entryCards: [
       {
         title: "템플릿으로 시작하기",
-        body: "구성된 room shell을 선택하고 4단계 builder로 바로 이동합니다.",
+        body: "구성된 방 구조를 선택하고 4단계 빌더로 바로 이동합니다.",
         button: "공간 선택",
         image: "/home/img5.jpg",
         nextPath: "/studio/builder?intent=template"
@@ -111,52 +110,51 @@ const COPY = {
       }
     ],
     entryTertiary: "내 프로젝트 열기",
-    heroCardEyebrow: "Featured setup",
-    heroCardTitle: "조용한 테크 코너",
-    heroCardBody: "우드 톤, 확산 조명, 레이어드 선반 구조로 집중감 있는 deskterior를 만듭니다.",
+    heroCardEyebrow: "발행된 장면",
+    heroCardTitle: "따뜻한 거실 장면",
+    heroCardBody: "방 쉘, 문창 배치, 재질 선택이 완료된 장면입니다.",
     benefits: [
-      { title: "Builder-ready", body: "업로드 없이 바로 시작하는 room shell 작성.", icon: DraftingCompass },
-      { title: "Surface-aware", body: "책상과 선반 위 배치가 자연스럽게 정리됩니다.", icon: Layers3 },
-      { title: "Walk review", body: "Top view와 공간 검증을 같은 흐름에서 처리.", icon: Sparkles },
-      { title: "Saved scenes", body: "공유 가능한 스냅샷과 viewer 상세 확인.", icon: ShieldCheck }
+      { title: "빌더 준비", body: "업로드 없이 바로 방 쉘을 생성합니다.", icon: DraftingCompass },
+      { title: "배치 편집", body: "가구 배치와 정렬을 같은 캔버스에서 처리합니다.", icon: Layers3 },
+      { title: "시점 검토", body: "항공뷰/상단뷰/워크뷰로 공간을 확인합니다.", icon: Sparkles },
+      { title: "공유 장면", body: "발행 후 읽기 전용 뷰어로 동일하게 확인합니다.", icon: ShieldCheck }
     ],
-    categoriesEyebrow: "Workspace directions",
-    categoriesTitle: "자산을 놓기 전에, 어떤 장면 언어로 갈지 먼저 선택하세요.",
+    categoriesEyebrow: "공간 방향",
+    categoriesTitle: "제품을 놓기 전에 공간 무드를 먼저 선택하세요.",
     categories: [
-      { title: "모노크롬 포커스", body: "다크 데스크탑과 식물 대비로 차분한 집중감을 만듭니다.", image: CATEGORY_IMAGES[0] },
-      { title: "컬렉터 셸프", body: "오브제와 보드 스토리지가 층위감 있게 쌓이는 구성입니다.", image: CATEGORY_IMAGES[1] },
-      { title: "웜 아카이브", body: "램프 광원과 프린트, 브라운 우드의 온도를 살립니다.", image: CATEGORY_IMAGES[2] },
-      { title: "클린 유틸리티", body: "밝은 벽 시스템과 정리된 액세서리 중심의 구조입니다.", image: CATEGORY_IMAGES[3] }
+      { title: "차분한 뉴트럴", body: "중성 벽면과 우드 바닥으로 배치 유연성을 확보합니다.", image: CATEGORY_IMAGES[0] },
+      { title: "패밀리 유틸리티", body: "수납 중심 구성과 명확한 동선을 만듭니다.", image: CATEGORY_IMAGES[1] },
+      { title: "웜 컴포트", body: "은은한 조명과 따뜻한 재질로 거실 분위기를 만듭니다.", image: CATEGORY_IMAGES[2] },
+      { title: "클린 모던", body: "밝은 표면과 낮은 시각 잡음으로 가시성을 높입니다.", image: CATEGORY_IMAGES[3] }
     ],
-    editorialEyebrow: "Editorial setup note",
-    editorialTitle: "Deskterior는 채우는 것이 아니라 큐레이션하는 것입니다.",
+    editorialEyebrow: "에디터 가이드",
+    editorialTitle: "빌더 완료 후 에디터에서 제품을 배치하세요.",
     editorialBody:
-      "먼저 builder에서 외곽과 동선을 잡고, 그 다음 오브제를 계층적으로 배치하세요. 스크린, 스피커, 선반, 태스크 조명은 하나의 장면 시스템처럼 읽혀야 합니다.",
-    editorialPrimary: "Builder 열기",
-    editorialSecondary: "Gallery 보기",
-    showcaseEyebrow: "Highlighted scenes",
-    showcaseTitle: "발행 가능한 장면을 위한 다크 쇼케이스.",
+      "빌더에서 방을 확정한 다음 에디터에서 이동/회전/정렬을 수행하고 저장/발행까지 같은 흐름으로 진행합니다.",
+    editorialPrimary: "빌더 열기",
+    editorialSecondary: "갤러리 보기",
+    showcaseEyebrow: "추천 장면",
+    showcaseTitle: "읽기 전용 뷰어로 바로 볼 수 있는 발행 장면",
     showcaseCta: "전체 보기",
-    showcaseButton: "Builder에서 열기",
+    showcaseButton: "장면 열기",
     showcaseCards: [
-      { title: "데이라이트 유틸리티", tag: "monitor shelf", image: SHOWCASE_IMAGES[0] },
-      { title: "오브제 라이브러리", tag: "desk styling", image: SHOWCASE_IMAGES[1] },
-      { title: "소프트 스튜디오 랙", tag: "speaker-focused", image: SHOWCASE_IMAGES[2] },
-      { title: "선라이트 메이커 데스크", tag: "collector corner", image: SHOWCASE_IMAGES[3] }
+      { title: "데이라이트 리빙", tag: "읽기 전용 뷰어", image: SHOWCASE_IMAGES[0] },
+      { title: "수납 중심 공간", tag: "제품 배치", image: SHOWCASE_IMAGES[1] },
+      { title: "컴팩트 스튜디오", tag: "카메라 검토", image: SHOWCASE_IMAGES[2] },
+      { title: "웜 패밀리 스페이스", tag: "발행 장면", image: SHOWCASE_IMAGES[3] }
     ],
-    finalTitle: "무드 참고에서 편집 가능한 scene까지 바로 연결하세요.",
-    finalBody: "직접 만들고 싶을 때는 builder로, 둘러보기만 할 때는 gallery/community로 들어가면 됩니다."
+    finalTitle: "영감부터 편집/발행/조회까지 하나의 흐름으로 연결하세요.",
+    finalBody: "빌더, 에디터, 갤러리, 커뮤니티가 동일한 장면 모델과 읽기 전용 뷰어를 공유합니다."
   }
 } as const;
 
 export default function HomePage() {
   const router = useRouter();
   const { session } = useAuthStore();
-  const { language } = useLanguageStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authNextPath, setAuthNextPath] = useState<string | undefined>(undefined);
   const isAuthenticated = Boolean(session?.user);
-  const copy = COPY[language];
+  const copy = COPY.ko;
 
   const requireAuth = (nextPath: string) => {
     if (isAuthenticated) {
@@ -176,7 +174,7 @@ export default function HomePage() {
               <div className="relative min-h-[520px] overflow-hidden">
                 <Image
                   src="/home/img7.jpg"
-                  alt="Sunlit deskterior hero"
+                  alt="따뜻한 채광의 공간 장면"
                   fill
                   priority
                   sizes="(max-width: 1024px) 100vw, 72vw"
@@ -188,7 +186,7 @@ export default function HomePage() {
                 </div>
                 <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
                   <div className="max-w-2xl rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(19,14,10,0.12)_0%,rgba(19,14,10,0.36)_100%)] p-6 backdrop-blur-md sm:p-8">
-                    <h1 className="max-w-xl font-cormorant text-5xl font-light leading-[0.94] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
+                    <h1 className="max-w-xl text-5xl font-light leading-[0.94] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
                       {copy.heroTitle}
                     </h1>
                     <p className="mt-5 max-w-xl text-sm leading-7 text-white/80 sm:text-[15px]">{copy.heroBody}</p>
@@ -225,7 +223,7 @@ export default function HomePage() {
                 <div className="relative h-full min-h-[320px] overflow-hidden rounded-[30px] border border-black/8 bg-[#d8c9b6] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
                   <Image
                     src="/home/img6.jpg"
-                    alt="Featured desk setup"
+                    alt="추천 공간 장면"
                     fill
                     sizes="(max-width: 1024px) 100vw, 28vw"
                     className="object-cover"
@@ -235,7 +233,7 @@ export default function HomePage() {
                     <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/72">
                       {copy.heroCardEyebrow}
                     </div>
-                    <h2 className="mt-3 font-cormorant text-4xl font-light leading-none text-white">{copy.heroCardTitle}</h2>
+                    <h2 className="mt-3 text-4xl font-light leading-none text-white">{copy.heroCardTitle}</h2>
                     <p className="mt-3 max-w-sm text-sm leading-6 text-white/80">{copy.heroCardBody}</p>
                   </div>
                 </div>
@@ -245,7 +243,7 @@ export default function HomePage() {
 
           <section className="mt-10 rounded-[34px] border border-[#d7c9b7] bg-white/70 p-6 shadow-[0_20px_56px_rgba(68,52,34,0.08)] backdrop-blur sm:p-8">
             <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7d6f5f]">{copy.entryEyebrow}</div>
-            <h2 className="mt-3 font-cormorant text-4xl font-light text-[#17120d] sm:text-5xl">{copy.entryTitle}</h2>
+            <h2 className="mt-3 text-4xl font-light text-[#17120d] sm:text-5xl">{copy.entryTitle}</h2>
             <div className="mt-8 grid gap-5 lg:grid-cols-2">
               {copy.entryCards.map((card) => (
                 <article
@@ -262,7 +260,7 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="space-y-4 px-6 py-6">
-                    <h3 className="font-cormorant text-4xl font-light text-[#17120d]">{card.title}</h3>
+                    <h3 className="text-4xl font-light text-[#17120d]">{card.title}</h3>
                     <p className="text-sm leading-7 text-[#5f5245]">{card.body}</p>
                     <button
                       type="button"
@@ -295,7 +293,7 @@ export default function HomePage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#786957]">{copy.categoriesEyebrow}</div>
-                <h2 className="mt-3 max-w-3xl font-cormorant text-4xl font-light leading-tight text-[#19130e] sm:text-5xl">
+                <h2 className="mt-3 max-w-3xl text-4xl font-light leading-tight text-[#19130e] sm:text-5xl">
                   {copy.categoriesTitle}
                 </h2>
               </div>
@@ -325,7 +323,7 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="px-5 py-5">
-                    <h3 className="font-cormorant text-3xl font-light text-[#18120d]">{item.title}</h3>
+                    <h3 className="text-3xl font-light text-[#18120d]">{item.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-[#5f5245]">{item.body}</p>
                   </div>
                 </article>
@@ -336,7 +334,7 @@ export default function HomePage() {
           <section className="mt-16 grid gap-8 rounded-[34px] bg-[#f7f1e8] px-6 py-8 sm:px-8 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:px-10 lg:py-10">
             <div className="max-w-xl">
               <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a7b69]">{copy.editorialEyebrow}</div>
-              <h2 className="mt-4 font-cormorant text-4xl font-light leading-tight text-[#1b1510] sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-light leading-tight text-[#1b1510] sm:text-5xl">
                 {copy.editorialTitle}
               </h2>
               <p className="mt-5 text-sm leading-7 text-[#615346] sm:text-[15px]">{copy.editorialBody}</p>
@@ -363,7 +361,7 @@ export default function HomePage() {
               <div className="relative min-h-[360px] overflow-hidden rounded-[28px]">
                 <Image
                   src="/home/img5.jpg"
-                  alt="Curated desk styling"
+                  alt="Curated room styling"
                   fill
                   sizes="(max-width: 1024px) 100vw, 42vw"
                   className="object-cover"
@@ -373,16 +371,16 @@ export default function HomePage() {
                 <div className="relative min-h-[172px] overflow-hidden rounded-[24px]">
                   <Image
                     src="/home/img2.jpg"
-                    alt="Layered desk accessories"
+                    alt="Layered room accessories"
                     fill
                     sizes="(max-width: 1024px) 100vw, 24vw"
                     className="object-cover"
                   />
                 </div>
                 <div className="rounded-[24px] bg-[#111111] p-6 text-white">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/52">Deskterior cue</div>
-                  <p className="mt-4 font-cormorant text-3xl font-light leading-tight">
-                    Light, storage, and display should read like one composition.
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/52">공간 힌트</div>
+                  <p className="mt-4 text-3xl font-light leading-tight">
+                    조명, 수납, 배치가 하나의 장면처럼 읽혀야 합니다.
                   </p>
                 </div>
               </div>
@@ -393,7 +391,7 @@ export default function HomePage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/42">{copy.showcaseEyebrow}</div>
-                <h2 className="mt-4 font-cormorant text-4xl font-light sm:text-5xl">{copy.showcaseTitle}</h2>
+                <h2 className="mt-4 text-4xl font-light sm:text-5xl">{copy.showcaseTitle}</h2>
               </div>
               <button
                 type="button"
@@ -419,7 +417,7 @@ export default function HomePage() {
                   </div>
                   <div className="px-5 py-5">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/44">{item.tag}</div>
-                    <h3 className="mt-3 font-cormorant text-3xl font-light text-white">{item.title}</h3>
+                    <h3 className="mt-3 text-3xl font-light text-white">{item.title}</h3>
                     <button
                       type="button"
                       onClick={() => requireAuth("/studio/builder")}
@@ -435,7 +433,7 @@ export default function HomePage() {
           </section>
 
           <section className="mt-16 rounded-[30px] border border-[#d6c7b4] bg-white/60 px-6 py-8 backdrop-blur-sm sm:px-8">
-            <h2 className="font-cormorant text-4xl font-light text-[#1b1510] sm:text-5xl">{copy.finalTitle}</h2>
+            <h2 className="text-4xl font-light text-[#1b1510] sm:text-5xl">{copy.finalTitle}</h2>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-[#635547] sm:text-[15px]">{copy.finalBody}</p>
           </section>
         </main>

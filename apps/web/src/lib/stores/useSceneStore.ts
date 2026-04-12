@@ -234,6 +234,7 @@ type SceneState = SceneDataState & {
   setFloorMaterialIndex: (index: number) => void;
   setLighting: (lighting: Partial<LightingSettings>) => void;
   setSelectedAssetId: (id: string | null) => void;
+  setEntranceId: (id: string | null) => void;
   addFurniture: (asset: Omit<SceneAsset, "id"> & { id?: string }) => void;
   updateFurniture: (id: string, updates: Partial<SceneAsset>) => void;
   removeFurniture: (id: string) => void;
@@ -503,6 +504,7 @@ export const useSceneStore = create<SceneState>((set) => ({
       }
     })),
   setSelectedAssetId: (id) => set({ selectedAssetId: id }),
+  setEntranceId: (id) => set({ entranceId: id }),
   addFurniture: (asset) =>
     set((state) => {
       const newAssets = [

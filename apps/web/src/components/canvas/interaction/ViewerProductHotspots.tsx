@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef } from "react";
 import type { Mesh } from "three";
 import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
-import { useSceneStore, type SceneAsset } from "../../../lib/stores/useSceneStore";
+import { useAssetSelector, useSelectionSelector } from "../../../lib/stores/scene-slices";
+import type { SceneAsset } from "../../../lib/stores/useSceneStore";
 
 type HotspotMarker = {
   id: string;
@@ -129,9 +130,9 @@ function ViewerHotspotPin({
 export default function ViewerProductHotspots() {
   const readOnly = useEditorStore((state) => state.readOnly);
   const viewMode = useEditorStore((state) => state.viewMode);
-  const assets = useSceneStore((state) => state.assets);
-  const selectedAssetId = useSceneStore((state) => state.selectedAssetId);
-  const setSelectedAssetId = useSceneStore((state) => state.setSelectedAssetId);
+  const assets = useAssetSelector((slice) => slice.assets);
+  const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
+  const setSelectedAssetId = useSelectionSelector((slice) => slice.setSelectedAssetId);
   const viewerMode = viewMode === "walk" ? "walk" : "top";
   const markers = useMemo(
     () => toHotspotMarkers(assets, selectedAssetId, viewerMode),

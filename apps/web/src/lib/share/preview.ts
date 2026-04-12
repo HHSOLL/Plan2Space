@@ -34,7 +34,7 @@ export function getSharePreviewMeta(value: unknown): SharePreviewMeta | null {
   }
 
   return {
-    projectName: projectName ?? "Shared Room",
+    projectName: projectName ?? "공유 공간",
     projectDescription,
     versionNumber,
     assetSummary
