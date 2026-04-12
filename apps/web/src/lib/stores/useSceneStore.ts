@@ -136,6 +136,16 @@ export type SceneAsset = {
   id: string;
   assetId: string;
   catalogItemId?: string | null;
+  product?: {
+    id: string;
+    name: string;
+    category: string;
+    brand?: string | null;
+    price?: string | null;
+    options?: string | null;
+    externalUrl?: string | null;
+    thumbnail?: string | null;
+  } | null;
   anchorType?: SceneAnchorType;
   supportAssetId?: string | null;
   supportProfile?: AssetSupportProfile | null;
@@ -307,10 +317,46 @@ function normalizeSupportAssetId(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function normalizeProductText(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeProductUrl(value: unknown) {
+  const normalized = normalizeProductText(value);
+  if (!normalized) return null;
+  if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeSceneAssetProduct(product: SceneAsset["product"]) {
+  if (!product || typeof product !== "object") return null;
+
+  const id = normalizeProductText(product.id);
+  const name = normalizeProductText(product.name);
+  const category = normalizeProductText(product.category);
+  if (!id || !name || !category) return null;
+
+  return {
+    id,
+    name,
+    category,
+    brand: normalizeProductText(product.brand),
+    price: normalizeProductText(product.price),
+    options: normalizeProductText(product.options),
+    externalUrl: normalizeProductUrl(product.externalUrl),
+    thumbnail: normalizeProductUrl(product.thumbnail)
+  } satisfies NonNullable<SceneAsset["product"]>;
+}
+
 function normalizeSceneAsset(asset: SceneAsset): SceneAsset {
   return {
     ...asset,
     catalogItemId: typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0 ? asset.catalogItemId : null,
+    product: normalizeSceneAssetProduct(asset.product),
     anchorType: normalizeSceneAnchorType(asset.anchorType),
     supportAssetId: normalizeSupportAssetId(asset.supportAssetId),
     supportProfile: normalizeAssetSupportProfile(asset.supportProfile)
@@ -516,6 +562,7 @@ export const useSceneStore = create<SceneState>((set) => ({
             typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
               ? asset.catalogItemId
               : null,
+          product: normalizeSceneAssetProduct(asset.product),
           anchorType: normalizeSceneAnchorType(asset.anchorType),
           supportAssetId: normalizeSupportAssetId(asset.supportAssetId),
           supportProfile: normalizeAssetSupportProfile(asset.supportProfile),

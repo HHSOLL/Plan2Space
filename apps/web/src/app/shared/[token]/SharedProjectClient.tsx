@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { Box, Link2, Play } from "lucide-react";
 import { ProductHotspotDrawer } from "../../../components/viewer/ProductHotspotDrawer";
-import { ReadOnlySceneViewport } from "../../../components/viewer/ReadOnlySceneViewport";
+import { ReadOnlyViewerViewport } from "../../../components/viewer/ReadOnlyViewerViewport";
 import { StudioMetricGrid } from "../../../components/editor/StudioMetricGrid";
 import { StudioModeToggle } from "../../../components/editor/StudioModeToggle";
 import { StudioWorkspaceShell } from "../../../components/layout/StudioWorkspaceShell";
@@ -53,6 +53,7 @@ function readMetadataUrl(record: Record<string, unknown> | null, key: string) {
 
 function readMetadataImageUrl(record: Record<string, unknown> | null) {
   return (
+    readMetadataUrl(record, "thumbnail") ??
     readMetadataUrl(record, "imageUrl") ??
     readMetadataUrl(record, "thumbnailUrl") ??
     readMetadataUrl(record, "previewImageUrl")
@@ -173,19 +174,35 @@ export function SharedProjectClient({
         const catalogItem = findCatalogItem(catalog, asset);
         const sceneNode = mappedScene?.document.nodes.find((node) => node.id === asset.id) ?? null;
         const metadata = toMetadataRecord(sceneNode?.metadata ?? null);
+        const productSnapshot = asset.product ?? null;
         return {
           id: asset.id,
-          name: catalogItem?.label ?? asset.assetId,
-          category: catalogItem?.category ?? "미분류",
+          name: catalogItem?.label ?? productSnapshot?.name ?? asset.assetId,
+          category: catalogItem?.category ?? productSnapshot?.category ?? "미분류",
           collection: catalogItem?.collection ?? "사용자 배치",
           tone: catalogItem?.tone ?? "slate",
           anchorType: normalizeSceneAnchorType(asset.anchorType),
           index,
-          brand: readMetadataText(metadata, "vendor"),
-          price: readMetadataPrice(metadata),
-          thumbnail: readMetadataImageUrl(metadata),
-          options: readMetadataText(metadata, "variant"),
-          externalUrl: readMetadataUrl(metadata, "productUrl"),
+          brand:
+            productSnapshot?.brand ??
+            readMetadataText(metadata, "brand") ??
+            readMetadataText(metadata, "vendor") ??
+            catalogItem?.brand ??
+            null,
+          price: productSnapshot?.price ?? readMetadataPrice(metadata) ?? catalogItem?.price ?? null,
+          thumbnail: productSnapshot?.thumbnail ?? readMetadataImageUrl(metadata) ?? catalogItem?.thumbnail ?? null,
+          options:
+            productSnapshot?.options ??
+            readMetadataText(metadata, "options") ??
+            readMetadataText(metadata, "variant") ??
+            catalogItem?.options ??
+            null,
+          externalUrl:
+            productSnapshot?.externalUrl ??
+            readMetadataUrl(metadata, "externalUrl") ??
+            readMetadataUrl(metadata, "productUrl") ??
+            catalogItem?.externalUrl ??
+            null,
           material: readMetadataText(metadata, "material")
         } satisfies ProductHotspot;
       }),
@@ -309,7 +326,7 @@ export function SharedProjectClient({
         </div>
 
         <StudioWorkspaceShell className="mt-6">
-          <ReadOnlySceneViewport
+          <ReadOnlyViewerViewport
             viewMode={viewMode === "walk" ? "walk" : "top"}
             selectedLabel={selectedHotspotLabel}
             showReadOnlyNotice={shareCapabilities.showPreviewNotice}

@@ -60,6 +60,7 @@ export function SceneViewport({
   const resolvedInteractionMode = interactionMode ?? (includeEditorTools ? "editor" : "viewer");
   const renderEditorTools = resolvedInteractionMode === "editor";
   const renderViewerHotspots = resolvedInteractionMode === "viewer";
+  const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
   const isLightTone = chromeTone === "light";
   return (
     <div
@@ -101,8 +102,8 @@ export function SceneViewport({
               <ProceduralFloor />
               <ProceduralCeiling />
               <ProceduralWall />
-              <InteractiveDoors />
-              <InteractiveLights />
+              {renderInteractiveShellControls ? <InteractiveDoors /> : null}
+              {renderInteractiveShellControls ? <InteractiveLights /> : null}
               <Furniture />
               {renderViewerHotspots ? <ViewerProductHotspots /> : null}
             </InteractionManager>

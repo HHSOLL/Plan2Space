@@ -136,6 +136,56 @@ function normalizeAssetAnchor(value: unknown) {
   return typeof value === "string" && ASSET_ANCHOR_TYPES.has(value) ? value : "floor";
 }
 
+function normalizeAssetMetadataText(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeAssetMetadataUrl(value: unknown) {
+  const normalized = normalizeAssetMetadataText(value);
+  if (!normalized) return null;
+  return normalized.startsWith("http://") || normalized.startsWith("https://") ? normalized : null;
+}
+
+function normalizeAssetMetadataPrice(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return normalizeAssetMetadataText(value);
+}
+
+function resolveAssetProductRecord(asset: Record<string, unknown>) {
+  return isRecord(asset.product) ? asset.product : null;
+}
+
+function buildAssetProductMetadata(asset: Record<string, unknown>) {
+  const product = resolveAssetProductRecord(asset);
+  const productId = normalizeAssetMetadataText(product?.id ?? product?.productId ?? asset.catalogItemId);
+  const label = normalizeAssetMetadataText(product?.name ?? asset.label);
+  const category = normalizeAssetMetadataText(product?.category ?? asset.category);
+  const collection = normalizeAssetMetadataText(product?.collection ?? asset.collection);
+  const vendor = normalizeAssetMetadataText(product?.brand ?? product?.vendor ?? asset.vendor ?? asset.brand);
+  const price = normalizeAssetMetadataPrice(product?.price ?? asset.price);
+  const variant = normalizeAssetMetadataText(product?.options ?? product?.variant ?? asset.variant ?? asset.options);
+  const productUrl = normalizeAssetMetadataUrl(product?.externalUrl ?? asset.productUrl ?? asset.externalUrl);
+  const thumbnailUrl = normalizeAssetMetadataUrl(
+    product?.thumbnail ?? asset.thumbnailUrl ?? asset.imageUrl ?? asset.previewImageUrl
+  );
+
+  return {
+    ...(productId ? { productId } : {}),
+    ...(label ? { label } : {}),
+    ...(category ? { category } : {}),
+    ...(collection ? { collection } : {}),
+    ...(vendor ? { vendor } : {}),
+    ...(price !== null ? { price } : {}),
+    ...(variant ? { variant } : {}),
+    ...(productUrl ? { productUrl } : {}),
+    ...(thumbnailUrl ? { thumbnailUrl } : {})
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -345,6 +395,7 @@ function buildSceneDocument(
     roomShell: resolvedRoomShell,
     nodes: assets.map((asset) => {
       const anchorType = normalizeAssetAnchor(asset.anchorType);
+      const productMetadata = buildAssetProductMetadata(asset);
       return {
         id: asset.id,
         assetId: asset.assetId,
@@ -367,7 +418,8 @@ function buildSceneDocument(
             : {}),
           ...(typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
             ? { catalogItemId: asset.catalogItemId }
-            : {})
+            : {}),
+          ...productMetadata
         }
       };
     }),
@@ -393,6 +445,7 @@ function buildProjectVersionCustomization(
     schemaVersion: 1,
     furniture: assets.map((asset) => {
       const anchorType = normalizeAssetAnchor(asset.anchorType);
+      const productMetadata = buildAssetProductMetadata(asset);
       return {
         id: asset.id,
         modelId: asset.assetId,
@@ -413,7 +466,8 @@ function buildProjectVersionCustomization(
             : {}),
           ...(typeof asset.catalogItemId === "string" && asset.catalogItemId.length > 0
             ? { catalogItemId: asset.catalogItemId }
-            : {})
+            : {}),
+          ...productMetadata
         }
       };
     }),

@@ -49,6 +49,7 @@ npm run dev:web
 npm run dev:web
 npm --workspace apps/web run qa:primary
 npm --workspace apps/web run primary:e2e:room-flow
+npm --workspace apps/web run assets:sync:deskterior
 
 # strict 모드(실패를 fail-fast로 처리)
 E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
@@ -59,6 +60,13 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 # legacy namespace (보조 경로)
 # 상세는 docs/legacy/README.md와 apps/web/package.json의 legacy:* 스크립트 참고
 ```
+
+## 데스크테리어 자산 파이프라인 (Blender + OSS)
+
+- Blender 원본: `assets/blender/deskterior/*.blend`
+- 런타임 모델: `apps/web/public/assets/models/`
+- 카탈로그 동기화: `npm --workspace apps/web run assets:sync:deskterior`
+- 오픈소스 자산은 라이선스 명시(CC0 우선)된 항목만 사용
 
 ## 핵심 문서
 

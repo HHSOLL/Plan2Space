@@ -1,0 +1,209 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Opening, Wall } from "../../../lib/stores/useSceneStore";
+import {
+  clamp,
+  createOpeningId,
+  getDoorWidthByStyle,
+  getWallLength,
+  getWindowWidthByStyle,
+  normalizeOpenings,
+  remapOpeningsToWalls,
+  tuneOpenings
+} from "../logic/openings";
+import type { DoorStyle, WindowStyle } from "../types";
+
+type UseBuilderOpeningStateInput = {
+  walls: Wall[];
+  templateOpenings: Opening[];
+  doorStyle: DoorStyle;
+  windowStyle: WindowStyle;
+  addSecondaryWindow: boolean;
+};
+
+export function useBuilderOpeningState({
+  walls,
+  templateOpenings,
+  doorStyle,
+  windowStyle,
+  addSecondaryWindow
+}: UseBuilderOpeningStateInput) {
+  const [openingDrafts, setOpeningDrafts] = useState<Opening[]>([]);
+  const [selectedOpeningId, setSelectedOpeningId] = useState<string | null>(null);
+  const [selectedWallId, setSelectedWallId] = useState<string | null>(null);
+
+  const openingDraftsRef = useRef<Opening[]>([]);
+  const previousWallSignatureRef = useRef<string | null>(null);
+  const previousWallsRef = useRef<Wall[]>(walls);
+
+  const wallSignature = useMemo(
+    () =>
+      walls
+        .map(
+          (wall) =>
+            `${wall.id}:${wall.start[0].toFixed(3)},${wall.start[1].toFixed(3)}-${wall.end[0].toFixed(3)},${wall.end[1].toFixed(3)}`
+        )
+        .join("|"),
+    [walls]
+  );
+
+  useEffect(() => {
+    openingDraftsRef.current = openingDrafts;
+  }, [openingDrafts]);
+
+  useEffect(() => {
+    const wallSignatureChanged = previousWallSignatureRef.current !== wallSignature;
+    if (!wallSignatureChanged) return;
+    previousWallSignatureRef.current = wallSignature;
+    const previousWalls = previousWallsRef.current;
+    const hasDrafts = openingDraftsRef.current.length > 0;
+
+    const sourceOpenings =
+      hasDrafts && previousWalls.length > 0
+        ? remapOpeningsToWalls(openingDraftsRef.current, previousWalls, walls)
+        : tuneOpenings(templateOpenings, walls, {
+            doorStyle,
+            windowStyle,
+            addSecondaryWindow
+          });
+
+    const nextDrafts = normalizeOpenings(sourceOpenings, walls);
+
+    setOpeningDrafts(nextDrafts);
+    setSelectedOpeningId((current) =>
+      current && nextDrafts.some((opening) => opening.id === current) ? current : nextDrafts[0]?.id ?? null
+    );
+    setSelectedWallId((current) => {
+      if (current && walls.some((wall) => wall.id === current)) {
+        return current;
+      }
+      return nextDrafts[0]?.wallId ?? walls[0]?.id ?? null;
+    });
+    previousWallsRef.current = walls;
+  }, [addSecondaryWindow, doorStyle, templateOpenings, wallSignature, walls, windowStyle]);
+
+  const openings = useMemo(() => normalizeOpenings(openingDrafts, walls), [openingDrafts, walls]);
+  const selectedOpening = useMemo(
+    () => openings.find((opening) => opening.id === selectedOpeningId) ?? null,
+    [openings, selectedOpeningId]
+  );
+  const selectedOpeningWall = useMemo(
+    () => walls.find((wall) => wall.id === selectedOpening?.wallId) ?? null,
+    [walls, selectedOpening?.wallId]
+  );
+  const selectedWallOpenings = useMemo(
+    () => openings.filter((opening) => opening.wallId === selectedWallId),
+    [openings, selectedWallId]
+  );
+
+  useEffect(() => {
+    if (!selectedOpeningId) return;
+    const nextOpening = openings.find((opening) => opening.id === selectedOpeningId);
+    if (!nextOpening) return;
+    if (nextOpening.wallId !== selectedWallId) {
+      setSelectedWallId(nextOpening.wallId);
+    }
+  }, [openings, selectedOpeningId, selectedWallId]);
+
+  useEffect(() => {
+    if (!selectedWallId) return;
+    const selectedOnCurrentWall = selectedOpeningId
+      ? openings.some((opening) => opening.id === selectedOpeningId && opening.wallId === selectedWallId)
+      : false;
+    if (selectedOnCurrentWall) return;
+    setSelectedOpeningId(openings.find((opening) => opening.wallId === selectedWallId)?.id ?? null);
+  }, [openings, selectedOpeningId, selectedWallId]);
+
+  const setOpeningPatch = useCallback(
+    (openingId: string, patch: Partial<Opening>) => {
+      setOpeningDrafts((current) =>
+        normalizeOpenings(
+          current.map((opening) =>
+            opening.id === openingId
+              ? {
+                  ...opening,
+                  ...patch
+                }
+              : opening
+          ),
+          walls
+        )
+      );
+    },
+    [walls]
+  );
+
+  const setEntranceOpening = useCallback(
+    (openingId: string) => {
+      setOpeningDrafts((current) =>
+        normalizeOpenings(
+          current.map((opening) =>
+            opening.type === "door" ? { ...opening, isEntrance: opening.id === openingId } : opening
+          ),
+          walls
+        )
+      );
+    },
+    [walls]
+  );
+
+  const deleteOpening = useCallback(
+    (openingId: string) => {
+      setOpeningDrafts((current) =>
+        normalizeOpenings(
+          current.filter((opening) => opening.id !== openingId),
+          walls
+        )
+      );
+      setSelectedOpeningId((current) => (current === openingId ? null : current));
+    },
+    [walls]
+  );
+
+  const addOpening = useCallback(
+    (type: "door" | "window") => {
+      const targetWall = walls.find((wall) => wall.id === selectedWallId) ?? walls[0];
+
+      if (!targetWall) {
+        return null;
+      }
+
+      const wallLength = getWallLength(targetWall);
+      const width = type === "door" ? getDoorWidthByStyle(doorStyle) : getWindowWidthByStyle(windowStyle);
+      const minMargin = type === "door" ? 0.38 : 0.32;
+      const clampedWidth = Math.min(width, Math.max(type === "door" ? 0.72 : 0.92, wallLength - minMargin * 2));
+      const nextOpening: Opening = {
+        id: createOpeningId(type),
+        wallId: targetWall.id,
+        type,
+        offset: clamp(wallLength * 0.25, minMargin, Math.max(minMargin, wallLength - clampedWidth - minMargin)),
+        width: clampedWidth,
+        height: type === "door" ? 2.1 : 1.3,
+        ...(type === "door"
+          ? { isEntrance: openings.filter((opening) => opening.type === "door").length === 0 }
+          : { sillHeight: 0.9 })
+      };
+
+      setOpeningDrafts((current) => normalizeOpenings([...current, nextOpening], walls));
+      setSelectedWallId(targetWall.id);
+      setSelectedOpeningId(nextOpening.id);
+
+      return nextOpening.id;
+    },
+    [doorStyle, openings, selectedWallId, walls, windowStyle]
+  );
+
+  return {
+    openings,
+    selectedOpeningId,
+    selectedWallId,
+    selectedOpening,
+    selectedOpeningWall,
+    selectedWallOpenings,
+    setSelectedOpeningId,
+    setSelectedWallId,
+    setOpeningPatch,
+    setEntranceOpening,
+    deleteOpening,
+    addOpening
+  };
+}

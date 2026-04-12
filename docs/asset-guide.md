@@ -1,6 +1,33 @@
-# Asset Guide (Railway Worker Asset Generation)
+# Asset Guide
 
-Plan2Space는 이미지 → GLB 생성을 Railway API/Worker 경로로 처리합니다.
+Plan2Space의 메인 자산 경로는 **deskterior 카탈로그 + Blender/오픈소스 GLB**입니다.
+
+## 1) 메인 경로: Blender + 오픈소스 카탈로그
+
+- Blender 원본: `assets/blender/deskterior/*.blend`
+- 런타임 GLB: `apps/web/public/assets/models/*/*.glb|*.gltf`
+- 카탈로그: `apps/web/public/assets/catalog/manifest.json`
+- 동기화 스크립트:
+
+```bash
+npm --workspace apps/web run assets:sync:deskterior
+```
+
+위 스크립트는 아래를 수행합니다.
+
+- Plan2Space 제작 deskterior 자산(p2s_*) upsert
+- 오픈소스 desk/chair/lamp 메타데이터(brand/options/externalUrl) 보강
+- 제품 인스펙터 표준 필드(thumbnail/price/options/externalUrl/brand) 유지
+
+## 2) 조명 자산 규칙 (Viewer/Editor 공통)
+
+- 카탈로그 id 또는 메타에서 lamp/light 키워드를 가진 자산은 동적 광원 후보입니다.
+- 성능 보호를 위해 동적 광원은 scene 당 최대 6개까지만 활성화합니다.
+- `options`에 `light-emitter` 힌트를 넣으면 조명 자산으로 안정적으로 인식됩니다.
+
+## 3) 레거시/보조 경로: Worker 생성형 GLB
+
+이미지 → GLB 생성은 운영 보조 경로로 유지합니다.
 웹은 `/api/v1/assets/generate`로 job을 enqueue하고, Vercel Route Handler가 Railway `/v1/assets/generate`로 프록시합니다.
 Railway worker가 TripoSR 또는 Meshy를 호출한 뒤 결과 GLB를 Supabase Storage에 저장합니다.
 

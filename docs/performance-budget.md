@@ -20,6 +20,9 @@
   - 가구 선택/이동/회전 중 장시간(2초+) 지속 dropped frame 없음
 - 읽기 전용 뷰어 상호작용 트리:
   - 에디터 전용 transform/delete 계층 미포함
+- 동적 조명 예산:
+  - 가구 기반 point light 활성 수 `<= 6`
+  - 조명 자산 없는 장면에서 추가 light pass 없음
 
 ## Primary Contract Check
 
@@ -51,5 +54,6 @@ interaction note: drag/rotate 동안 눈에 띄는 frame drop 없음
 
 - heavy model은 lazy load를 기본으로 유지
 - 읽기 전용 뷰어는 에디터보다 가벼운 interaction tree 유지
+- 조명 제품은 카탈로그 힌트 기반으로만 동적 light를 켜고, 상한(6개)을 반드시 유지
 - publish/share/public 뷰어 실패는 로깅 이벤트로 남겨 재현 가능해야 함
 - 회귀가 budget 초과 시, 기능 추가보다 성능 회귀 원인 제거를 우선

@@ -1,6 +1,12 @@
 import type { Floor, Opening, ScaleInfo, Wall } from "../stores/useSceneStore";
 
-export type BuilderTemplateId = "rect-studio" | "corner-suite" | "gallery-loft";
+export type BuilderTemplateId =
+  | "rect-studio"
+  | "l-shape"
+  | "cut-shape"
+  | "t-shape"
+  | "u-shape"
+  | "slanted-shape";
 
 export type BuilderTemplate = {
   id: BuilderTemplateId;
@@ -17,18 +23,18 @@ export type BuilderTemplate = {
 export const builderTemplates: BuilderTemplate[] = [
   {
     id: "rect-studio",
-    name: "Rect Studio",
-    eyebrow: "Fastest launch",
-    description: "A clean rectangular room tuned for desks, lounge furniture, and camera-friendly compositions.",
+    name: "사각형",
+    eyebrow: "기본 형태",
+    description: "가장 빠르게 시작할 수 있는 직사각형 방 형태입니다.",
     accent: "#c96f3b",
     defaultWidth: 6.4,
     defaultDepth: 4.8
   },
   {
-    id: "corner-suite",
-    name: "Corner Suite",
-    eyebrow: "Best for zoning",
-    description: "An L-shaped shell with a recessed corner for dining, media, or bedroom zoning.",
+    id: "l-shape",
+    name: "L자형",
+    eyebrow: "코너 확장",
+    description: "한쪽이 확장된 L형 구조로 구역 분리가 쉬운 형태입니다.",
     accent: "#2f6c61",
     defaultWidth: 7.6,
     defaultDepth: 6.2,
@@ -36,13 +42,48 @@ export const builderTemplates: BuilderTemplate[] = [
     defaultNookDepth: 2.4
   },
   {
-    id: "gallery-loft",
-    name: "Gallery Loft",
-    eyebrow: "Open display",
-    description: "A wider footprint with generous wall runs for shelving, art, and product-led storytelling.",
-    accent: "#46566b",
-    defaultWidth: 8.4,
-    defaultDepth: 5.6
+    id: "cut-shape",
+    name: "잘라내기",
+    eyebrow: "모서리 컷",
+    description: "모서리를 사선으로 잘라낸 형태로 진입 동선을 확보하기 좋습니다.",
+    accent: "#7c5c42",
+    defaultWidth: 6.8,
+    defaultDepth: 5.2,
+    defaultNookWidth: 2.0,
+    defaultNookDepth: 1.6
+  },
+  {
+    id: "t-shape",
+    name: "T자형",
+    eyebrow: "복합 구역",
+    description: "중앙 복도와 상단 확장부를 가진 형태로 작업/수납 구역 분리에 적합합니다.",
+    accent: "#5f6d86",
+    defaultWidth: 7.8,
+    defaultDepth: 6.0,
+    defaultNookWidth: 3.0,
+    defaultNookDepth: 2.2
+  },
+  {
+    id: "u-shape",
+    name: "U자형",
+    eyebrow: "집중형 배치",
+    description: "내부 포켓 공간이 있어 데스크테리어 집중 배치에 유리합니다.",
+    accent: "#5f6752",
+    defaultWidth: 8.0,
+    defaultDepth: 5.8,
+    defaultNookWidth: 2.4,
+    defaultNookDepth: 1.4
+  },
+  {
+    id: "slanted-shape",
+    name: "경사진 형태",
+    eyebrow: "사선 외곽",
+    description: "경사진 벽 라인이 포함된 형태로 전시형 장면 구성에 적합합니다.",
+    accent: "#6a5a7b",
+    defaultWidth: 7.2,
+    defaultDepth: 5.4,
+    defaultNookWidth: 1.4,
+    defaultNookDepth: 1.4
   }
 ];
 
@@ -100,26 +141,81 @@ function getWallLength(wall: Wall) {
 }
 
 function buildPolygon(input: BuilderSceneInput) {
-  if (input.templateId !== "corner-suite") {
-    return [
-      [0, 0],
-      [input.width, 0],
-      [input.width, input.depth],
-      [0, input.depth]
-    ] as Array<[number, number]>;
+  const width = input.width;
+  const depth = input.depth;
+  const nookWidth = clamp(input.nookWidth ?? width * 0.34, 1.2, Math.max(1.2, width - 1.6));
+  const nookDepth = clamp(input.nookDepth ?? depth * 0.32, 1.0, Math.max(1.0, depth - 1.4));
+
+  switch (input.templateId) {
+    case "l-shape":
+      return [
+        [0, 0],
+        [width, 0],
+        [width, depth - nookDepth],
+        [width - nookWidth, depth - nookDepth],
+        [width - nookWidth, depth],
+        [0, depth]
+      ] as Array<[number, number]>;
+    case "cut-shape":
+      return [
+        [0, 0],
+        [width, 0],
+        [width, depth - nookDepth],
+        [width - nookWidth, depth],
+        [0, depth]
+      ] as Array<[number, number]>;
+    case "t-shape": {
+      const stemWidth = clamp(input.nookWidth ?? width * 0.4, 1.8, Math.max(1.8, width - 1.2));
+      const stemDepth = clamp(input.nookDepth ?? depth * 0.38, 1.4, Math.max(1.4, depth - 1.1));
+      const halfStem = stemWidth / 2;
+      const center = width / 2;
+      return [
+        [0, 0],
+        [width, 0],
+        [width, stemDepth],
+        [center + halfStem, stemDepth],
+        [center + halfStem, depth],
+        [center - halfStem, depth],
+        [center - halfStem, stemDepth],
+        [0, stemDepth]
+      ] as Array<[number, number]>;
+    }
+    case "u-shape": {
+      const notchWidth = clamp(input.nookWidth ?? width * 0.3, 1.4, Math.max(1.4, width - 1.8));
+      const notchDepth = clamp(input.nookDepth ?? depth * 0.28, 0.9, Math.max(0.9, depth - 1.5));
+      const halfNotch = notchWidth / 2;
+      const center = width / 2;
+      return [
+        [0, 0],
+        [width, 0],
+        [width, depth],
+        [center + halfNotch, depth],
+        [center + halfNotch, depth - notchDepth],
+        [center - halfNotch, depth - notchDepth],
+        [center - halfNotch, depth],
+        [0, depth]
+      ] as Array<[number, number]>;
+    }
+    case "slanted-shape": {
+      const bevel = clamp(input.nookDepth ?? Math.min(width, depth) * 0.18, 0.6, Math.min(width, depth) * 0.35);
+      return [
+        [0, 0],
+        [width, 0],
+        [width, depth - bevel],
+        [width - bevel, depth],
+        [bevel, depth],
+        [0, depth - bevel]
+      ] as Array<[number, number]>;
+    }
+    case "rect-studio":
+    default:
+      return [
+        [0, 0],
+        [width, 0],
+        [width, depth],
+        [0, depth]
+      ] as Array<[number, number]>;
   }
-
-  const nookWidth = clamp(input.nookWidth ?? input.width * 0.36, 1.6, Math.max(1.6, input.width - 1.8));
-  const nookDepth = clamp(input.nookDepth ?? input.depth * 0.38, 1.4, Math.max(1.4, input.depth - 1.8));
-
-  return [
-    [0, 0],
-    [input.width, 0],
-    [input.width, input.depth - nookDepth],
-    [input.width - nookWidth, input.depth - nookDepth],
-    [input.width - nookWidth, input.depth],
-    [0, input.depth]
-  ] as Array<[number, number]>;
 }
 
 function buildOpenings(walls: Wall[], templateId: BuilderTemplateId): Opening[] {
@@ -130,7 +226,7 @@ function buildOpenings(walls: Wall[], templateId: BuilderTemplateId): Opening[] 
   const windowLength = windowWall ? getWallLength(windowWall) : 0;
 
   const doorWidth = 0.92;
-  const windowWidth = templateId === "gallery-loft" ? 2.4 : 1.8;
+  const windowWidth = templateId === "u-shape" || templateId === "t-shape" ? 2.2 : 1.8;
 
   const openings: Opening[] = [];
 

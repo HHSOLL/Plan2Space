@@ -6,6 +6,7 @@ import { RigidBody } from "@react-three/rapier";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useGLBAsset } from "../../../lib/loaders/AssetLoader";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
+import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import {
   useAssetSelector,
@@ -17,9 +18,83 @@ import type { SceneAsset } from "../../../lib/stores/useSceneStore";
 
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const GRID_SNAP = 0.25;
+const MAX_DYNAMIC_EMITTERS = 6;
+const LIGHT_EMITTER_HINT_IDS = new Set([
+  "p2s_desk_lamp_glow",
+  "desk_lamp_arm_01",
+  "modern_ceiling_lamp_01",
+  "hanging_industrial_lamp",
+  "industrial_wall_lamp"
+]);
+const LIGHT_KEYWORDS = ["lamp", "light", "lighting", "조명", "light-emitter"];
+
+type AssetLightProfile = {
+  offset: [number, number, number];
+  color: string;
+  intensity: number;
+  distance: number;
+};
 
 function isPlaceholderAsset(assetId: string) {
   return assetId.startsWith("placeholder:");
+}
+
+function isLightingAsset(asset: SceneAsset) {
+  if (asset.catalogItemId && LIGHT_EMITTER_HINT_IDS.has(asset.catalogItemId)) {
+    return true;
+  }
+  const haystack = [
+    asset.catalogItemId ?? "",
+    asset.assetId,
+    asset.product?.name ?? "",
+    asset.product?.category ?? "",
+    asset.product?.options ?? ""
+  ]
+    .join(" ")
+    .toLowerCase();
+  return LIGHT_KEYWORDS.some((keyword) => haystack.includes(keyword.toLowerCase()));
+}
+
+function resolveAssetLightProfile(asset: SceneAsset): AssetLightProfile | null {
+  if (!isLightingAsset(asset)) return null;
+
+  const anchorType = normalizeSceneAnchorType(asset.anchorType);
+  const normalizedText = [
+    asset.assetId,
+    asset.catalogItemId ?? "",
+    asset.product?.name ?? "",
+    asset.product?.options ?? ""
+  ]
+    .join(" ")
+    .toLowerCase();
+  const warm = normalizedText.includes("3000k") || normalizedText.includes("warm");
+  const cool = normalizedText.includes("4000k") || normalizedText.includes("cool");
+  const color = warm ? "#ffd29a" : cool ? "#d9ecff" : "#ffe6bf";
+
+  if (anchorType === "ceiling") {
+    return {
+      offset: [0, -0.16, 0],
+      color,
+      intensity: 1.2,
+      distance: 4.4
+    };
+  }
+
+  if (anchorType === "wall") {
+    return {
+      offset: [0.06, 0.24, 0],
+      color,
+      intensity: 0.9,
+      distance: 3.2
+    };
+  }
+
+  return {
+    offset: [0, 0.3, 0],
+    color,
+    intensity: 0.82,
+    distance: 2.6
+  };
 }
 
 function PlaceholderFurniture() {
@@ -80,7 +155,7 @@ function ModelInstance({ assetId }: { assetId: string }) {
   return <primitive object={lod} />;
 }
 
-function FurnitureItem({ asset }: { asset: SceneAsset }) {
+function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enableDynamicLight: boolean }) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const readOnly = useEditorStore((state) => state.readOnly);
@@ -94,6 +169,10 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
   const recordSnapshot = usePublishSelector((slice) => slice.recordSnapshot);
   const [isDragging, setIsDragging] = useState(false);
   const isSelected = selectedAssetId === asset.id;
+  const lightProfile = useMemo(
+    () => (enableDynamicLight ? resolveAssetLightProfile(asset) : null),
+    [asset, enableDynamicLight]
+  );
 
   const position = useMemo(() => new THREE.Vector3(...asset.position), [asset.position]);
 
@@ -179,6 +258,15 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
       <RigidBody type="fixed" colliders="cuboid" position={asset.position} rotation={asset.rotation}>
         <group name={`furniture:${asset.id}`} scale={asset.scale} {...groupProps}>
           {content}
+          {lightProfile ? (
+            <pointLight
+              position={lightProfile.offset}
+              color={lightProfile.color}
+              intensity={lightProfile.intensity}
+              distance={lightProfile.distance}
+              decay={2}
+            />
+          ) : null}
         </group>
       </RigidBody>
     );
@@ -193,6 +281,15 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
       {...groupProps}
     >
       {content}
+      {lightProfile ? (
+        <pointLight
+          position={lightProfile.offset}
+          color={lightProfile.color}
+          intensity={lightProfile.intensity}
+          distance={lightProfile.distance}
+          decay={2}
+        />
+      ) : null}
       {isSelected ? (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
           <ringGeometry args={[0.45, 0.62, 48]} />
@@ -205,11 +302,22 @@ function FurnitureItem({ asset }: { asset: SceneAsset }) {
 
 export default function Furniture() {
   const assets = useAssetSelector((slice) => slice.assets);
+  const emitterAssetIds = useMemo(() => {
+    const ids = new Set<string>();
+    let count = 0;
+    for (const asset of assets) {
+      if (count >= MAX_DYNAMIC_EMITTERS) break;
+      if (!isLightingAsset(asset)) continue;
+      ids.add(asset.id);
+      count += 1;
+    }
+    return ids;
+  }, [assets]);
 
   return (
     <group>
       {assets.map((asset) => (
-        <FurnitureItem key={asset.id} asset={asset} />
+        <FurnitureItem key={asset.id} asset={asset} enableDynamicLight={emitterAssetIds.has(asset.id)} />
       ))}
     </group>
   );

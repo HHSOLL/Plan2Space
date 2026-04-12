@@ -25,7 +25,23 @@ export type LibraryCatalogItem = {
   assetId: string;
   scale: [number, number, number];
   description: string;
+  thumbnail: string | null;
+  price: string | null;
+  options: string | null;
+  externalUrl: string | null;
+  brand: string | null;
   supportProfile?: AssetSupportProfile | null;
+};
+
+export type CatalogProductSnapshot = {
+  id: string;
+  name: string;
+  category: string;
+  brand: string | null;
+  price: string | null;
+  options: string | null;
+  externalUrl: string | null;
+  thumbnail: string | null;
 };
 
 export type ProjectAssetSummaryItem = {
@@ -225,6 +241,38 @@ function isSupportedCatalogAssetId(assetId: string) {
   );
 }
 
+function normalizeCatalogText(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeCatalogPrice(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return normalizeCatalogText(value);
+}
+
+function normalizeCatalogUrl(value: unknown) {
+  const normalized = normalizeCatalogText(value);
+  if (!normalized) return null;
+  if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeCatalogImageUrl(record: Record<string, unknown>) {
+  return (
+    normalizeCatalogUrl(record.thumbnail) ??
+    normalizeCatalogUrl(record.thumbnailUrl) ??
+    normalizeCatalogUrl(record.image) ??
+    normalizeCatalogUrl(record.imageUrl) ??
+    normalizeCatalogUrl(record.previewImageUrl)
+  );
+}
+
 function resolveCategoryId(record: Record<string, unknown>) {
   const rawCategory = typeof record.category === "string" ? record.category.trim().toLowerCase() : "";
   const text = [record.id, record.label, record.category, record.description]
@@ -279,6 +327,11 @@ function normalizeCatalogItem(item: unknown): LibraryCatalogItem | null {
       typeof record.description === "string" && record.description.trim().length > 0
         ? record.description.trim()
         : meta.description,
+    thumbnail: normalizeCatalogImageUrl(record),
+    price: normalizeCatalogPrice(record.price),
+    options: normalizeCatalogText(record.options) ?? normalizeCatalogText(record.variant),
+    externalUrl: normalizeCatalogUrl(record.externalUrl) ?? normalizeCatalogUrl(record.productUrl),
+    brand: normalizeCatalogText(record.brand) ?? normalizeCatalogText(record.vendor),
     supportProfile:
       normalizeAssetSupportProfile(record.supportProfile) ??
       inferAssetSupportProfile({
@@ -294,6 +347,19 @@ function normalizeCatalogItem(item: unknown): LibraryCatalogItem | null {
 export const DEFAULT_CATALOG: LibraryCatalogItem[] = DEFAULT_CATALOG_SOURCE.map((item) =>
   normalizeCatalogItem(item)
 ).filter((item): item is LibraryCatalogItem => item !== null);
+
+export function toCatalogProductSnapshot(item: LibraryCatalogItem): CatalogProductSnapshot {
+  return {
+    id: item.id,
+    name: item.label,
+    category: item.category,
+    brand: item.brand,
+    price: item.price,
+    options: item.options,
+    externalUrl: item.externalUrl,
+    thumbnail: item.thumbnail
+  };
+}
 
 export function normalizeCatalog(input: unknown) {
   if (!Array.isArray(input)) {
@@ -376,7 +442,7 @@ export function filterCatalogItems(
 
 export function getFeaturedCatalogItems(items: LibraryCatalogItem[], limit = 4) {
   const selected: LibraryCatalogItem[] = [];
-  const preferredKeywords = ["sofa", "chair", "table", "cabinet", "lamp", "bed"];
+  const preferredKeywords = ["desk", "chair", "lamp", "monitor", "shelf", "drawer"];
   const available = items.filter((item) => !item.assetId.startsWith("placeholder:"));
 
   preferredKeywords.forEach((keyword) => {

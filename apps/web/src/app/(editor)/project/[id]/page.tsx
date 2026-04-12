@@ -35,6 +35,7 @@ import {
   findCatalogItem,
   formatAssetIdLabel,
   selectStarterSetItems,
+  toCatalogProductSnapshot,
   type LibraryCatalogItem
 } from "../../../../lib/builder/catalog";
 import { builderFloorFinishes, builderWallFinishes } from "../../../../lib/builder/templates";
@@ -303,6 +304,7 @@ export default function ProjectEditorPage() {
         id,
         assetId: item.assetId,
         catalogItemId: item.id,
+        product: toCatalogProductSnapshot(item),
         anchorType: anchoredPlacement.anchorType,
         supportAssetId: anchoredPlacement.supportAssetId,
         supportProfile: item.supportProfile ?? null,
@@ -348,6 +350,7 @@ export default function ProjectEditorPage() {
         id: createAssetId(),
         assetId: item.assetId,
         catalogItemId: item.id,
+        product: toCatalogProductSnapshot(item),
         anchorType: anchoredPlacement.anchorType,
         supportAssetId: anchoredPlacement.supportAssetId,
         supportProfile: item.supportProfile ?? null,

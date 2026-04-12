@@ -40,9 +40,19 @@ export type RoomShell = {
 
 export type ProductMetadata = {
   catalogItemId?: string | null;
+  productId?: string;
   label?: string;
+  name?: string;
   category?: string;
   collection?: string;
+  vendor?: string;
+  price?: string | number;
+  variant?: string;
+  productUrl?: string;
+  externalUrl?: string;
+  thumbnailUrl?: string;
+  imageUrl?: string;
+  previewImageUrl?: string;
   supportAssetId?: string | null;
   supportProfile?: AssetSupportProfile | null;
 };
@@ -113,6 +123,48 @@ function isArray(value: unknown): value is unknown[] {
 function toSafeNumber(value: unknown, fallback: number) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function toMetadataText(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function toMetadataUrl(value: unknown) {
+  const normalized = toMetadataText(value);
+  if (!normalized) return null;
+  return normalized.startsWith("http://") || normalized.startsWith("https://") ? normalized : null;
+}
+
+function toMetadataPrice(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Intl.NumberFormat("ko-KR", {
+      style: "currency",
+      currency: "KRW",
+      maximumFractionDigits: 0
+    }).format(value);
+  }
+  return toMetadataText(value);
+}
+
+function toSceneAssetProduct(metadata: ProductMetadata | undefined): SceneAsset["product"] {
+  if (!metadata) return null;
+  const id = toMetadataText(metadata.productId ?? metadata.catalogItemId);
+  const name = toMetadataText(metadata.label ?? metadata.name);
+  const category = toMetadataText(metadata.category);
+  if (!id || !name || !category) return null;
+
+  return {
+    id,
+    name,
+    category,
+    brand: toMetadataText(metadata.vendor),
+    price: toMetadataPrice(metadata.price),
+    options: toMetadataText(metadata.variant),
+    externalUrl: toMetadataUrl(metadata.productUrl ?? metadata.externalUrl),
+    thumbnail: toMetadataUrl(metadata.thumbnailUrl ?? metadata.imageUrl ?? metadata.previewImageUrl)
+  };
 }
 
 function toScaleInfo(value: unknown) {
@@ -215,6 +267,7 @@ export function toSceneStorePatch(scene: SceneDocumentBootstrap): SceneStorePatc
     assets: scene.document.nodes.map((node) => ({
       ...node,
       catalogItemId: node.metadata?.catalogItemId ?? node.catalogItemId,
+      product: toSceneAssetProduct(node.metadata) ?? node.product ?? null,
       supportAssetId:
         (node.metadata && typeof node.metadata.supportAssetId === "string" && node.metadata.supportAssetId.length > 0
           ? node.metadata.supportAssetId

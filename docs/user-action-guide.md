@@ -81,3 +81,21 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - `docs/legacy/user-action-guide-ops.md`
 - `docs/legacy/ai-pipeline.md`
 - `docs/legacy/provider-rollout.md`
+
+## 5) 데스크테리어 자산 운영 (Blender + 오픈소스)
+
+1. Blender에서 `.blend` 소스를 수정/제작한다.
+2. `apps/web/public/assets/models/`로 `.glb`를 export한다.
+3. 아래 명령으로 카탈로그를 동기화한다.
+
+```bash
+npm --workspace apps/web run assets:sync:deskterior
+```
+
+4. 에디터에서 자산 배치 후 저장/발행하고 shared viewer에서 제품 정보를 검증한다.
+5. 조명 제품은 뷰어에서 실제 광원 효과가 보이는지 확인한다.
+
+오픈소스 자산 체크:
+- 라이선스(CC0 우선) 확인
+- 출처 URL 기록 (`externalUrl`)
+- 브랜드/옵션/설명 메타 입력

@@ -12,6 +12,7 @@
     "primary:e2e:room-flow": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=smoke",
     "primary:e2e:room-flow:strict": "E2E_ROOM_FLOW_STRICT=1 node --import tsx scripts/e2e-primary-room-flow.ts --mode=contract",
     "primary:e2e:room-flow:full": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=flow --strict",
+    "assets:sync:deskterior": "node --import tsx scripts/sync-deskterior-catalog.ts",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs",
     "legacy:e2e:intake": "node --import tsx scripts/e2e-intake-flow.ts",
     "legacy:fixtures:floorplan:validate": "node --import tsx scripts/validate-floorplan-fixtures.ts",

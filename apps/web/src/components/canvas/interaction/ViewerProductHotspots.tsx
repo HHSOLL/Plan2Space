@@ -2,7 +2,7 @@
 
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Mesh } from "three";
 import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
@@ -49,9 +49,11 @@ function ViewerHotspotPin({
   onSelect: (id: string) => void;
 }) {
   const pulseRef = useRef<Mesh>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const interactive = marker.isActive || isHovered;
 
   useFrame(({ clock }) => {
-    const pulse = marker.isActive
+    const pulse = interactive
       ? 1.03 + Math.sin(clock.elapsedTime * 4.4) * 0.07
       : 0.98 + Math.sin(clock.elapsedTime * 2.4 + marker.index) * 0.04;
     if (pulseRef.current) {
@@ -63,11 +65,29 @@ function ViewerHotspotPin({
 
   return (
     <group position={marker.position}>
+      <mesh
+        renderOrder={2}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onSelect(marker.id);
+        }}
+        onPointerOver={() => {
+          setIsHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          setIsHovered(false);
+          document.body.style.cursor = "default";
+        }}
+      >
+        <circleGeometry args={[0.24, 36]} />
+        <meshBasicMaterial color="#ffffff" opacity={0} transparent depthTest={false} />
+      </mesh>
       <mesh renderOrder={3} position={[0, 0, -0.002]}>
-        <circleGeometry args={[marker.isActive ? 0.24 : 0.2, 40]} />
+        <circleGeometry args={[interactive ? 0.24 : 0.2, 40]} />
         <meshBasicMaterial
-          color={marker.isActive ? "#d8c6a8" : "#17130f"}
-          opacity={marker.isActive ? 0.22 : 0.08}
+          color={interactive ? "#d8c6a8" : "#17130f"}
+          opacity={interactive ? 0.24 : 0.08}
           transparent
           depthTest={false}
         />
@@ -79,25 +99,27 @@ function ViewerHotspotPin({
           onSelect(marker.id);
         }}
         onPointerOver={() => {
+          setIsHovered(true);
           document.body.style.cursor = "pointer";
         }}
         onPointerOut={() => {
+          setIsHovered(false);
           document.body.style.cursor = "default";
         }}
       >
-        <circleGeometry args={[marker.isActive ? 0.118 : 0.104, 36]} />
+        <circleGeometry args={[interactive ? 0.122 : 0.104, 36]} />
         <meshBasicMaterial
-          color={marker.isActive ? "#17130f" : "#f7f2e8"}
-          opacity={marker.isActive ? 0.97 : 0.9}
+          color={interactive ? "#17130f" : "#f7f2e8"}
+          opacity={interactive ? 0.97 : 0.9}
           transparent
           depthTest={false}
         />
       </mesh>
       <mesh ref={pulseRef} renderOrder={5} position={[0, 0, 0.002]}>
-        <ringGeometry args={[0.118, marker.isActive ? 0.19 : 0.165, 40]} />
+        <ringGeometry args={[0.118, interactive ? 0.194 : 0.165, 40]} />
         <meshBasicMaterial
-          color={marker.isActive ? "#f1e5d2" : "#241f19"}
-          opacity={marker.isActive ? 0.96 : 0.58}
+          color={interactive ? "#f1e5d2" : "#241f19"}
+          opacity={interactive ? 0.96 : 0.58}
           transparent
           depthTest={false}
         />
@@ -105,7 +127,7 @@ function ViewerHotspotPin({
       <mesh renderOrder={6} position={[0, badgeHeight, 0.004]}>
         <planeGeometry args={[0.11, 0.062]} />
         <meshBasicMaterial
-          color={marker.isActive ? "#17130f" : "#f7f2e8"}
+          color={interactive ? "#17130f" : "#f7f2e8"}
           opacity={0.92}
           transparent
           depthTest={false}
@@ -114,10 +136,10 @@ function ViewerHotspotPin({
       <Text
         position={[0, badgeHeight, 0.007]}
         fontSize={0.03}
-        color={marker.isActive ? "#f7f2e8" : "#17130f"}
+        color={interactive ? "#f7f2e8" : "#17130f"}
         anchorX="center"
         anchorY="middle"
-        outlineColor={marker.isActive ? "#17130f" : "#f7f2e8"}
+        outlineColor={interactive ? "#17130f" : "#f7f2e8"}
         outlineWidth={0.001}
         renderOrder={7}
       >

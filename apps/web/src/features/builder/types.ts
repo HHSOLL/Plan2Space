@@ -1,6 +1,9 @@
 import type { BuilderTemplateId } from "../../lib/builder/templates";
 
+export type BuilderStepId = "shape" | "dimension" | "opening" | "style";
+
 export type BuilderStepMeta = {
+  id: BuilderStepId;
   label: string;
   title: string;
   description: string;

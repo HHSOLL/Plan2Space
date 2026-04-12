@@ -29,6 +29,8 @@
 - full-flow E2E 명령 추가 (`primary:e2e:room-flow:full`)
 - legacy CI 잡은 `LEGACY_PIPELINE_CI_ENABLED=true`에서만 실행되도록 분리
 - 성능 budget 문서화 (`docs/performance-budget.md`)
+- deskterior 전용 자산 파이프라인 추가 (Blender 원본 + 카탈로그 동기화 스크립트)
+- 커스텀 desk/lamp/monitor stand GLB를 메인 catalog에 연결
 
 ## P3
 목표: 운영 관측성과 대형 scene 최적화
@@ -37,6 +39,7 @@
 - publish/share/public 뷰어 오류 이벤트 로깅(`lib/telemetry/scene-events.ts`) 도입
 - 뷰어 전용 interaction 계층을 에디터 계층과 분리 유지
 - 성능 예산/회귀 검증 문서 및 CI 경로를 공간 우선 기준으로 정렬
+- 조명 제품 동적 광원 처리(최대 6개 캡)로 deskterior 조명 상호작용 보강
 
 ## 레거시 트랙
 
