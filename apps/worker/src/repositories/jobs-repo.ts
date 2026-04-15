@@ -3,7 +3,6 @@ import { supabaseService } from "../services/supabase";
 export type JobRow = {
   id: string;
   type: string;
-  floorplan_id: string | null;
   payload: Record<string, unknown>;
   status: string;
   attempts: number;

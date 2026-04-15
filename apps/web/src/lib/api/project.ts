@@ -17,14 +17,7 @@ import type {
 } from "../stores/useSceneStore";
 
 export type SaveProjectPayload = {
-  topology: {
-    scale: number;
-    scaleInfo?: ScaleInfo;
-    walls: Wall[];
-    openings: Opening[];
-    floors?: Floor[];
-  };
-  roomShell?: {
+  roomShell: {
     scale: number;
     scaleInfo?: ScaleInfo;
     walls: Wall[];
@@ -49,12 +42,11 @@ export type SaveProjectPayload = {
   message?: string;
 };
 
-export type ProjectSceneBootstrapSource = "current_version" | "latest_version" | "revision_layout" | "none";
+export type ProjectSceneBootstrapSource = "current_version" | "latest_version" | "none";
 
 export type ProjectSceneBootstrapResponse = {
   source: ProjectSceneBootstrapSource;
   bootstrap: SceneDocumentBootstrap | null;
-  revisionId: string | null;
 };
 
 async function requestJson<T>(path: string, init: RequestInit = {}) {

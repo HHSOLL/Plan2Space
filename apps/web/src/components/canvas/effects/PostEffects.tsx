@@ -1,13 +1,12 @@
 "use client";
 
-import { Bloom, DepthOfField, EffectComposer, Noise, Vignette, SSAO } from "@react-three/postprocessing";
+import { Bloom, EffectComposer, Noise, Vignette, SSAO } from "@react-three/postprocessing";
 import { useThree } from "@react-three/fiber";
 import { Suspense, useMemo } from "react";
 
 export default function PostEffects() {
   const { size, gl, scene, camera } = useThree();
 
-  // Robust guards to ensure all required objects and context are available
   const isReady = useMemo(() => {
     return (
       gl &&
@@ -16,7 +15,7 @@ export default function PostEffects() {
       size &&
       size.width > 0 &&
       size.height > 0 &&
-      !(gl as any).isContextLost?.()
+      !(gl as { isContextLost?: () => boolean }).isContextLost?.()
     );
   }, [gl, scene, camera, size]);
 
@@ -27,22 +26,27 @@ export default function PostEffects() {
   return (
     <Suspense fallback={null}>
       <EffectComposer
-        key={`${size.width}-${size.height}`} // Force recreation when size changes significantly
-        multisampling={0}
-        enableNormalPass={true} // Required for SSAO
+        key={`${size.width}-${size.height}`}
+        multisampling={2}
+        enableNormalPass
         stencilBuffer={false}
         autoClear={false}
       >
-        {/* <SSAO
-          intensity={10}
-          radius={0.05}
-          luminanceInfluence={0.5}
+        <SSAO
+          intensity={8}
+          radius={0.055}
+          luminanceInfluence={0.45}
           bias={0.02}
-        /> */}
-        <Bloom intensity={0.5} luminanceThreshold={1.0} luminanceSmoothing={0.15} />
-        {/* <DepthOfField focusDistance={0.02} focalLength={0.02} bokehScale={1.4} height={480} /> */}
-        <Vignette offset={0.3} darkness={0.48} />
-        <Noise opacity={0.012} />
+          worldDistanceThreshold={1}
+          worldDistanceFalloff={0.2}
+          worldProximityThreshold={0.8}
+          worldProximityFalloff={0.2}
+          samples={16}
+          rings={4}
+        />
+        <Bloom intensity={0.35} luminanceThreshold={0.9} luminanceSmoothing={0.2} />
+        <Vignette offset={0.22} darkness={0.28} />
+        <Noise opacity={0.006} />
       </EffectComposer>
     </Suspense>
   );

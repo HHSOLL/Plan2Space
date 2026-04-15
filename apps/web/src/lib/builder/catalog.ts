@@ -15,6 +15,20 @@ export type LibraryCatalogCategoryId =
   | "plants"
   | "utility";
 
+export type ProductDimensionsMm = {
+  width: number;
+  depth: number;
+  height: number;
+};
+
+export type ProductPhysicalMetadata = {
+  dimensionsMm: ProductDimensionsMm | null;
+  finishColor: string | null;
+  finishMaterial: string | null;
+  detailNotes: string | null;
+  scaleLocked: boolean;
+};
+
 export type LibraryCatalogItem = {
   id: string;
   label: string;
@@ -31,7 +45,7 @@ export type LibraryCatalogItem = {
   externalUrl: string | null;
   brand: string | null;
   supportProfile?: AssetSupportProfile | null;
-};
+} & ProductPhysicalMetadata;
 
 export type CatalogProductSnapshot = {
   id: string;
@@ -42,7 +56,7 @@ export type CatalogProductSnapshot = {
   options: string | null;
   externalUrl: string | null;
   thumbnail: string | null;
-};
+} & ProductPhysicalMetadata;
 
 export type ProjectAssetSummaryItem = {
   catalogItemId: string | null;
@@ -254,6 +268,44 @@ function normalizeCatalogPrice(value: unknown) {
   return normalizeCatalogText(value);
 }
 
+function normalizeCatalogBoolean(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return false;
+}
+
+function normalizeCatalogDimensionValue(value: unknown) {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function normalizeCatalogDimensionsMm(value: unknown): ProductDimensionsMm | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const width = normalizeCatalogDimensionValue(record.width);
+  const depth = normalizeCatalogDimensionValue(record.depth);
+  const height = normalizeCatalogDimensionValue(record.height);
+
+  if (width === null || depth === null || height === null) {
+    return null;
+  }
+
+  return {
+    width,
+    depth,
+    height
+  };
+}
+
 function normalizeCatalogUrl(value: unknown) {
   const normalized = normalizeCatalogText(value);
   if (!normalized) return null;
@@ -313,6 +365,7 @@ function normalizeCatalogItem(item: unknown): LibraryCatalogItem | null {
 
   const categoryId = resolveCategoryId(record);
   const meta = CATEGORY_META[categoryId];
+  const dimensionsMm = normalizeCatalogDimensionsMm(record.dimensionsMm);
 
   return {
     id: record.id,
@@ -332,6 +385,11 @@ function normalizeCatalogItem(item: unknown): LibraryCatalogItem | null {
     options: normalizeCatalogText(record.options) ?? normalizeCatalogText(record.variant),
     externalUrl: normalizeCatalogUrl(record.externalUrl) ?? normalizeCatalogUrl(record.productUrl),
     brand: normalizeCatalogText(record.brand) ?? normalizeCatalogText(record.vendor),
+    dimensionsMm,
+    finishColor: normalizeCatalogText(record.finishColor),
+    finishMaterial: normalizeCatalogText(record.finishMaterial),
+    detailNotes: normalizeCatalogText(record.detailNotes),
+    scaleLocked: normalizeCatalogBoolean(record.scaleLocked),
     supportProfile:
       normalizeAssetSupportProfile(record.supportProfile) ??
       inferAssetSupportProfile({
@@ -339,7 +397,8 @@ function normalizeCatalogItem(item: unknown): LibraryCatalogItem | null {
         assetId: record.assetId,
         label: typeof record.label === "string" ? record.label : undefined,
         category: typeof record.category === "string" ? record.category : undefined,
-        description: typeof record.description === "string" ? record.description : undefined
+        description: typeof record.description === "string" ? record.description : undefined,
+        dimensionsMm
       })
   } satisfies LibraryCatalogItem;
 }
@@ -357,7 +416,12 @@ export function toCatalogProductSnapshot(item: LibraryCatalogItem): CatalogProdu
     price: item.price,
     options: item.options,
     externalUrl: item.externalUrl,
-    thumbnail: item.thumbnail
+    thumbnail: item.thumbnail,
+    dimensionsMm: item.dimensionsMm,
+    finishColor: item.finishColor,
+    finishMaterial: item.finishMaterial,
+    detailNotes: item.detailNotes,
+    scaleLocked: item.scaleLocked
   };
 }
 

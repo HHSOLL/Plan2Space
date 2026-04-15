@@ -9,8 +9,8 @@
 
 ## Core Responsibilities
 - 로딩/랜딩/인증/대시보드 UX 구현
-- 2D 보정 편집 UX 개선
-- Top view / Walk mode 전환 경험 유지
+- room builder 단계 UX 개선
+- 데스크테리어 편집/공유/커뮤니티 조회 흐름 품질 유지
 
 ## Deliverables
 - UX/상태 흐름 정리: `docs/master-guide.md`
@@ -19,5 +19,5 @@
 
 ## Checks
 - 인터랙션 피드백(hover/cursor/hint)이 일관적인가
-- 2D 수정 결과가 3D에 즉시 반영되는가
+- 빌더 설정 결과가 에디터 3D에 즉시 반영되는가
 - 빌드 타임/런타임 경고 없이 동작하는가

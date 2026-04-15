@@ -49,8 +49,3 @@ E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 - `docs/3d-visual-engine.md`
 - `docs/user-action-guide.md`
 - `docs/performance-budget.md`
-
-레거시 아카이브:
-- `docs/legacy/README.md`
-- `docs/legacy/developer-handbook-archive.md`
-- `docs/legacy/master-guide-archive.md`

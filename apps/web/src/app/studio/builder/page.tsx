@@ -266,13 +266,6 @@ export default function StudioBuilderPage() {
       });
 
       await saveProject(project.id, {
-        topology: {
-          scale: scene.scale,
-          scaleInfo: scene.scaleInfo,
-          walls: scene.walls,
-          openings: scene.openings,
-          floors: scene.floors
-        },
         roomShell: derivedRoomShell,
         assets: [],
         materials: {

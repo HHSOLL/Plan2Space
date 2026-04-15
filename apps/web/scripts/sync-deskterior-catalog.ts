@@ -1,6 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+type ProductDimensionsMm = {
+  width: number;
+  depth: number;
+  height: number;
+};
+
 type CatalogEntry = {
   id: string;
   label: string;
@@ -13,6 +19,11 @@ type CatalogEntry = {
   options?: string | null;
   externalUrl?: string | null;
   brand?: string | null;
+  dimensionsMm?: ProductDimensionsMm | null;
+  finishColor?: string | null;
+  finishMaterial?: string | null;
+  detailNotes?: string | null;
+  scaleLocked?: boolean;
   supportProfile?: {
     surfaces: Array<{
       id: string;
@@ -40,16 +51,26 @@ const CURATED_INSERTS: CatalogEntry[] = [
     description: "Plan2Space에서 Blender로 직접 제작한 기본 데스크 자산입니다.",
     brand: "Plan2Space Studio",
     price: "₩189,000",
-    options: "1400x650x740 mm",
+    options: "1330x581x575 mm (Blender measured envelope)",
     externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EC%B1%85%EC%83%81",
+    dimensionsMm: {
+      width: 1330,
+      depth: 581,
+      height: 575
+    },
+    finishColor: "Natural oak",
+    finishMaterial: "Oak veneer over engineered wood",
+    detailNotes:
+      "Rectangular desk with a straight apron and slab top. Dimensions reflect Blender-measured envelope for runtime fidelity.",
+    scaleLocked: true,
     supportProfile: {
       surfaces: [
         {
           id: "desk-top",
           anchorTypes: ["desk_surface", "furniture_surface"],
           center: [0, 0],
-          size: [1.3, 0.62],
-          top: 0.74,
+          size: [1.33, 0.58],
+          top: 0.755,
           margin: [0.08, 0.08]
         }
       ]
@@ -64,17 +85,27 @@ const CURATED_INSERTS: CatalogEntry[] = [
     description: "키보드 수납 공간이 있는 데스크 전용 모니터 스탠드입니다.",
     brand: "Plan2Space Studio",
     price: "₩39,000",
-    options: "640x260x65 mm",
+    options: "560x130x71 mm (Blender measured envelope)",
     externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EB%AA%A8%EB%8B%88%ED%84%B0%20%EC%8A%A4%ED%83%A0%EB%93%9C",
+    dimensionsMm: {
+      width: 560,
+      depth: 130,
+      height: 71
+    },
+    finishColor: "Warm walnut",
+    finishMaterial: "Walnut veneer over plywood",
+    detailNotes:
+      "Low-profile riser for one ultrawide or dual compact monitors. Dimensions reflect Blender-measured envelope.",
+    scaleLocked: true,
     supportProfile: {
       surfaces: [
         {
           id: "stand-top",
           anchorTypes: ["desk_surface", "furniture_surface"],
           center: [0, 0],
-          size: [0.62, 0.24],
-          top: 0.08,
-          margin: [0.03, 0.03]
+          size: [0.56, 0.13],
+          top: 0.072,
+          margin: [0.02, 0.02]
         }
       ]
     }
@@ -89,7 +120,17 @@ const CURATED_INSERTS: CatalogEntry[] = [
     brand: "Plan2Space Studio",
     price: "₩59,000",
     options: "3000K 웜 라이트 · light-emitter",
-    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EB%8D%B0%EC%8A%A4%ED%81%AC%20%EB%9E%A8%ED%94%84"
+    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EB%8D%B0%EC%8A%A4%ED%81%AC%20%EB%9E%A8%ED%94%84",
+    dimensionsMm: {
+      width: 445,
+      depth: 227,
+      height: 483
+    },
+    finishColor: "Matte ivory",
+    finishMaterial: "Powder-coated steel with frosted acrylic diffuser",
+    detailNotes:
+      "Adjustable desk lamp with integrated warm emitter. Dimensions reflect Blender-measured envelope for accurate placement.",
+    scaleLocked: true
   }
 ];
 

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { ProductDimensionsMm, ProductPhysicalMetadata } from "../builder/catalog";
 import { normalizeSceneAnchorType, type SceneAnchorType } from "../scene/anchor-types";
 import { constrainPlacementToAnchor } from "../scene/anchors";
 import {
@@ -145,7 +146,7 @@ export type SceneAsset = {
     options?: string | null;
     externalUrl?: string | null;
     thumbnail?: string | null;
-  } | null;
+  } & ProductPhysicalMetadata | null;
   anchorType?: SceneAnchorType;
   supportAssetId?: string | null;
   supportProfile?: AssetSupportProfile | null;
@@ -271,10 +272,10 @@ const makeUnknownScaleInfo = (value = 1): ScaleInfo => ({
 });
 
 const DEFAULT_LIGHTING: LightingSettings = {
-  ambientIntensity: 0.35,
-  hemisphereIntensity: 0.4,
-  directionalIntensity: 1.05,
-  environmentBlur: 0.2
+  ambientIntensity: 0.44,
+  hemisphereIntensity: 0.54,
+  directionalIntensity: 1.24,
+  environmentBlur: 0.14
 };
 
 const initialSceneState: SceneDataState = {
@@ -332,6 +333,35 @@ function normalizeProductUrl(value: unknown) {
   return null;
 }
 
+function normalizeProductBoolean(value: unknown) {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  return false;
+}
+
+function normalizeProductDimensionValue(value: unknown) {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function normalizeProductDimensions(value: unknown): ProductDimensionsMm | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const width = normalizeProductDimensionValue((value as ProductDimensionsMm).width);
+  const depth = normalizeProductDimensionValue((value as ProductDimensionsMm).depth);
+  const height = normalizeProductDimensionValue((value as ProductDimensionsMm).height);
+  if (width === null || depth === null || height === null) {
+    return null;
+  }
+
+  return { width, depth, height };
+}
+
 function normalizeSceneAssetProduct(product: SceneAsset["product"]) {
   if (!product || typeof product !== "object") return null;
 
@@ -348,7 +378,12 @@ function normalizeSceneAssetProduct(product: SceneAsset["product"]) {
     price: normalizeProductText(product.price),
     options: normalizeProductText(product.options),
     externalUrl: normalizeProductUrl(product.externalUrl),
-    thumbnail: normalizeProductUrl(product.thumbnail)
+    thumbnail: normalizeProductUrl(product.thumbnail),
+    dimensionsMm: normalizeProductDimensions(product.dimensionsMm),
+    finishColor: normalizeProductText(product.finishColor),
+    finishMaterial: normalizeProductText(product.finishMaterial),
+    detailNotes: normalizeProductText(product.detailNotes),
+    scaleLocked: normalizeProductBoolean(product.scaleLocked)
   } satisfies NonNullable<SceneAsset["product"]>;
 }
 
@@ -369,6 +404,10 @@ function isSurfaceAnchor(anchorType: SceneAnchorType | undefined): boolean {
     anchorType === "shelf_surface" ||
     anchorType === "furniture_surface"
   );
+}
+
+function isScaleLockedProduct(product: SceneAsset["product"] | null | undefined) {
+  return normalizeProductBoolean(product?.scaleLocked);
 }
 
 function reanchorDependentsForSupport(
@@ -528,7 +567,7 @@ export const useSceneStore = create<SceneState>((set) => ({
   setRooms: (rooms) => set({ rooms }),
   setCameraAnchors: (cameraAnchors) => set({ cameraAnchors }),
   setNavGraph: (navGraph) => set({ navGraph }),
-  setAssets: (assets) => set({ assets }),
+  setAssets: (assets) => set({ assets: assets.map((asset) => normalizeSceneAsset(asset)) }),
   setScale: (scale, scaleInfo) =>
     set((state) => ({
       scale,
@@ -578,22 +617,31 @@ export const useSceneStore = create<SceneState>((set) => ({
     set((state) => {
       let nextAssets = state.assets.map((asset) =>
         asset.id === id
-          ? normalizeSceneAsset({
-              ...asset,
-              ...updates,
-              catalogItemId:
-                typeof (updates.catalogItemId ?? asset.catalogItemId) === "string" &&
-                (updates.catalogItemId ?? asset.catalogItemId)?.length
-                  ? (updates.catalogItemId ?? asset.catalogItemId)
-                  : null,
-              anchorType: normalizeSceneAnchorType(updates.anchorType ?? asset.anchorType),
-              supportAssetId:
-                updates.supportAssetId !== undefined ? normalizeSupportAssetId(updates.supportAssetId) : asset.supportAssetId,
-              supportProfile:
-                updates.supportProfile !== undefined
-                  ? normalizeAssetSupportProfile(updates.supportProfile)
-                  : asset.supportProfile ?? null
-            })
+          ? (() => {
+              const mergedProduct = normalizeSceneAssetProduct(updates.product ?? asset.product);
+              const scaleLocked = isScaleLockedProduct(mergedProduct);
+
+              return normalizeSceneAsset({
+                ...asset,
+                ...updates,
+                product: mergedProduct,
+                scale: scaleLocked ? asset.scale : (updates.scale ?? asset.scale),
+                catalogItemId:
+                  typeof (updates.catalogItemId ?? asset.catalogItemId) === "string" &&
+                  (updates.catalogItemId ?? asset.catalogItemId)?.length
+                    ? (updates.catalogItemId ?? asset.catalogItemId)
+                    : null,
+                anchorType: normalizeSceneAnchorType(updates.anchorType ?? asset.anchorType),
+                supportAssetId:
+                  updates.supportAssetId !== undefined
+                    ? normalizeSupportAssetId(updates.supportAssetId)
+                    : asset.supportAssetId,
+                supportProfile:
+                  updates.supportProfile !== undefined
+                    ? normalizeAssetSupportProfile(updates.supportProfile)
+                    : asset.supportProfile ?? null
+              });
+            })()
           : asset
       );
 
@@ -749,7 +797,7 @@ export const useSceneStore = create<SceneState>((set) => ({
       const nextScaleInfo =
         scene.scaleInfo ??
         (typeof scene.scale === "number" ? { ...state.scaleInfo, value: scene.scale } : state.scaleInfo);
-      const topologyChanged =
+      const roomShellChanged =
         scene.walls !== undefined ||
         scene.openings !== undefined ||
         scene.floors !== undefined ||
@@ -760,12 +808,11 @@ export const useSceneStore = create<SceneState>((set) => ({
         scene.rooms !== undefined ||
         scene.cameraAnchors !== undefined ||
         scene.navGraph !== undefined;
-      const derivedReset = topologyChanged && !derivedProvided ? createDerivedSceneReset() : {};
+      const derivedReset = roomShellChanged && !derivedProvided ? createDerivedSceneReset() : {};
       const nextOpenings = scene.openings ?? state.openings;
-      const nextAssets =
-        Array.isArray(scene.assets) && scene.assets.length > 0
-          ? scene.assets.map((asset) => normalizeSceneAsset(asset))
-          : scene.assets;
+      const nextAssets = Array.isArray(scene.assets)
+        ? scene.assets.map((asset) => normalizeSceneAsset(asset))
+        : scene.assets;
       const nextLighting = scene.lighting
         ? {
             ...state.lighting,
@@ -775,7 +822,7 @@ export const useSceneStore = create<SceneState>((set) => ({
       const nextEntranceId =
         scene.entranceId !== undefined
           ? scene.entranceId
-          : topologyChanged
+          : roomShellChanged
             ? resolveEntranceId(nextOpenings)
             : state.entranceId;
       return {

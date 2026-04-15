@@ -7,6 +7,15 @@ export type ProductInspectorModel = {
   price: string | null;
   options: string | null;
   externalUrl: string | null;
+  dimensionsMm: {
+    width: number;
+    depth: number;
+    height: number;
+  } | null;
+  finishColor: string | null;
+  finishMaterial: string | null;
+  detailNotes: string | null;
+  scaleLocked: boolean;
 };
 
 export type ProductHotspot = ProductInspectorModel & {

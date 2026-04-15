@@ -19,14 +19,14 @@ Must Read (in order):
 ## 2) Prime Directives
 - `new_guideline/README.md`를 최상위 제품 요구사항으로 취급한다.
 - `docs/master-guide.md`를 엔지니어링 단일 기준 문서로 유지한다.
-- Semantic parsing -> 2D correction -> Procedural 3D 파이프라인을 유지한다.
-- Top view / Walk mode 두 모드 카메라 경험을 유지한다.
+- Room-first builder -> deskterior editor -> publish/share -> community viewer 제품 흐름을 유지한다.
+- floorplan/intake 레거시 파이프라인을 메인 제품 경로에 재도입하지 않는다.
 - PBR + HDR + Post FX 품질 기준을 유지한다.
 
 ## 3) Skill Routing Matrix
 - 아키텍처/범위/품질 게이트: `plan2space-project-core`
 - 랜딩/UX/상호작용/비주얼 폴리시: `plan2space-studio-ux`
-- 도면 분석/스키마/검증/프롬프트: `plan2space-blueprint-ai`
+- 자산 생성/추천형 AI 경계: `plan2space-blueprint-ai` (필요 시 제한적으로 사용)
 - 브라우저 E2E/시나리오 검증: `playwright`
 - UI 가이드라인 점검: `web-design-guidelines`
 
@@ -42,7 +42,7 @@ Must Read (in order):
 ## 5) Documentation Update Rules (작업 종료 전 필수)
 - 아키텍처/품질 제약 변경: `docs/master-guide.md`
 - 단계/우선순위/완료조건 변경: `docs/implementation-plan.md`
-- AI 계약/스키마/오류 처리 변경: `docs/ai-pipeline.md`
+- AI 계약/오류 처리 변경: `docs/ai-pipeline.md`
 - 렌더링/시각 품질 기준 변경: `docs/3d-visual-engine.md`
 - 사용자 준비사항/운영 절차 변경: `docs/user-action-guide.md`
 

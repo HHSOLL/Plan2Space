@@ -45,6 +45,39 @@ function readMetadataText(record: Record<string, unknown> | null, key: string) {
   return normalized.length > 0 ? normalized : null;
 }
 
+function readMetadataBoolean(record: Record<string, unknown> | null, key: string) {
+  if (!record) return null;
+  const value = record[key];
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  return null;
+}
+
+function readMetadataDimensionValue(value: unknown) {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function readMetadataDimensions(record: Record<string, unknown> | null) {
+  if (!record) return null;
+  const raw = record.dimensionsMm;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+
+  const width = readMetadataDimensionValue((raw as Record<string, unknown>).width);
+  const depth = readMetadataDimensionValue((raw as Record<string, unknown>).depth);
+  const height = readMetadataDimensionValue((raw as Record<string, unknown>).height);
+  if (width === null || depth === null || height === null) {
+    return null;
+  }
+
+  return { width, depth, height };
+}
+
 function readMetadataUrl(record: Record<string, unknown> | null, key: string) {
   const value = readMetadataText(record, key);
   if (!value) return null;
@@ -203,7 +236,34 @@ export function SharedProjectClient({
             readMetadataUrl(metadata, "productUrl") ??
             catalogItem?.externalUrl ??
             null,
-          material: readMetadataText(metadata, "material")
+          dimensionsMm: productSnapshot?.dimensionsMm ?? readMetadataDimensions(metadata) ?? catalogItem?.dimensionsMm ?? null,
+          finishColor:
+            productSnapshot?.finishColor ??
+            readMetadataText(metadata, "finishColor") ??
+            catalogItem?.finishColor ??
+            null,
+          finishMaterial:
+            productSnapshot?.finishMaterial ??
+            readMetadataText(metadata, "finishMaterial") ??
+            readMetadataText(metadata, "material") ??
+            catalogItem?.finishMaterial ??
+            null,
+          detailNotes:
+            productSnapshot?.detailNotes ??
+            readMetadataText(metadata, "detailNotes") ??
+            catalogItem?.detailNotes ??
+            null,
+          scaleLocked:
+            productSnapshot?.scaleLocked ??
+            readMetadataBoolean(metadata, "scaleLocked") ??
+            catalogItem?.scaleLocked ??
+            false,
+          material:
+            productSnapshot?.finishMaterial ??
+            readMetadataText(metadata, "finishMaterial") ??
+            readMetadataText(metadata, "material") ??
+            catalogItem?.finishMaterial ??
+            null
         } satisfies ProductHotspot;
       }),
     [catalog, mappedScene, scenePayload.assets]

@@ -45,6 +45,7 @@ import {
 } from "../../../../lib/domain/scene-document";
 import { constrainPlacementToAnchor, inferAnchorTypeForCatalogItem } from "../../../../lib/scene/anchors";
 import { normalizeSceneAnchorType } from "../../../../lib/scene/anchor-types";
+import { getLightingPreset, type LightingPresetId } from "../../../../lib/scene/lighting-presets";
 
 const STARTER_SET_OFFSETS: Array<[number, number]> = [
   [-2.2, -1.2],
@@ -197,10 +198,6 @@ export default function ProjectEditorPage() {
         return "empty";
       }
 
-      if (bootstrapResponse.source === "revision_layout") {
-        toast.message("고정된 장면 버전에서 불러왔습니다. 저장하면 현재 프로젝트 스냅샷으로 반영됩니다.");
-      }
-
       applyMappedScene(bootstrapResponse.bootstrap);
       setViewMode("top");
       return "version";
@@ -291,23 +288,36 @@ export default function ProjectEditorPage() {
   const addCatalogItemToScene = useCallback(
     (item: LibraryCatalogItem) => {
       const id = createAssetId();
+      const productSnapshot = toCatalogProductSnapshot(item);
+      const supportProfile = item.supportProfile ?? null;
+      const inferredAnchorType = inferAnchorTypeForCatalogItem(item);
       const anchoredPlacement = constrainPlacementToAnchor(
         {
           position: [sceneCenter.x, 0, sceneCenter.z],
           rotation: [0, 0, 0],
-          anchorType: inferAnchorTypeForCatalogItem(item),
+          anchorType: inferredAnchorType,
           supportAssetId: null
         },
-        anchorContext
+        {
+          ...anchorContext,
+          activeAsset: {
+            id,
+            assetId: item.assetId,
+            catalogItemId: item.id,
+            product: productSnapshot,
+            supportProfile,
+            scale: item.scale
+          }
+        }
       );
       addFurniture({
         id,
         assetId: item.assetId,
         catalogItemId: item.id,
-        product: toCatalogProductSnapshot(item),
+        product: productSnapshot,
         anchorType: anchoredPlacement.anchorType,
         supportAssetId: anchoredPlacement.supportAssetId,
-        supportProfile: item.supportProfile ?? null,
+        supportProfile,
         position: anchoredPlacement.position,
         rotation: anchoredPlacement.rotation,
         scale: item.scale,
@@ -334,26 +344,38 @@ export default function ProjectEditorPage() {
 
     selectedItems.slice(0, STARTER_SET_OFFSETS.length).forEach((item, index) => {
       const [offsetX, offsetZ] = STARTER_SET_OFFSETS[index] ?? [0, 0];
+      const id = createAssetId();
+      const productSnapshot = toCatalogProductSnapshot(item);
+      const supportProfile = item.supportProfile ?? null;
+      const inferredAnchorType = inferAnchorTypeForCatalogItem(item);
       const anchoredPlacement = constrainPlacementToAnchor(
         {
           position: [sceneCenter.x + offsetX, 0, sceneCenter.z + offsetZ],
           rotation: [0, 0, 0],
-          anchorType: inferAnchorTypeForCatalogItem(item),
+          anchorType: inferredAnchorType,
           supportAssetId: null
         },
         {
           ...anchorContext,
-          sceneAssets: nextSceneAssets
+          sceneAssets: nextSceneAssets,
+          activeAsset: {
+            id,
+            assetId: item.assetId,
+            catalogItemId: item.id,
+            product: productSnapshot,
+            supportProfile,
+            scale: item.scale
+          }
         }
       );
       const nextAsset = {
-        id: createAssetId(),
+        id,
         assetId: item.assetId,
         catalogItemId: item.id,
-        product: toCatalogProductSnapshot(item),
+        product: productSnapshot,
         anchorType: anchoredPlacement.anchorType,
         supportAssetId: anchoredPlacement.supportAssetId,
-        supportProfile: item.supportProfile ?? null,
+        supportProfile,
         position: anchoredPlacement.position,
         rotation: anchoredPlacement.rotation,
         scale: item.scale,
@@ -442,6 +464,15 @@ export default function ProjectEditorPage() {
   const commitLightingSetting = useCallback(() => {
     recordSnapshot("조명 변경");
   }, [recordSnapshot]);
+  const applyLightingPreset = useCallback(
+    (presetId: LightingPresetId) => {
+      const preset = getLightingPreset(presetId);
+      if (!preset) return;
+      setLighting(preset.settings);
+      recordSnapshot(`조명 프리셋 변경: ${preset.label}`);
+    },
+    [recordSnapshot, setLighting]
+  );
 
   const hasSceneGeometry = walls.length > 0 || floors.length > 0;
   const canEnter3D = hasSceneGeometry && !getScaleGateMessage(scale, scaleInfo);
@@ -460,13 +491,6 @@ export default function ProjectEditorPage() {
 
   const savePayload = useMemo(
     () => ({
-      topology: {
-        scale,
-        scaleInfo,
-        walls,
-        openings,
-        floors
-      },
       roomShell: {
         scale,
         scaleInfo,
@@ -693,6 +717,7 @@ export default function ProjectEditorPage() {
                           onFloorMaterialChange={applyFloorFinish}
                           onLightingChange={applyLightingSetting}
                           onLightingCommit={commitLightingSetting}
+                          onApplyLightingPreset={applyLightingPreset}
                           onUpdateAsset={updateAssetFromInspector}
                           onRemoveAsset={removeAssetFromInspector}
                           formatAssetLabel={formatAssetIdLabel}
@@ -765,6 +790,7 @@ export default function ProjectEditorPage() {
                         onFloorMaterialChange={applyFloorFinish}
                         onLightingChange={applyLightingSetting}
                         onLightingCommit={commitLightingSetting}
+                        onApplyLightingPreset={applyLightingPreset}
                         onUpdateAsset={updateAssetFromInspector}
                         onRemoveAsset={removeAssetFromInspector}
                         formatAssetLabel={formatAssetIdLabel}

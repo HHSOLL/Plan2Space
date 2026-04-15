@@ -29,8 +29,6 @@ type SceneViewportProps = {
   gl?: ComponentProps<typeof Canvas>["gl"];
   camera: ComponentProps<typeof Canvas>["camera"];
   interactionMode?: "editor" | "viewer" | "preview";
-  // Legacy prop, prefer interactionMode.
-  includeEditorTools?: boolean;
   toneMappingExposure?: number;
   modeBadge?: ReactNode;
   bottomNotice?: ReactNode;
@@ -50,14 +48,13 @@ export function SceneViewport({
   },
   camera,
   interactionMode,
-  includeEditorTools = false,
-  toneMappingExposure = 1.08,
+  toneMappingExposure = 1.12,
   modeBadge,
   bottomNotice,
   chromeTone = "dark",
   showHud = true
 }: SceneViewportProps) {
-  const resolvedInteractionMode = interactionMode ?? (includeEditorTools ? "editor" : "viewer");
+  const resolvedInteractionMode = interactionMode ?? "viewer";
   const renderEditorTools = resolvedInteractionMode === "editor";
   const renderViewerHotspots = resolvedInteractionMode === "viewer";
   const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";

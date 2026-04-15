@@ -12,9 +12,6 @@ export interface Project {
   updated_at: string;
   metadata?: Record<string, unknown>;
   current_version_id?: string | null;
-  source_layout_revision_id?: string | null;
-  resolution_state?: "reused" | "generated" | "reuse_invalidated" | null;
-  created_from_intake_session_id?: string | null;
 }
 
 async function requestJson<T>(path: string, init: RequestInit = {}) {

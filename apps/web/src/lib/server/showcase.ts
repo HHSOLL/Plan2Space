@@ -74,7 +74,7 @@ function resolveThumbnailBucket(metadata: Record<string, unknown> | null) {
   if (metadata && typeof metadata.thumbnailBucket === "string" && metadata.thumbnailBucket.length > 0) {
     return metadata.thumbnailBucket;
   }
-  return process.env.FLOORPLAN_UPLOAD_BUCKET ?? process.env.NEXT_PUBLIC_FLOORPLAN_UPLOAD_BUCKET ?? "floor-plans";
+  return process.env.PROJECT_MEDIA_BUCKET ?? process.env.NEXT_PUBLIC_PROJECT_MEDIA_BUCKET ?? "project-media";
 }
 
 async function resolveProjectThumbnail(thumbnailPath: string | null, metadata: Record<string, unknown> | null) {

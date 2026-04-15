@@ -3,21 +3,33 @@
 ## JSON Schema (Example)
 ```json
 {
-  "walls": [
-    {"id": "wall-1", "start": [120, 80], "end": [420, 80], "thickness": 12, "type": "exterior"}
-  ],
-  "openings": [
-    {"id": "open-1", "wallId": "wall-1", "type": "door", "offset": 160, "width": 90, "height": 210}
-  ]
+  "task": "asset_generation",
+  "input": {
+    "imageUrl": "https://...",
+    "category": "desk_accessory",
+    "styleTags": ["minimal", "oak", "warm"]
+  },
+  "output": {
+    "assetName": "oak_monitor_stand",
+    "description": "Minimal oak monitor stand with rounded corners",
+    "tags": ["desk", "monitor", "wood"],
+    "license": "CC0",
+    "sourceAttribution": "user-upload",
+    "estimatedDimensionsMeters": [0.56, 0.12, 0.21]
+  }
 }
 ```
 
 ## Prompt Template
 ```
-You are a floorplan analyst. Extract only walls and openings.
-Coordinates are image pixels, origin at top-left (0,0).
-Return ONLY JSON in this schema:
-{ walls: [{id, start:[x,y], end:[x,y], thickness, type?}], openings:[{id, wallId?, type, offset?, width, height?}] }
-Ignore furniture, text, and symbols not part of structure.
-If tools are available, return the JSON using the tool output.
+You are a deskterior asset AI assistant.
+Generate ONLY JSON for an asset-generation task.
+Do not output floorplan/topology entities such as walls/openings.
+Required:
+- task = "asset_generation"
+- output.assetName, output.tags, output.license
+Optional:
+- output.estimatedDimensionsMeters when confidence is sufficient.
+If model generation fails, return:
+{ "task": "asset_generation", "error": { "code": "...", "message": "..." } }
 ```

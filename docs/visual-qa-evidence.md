@@ -18,10 +18,10 @@
 3. `/studio/builder` step 3: door/window authoring + wall target chips
 4. `/studio/builder` step 4: finish swatches + summary + primary CTA
 5. `/project/[id]` top view: 상단 chrome + 중심 viewport + 하단 view bar
-6. `/project/[id]` walk mode: 탑뷰와 구분되는 몰입형 시점
+6. `/project/[id]` immersive preview: 탑뷰와 구분되는 몰입형 시점
 7. `/project/[id]` 공유 모달: permanent/view-only/publish 흐름
 8. `/shared/[token]` top view: 읽기 전용 헤더/메트릭/inspection rail
-9. `/shared/[token]` walk mode: hotspot 선택 ↔ 상품 패널 연동
+9. `/shared/[token]` viewer immersive shot: hotspot 선택 ↔ 상품 패널 연동
 10. `/community`: featured + collection pulse + pinned feed 구조
 11. `/gallery`: filter chips + 안정적인 카드 그리드/카운트
 12. `/shared/[token-expired]`: branded 만료 링크 복구 상태

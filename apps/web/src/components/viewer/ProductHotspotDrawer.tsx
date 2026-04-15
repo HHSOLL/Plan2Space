@@ -10,6 +10,13 @@ type ProductHotspotDrawerProps = {
   children?: ReactNode;
 };
 
+function formatDimensionsMm(
+  dimensions: { width: number; depth: number; height: number } | null
+) {
+  if (!dimensions) return null;
+  return `W ${dimensions.width} / D ${dimensions.depth} / H ${dimensions.height} mm`;
+}
+
 export function ProductHotspotDrawer({
   hotspots,
   selectedHotspotId,
@@ -18,6 +25,7 @@ export function ProductHotspotDrawer({
 }: ProductHotspotDrawerProps) {
   const selectedHotspot = hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? null;
   const selectedPreview = selectedHotspot ? getCatalogPreviewClasses(selectedHotspot.tone) : null;
+  const selectedDimensions = formatDimensionsMm(selectedHotspot?.dimensionsMm ?? null);
 
   return (
     <aside className="p2s-workspace-panel p-4 sm:p-5 xl:order-1 xl:sticky xl:top-8 xl:self-start">
@@ -66,6 +74,11 @@ export function ProductHotspotDrawer({
                 <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#6e6458]">
                   {selectedHotspot.anchorType.replaceAll("_", " ")}
                 </span>
+                {selectedHotspot.scaleLocked ? (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#8a6a2c]">
+                    실측 고정
+                  </span>
+                ) : null}
               </div>
               {selectedHotspot.price ? (
                 <p className="mt-4 text-lg font-semibold text-[#1f1b16]">{selectedHotspot.price}</p>
@@ -79,11 +92,36 @@ export function ProductHotspotDrawer({
                     {selectedHotspot.brand ?? selectedHotspot.material ?? "브랜드/재질 정보 없음"}
                   </span>
                 </div>
+                {selectedDimensions ? (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/70 px-2.5 py-2">
+                    <span className="uppercase tracking-[0.12em] text-[#84796d]">실제 규격</span>
+                    <span className="font-semibold text-right text-[#1f1b16]">{selectedDimensions}</span>
+                  </div>
+                ) : null}
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/70 px-2.5 py-2">
                   <span className="uppercase tracking-[0.12em] text-[#84796d]">옵션/규격</span>
                   <span className="font-semibold text-[#1f1b16]">{selectedHotspot.options ?? "기본 옵션"}</span>
                 </div>
               </div>
+              {selectedHotspot.finishColor || selectedHotspot.finishMaterial ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedHotspot.finishColor ? (
+                    <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6e6458]">
+                      색상 {selectedHotspot.finishColor}
+                    </span>
+                  ) : null}
+                  {selectedHotspot.finishMaterial ? (
+                    <span className="rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6e6458]">
+                      재질 {selectedHotspot.finishMaterial}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+              {selectedHotspot.detailNotes ? (
+                <div className="mt-3 rounded-[14px] border border-black/10 bg-white/75 px-3 py-3 text-xs leading-6 text-[#5f564b]">
+                  {selectedHotspot.detailNotes}
+                </div>
+              ) : null}
               {selectedHotspot.externalUrl ? (
                 <a
                   href={selectedHotspot.externalUrl}
@@ -172,6 +210,11 @@ export function ProductHotspotDrawer({
                         {hotspot.price ? (
                           <span className="rounded-full border border-black/10 bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#736659]">
                             {hotspot.price}
+                          </span>
+                        ) : null}
+                        {hotspot.dimensionsMm ? (
+                          <span className="rounded-full border border-black/10 bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#736659]">
+                            {hotspot.dimensionsMm.width}x{hotspot.dimensionsMm.depth}x{hotspot.dimensionsMm.height} mm
                           </span>
                         ) : null}
                       </div>

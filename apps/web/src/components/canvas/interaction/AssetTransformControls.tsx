@@ -54,6 +54,7 @@ export default function AssetTransformControls() {
     if (!selectedAssetId || !target) return;
     const selectedAsset = assets.find((asset) => asset.id === selectedAssetId);
     if (!selectedAsset) return;
+    const scaleLocked = selectedAsset.product?.scaleLocked === true;
     const anchoredPlacement = constrainPlacementToAnchor(
       {
         position: vector3ToTuple(target.position),
@@ -72,13 +73,26 @@ export default function AssetTransformControls() {
 
     target.position.set(...anchoredPlacement.position);
     target.rotation.set(...anchoredPlacement.rotation);
-    updateFurniture(selectedAssetId, {
+    if (scaleLocked) {
+      target.scale.set(...selectedAsset.scale);
+    }
+
+    const updates = {
       anchorType: anchoredPlacement.anchorType,
       supportAssetId: anchoredPlacement.supportAssetId,
       position: anchoredPlacement.position,
-      rotation: anchoredPlacement.rotation,
-      scale: vector3ToTuple(target.scale)
-    });
+      rotation: anchoredPlacement.rotation
+    } as const;
+
+    updateFurniture(
+      selectedAssetId,
+      scaleLocked
+        ? updates
+        : {
+            ...updates,
+            scale: vector3ToTuple(target.scale)
+          }
+    );
   }, [assets, ceilings, scale, selectedAssetId, target, updateFurniture, walls]);
 
   if (viewMode !== "top" || readOnly || !target) return null;

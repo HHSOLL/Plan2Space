@@ -1,17 +1,17 @@
 # Quality Bar and Guardrails
 
 ## Must-Haves
-- Semantic parsing -> 2D correction -> procedural 3D generation.
+- Room builder output(`roomShell`)과 scene 저장(`sceneDocument`) 계약을 일관되게 유지.
+- Publish/share/community에서 동일 scene snapshot이 읽기 전용 뷰어로 복원.
+- Blender 원본 -> GLB -> catalog manifest 동기화 경로 유지.
 - PBR materials + HDR environment + post-processing chain.
-- Top view hides ceiling; walk mode shows ceiling.
 - Save/load versions with stable JSON contracts.
-- Watermark/컬러 도면 대응 전처리(그레이스케일/배경제거) 유지.
 
 ## Visual Targets
 - Loading and landing match `new_guideline/` references.
 - Glassmorphism UI overlays with readable contrast.
 
 ## Failure Conditions
-- Direct AI-to-3D generation without 2D correction.
+- Retired floorplan/intake pipeline reintroduced to runtime path.
 - Flat or plastic-looking materials (no PBR/HDRI).
-- Walk mode passing through walls.
+- Shared/community viewer scene mismatch with published snapshot.

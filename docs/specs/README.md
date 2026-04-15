@@ -1,7 +1,9 @@
-# 레거시 스펙 안내
+# 스펙 안내
 
-`docs/specs`는 메인 공간 우선 제품 문서 영역이 아닙니다.
+`docs/specs`는 제품 활성 스펙 보관 영역입니다.
 
-과거 분석/파이프라인 스펙 문서는 아래로 이동했습니다.
-
-- `docs/legacy/specs/`
+현재 기준 문서는 다음 문서를 우선 참고합니다.
+- `docs/master-guide.md`
+- `docs/implementation-plan.md`
+- `docs/3d-visual-engine.md`
+- `docs/user-action-guide.md`

@@ -189,13 +189,21 @@ export default function AIAssistantPanel() {
         setFloorMaterialIndex((floorMaterialIndex + 1) % FLOOR_MATERIAL_COUNT),
       drop_chair: () => {
         const id = createId();
+        const inferredAnchorType = "floor" as const;
         const anchoredPlacement = constrainPlacementToAnchor(
           {
             position: [center.x, 0, center.z],
             rotation: [0, 0, 0],
-            anchorType: "floor"
+            anchorType: inferredAnchorType
           },
-          anchorContext
+          {
+            ...anchorContext,
+            activeAsset: {
+              id,
+              assetId: DEFAULT_ASSET,
+              scale: [1, 1, 1]
+            }
+          }
         );
         addFurniture({
           id,

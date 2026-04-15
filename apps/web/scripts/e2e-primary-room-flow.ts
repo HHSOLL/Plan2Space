@@ -171,56 +171,66 @@ async function pageContains(baseUrl: URL, route: string, pattern: string, attemp
 }
 
 function buildVersionPayload() {
+  const roomShell = {
+    scale: 1,
+    scaleInfo: {
+      value: 1,
+      source: "user_measure",
+      confidence: 0.9,
+      evidence: { notes: "scripted-e2e" }
+    },
+    walls: [
+      { id: "wall-1", start: [0, 0], end: [6, 0], thickness: 0.2, height: 2.8 },
+      { id: "wall-2", start: [6, 0], end: [6, 4], thickness: 0.2, height: 2.8 },
+      { id: "wall-3", start: [6, 4], end: [0, 4], thickness: 0.2, height: 2.8 },
+      { id: "wall-4", start: [0, 4], end: [0, 0], thickness: 0.2, height: 2.8 }
+    ],
+    openings: [
+      {
+        id: "opening-door-main",
+        wallId: "wall-1",
+        type: "door",
+        offset: 0.8,
+        width: 0.9,
+        height: 2.1,
+        verticalOffset: 0,
+        isEntrance: true
+      },
+      {
+        id: "opening-window-main",
+        wallId: "wall-2",
+        type: "window",
+        offset: 1.0,
+        width: 1.4,
+        height: 1.2,
+        sillHeight: 0.9
+      }
+    ],
+    floors: [
+      {
+        id: "floor-main",
+        outline: [
+          [0, 0],
+          [6, 0],
+          [6, 4],
+          [0, 4]
+        ],
+        materialId: null
+      }
+    ],
+    ceilings: [],
+    rooms: [],
+    cameraAnchors: [],
+    navGraph: {
+      nodes: [],
+      edges: []
+    },
+    entranceId: "opening-door-main"
+  };
+
   return {
     message: "E2E primary room flow",
-    topology: {
-      scale: 1,
-      scaleInfo: {
-        value: 1,
-        source: "user_measure",
-        confidence: 0.9,
-        evidence: { notes: "scripted-e2e" }
-      },
-      walls: [
-        { id: "wall-1", start: [0, 0], end: [6, 0], thickness: 0.2, height: 2.8 },
-        { id: "wall-2", start: [6, 0], end: [6, 4], thickness: 0.2, height: 2.8 },
-        { id: "wall-3", start: [6, 4], end: [0, 4], thickness: 0.2, height: 2.8 },
-        { id: "wall-4", start: [0, 4], end: [0, 0], thickness: 0.2, height: 2.8 }
-      ],
-      openings: [
-        {
-          id: "opening-door-main",
-          wallId: "wall-1",
-          type: "door",
-          offset: 0.8,
-          width: 0.9,
-          height: 2.1,
-          verticalOffset: 0,
-          isEntrance: true
-        },
-        {
-          id: "opening-window-main",
-          wallId: "wall-2",
-          type: "window",
-          offset: 1.0,
-          width: 1.4,
-          height: 1.2,
-          sillHeight: 0.9
-        }
-      ],
-      floors: [
-        {
-          id: "floor-main",
-          outline: [
-            [0, 0],
-            [6, 0],
-            [6, 4],
-            [0, 4]
-          ],
-          materialId: null
-        }
-      ]
-    },
+    roomShell,
     assets: [
       {
         id: "asset-chair-1",
@@ -328,13 +338,13 @@ async function runFullPrimaryFlow(baseUrl: URL) {
     console.log("[PASS] 1) 새 방 만들기 완료");
 
     const versionPayload = buildVersionPayload();
-    if (!Number.isFinite(versionPayload.topology.scale) || versionPayload.topology.walls.length < 4) {
-      throw new Error("Invalid topology payload for dimension step.");
+    if (!Number.isFinite(versionPayload.roomShell.scale) || versionPayload.roomShell.walls.length < 4) {
+      throw new Error("Invalid room shell payload for dimension step.");
     }
     console.log("[PASS] 2) 치수 조정하기 계약 데이터 확인");
 
-    const hasDoor = versionPayload.topology.openings.some((opening) => opening.type === "door");
-    const hasWindow = versionPayload.topology.openings.some((opening) => opening.type === "window");
+    const hasDoor = versionPayload.roomShell.openings.some((opening) => opening.type === "door");
+    const hasWindow = versionPayload.roomShell.openings.some((opening) => opening.type === "window");
     if (!hasDoor || !hasWindow) {
       throw new Error("Opening step payload is missing door or window.");
     }

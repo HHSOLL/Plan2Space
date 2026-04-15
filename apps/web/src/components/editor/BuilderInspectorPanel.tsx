@@ -4,6 +4,11 @@ import { SlidersHorizontal, Trash2 } from "lucide-react";
 import type { LibraryCatalogItem } from "../../lib/builder/catalog";
 import { SCENE_ANCHOR_TYPES, type SceneAnchorType } from "../../lib/scene/anchor-types";
 import { builderFloorFinishes, builderWallFinishes } from "../../lib/builder/templates";
+import {
+  LIGHTING_PRESETS,
+  inferLightingPresetId,
+  type LightingPresetId
+} from "../../lib/scene/lighting-presets";
 import type { TransformMode } from "../../lib/stores/useEditorStore";
 import type { LightingSettings, SceneAsset } from "../../lib/stores/useSceneStore";
 
@@ -25,10 +30,18 @@ type BuilderInspectorPanelProps = {
   onFloorMaterialChange: (index: number) => void;
   onLightingChange: (lighting: Partial<LightingSettings>) => void;
   onLightingCommit: () => void;
+  onApplyLightingPreset: (presetId: LightingPresetId) => void;
   onUpdateAsset: (id: string, updates: Partial<SceneAsset>) => void;
   onRemoveAsset: (id: string) => void;
   formatAssetLabel: (assetId: string) => string;
 };
+
+function formatDimensionsMm(
+  dimensions: { width: number; depth: number; height: number } | null | undefined
+) {
+  if (!dimensions) return null;
+  return `W ${dimensions.width} / D ${dimensions.depth} / H ${dimensions.height} mm`;
+}
 
 export function BuilderInspectorPanel({
   visible,
@@ -48,6 +61,7 @@ export function BuilderInspectorPanel({
   onFloorMaterialChange,
   onLightingChange,
   onLightingCommit,
+  onApplyLightingPreset,
   onUpdateAsset,
   onRemoveAsset,
   formatAssetLabel
@@ -67,6 +81,14 @@ export function BuilderInspectorPanel({
     selectedAsset?.anchorType === "furniture_surface" ||
     selectedAsset?.anchorType === "shelf_surface";
   const isRotationManagedByAnchor = selectedAsset?.anchorType === "wall";
+  const productDimensions = selectedAsset?.product?.dimensionsMm ?? selectedAssetMeta?.dimensionsMm ?? null;
+  const productFinishColor = selectedAsset?.product?.finishColor ?? selectedAssetMeta?.finishColor ?? null;
+  const productFinishMaterial = selectedAsset?.product?.finishMaterial ?? selectedAssetMeta?.finishMaterial ?? null;
+  const productDetailNotes = selectedAsset?.product?.detailNotes ?? selectedAssetMeta?.detailNotes ?? null;
+  const scaleLocked =
+    selectedAsset?.product?.scaleLocked ?? selectedAssetMeta?.scaleLocked ?? false;
+  const dimensionsLabel = formatDimensionsMm(productDimensions);
+  const activeLightingPresetId = inferLightingPresetId(lighting);
   const containerClassName =
     layout === "inline"
       ? `flex h-full min-h-0 flex-col ${className ?? ""}`.trim()
@@ -151,6 +173,28 @@ export function BuilderInspectorPanel({
 
         <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">조명</p>
+          <div className="grid gap-2">
+            {LIGHTING_PRESETS.map((preset) => {
+              const isActive = activeLightingPresetId === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => onApplyLightingPreset(preset.id)}
+                  className={`rounded-xl border px-3 py-2 text-left transition ${
+                    isActive
+                      ? "border-[#1c1a17] bg-[#1c1a17] text-white"
+                      : "border-black/10 bg-[#faf9f7] text-[#4e473d] hover:border-black/20"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em]">{preset.label}</div>
+                  <div className={`mt-1 text-[11px] leading-4 ${isActive ? "text-white/80" : "text-[#6f665a]"}`}>
+                    {preset.description}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
           <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
             주변광
             <input
@@ -247,6 +291,33 @@ export function BuilderInspectorPanel({
                 ) : null}
                 <div className="mt-1 text-xs text-[#83796d]">{selectedAsset.id}</div>
               </div>
+              {dimensionsLabel || productFinishColor || productFinishMaterial || productDetailNotes ? (
+                <div className="space-y-3 rounded-[18px] border border-black/10 bg-[#faf9f7] p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
+                    실제 규격
+                  </div>
+                  {dimensionsLabel ? (
+                    <div className="rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm font-semibold text-[#1f1b16]">
+                      {dimensionsLabel}
+                    </div>
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    {productFinishColor ? (
+                      <span className="rounded-full border border-black/10 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6f665a]">
+                        색상 {productFinishColor}
+                      </span>
+                    ) : null}
+                    {productFinishMaterial ? (
+                      <span className="rounded-full border border-black/10 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6f665a]">
+                        재질 {productFinishMaterial}
+                      </span>
+                    ) : null}
+                  </div>
+                  {productDetailNotes ? (
+                    <p className="text-xs leading-6 text-[#6f665b]">{productDetailNotes}</p>
+                  ) : null}
+                </div>
+              ) : null}
               <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                 기준면
                 <select
@@ -354,13 +425,18 @@ export function BuilderInspectorPanel({
                     type="number"
                     step="0.1"
                     value={selectedAsset.scale[0]}
+                    disabled={scaleLocked}
                     onChange={(event) => {
                       const nextValue = Number(event.target.value);
                       onUpdateAsset(selectedAsset.id, {
                         scale: [nextValue, nextValue, nextValue]
                       });
                     }}
-                    className="w-full rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-sm text-[#2f2921] outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35"
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#a48f79]/35 ${
+                      scaleLocked
+                        ? "cursor-not-allowed border-black/10 bg-[#efede8] text-[#9b9287]"
+                        : "border-black/10 bg-[#faf9f7] text-[#2f2921]"
+                    }`}
                   />
                 </label>
               </div>
@@ -371,6 +447,11 @@ export function BuilderInspectorPanel({
                   {isYManagedByAnchor && isRotationManagedByAnchor ? " 및" : ""}
                   {isRotationManagedByAnchor ? " 회전" : ""}
                   값을 관리합니다.
+                </div>
+              ) : null}
+              {scaleLocked ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[#8a6a2c]">
+                  이 제품은 실제 규격 기준으로 고정되어 있어 크기 비율을 직접 변경할 수 없습니다.
                 </div>
               ) : null}
               <button

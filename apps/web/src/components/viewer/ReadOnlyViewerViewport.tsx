@@ -35,7 +35,7 @@ export function ReadOnlyViewerViewport({
         <SceneViewport
           className="h-[72vh] rounded-none border-0 shadow-none sm:h-[78vh]"
           camera={{ fov: 45, position: [0, 8, 14] }}
-          toneMappingExposure={1.05}
+          toneMappingExposure={1.12}
           chromeTone="light"
           interactionMode="viewer"
           modeBadge={viewMode === "top" ? "읽기 전용 상단뷰" : "읽기 전용 워크뷰"}

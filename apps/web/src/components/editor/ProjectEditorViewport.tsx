@@ -12,7 +12,7 @@ export function ProjectEditorViewport({ gl }: ProjectEditorViewportProps) {
       className="rounded-none border-0 shadow-none"
       gl={gl}
       camera={{ fov: 40, position: [0, 10, 20] }}
-      toneMappingExposure={1.1}
+      toneMappingExposure={1.14}
       chromeTone="light"
       interactionMode="editor"
     />

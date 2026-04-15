@@ -4,8 +4,8 @@
 - Loading screen -> Landing (keypad navigation) -> Auth popup -> Dashboard.
 
 ## Editor Flow
-- Upload floorplan -> AI parse -> 2D correction -> Confirm -> 3D editor.
-  - View mode progression: `2d-edit` → `top` → `walk`.
+- Room builder -> Create project -> 3D editor -> Publish/Share -> Community viewer.
+  - Preview mode progression: `builder-preview`/`top` -> `walk` (optional immersive preview).
 
 ## Top View
 - Orthographic camera.

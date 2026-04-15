@@ -6,7 +6,6 @@ COPY apps/worker/package.json apps/worker/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
-COPY packages/floorplan-core/package.json packages/floorplan-core/package.json
 RUN npm ci
 COPY . .
 CMD ["npm", "--workspace", "apps/worker", "run", "start"]

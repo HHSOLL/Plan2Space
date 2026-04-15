@@ -2,7 +2,6 @@ import os from "node:os";
 import { env } from "./config/env";
 import { claimNextAvailableJobs } from "./queue/claim-next-job";
 import { processAssetGenerationJob } from "./processors/asset-generation-processor";
-import { processFloorplanJob } from "./processors/floorplan-processor";
 
 const workerId = `${os.hostname()}-${process.pid}-${crypto.randomUUID().slice(0, 8)}`;
 
@@ -14,10 +13,12 @@ function sleep(ms: number) {
 }
 
 function launch(job: any) {
-  const processor =
-    job.type === "ASSET_GENERATION"
-      ? processAssetGenerationJob(job)
-      : processFloorplanJob(job);
+  if (job.type !== "ASSET_GENERATION") {
+    console.warn(`[worker] skipping unsupported job type: ${job.type}`);
+    return;
+  }
+
+  const processor = processAssetGenerationJob(job);
 
   const task = processor
     .catch((error) => {

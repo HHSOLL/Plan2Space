@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type EditorViewMode = "2d-edit" | "top" | "walk" | "builder-preview";
+export type EditorViewMode = "top" | "walk" | "builder-preview";
 export type TransformMode = "translate" | "rotate";
 
 export type EditorPanels = {
