@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
-import type { Opening } from "../../lib/stores/useSceneStore";
+import type { Opening, Vector2 } from "../../lib/stores/useSceneStore";
 import { SceneViewport } from "../../components/editor/SceneViewport";
 import type { EditorViewMode } from "../../lib/stores/useEditorStore";
 import type { BuilderStepId } from "./types";
@@ -11,6 +11,7 @@ type BuilderPreviewPaneProps = {
   width: number;
   depth: number;
   unit: "ft" | "cm";
+  outline: Vector2[];
   wallFinishName: string;
   floorFinishName: string;
   doorCount: number;
@@ -28,74 +29,115 @@ function formatDimension(value: number, unit: "ft" | "cm") {
   return `${Math.round(value * 100)} cm`;
 }
 
+function buildScaledOutline(outline: Vector2[]) {
+  const fallback: Vector2[] = [
+    [0, 0],
+    [6.2, 0],
+    [6.2, 4.4],
+    [0, 4.4]
+  ];
+  const source = outline.length >= 3 ? outline : fallback;
+  const minX = Math.min(...source.map(([x]) => x));
+  const maxX = Math.max(...source.map(([x]) => x));
+  const minY = Math.min(...source.map(([, y]) => y));
+  const maxY = Math.max(...source.map(([, y]) => y));
+  const shapeWidth = Math.max(maxX - minX, 0.01);
+  const shapeHeight = Math.max(maxY - minY, 0.01);
+  const viewportWidth = 420;
+  const viewportHeight = 260;
+  const scale = Math.min(viewportWidth / shapeWidth, viewportHeight / shapeHeight);
+  const scaledWidth = shapeWidth * scale;
+  const scaledHeight = shapeHeight * scale;
+  const offsetX = (820 - scaledWidth) / 2;
+  const offsetY = (560 - scaledHeight) / 2;
+
+  const points = source.map(([x, y]) => {
+    const scaledX = offsetX + (x - minX) * scale;
+    const scaledY = offsetY + (maxY - y) * scale;
+    return [scaledX, scaledY] as const;
+  });
+
+  const path = points
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(" ")
+    .concat(" Z");
+
+  return {
+    path,
+    points,
+    bounds: {
+      minX: offsetX,
+      maxX: offsetX + scaledWidth,
+      minY: offsetY,
+      maxY: offsetY + scaledHeight
+    }
+  };
+}
+
 function DimensionOverlay({
+  outline,
   width,
   depth,
   unit
 }: {
+  outline: Vector2[];
   width: number;
   depth: number;
   unit: "ft" | "cm";
 }) {
+  const scaled = buildScaledOutline(outline);
+
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-10 py-12">
       <svg viewBox="0 0 820 560" className="h-full max-h-[560px] w-full max-w-[900px]" aria-hidden>
-        <line x1="190" y1="150" x2="630" y2="150" stroke="#202020" strokeWidth="6" />
-        <line x1="190" y1="410" x2="630" y2="410" stroke="#202020" strokeWidth="6" />
-        <line x1="190" y1="150" x2="190" y2="410" stroke="#202020" strokeWidth="6" />
-        <line x1="630" y1="150" x2="630" y2="410" stroke="#202020" strokeWidth="6" />
+        <path d={scaled.path} fill="rgba(255,255,255,0.18)" stroke="#202020" strokeWidth="6" strokeLinejoin="round" />
 
-        <line x1="190" y1="124" x2="630" y2="124" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="190" y1="436" x2="630" y2="436" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="164" y1="150" x2="164" y2="410" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="656" y1="150" x2="656" y2="410" stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX} y1={scaled.bounds.minY - 26} x2={scaled.bounds.maxX} y2={scaled.bounds.minY - 26} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX} y1={scaled.bounds.maxY + 26} x2={scaled.bounds.maxX} y2={scaled.bounds.maxY + 26} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX - 26} y1={scaled.bounds.minY} x2={scaled.bounds.minX - 26} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.maxX + 26} y1={scaled.bounds.minY} x2={scaled.bounds.maxX + 26} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
 
-        <line x1="190" y1="116" x2="190" y2="136" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="630" y1="116" x2="630" y2="136" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="190" y1="424" x2="190" y2="448" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="630" y1="424" x2="630" y2="448" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="156" y1="150" x2="172" y2="150" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="156" y1="410" x2="172" y2="410" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="648" y1="150" x2="664" y2="150" stroke="#8f8f8f" strokeWidth="2" />
-        <line x1="648" y1="410" x2="664" y2="410" stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX} y1={scaled.bounds.minY - 34} x2={scaled.bounds.minX} y2={scaled.bounds.minY - 14} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.maxX} y1={scaled.bounds.minY - 34} x2={scaled.bounds.maxX} y2={scaled.bounds.minY - 14} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX} y1={scaled.bounds.maxY + 14} x2={scaled.bounds.minX} y2={scaled.bounds.maxY + 38} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.maxX} y1={scaled.bounds.maxY + 14} x2={scaled.bounds.maxX} y2={scaled.bounds.maxY + 38} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX - 34} y1={scaled.bounds.minY} x2={scaled.bounds.minX - 14} y2={scaled.bounds.minY} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.minX - 34} y1={scaled.bounds.maxY} x2={scaled.bounds.minX - 14} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.maxX + 14} y1={scaled.bounds.minY} x2={scaled.bounds.maxX + 34} y2={scaled.bounds.minY} stroke="#8f8f8f" strokeWidth="2" />
+        <line x1={scaled.bounds.maxX + 14} y1={scaled.bounds.maxY} x2={scaled.bounds.maxX + 34} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
 
-        {[
-          [190, 150],
-          [630, 150],
-          [190, 410],
-          [630, 410]
-        ].map(([x, y]) => (
+        {scaled.points.map(([x, y]) => (
           <g key={`${x}-${y}`}>
             <circle cx={x} cy={y} r="10" fill="#ffffff" />
             <circle cx={x} cy={y} r="7" fill="#ffffff" stroke="#202020" strokeWidth="3" />
           </g>
         ))}
 
-        <text x="410" y="105" textAnchor="middle" fill="#6f6f6f" fontSize="24" fontWeight="600">
+        <text x="410" y={scaled.bounds.minY - 44} textAnchor="middle" fill="#6f6f6f" fontSize="24" fontWeight="600">
           {formatDimension(width, unit)}
         </text>
-        <text x="410" y="468" textAnchor="middle" fill="#6f6f6f" fontSize="24" fontWeight="600">
+        <text x="410" y={scaled.bounds.maxY + 58} textAnchor="middle" fill="#6f6f6f" fontSize="24" fontWeight="600">
           {formatDimension(width, unit)}
         </text>
         <text
-          x="128"
+          x={scaled.bounds.minX - 62}
           y="280"
           textAnchor="middle"
           fill="#6f6f6f"
           fontSize="24"
           fontWeight="600"
-          transform="rotate(-90 128 280)"
+          transform={`rotate(-90 ${scaled.bounds.minX - 62} 280)`}
         >
           {formatDimension(depth, unit)}
         </text>
         <text
-          x="692"
+          x={scaled.bounds.maxX + 62}
           y="280"
           textAnchor="middle"
           fill="#6f6f6f"
           fontSize="24"
           fontWeight="600"
-          transform="rotate(90 692 280)"
+          transform={`rotate(90 ${scaled.bounds.maxX + 62} 280)`}
         >
           {formatDimension(depth, unit)}
         </text>
@@ -180,6 +222,7 @@ export function BuilderPreviewPane({
   width,
   depth,
   unit,
+  outline,
   wallFinishName,
   floorFinishName,
   doorCount,
@@ -192,10 +235,10 @@ export function BuilderPreviewPane({
     <motion.section
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative min-h-[520px] overflow-hidden bg-[#d7d7d3] xl:min-h-full"
+      className="relative min-h-[360px] overflow-hidden bg-[#d7d7d3] xl:min-h-0 xl:h-full"
     >
       <SceneViewport
-        className="h-full min-h-[520px] !rounded-none !border-0 !shadow-none xl:min-h-[820px]"
+        className="h-full min-h-[360px] !rounded-none !border-0 !shadow-none xl:min-h-0 xl:h-full"
         camera={previewMode === "top" ? { fov: 42, position: [0, 10.5, 0.01] } : { fov: 46, position: [8, 5, 8] }}
         toneMappingExposure={1.02}
         chromeTone="light"
@@ -203,7 +246,7 @@ export function BuilderPreviewPane({
         interactionMode="preview"
       />
 
-      {stepId === "dimension" ? <DimensionOverlay width={width} depth={depth} unit={unit} /> : null}
+      {stepId === "dimension" ? <DimensionOverlay outline={outline} width={width} depth={depth} unit={unit} /> : null}
       {stepId === "opening" ? (
         <OpeningOverlay
           selectedWallLabel={selectedWallLabel}

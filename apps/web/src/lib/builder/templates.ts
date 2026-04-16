@@ -140,6 +140,16 @@ function getWallLength(wall: Wall) {
   return Math.hypot(wall.end[0] - wall.start[0], wall.end[1] - wall.start[1]);
 }
 
+function getWallCenter(wall: Wall) {
+  return [(wall.start[0] + wall.end[0]) / 2, (wall.start[1] + wall.end[1]) / 2] as const;
+}
+
+function getWallOrientationScore(wall: Wall) {
+  const horizontalSpan = Math.abs(wall.end[0] - wall.start[0]);
+  const verticalSpan = Math.abs(wall.end[1] - wall.start[1]);
+  return horizontalSpan - verticalSpan;
+}
+
 function buildPolygon(input: BuilderSceneInput) {
   const width = input.width;
   const depth = input.depth;
@@ -219,8 +229,33 @@ function buildPolygon(input: BuilderSceneInput) {
 }
 
 function buildOpenings(walls: Wall[], templateId: BuilderTemplateId): Opening[] {
-  const entranceWall = walls[0];
-  const windowWall = walls[Math.min(2, walls.length - 1)] ?? walls[walls.length - 1];
+  const wallCenters = walls.map((wall) => ({
+    wall,
+    center: getWallCenter(wall),
+    length: getWallLength(wall),
+    orientation: getWallOrientationScore(wall)
+  }));
+  const minCenterY = Math.min(...wallCenters.map((entry) => entry.center[1]));
+  const maxCenterY = Math.max(...wallCenters.map((entry) => entry.center[1]));
+  const entranceWall =
+    [...wallCenters]
+      .sort((left, right) => {
+        const leftScore = Math.abs(left.center[1] - minCenterY) * 4 - left.orientation - left.length;
+        const rightScore = Math.abs(right.center[1] - minCenterY) * 4 - right.orientation - right.length;
+        return leftScore - rightScore;
+      })
+      .map((entry) => entry.wall)[0] ?? walls[0];
+  const windowWall =
+    [...wallCenters]
+      .filter((entry) => entry.wall.id !== entranceWall?.id)
+      .sort((left, right) => {
+        const leftScore = Math.abs(left.center[1] - maxCenterY) * 4 - left.orientation - left.length;
+        const rightScore = Math.abs(right.center[1] - maxCenterY) * 4 - right.orientation - right.length;
+        return leftScore - rightScore;
+      })
+      .map((entry) => entry.wall)[0] ??
+    walls[Math.min(2, walls.length - 1)] ??
+    walls[walls.length - 1];
 
   const entranceLength = entranceWall ? getWallLength(entranceWall) : 0;
   const windowLength = windowWall ? getWallLength(windowWall) : 0;

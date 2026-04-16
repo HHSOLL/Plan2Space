@@ -16,13 +16,15 @@
 진행:
 - 홈 시작하기 2-way 진입(`공간 선택`/`공간 만들기`)과 레퍼런스형 카드 레이아웃 적용
 - `빈 공간`/`가구가 비치된 공간` 템플릿 브라우저 추가
-- 템플릿 선택값을 쿼리스트링으로 builder에 전달해 방 형태/치수/마감/seeded asset 초기값을 복원
+- 템플릿 선택 즉시 project draft/save 후 editor로 직행하는 bootstrap 경로 적용
 - furnished template별 시드 자산 구성을 분리하고 pre-seeded editor 회귀 항목에 포함
 - 빌더를 레퍼런스 4-step split shell로 재구성하고 단계별 preview camera/overlay를 정렬
 - 빌더 단계(Shape/Dimension/Opening/Style)를 레퍼런스 density 기준으로 재작성
 - 개구부 스타일 retune 및 auth restore 이후 상태 덮어쓰기 버그 수정
+- builder desktop shell 무스크롤 fit 및 실 floor outline 기반 dimension overlay 적용
 - 템플릿 기반 방 생성 속도 개선
 - 저장 직후 에디터/뷰어 일관성 확인 자동화
+- project-media bucket 미구성 시 thumbnail upload 복구/재시도로 저장 실패를 완화
 
 ## P2
 목표: 데스크테리어 편집 경험 고도화
@@ -128,6 +130,18 @@ Updated:
 
 Removed/Deprecated:
 - shared viewer hero metric strip과 community featured/recent 분리 카드 레이아웃.
+
+## 2026-04-16 변경 동기화 (Start Flow Fixes + Builder Shell Fit)
+Added:
+- P1 범위에 `템플릿 선택 -> 즉시 editor 진입` 경로와 desktop builder shell fit을 명시.
+- thumbnail storage bucket 누락 시 save fallback/retry를 P1 안정화 항목에 추가.
+
+Updated:
+- 템플릿 진입 완료 기준을 "builder 초기값 복원"에서 "saved project 생성 후 editor 직행"으로 변경.
+- builder 완료 기준에 "페이지 무스크롤", "실제 floor outline 기반 치수 overlay"를 추가.
+
+Removed/Deprecated:
+- 템플릿 선택이 항상 builder step flow를 지난다는 완료 조건.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

@@ -27,7 +27,7 @@ import { BuilderStyleStep } from "../../../features/builder/steps/BuilderStyleSt
 import type { DoorStyle, WindowStyle } from "../../../features/builder/types";
 import { fetchAssetCatalog } from "../../../lib/api/catalog";
 import { fetchRoomTemplateConfig, type BuilderFinishOption } from "../../../lib/api/room-templates";
-import { createProjectDraft, saveProject } from "../../../lib/api/project";
+import { createStudioProject } from "../../../lib/api/project";
 import {
   DEFAULT_CATALOG,
   buildProjectAssetSummary
@@ -665,29 +665,28 @@ function StudioBuilderPageContent() {
     setIsCreating(true);
     try {
       const seededAssets = buildSeededSceneAssets(catalogSnapshot, derivedRoomShell, starterSetPreset, starterTemplateId);
-      const project = await createProjectDraft({
+      const project = await createStudioProject({
         name: projectName.trim(),
-        description: projectDescription.trim() || "빌더에서 생성한 기본 공간"
-      });
-
-      await saveProject(project.id, {
-        roomShell: derivedRoomShell,
-        assets: seededAssets,
-        materials: {
-          wallIndex: wallMaterialIndex,
-          floorIndex: floorMaterialIndex
-        },
-        lighting: {
-          ambientIntensity: 0.35,
-          hemisphereIntensity: 0.4,
-          directionalIntensity: 1.05,
-          environmentBlur: 0.2
-        },
-        thumbnailDataUrl: previewDataUrl,
-        assetSummary: buildProjectAssetSummary(catalogSnapshot, seededAssets),
-        projectName: projectName.trim(),
-        projectDescription: projectDescription.trim() || "빌더에서 생성한 기본 공간",
-        message: starterSetPreset === "none" ? "빌더 초기 장면" : "빌더 템플릿 장면"
+        description: projectDescription.trim() || "빌더에서 생성한 기본 공간",
+        scene: {
+          roomShell: derivedRoomShell,
+          assets: seededAssets,
+          materials: {
+            wallIndex: wallMaterialIndex,
+            floorIndex: floorMaterialIndex
+          },
+          lighting: {
+            ambientIntensity: 0.35,
+            hemisphereIntensity: 0.4,
+            directionalIntensity: 1.05,
+            environmentBlur: 0.2
+          },
+          thumbnailDataUrl: previewDataUrl,
+          assetSummary: buildProjectAssetSummary(catalogSnapshot, seededAssets),
+          projectName: projectName.trim(),
+          projectDescription: projectDescription.trim() || "빌더에서 생성한 기본 공간",
+          message: starterSetPreset === "none" ? "빌더 초기 장면" : "빌더 템플릿 장면"
+        }
       });
 
       router.push(`/project/${project.id}?origin=builder`);
@@ -711,14 +710,14 @@ function StudioBuilderPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f2ef] pb-10 pt-16 text-[#171411] sm:pt-20">
-      <div className="mx-auto max-w-[1540px] px-4 sm:px-6 lg:px-8">
-        <StudioWorkspaceShell className="gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] xl:min-h-[820px] xl:grid-cols-[minmax(360px,36vw)_minmax(0,1fr)]">
-          <StudioWorkspacePanel className="flex flex-col rounded-none border-0 border-b border-black/10 bg-white shadow-none xl:border-b-0 xl:border-r xl:border-black/10">
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 xl:p-10">
+    <div className="min-h-screen bg-[#f3f2ef] px-4 pb-6 pt-24 text-[#171411] sm:px-6 sm:pt-28 lg:px-8 xl:h-screen xl:overflow-hidden xl:pb-8">
+      <div className="mx-auto max-w-[1540px] xl:flex xl:h-[calc(100vh-8.5rem)] xl:flex-col">
+        <StudioWorkspaceShell className="gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(340px,34vw)_minmax(0,1fr)]">
+          <StudioWorkspacePanel className="flex flex-col rounded-none border-0 border-b border-black/10 bg-white shadow-none xl:min-h-0 xl:border-b-0 xl:border-r xl:border-black/10">
+            <div className="min-h-0 flex-1 overflow-y-auto p-6 sm:p-8 xl:p-9">
               <BuilderStepHeader activeStep={activeStep} />
 
-              <div className="mt-10 space-y-6">
+              <div className="mt-8 space-y-6">
                 {stepIndex === 0 ? (
                   <BuilderShapeStep
                     templateOptions={templateOptions}
@@ -799,6 +798,7 @@ function StudioBuilderPageContent() {
             width={width}
             depth={depth}
             unit={dimensionUnit}
+            outline={scene.floors[0]?.outline ?? []}
             wallFinishName={activeWallFinish.name}
             floorFinishName={activeFloorFinish.name}
             doorCount={scene.openings.filter((opening) => opening.type === "door").length}

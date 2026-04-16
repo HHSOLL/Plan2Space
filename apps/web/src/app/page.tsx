@@ -16,21 +16,21 @@ type StartCardProps = {
 
 function StartCard({ badge, imageSrc, title, buttonLabel, onClick }: StartCardProps) {
   return (
-    <article className="overflow-hidden bg-white">
-      <div className="relative aspect-[1.3/0.85] bg-[#d9d9d7]">
+    <article className="overflow-hidden rounded-[28px] border border-[#ece8e2] bg-white shadow-[0_20px_50px_rgba(35,24,14,0.06)]">
+      <div className="relative aspect-[1.45/0.8] bg-[#d9d9d7]">
         <Image src={imageSrc} alt={title} fill priority sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
-        <div className="absolute left-8 top-7 rounded-[9px] border border-[#979797] bg-white px-8 py-4 text-[18px] font-semibold text-[#3e3e3e]">
+        <div className="absolute left-5 top-5 rounded-[9px] border border-[#a6a29b] bg-white px-5 py-2.5 text-sm font-semibold text-[#3e3e3e] sm:left-6 sm:top-6">
           {badge}
         </div>
       </div>
-      <div className="space-y-10 px-8 py-10">
-        <h2 className="max-w-[700px] text-[38px] font-semibold leading-[1.18] tracking-[-0.05em] text-[#1d1d1d] sm:text-[44px]">
+      <div className="space-y-6 px-6 py-7 sm:px-7 sm:py-8">
+        <h2 className="max-w-[560px] text-[28px] font-semibold leading-[1.2] tracking-[-0.05em] text-[#1d1d1d] sm:text-[32px]">
           {title}
         </h2>
         <button
           type="button"
           onClick={onClick}
-          className="rounded-full border border-[#262626] px-12 py-6 text-[20px] font-semibold tracking-[-0.02em] text-[#1f1f1f] transition hover:bg-[#111111] hover:text-white"
+          className="rounded-full border border-[#262626] px-8 py-3.5 text-base font-semibold tracking-[-0.02em] text-[#1f1f1f] transition hover:bg-[#111111] hover:text-white"
         >
           {buttonLabel}
         </button>
@@ -57,11 +57,11 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="min-h-screen bg-white px-5 pb-24 pt-10 text-[#181818] sm:px-8 lg:px-12">
+      <div className="min-h-screen bg-white px-5 pb-24 pt-28 text-[#181818] sm:px-8 sm:pt-32 lg:px-12">
         <div className="mx-auto max-w-[1820px]">
-          <h1 className="text-[58px] font-semibold tracking-[-0.06em] text-[#181818] sm:text-[72px]">시작하는 방법</h1>
+          <h1 className="text-[44px] font-semibold tracking-[-0.06em] text-[#181818] sm:text-[56px]">시작하는 방법</h1>
 
-          <section className="mt-16 grid gap-10 xl:grid-cols-2">
+          <section className="mt-10 grid gap-6 lg:grid-cols-2">
             <StartCard
               badge="퀵 스타트"
               imageSrc="/home/img7.jpg"

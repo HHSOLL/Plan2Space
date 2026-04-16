@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { ProductHotspotDrawer } from "../../../components/viewer/ProductHotspotDrawer";
 import { ReadOnlyViewerViewport } from "../../../components/viewer/ReadOnlyViewerViewport";
 import { StudioWorkspaceShell } from "../../../components/layout/StudioWorkspaceShell";
 import { useAssetCatalog } from "../../../components/editor/useAssetCatalog";
+import { AuthPopup } from "../../../components/overlay/AuthPopup";
 import { getScaleGateMessage } from "../../../lib/ai/scaleInfo";
 import {
   findCatalogItem,
@@ -16,6 +18,7 @@ import {
 import { toSceneStorePatch, type SceneDocumentBootstrap } from "../../../lib/domain/scene-document";
 import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
 import { resolveShareCapabilities, type SharePermission } from "../../../lib/share/permissions";
+import { useAuthStore } from "../../../lib/stores/useAuthStore";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useCameraStore, useSelectionStore, useShellStore } from "../../../lib/stores/scene-slices";
 import type { ProductHotspot } from "../../../lib/viewer/hotspots";
@@ -116,6 +119,11 @@ export function SharedProjectClient({
   pinnedVersionNumber,
   previewAssetSummary
 }: SharedProjectClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, session, logout } = useAuthStore();
+  const isAuthenticated = Boolean(session?.user);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const { setScene, resetScene } = useShellStore();
   const { selectedAssetId, setSelectedAssetId } = useSelectionStore();
   const { setEntranceId } = useCameraStore();
@@ -274,108 +282,195 @@ export function SharedProjectClient({
 
   if (isVersionMappingFailed) {
     return (
-      <div className="min-h-screen bg-[#ece8e1] px-4 pb-12 pt-10 text-[#1f1b16] sm:px-8">
-        <div className="mx-auto max-w-4xl rounded-[24px] border border-[#c06e3d]/20 bg-white p-8 shadow-[0_18px_46px_rgba(40,30,21,0.12)]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#c06e3d]/25 bg-[#fff7f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#a75f37]">
-            <Link2 className="h-3.5 w-3.5" />
-            스냅샷 로드 실패
-          </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-[#1d1712] sm:text-4xl">
-            공유 스냅샷을 렌더링할 수 없습니다.
-          </h1>
-          <p className="mt-4 text-sm leading-7 text-[#61574d]">
-            저장된 버전은 존재하지만 현재 viewer 매퍼와 장면 데이터가 호환되지 않습니다.
-          </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[14px] border border-black/10 bg-[#faf7f2] p-4 text-sm text-[#5b5146]">
-              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">프로젝트</div>
-              <div className="mt-2 font-semibold text-[#1f1b16]">{projectName}</div>
+      <>
+        <div className="min-h-screen bg-[#ece8e1] text-[#1f1b16]">
+          <div className="sticky top-0 z-[100] border-b border-black/10 bg-white/95 backdrop-blur-xl">
+            <div className="flex min-h-16 items-center justify-between gap-3 px-3 py-3 sm:px-5 xl:px-8">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push("/")}
+                  className="inline-flex rounded-full border border-black/10 bg-white px-3 py-2 text-[11px] font-semibold tracking-[-0.03em] text-[#171411] transition hover:border-black/20 hover:bg-[#f4f4f1]"
+                >
+                  Plan2Space
+                </button>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a8177]">
+                    <Link2 className="h-4 w-4" />
+                    공유 장면
+                  </div>
+                  <h1 className="truncate text-sm font-semibold text-[#171411] sm:text-[15px]">{projectName}</h1>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                {isAuthenticated ? (
+                  <>
+                    <span className="hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999] xl:block">
+                      {user?.name ?? user?.email ?? "내 공간"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void logout()}
+                      className="inline-flex h-10 items-center rounded-full border border-black/10 px-4 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51] transition hover:border-black/20 hover:bg-[#f4f4f1]"
+                    >
+                      로그아웃
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsAuthOpen(true)}
+                    className="inline-flex h-10 items-center rounded-full bg-[#171411] px-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-black"
+                  >
+                    로그인
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="rounded-[14px] border border-black/10 bg-[#faf7f2] p-4 text-sm text-[#5b5146]">
-              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">고정 버전</div>
-              <div className="mt-2 font-semibold text-[#1f1b16]">
-                {pinnedVersionNumber ? `v${pinnedVersionNumber}` : "알 수 없음"}
+          </div>
+
+          <div className="px-4 pb-12 pt-10 sm:px-8">
+            <div className="mx-auto max-w-4xl rounded-[24px] border border-[#c06e3d]/20 bg-white p-8 shadow-[0_18px_46px_rgba(40,30,21,0.12)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#c06e3d]/25 bg-[#fff7f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#a75f37]">
+                <Link2 className="h-3.5 w-3.5" />
+                스냅샷 로드 실패
+              </div>
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-[#1d1712] sm:text-4xl">
+                공유 스냅샷을 렌더링할 수 없습니다.
+              </h1>
+              <p className="mt-4 text-sm leading-7 text-[#61574d]">
+                저장된 버전은 존재하지만 현재 viewer 매퍼와 장면 데이터가 호환되지 않습니다.
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[14px] border border-black/10 bg-[#faf7f2] p-4 text-sm text-[#5b5146]">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">프로젝트</div>
+                  <div className="mt-2 font-semibold text-[#1f1b16]">{projectName}</div>
+                </div>
+                <div className="rounded-[14px] border border-black/10 bg-[#faf7f2] p-4 text-sm text-[#5b5146]">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a7c70]">고정 버전</div>
+                  <div className="mt-2 font-semibold text-[#1f1b16]">
+                    {pinnedVersionNumber ? `v${pinnedVersionNumber}` : "알 수 없음"}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+        <AuthPopup isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} nextPath={pathname ?? "/"} />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#efefec] text-[#1f1b16]">
-      <div className="sticky top-0 z-[100] border-b border-black/10 bg-white/95 backdrop-blur-xl">
-        <div className="flex min-h-16 items-center gap-3 px-3 py-3 sm:px-5 xl:px-8">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a8177]">
-              <Link2 className="h-4 w-4" />
-              공유 장면
+    <>
+      <div className="min-h-screen bg-[#efefec] text-[#1f1b16]">
+        <div className="sticky top-0 z-[100] border-b border-black/10 bg-white/95 backdrop-blur-xl">
+          <div className="flex min-h-16 items-center gap-3 px-3 py-3 sm:px-5 xl:px-8">
+            <div className="min-w-0 flex flex-1 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="inline-flex rounded-full border border-black/10 bg-white px-3 py-2 text-[11px] font-semibold tracking-[-0.03em] text-[#171411] transition hover:border-black/20 hover:bg-[#f4f4f1]"
+              >
+                Plan2Space
+              </button>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a8177]">
+                  <Link2 className="h-4 w-4" />
+                  공유 장면
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-sm font-semibold text-[#171411] sm:text-[15px]">{projectName}</h1>
+                  <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                    {shareCapabilities.accessLabel}
+                  </span>
+                  <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                    제품 {scenePayload.assets.length}개
+                  </span>
+                  {pinnedVersionNumber ? (
+                    <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                      버전 {pinnedVersionNumber}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-sm font-semibold text-[#171411] sm:text-[15px]">{projectName}</h1>
-              <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-                {shareCapabilities.accessLabel}
-              </span>
-              <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-                제품 {scenePayload.assets.length}개
-              </span>
-              {pinnedVersionNumber ? (
-                <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-                  버전 {pinnedVersionNumber}
-                </span>
-              ) : null}
+
+            <div className="flex shrink-0 items-center gap-2">
+              {isAuthenticated ? (
+                <>
+                  <span className="hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999] xl:block">
+                    {user?.name ?? user?.email ?? "내 공간"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="inline-flex h-10 items-center rounded-full border border-black/10 px-4 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51] transition hover:border-black/20 hover:bg-[#f4f4f1]"
+                  >
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsAuthOpen(true)}
+                  className="inline-flex h-10 items-center rounded-full bg-[#171411] px-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-black"
+                >
+                  로그인
+                </button>
+              )}
+
+              <div className="flex items-center gap-2 rounded-full border border-black/10 bg-[#f4f4f1] p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("top")}
+                  className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                    viewMode === "top"
+                      ? "bg-white text-[#171411] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
+                      : "text-[#625a51] hover:bg-white"
+                  }`}
+                >
+                  상단뷰
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("walk")}
+                  disabled={!canEnterWalk}
+                  className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                    viewMode === "walk"
+                      ? "bg-white text-[#171411] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
+                      : "text-[#625a51] hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
+                  }`}
+                >
+                  워크뷰
+                </button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-black/10 bg-[#f4f4f1] p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode("top")}
-              className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
-                viewMode === "top"
-                  ? "bg-white text-[#171411] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
-                  : "text-[#625a51] hover:bg-white"
-              }`}
-            >
-              상단뷰
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("walk")}
-              disabled={!canEnterWalk}
-              className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
-                viewMode === "walk"
-                  ? "bg-white text-[#171411] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
-                  : "text-[#625a51] hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
-              }`}
-            >
-              워크뷰
-            </button>
+        <div className="px-2 pb-10 pt-4 sm:px-4 xl:px-6">
+          <div className="mb-4 flex flex-wrap items-center gap-2 px-1">
+            {projectDescription ? (
+              <p className="max-w-3xl text-sm leading-6 text-[#625a51]">{projectDescription}</p>
+            ) : null}
+            {expiresAt ? (
+              <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                만료 {new Date(expiresAt).toLocaleDateString()}
+              </span>
+            ) : null}
+            {shareCapabilities.showPreviewNotice ? (
+              <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                읽기 전용 링크
+              </span>
+            ) : null}
           </div>
-        </div>
-      </div>
 
-      <div className="px-2 pb-10 pt-4 sm:px-4 xl:px-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2 px-1">
-          {projectDescription ? (
-            <p className="max-w-3xl text-sm leading-6 text-[#625a51]">{projectDescription}</p>
-          ) : null}
-          {expiresAt ? (
-            <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-              만료 {new Date(expiresAt).toLocaleDateString()}
-            </span>
-          ) : null}
-          {shareCapabilities.showPreviewNotice ? (
-            <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-              읽기 전용 링크
-            </span>
-          ) : null}
-        </div>
-
-        <StudioWorkspaceShell>
-          <ProductHotspotDrawer hotspots={assetHotspots} selectedHotspotId={selectedAssetId} onSelectHotspot={setSelectedAssetId}>
-            <div className="rounded-[20px] border border-black/10 bg-white p-4">
+          <StudioWorkspaceShell>
+            <ProductHotspotDrawer hotspots={assetHotspots} selectedHotspotId={selectedAssetId} onSelectHotspot={setSelectedAssetId}>
+              <div className="rounded-[20px] border border-black/10 bg-white p-4">
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7e7367]">배치 요약</div>
                 {summaryItemsForRail && summaryItemsForRail.length > 0 ? (
                   <div className="mt-3 space-y-2">
@@ -446,16 +541,19 @@ export function SharedProjectClient({
                     ))}
                   </div>
                 ) : null}
-            </div>
-          </ProductHotspotDrawer>
+              </div>
+            </ProductHotspotDrawer>
 
-          <ReadOnlyViewerViewport
-            viewMode={viewMode === "walk" ? "walk" : "top"}
-            selectedLabel={selectedHotspotLabel}
-            showReadOnlyNotice={shareCapabilities.showPreviewNotice}
-          />
-        </StudioWorkspaceShell>
+            <ReadOnlyViewerViewport
+              viewMode={viewMode === "walk" ? "walk" : "top"}
+              selectedLabel={selectedHotspotLabel}
+              showReadOnlyNotice={shareCapabilities.showPreviewNotice}
+            />
+          </StudioWorkspaceShell>
+        </div>
       </div>
-    </div>
+
+      <AuthPopup isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} nextPath={pathname ?? "/"} />
+    </>
   );
 }
