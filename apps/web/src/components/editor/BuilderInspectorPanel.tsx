@@ -9,7 +9,7 @@ import {
   inferLightingPresetId,
   type LightingPresetId
 } from "../../lib/scene/lighting-presets";
-import type { TransformMode } from "../../lib/stores/useEditorStore";
+import type { TransformMode, TransformSpace } from "../../lib/stores/useEditorStore";
 import type { LightingSettings, SceneAsset } from "../../lib/stores/useSceneStore";
 
 type BuilderInspectorPanelProps = {
@@ -17,6 +17,7 @@ type BuilderInspectorPanelProps = {
   layout?: "overlay" | "inline";
   className?: string;
   transformMode: TransformMode;
+  transformSpace: TransformSpace;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
   lighting: LightingSettings;
@@ -26,6 +27,7 @@ type BuilderInspectorPanelProps = {
   selectedAsset: SceneAsset | null;
   selectedAssetMeta: LibraryCatalogItem | null;
   onTransformModeChange: (mode: TransformMode) => void;
+  onTransformSpaceChange: (space: TransformSpace) => void;
   onWallMaterialChange: (index: number) => void;
   onFloorMaterialChange: (index: number) => void;
   onLightingChange: (lighting: Partial<LightingSettings>) => void;
@@ -48,6 +50,7 @@ export function BuilderInspectorPanel({
   layout = "overlay",
   className,
   transformMode,
+  transformSpace,
   wallMaterialIndex,
   floorMaterialIndex,
   lighting,
@@ -57,6 +60,7 @@ export function BuilderInspectorPanel({
   selectedAsset,
   selectedAssetMeta,
   onTransformModeChange,
+  onTransformSpaceChange,
   onWallMaterialChange,
   onFloorMaterialChange,
   onLightingChange,
@@ -129,6 +133,32 @@ export function BuilderInspectorPanel({
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">좌표계</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { id: "world", label: "월드" },
+              { id: "local", label: "로컬" }
+            ].map((space) => (
+              <button
+                key={space.id}
+                type="button"
+                onClick={() => onTransformSpaceChange(space.id as TransformSpace)}
+                className={`rounded-2xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
+                  transformSpace === space.id
+                    ? "bg-[#1c1a17] text-white"
+                    : "border border-black/10 bg-white text-[#4e473d] hover:border-black/20"
+                }`}
+              >
+                {space.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] leading-5 text-[#82796d]">
+            월드는 방 기준, 로컬은 선택한 제품 기준 축으로 이동/회전합니다.
+          </p>
         </div>
 
         <div className="space-y-3">

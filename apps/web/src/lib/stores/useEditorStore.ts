@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export type EditorViewMode = "top" | "walk" | "builder-preview";
 export type TransformMode = "translate" | "rotate";
+export type TransformSpace = "world" | "local";
 
 export type EditorPanels = {
   properties: boolean;
@@ -15,6 +16,7 @@ type EditorShellState = {
   selectedId: string | null;
   panels: EditorPanels;
   transformMode: TransformMode;
+  transformSpace: TransformSpace;
   isTransforming: boolean;
   readOnly: boolean;
 };
@@ -28,6 +30,7 @@ type EditorState = {
   selectedId: string | null;
   panels: EditorPanels;
   transformMode: TransformMode;
+  transformSpace: TransformSpace;
   isTransforming: boolean;
   readOnly: boolean;
   setViewMode: (mode: EditorViewMode) => void;
@@ -37,6 +40,7 @@ type EditorState = {
   togglePanel: (panel: keyof EditorPanels) => void;
   setPanels: (panels: Partial<EditorPanels>) => void;
   setTransformMode: (mode: TransformMode) => void;
+  setTransformSpace: (space: TransformSpace) => void;
   setIsTransforming: (value: boolean) => void;
   setReadOnly: (value: boolean) => void;
   applyShellPreset: (
@@ -54,6 +58,7 @@ const editorShellDefaults: EditorShellState = {
     assets: false
   },
   transformMode: "translate",
+  transformSpace: "world",
   isTransforming: false,
   readOnly: false
 };
@@ -92,6 +97,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   setPanels: (panels) =>
     set((state) => ({ panels: { ...state.panels, ...panels } })),
   setTransformMode: (mode) => set({ transformMode: mode }),
+  setTransformSpace: (space) => set({ transformSpace: space }),
   setIsTransforming: (value) => set({ isTransforming: value }),
   setReadOnly: (value) => set({ readOnly: value }),
   applyShellPreset: (preset, overrides) =>

@@ -49,7 +49,7 @@
 7. 문/창문 추가하기
 8. 스타일 선택 후 에디터 진입하기
 9. 에디터에서 데스크테리어 가구 추가하기
-10. 가구 이동/회전하기
+10. 가구 이동/회전하고 `월드/로컬` 좌표계를 전환해보기
 11. 저장/발행하기
 12. 공유 토큰 열기
 13. 읽기 전용 뷰어에서 제품 클릭하기
@@ -182,6 +182,8 @@ npm --workspace apps/web run assets:verify:deskterior
   - shared viewer 제품 카드에서 W/D/H, 마감 색상/재질, 디테일 노트가 보이는지 확인
   - 데스크/선반 계열 support 배치 시 실측 기반으로 상면(top) 클램핑이 자연스럽게 유지되는지 확인
   - floor/surface 배치 시 벽 관통 없이 wall clearance가 적용되고, 인접 자산과 과도한 중첩이 완화되는지 확인
+  - 상단뷰 하단 툴바와 속성 패널에서 `월드/로컬` 토글이 동일하게 동작하는지 확인
+  - gizmo 드래그 중 방 외곽으로 나가려 하면 live clamp가 걸리고, mouse-up 후 위치가 다시 튀지 않는지 확인
   - finishColor/finishMaterial이 있는 제품은 GLB 표면 톤/질감이 기존 대비 반영되는지 확인
   - `DeskWood`/`DeskMetal`/`StandWood`/`StandPad`/`LampBody`/`LampAccent`/`LampBulb` 슬롯이 의도한 재질 특성으로 분리 반영되는지 확인
 7. 조명 제품은 뷰어에서 실제 광원 효과가 보이는지 확인한다.
@@ -226,6 +228,16 @@ Updated:
 
 Removed/Deprecated:
 - builder preview summary 카드와 step chip 존재를 전제로 한 기존 확인 포인트.
+
+## 2026-04-16 변경 동기화 (Editor Precision Controls)
+Added:
+- 에디터 QA에 `월드/로컬` 좌표계 토글과 live placement clamp 검증 항목을 추가.
+
+Updated:
+- top-view 편집 검증을 “이동/회전 가능”에서 “이동/회전 + 좌표계 전환 + 실시간 경계 보정”까지 확장.
+
+Removed/Deprecated:
+- 드래그 중에는 room bounds 보정이 없어도 괜찮다는 운영 가정.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Operations)
 Added:

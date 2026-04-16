@@ -91,6 +91,17 @@ Updated:
 Removed/Deprecated:
 - 빌더 내부 상단 quick-start badge, step chip, preview summary 카드 중심의 이전 shell.
 
+## 2026-04-16 변경 동기화 (Editor Precision Controls)
+Added:
+- `/project/[id]` 상단뷰 편집에서 `월드/로컬` transform space 토글을 기본 편집 affordance에 추가.
+- TransformControls 드래그 중에도 room bounds + anchor solver를 재적용하는 live placement clamp 규칙을 추가.
+
+Updated:
+- 상단뷰 자산 조작 기준을 `이동/회전`만이 아니라 `이동/회전 + world/local 좌표계`까지 포함하도록 확장.
+
+Removed/Deprecated:
+- gizmo 보정이 mouse-up 시점에만 적용된다는 전제.
+
 ## 2026-04-14 변경 동기화 (Physical Fidelity Runtime Pass)
 Added:
 - 실측/마감 메타데이터를 catalog -> save pipeline -> sceneDocument -> viewer hotspot까지 유지하는 계약을 기본 규칙으로 추가.

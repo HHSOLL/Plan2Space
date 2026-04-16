@@ -4,7 +4,11 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { BuilderLibraryShelf } from "../../../../components/editor/BuilderLibraryShelf";
-import { useEditorStore, type EditorViewMode } from "../../../../lib/stores/useEditorStore";
+import {
+  useEditorStore,
+  type EditorViewMode,
+  type TransformSpace
+} from "../../../../lib/stores/useEditorStore";
 import { useProjectStore } from "../../../../lib/stores/useProjectStore";
 import {
   useAssetSelector,
@@ -86,8 +90,10 @@ export default function ProjectEditorPage() {
   const setPanels = useEditorStore((state) => state.setPanels);
   const resetShellState = useEditorStore((state) => state.resetShellState);
   const transformMode = useEditorStore((state) => state.transformMode);
+  const transformSpace = useEditorStore((state) => state.transformSpace);
   const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
   const setTransformMode = useEditorStore((state) => state.setTransformMode);
+  const setTransformSpace = useEditorStore((state) => state.setTransformSpace);
   const {
     walls,
     openings,
@@ -556,8 +562,16 @@ export default function ProjectEditorPage() {
     if (!isSceneVisible || isTopEditorVisible) return;
     setPanels({ assets: false, properties: false });
     setTransformMode("translate");
+    setTransformSpace("world");
     setIsTransforming(false);
-  }, [isSceneVisible, isTopEditorVisible, setIsTransforming, setPanels, setTransformMode]);
+  }, [
+    isSceneVisible,
+    isTopEditorVisible,
+    setIsTransforming,
+    setPanels,
+    setTransformMode,
+    setTransformSpace
+  ]);
 
   const showAssetPanel = panels.assets || !panels.properties;
   const activateAssetPanel = () => setPanels({ assets: true, properties: false });
@@ -704,6 +718,7 @@ export default function ProjectEditorPage() {
                           layout="inline"
                           className="h-full"
                           transformMode={transformMode}
+                          transformSpace={transformSpace}
                           wallMaterialIndex={wallMaterialIndex}
                           floorMaterialIndex={floorMaterialIndex}
                           lighting={lighting}
@@ -713,6 +728,7 @@ export default function ProjectEditorPage() {
                           selectedAsset={selectedAsset}
                           selectedAssetMeta={selectedCatalogItem}
                           onTransformModeChange={setTransformMode}
+                          onTransformSpaceChange={setTransformSpace}
                           onWallMaterialChange={applyWallFinish}
                           onFloorMaterialChange={applyFloorFinish}
                           onLightingChange={applyLightingSetting}
@@ -777,6 +793,7 @@ export default function ProjectEditorPage() {
                         visible={panels.properties}
                         className="xl:hidden"
                         transformMode={transformMode}
+                        transformSpace={transformSpace}
                         wallMaterialIndex={wallMaterialIndex}
                         floorMaterialIndex={floorMaterialIndex}
                         lighting={lighting}
@@ -786,6 +803,7 @@ export default function ProjectEditorPage() {
                         selectedAsset={selectedAsset}
                         selectedAssetMeta={selectedCatalogItem}
                         onTransformModeChange={setTransformMode}
+                        onTransformSpaceChange={setTransformSpace}
                         onWallMaterialChange={applyWallFinish}
                         onFloorMaterialChange={applyFloorFinish}
                         onLightingChange={applyLightingSetting}
@@ -909,6 +927,22 @@ export default function ProjectEditorPage() {
                   >
                     회전
                   </button>
+                  <span className="mx-0.5 h-6 w-px bg-black/10" />
+                  {[
+                    ["world", "월드"],
+                    ["local", "로컬"]
+                  ].map(([space, label]) => (
+                    <button
+                      key={space}
+                      type="button"
+                      onClick={() => setTransformSpace(space as TransformSpace)}
+                      className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                        transformSpace === space ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                   <button
                     type="button"
                     onClick={undo}

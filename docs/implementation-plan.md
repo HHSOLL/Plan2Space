@@ -36,6 +36,7 @@
 - 공유 뷰어 hotspot drawer에 W/D/H 규격 및 마감/디테일 노출 적용
 - 스냅/배치/회전 정밀도 개선 및 뷰어 hotspot 신뢰도 강화
 - floor/surface 배치에 wall clearance + inter-asset separation + support re-clamp 기반 물리 솔버 적용
+- 상단뷰 에디터에 world/local transform space 토글과 live placement clamp 적용
 - Blender 알려진 슬롯 기준(`DeskWood`, `DeskMetal`, `StandWood`, `StandPad`, `LampBody`, `LampAccent`, `LampBulb`)의 slot-aware finish 매핑 적용
 - 오픈소스/공식문서/논문 기반 개선안은 `docs/research-roadmap.md`를 기준으로 추적
 
@@ -93,6 +94,16 @@ Updated:
 
 Removed/Deprecated:
 - 이전 builder 상단 퀵 액션/step chip/summary card 중심 레이아웃.
+
+## 2026-04-16 변경 동기화 (Editor Precision Controls)
+Added:
+- P2 범위에 `world/local` transform space 토글과 live placement clamp를 명시.
+
+Updated:
+- 상단뷰 편집 정확도 목표를 “snap + solver”에서 “snap + solver + live bounds”까지 확장.
+
+Removed/Deprecated:
+- gizmo 배치 보정이 drag 종료 후 한 번만 일어난다는 전제.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

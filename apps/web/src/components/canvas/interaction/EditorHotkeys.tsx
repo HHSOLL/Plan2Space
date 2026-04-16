@@ -13,6 +13,8 @@ const ROTATE_STEP = Math.PI / 2;
 export default function EditorHotkeys() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const setTransformMode = useEditorStore((state) => state.setTransformMode);
+  const transformSpace = useEditorStore((state) => state.transformSpace);
+  const setTransformSpace = useEditorStore((state) => state.setTransformSpace);
   const readOnly = useEditorStore((state) => state.readOnly);
   const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
   const assets = useAssetSelector((slice) => slice.assets);
@@ -24,6 +26,11 @@ export default function EditorHotkeys() {
       if (viewMode !== "top" || readOnly) return;
       if (event.key.toLowerCase() === "g") {
         setTransformMode("translate");
+        return;
+      }
+      if (event.key.toLowerCase() === "q") {
+        setTransformSpace(transformSpace === "world" ? "local" : "world");
+        return;
       }
       if (event.key.toLowerCase() !== "r") return;
       if (!selectedAssetId) return;
@@ -37,7 +44,17 @@ export default function EditorHotkeys() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [assets, readOnly, recordSnapshot, selectedAssetId, setTransformMode, updateFurniture, viewMode]);
+  }, [
+    assets,
+    readOnly,
+    recordSnapshot,
+    selectedAssetId,
+    setTransformMode,
+    setTransformSpace,
+    transformSpace,
+    updateFurniture,
+    viewMode
+  ]);
 
   return null;
 }
