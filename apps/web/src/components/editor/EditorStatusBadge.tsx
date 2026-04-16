@@ -77,7 +77,7 @@ export function EditorStatusBadge({
 
   return (
     <div
-      className={`hidden items-center gap-2 rounded-full border px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] shadow-[0_10px_24px_rgba(29,24,18,0.08)] backdrop-blur-xl lg:flex ${status.className}`}
+      className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] md:flex ${status.className}`}
     >
       <Icon className={`h-4 w-4 ${status.iconClassName ?? ""}`.trim()} />
       <span>{status.label}</span>

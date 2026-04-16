@@ -1,103 +1,95 @@
 import type { BuilderFinishOption } from "../../../lib/api/room-templates";
 
 type BuilderStyleStepProps = {
-  projectName: string;
-  projectDescription: string;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
   wallFinishOptions: BuilderFinishOption[];
   floorFinishOptions: BuilderFinishOption[];
   wallFinishSwatch: Record<number, string>;
   floorFinishSwatch: Record<number, string>;
-  onProjectNameChange: (value: string) => void;
-  onProjectDescriptionChange: (value: string) => void;
   onWallMaterialIndexChange: (index: number) => void;
   onFloorMaterialIndexChange: (index: number) => void;
 };
 
+function buildWallPalette(
+  options: BuilderFinishOption[],
+  swatches: Record<number, string>
+) {
+  return options.map((finish) => ({
+    id: finish.id,
+    name: finish.name,
+    background: swatches[finish.id] ?? "#efe9df"
+  }));
+}
+
+function buildFloorPalette(
+  options: BuilderFinishOption[],
+  swatches: Record<number, string>
+) {
+  return options.map((finish) => ({
+    id: finish.id,
+    name: finish.name,
+    background: swatches[finish.id] ?? "#b58f67"
+  }));
+}
+
 export function BuilderStyleStep({
-  projectName,
-  projectDescription,
   wallMaterialIndex,
   floorMaterialIndex,
   wallFinishOptions,
   floorFinishOptions,
   wallFinishSwatch,
   floorFinishSwatch,
-  onProjectNameChange,
-  onProjectDescriptionChange,
   onWallMaterialIndexChange,
   onFloorMaterialIndexChange
 }: BuilderStyleStepProps) {
+  const wallPalette = buildWallPalette(wallFinishOptions, wallFinishSwatch);
+  const floorPalette = buildFloorPalette(floorFinishOptions, floorFinishSwatch);
+  const activeFloorName = floorFinishOptions.find((finish) => finish.id === floorMaterialIndex)?.name ?? "";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <label className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">프로젝트 이름</label>
-        <input
-          type="text"
-          value={projectName}
-          onChange={(event) => onProjectNameChange(event.target.value)}
-          className="mt-3 w-full rounded-[18px] border border-black/10 bg-[#fcfaf6] px-4 py-4 text-sm outline-none transition focus:border-black/40"
-        />
-      </div>
-
-      <div>
-        <label className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">설명</label>
-        <textarea
-          value={projectDescription}
-          onChange={(event) => onProjectDescriptionChange(event.target.value)}
-          rows={4}
-          className="mt-3 w-full rounded-[18px] border border-black/10 bg-[#fcfaf6] px-4 py-4 text-sm outline-none transition focus:border-black/40"
-        />
-      </div>
-
-      <div className="space-y-3">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">벽 스타일</div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {wallFinishOptions.map((finish) => (
+    <div className="space-y-8">
+      <section>
+        <h2 className="text-base font-bold text-[#1a1714]">벽 색상</h2>
+        <div className="mt-4 grid grid-cols-5 gap-3">
+          {wallPalette.map((finish) => (
             <button
               key={finish.id}
               type="button"
               onClick={() => onWallMaterialIndexChange(finish.id)}
-              className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
-                wallMaterialIndex === finish.id
-                  ? "border-black/30 bg-[#f2ebe2]"
-                  : "border-black/10 bg-[#fcfaf6] hover:border-black/25"
+              className={`aspect-square rounded-[12px] border-2 transition ${
+                wallMaterialIndex === finish.id ? "border-[#171411]" : "border-transparent"
               }`}
-            >
-              <span
-                className="h-7 w-7 rounded-md border border-black/10"
-                style={{ background: wallFinishSwatch[finish.id] ?? "#ece6dc" }}
-              />
-              <span className="text-sm font-semibold text-[#3a3026]">{finish.name}</span>
-            </button>
+              style={{ background: finish.background }}
+              aria-label={finish.name}
+            />
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="space-y-3">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7f72]">바닥 스타일</div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {floorFinishOptions.map((finish) => (
+      <div className="border-t border-black/10" />
+
+      <section>
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="text-base font-bold text-[#1a1714]">바닥 스타일</h2>
+          {activeFloorName ? <span className="text-sm text-[#766c60]">{activeFloorName}</span> : null}
+        </div>
+
+        <div className="mt-4 grid grid-cols-4 gap-3">
+          {floorPalette.map((finish) => (
             <button
               key={finish.id}
               type="button"
               onClick={() => onFloorMaterialIndexChange(finish.id)}
-              className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
-                floorMaterialIndex === finish.id
-                  ? "border-black/30 bg-[#f2ebe2]"
-                  : "border-black/10 bg-[#fcfaf6] hover:border-black/25"
+              className={`aspect-square rounded-[12px] border-2 bg-cover bg-center transition ${
+                floorMaterialIndex === finish.id ? "border-[#171411]" : "border-transparent"
               }`}
-            >
-              <span
-                className="h-7 w-7 rounded-md border border-black/10"
-                style={{ background: floorFinishSwatch[finish.id] ?? "#b79d7e" }}
-              />
-              <span className="text-sm font-semibold text-[#3a3026]">{finish.name}</span>
-            </button>
+              style={{ background: finish.background }}
+              aria-label={finish.name}
+            />
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

@@ -6,12 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/worker.ts",
     "start": "tsx src/worker.ts",
-    "provider:floorplan:check": "node --import tsx scripts/check-floorplan-providers.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test"
   },
   "dependencies": {
-    "@plan2space/floorplan-core": "0.0.0",
     "@supabase/supabase-js": "^2.45.3",
     "sharp": "^0.33.3",
     "zod": "^4.2.1"

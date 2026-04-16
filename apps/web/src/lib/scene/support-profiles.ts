@@ -24,6 +24,11 @@ type SupportProfileDescriptor = {
   label?: string;
   category?: string;
   description?: string;
+  dimensionsMm?: {
+    width: number;
+    depth: number;
+    height: number;
+  } | null;
 };
 
 const SUPPORT_ANCHOR_TYPES: SupportAnchorType[] = [
@@ -76,6 +81,33 @@ function createProfile(surfaces: AssetSupportSurface[]): AssetSupportProfile {
   return { surfaces };
 }
 
+function normalizeDimensionsMm(
+  value: SupportProfileDescriptor["dimensionsMm"]
+): SupportProfileDescriptor["dimensionsMm"] {
+  if (!value) return null;
+  const width = toNumber(value.width, 0);
+  const depth = toNumber(value.depth, 0);
+  const height = toNumber(value.height, 0);
+  if (width <= 0 || depth <= 0 || height <= 0) {
+    return null;
+  }
+  return { width, depth, height };
+}
+
+function toMeters(value: number) {
+  return value / 1000;
+}
+
+function resolveDimensionBounds(descriptor: SupportProfileDescriptor) {
+  const dimensionsMm = normalizeDimensionsMm(descriptor.dimensionsMm);
+  if (!dimensionsMm) return null;
+  return {
+    width: toMeters(dimensionsMm.width),
+    depth: toMeters(dimensionsMm.depth),
+    height: toMeters(dimensionsMm.height)
+  };
+}
+
 export function normalizeAssetSupportProfile(value: unknown): AssetSupportProfile | null {
   if (!isRecord(value) || !Array.isArray(value.surfaces)) {
     return null;
@@ -118,6 +150,7 @@ export function normalizeAssetSupportProfile(value: unknown): AssetSupportProfil
 }
 
 export function inferAssetSupportProfile(descriptor: SupportProfileDescriptor): AssetSupportProfile | null {
+  const bounds = resolveDimensionBounds(descriptor);
   const haystack = [
     descriptor.catalogItemId ?? "",
     descriptor.assetId,
@@ -130,9 +163,17 @@ export function inferAssetSupportProfile(descriptor: SupportProfileDescriptor): 
 
   if (haystack.includes("desk") || haystack.includes("workbench") || haystack.includes("dining table")) {
     return createProfile([
-      createSurface("desk-top", ["desk_surface", "furniture_surface"], [1.25, 0.68], 0.75, {
-        margin: [0.09, 0.08]
-      })
+      createSurface(
+        "desk-top",
+        ["desk_surface", "furniture_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.9, 0.3), Math.max(bounds.depth * 0.9, 0.24)]
+          : [1.25, 0.68],
+        bounds ? Math.max(bounds.height, 0.4) : 0.75,
+        {
+          margin: [0.09, 0.08]
+        }
+      )
     ]);
   }
 
@@ -142,17 +183,33 @@ export function inferAssetSupportProfile(descriptor: SupportProfileDescriptor): 
     haystack.includes("side table")
   ) {
     return createProfile([
-      createSurface("table-top", ["desk_surface", "furniture_surface"], [1.05, 0.62], 0.72, {
-        margin: [0.08, 0.07]
-      })
+      createSurface(
+        "table-top",
+        ["desk_surface", "furniture_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.88, 0.28), Math.max(bounds.depth * 0.88, 0.22)]
+          : [1.05, 0.62],
+        bounds ? Math.max(bounds.height, 0.36) : 0.72,
+        {
+          margin: [0.08, 0.07]
+        }
+      )
     ]);
   }
 
   if (haystack.includes("nightstand")) {
     return createProfile([
-      createSurface("nightstand-top", ["furniture_surface"], [0.5, 0.38], 0.68, {
-        margin: [0.05, 0.05]
-      })
+      createSurface(
+        "nightstand-top",
+        ["furniture_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.88, 0.22), Math.max(bounds.depth * 0.88, 0.18)]
+          : [0.5, 0.38],
+        bounds ? Math.max(bounds.height, 0.3) : 0.68,
+        {
+          margin: [0.05, 0.05]
+        }
+      )
     ]);
   }
 
@@ -164,28 +221,60 @@ export function inferAssetSupportProfile(descriptor: SupportProfileDescriptor): 
     haystack.includes("console")
   ) {
     return createProfile([
-      createSurface("casework-top", ["furniture_surface"], [0.88, 0.4], 0.84, {
-        margin: [0.07, 0.05]
-      })
+      createSurface(
+        "casework-top",
+        ["furniture_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.9, 0.24), Math.max(bounds.depth * 0.86, 0.18)]
+          : [0.88, 0.4],
+        bounds ? Math.max(bounds.height, 0.36) : 0.84,
+        {
+          margin: [0.07, 0.05]
+        }
+      )
     ]);
   }
 
   if (haystack.includes("cart")) {
     return createProfile([
-      createSurface("cart-top", ["furniture_surface"], [0.72, 0.42], 0.86, {
-        margin: [0.06, 0.05]
-      })
+      createSurface(
+        "cart-top",
+        ["furniture_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.88, 0.22), Math.max(bounds.depth * 0.84, 0.18)]
+          : [0.72, 0.42],
+        bounds ? Math.max(bounds.height, 0.36) : 0.86,
+        {
+          margin: [0.06, 0.05]
+        }
+      )
     ]);
   }
 
   if (haystack.includes("shelf") || haystack.includes("shelves") || haystack.includes("bookcase") || haystack.includes("rack")) {
     return createProfile([
-      createSurface("shelf-upper", ["shelf_surface"], [0.82, 0.28], 1.2, {
-        margin: [0.06, 0.04]
-      }),
-      createSurface("shelf-top", ["furniture_surface"], [0.9, 0.32], 1.72, {
-        margin: [0.07, 0.05]
-      })
+      createSurface(
+        "shelf-upper",
+        ["shelf_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.82, 0.24), Math.max(bounds.depth * 0.74, 0.16)]
+          : [0.82, 0.28],
+        bounds ? Math.max(Math.min(bounds.height * 0.72, bounds.height - 0.16), 0.48) : 1.2,
+        {
+          margin: [0.06, 0.04]
+        }
+      ),
+      createSurface(
+        "shelf-top",
+        ["furniture_surface"],
+        bounds
+          ? [Math.max(bounds.width * 0.9, 0.26), Math.max(bounds.depth * 0.84, 0.18)]
+          : [0.9, 0.32],
+        bounds ? Math.max(bounds.height, 0.54) : 1.72,
+        {
+          margin: [0.07, 0.05]
+        }
+      )
     ]);
   }
 

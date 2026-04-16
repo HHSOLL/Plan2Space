@@ -13,80 +13,9 @@ export type Vec3 = [number, number, number]; // [x, y, z] in meters (Three.js)
 
 export type Euler = Vec3; // radians, intrinsic XYZ (Three.js default)
 
-export type FloorPlanUnit = "m";
-
 export type OpeningType = "door" | "window";
 
 export type OpeningSwing = "left" | "right" | "cw" | "ccw";
-
-export interface FloorPlanParams {
-  wallHeight: number;
-  wallThickness: number;
-  ceilingHeight: number;
-}
-
-export interface FloorPlanWall {
-  id: string;
-  a: Vec2;
-  b: Vec2;
-  thickness?: number;
-  height?: number;
-  locked?: boolean;
-  editable?: boolean;
-  demolishable?: boolean | "unknown";
-}
-
-export interface FloorPlanOpening {
-  id: string;
-  wallId: string;
-  type: OpeningType;
-  offset: number; // meters from wall.a along the wall direction
-  width: number; // meters
-  height: number; // meters
-  verticalOffset?: number; // meters (default 0)
-  sillHeight?: number; // meters (windows)
-  swing?: OpeningSwing; // doors
-}
-
-export interface FloorPlanRoom {
-  id: string;
-  name?: string;
-  polygon: Vec2[];
-  height?: number; // meters (optional override)
-}
-
-export interface FloorPlanDimension {
-  id: string;
-  kind: "distance";
-  from: Vec2;
-  to: Vec2;
-  value: number; // meters
-  label?: string;
-  source?: "ai" | "user";
-  confidence?: number; // 0..1 (ai)
-}
-
-export interface FloorPlanSource {
-  kind: "ai_blueprint" | "manual_2d_editor" | "import_dxf" | "import_ifc";
-  originalUnits?: "mm" | "m";
-  raw?: Json;
-  warnings?: string[];
-}
-
-export interface FloorPlanData {
-  schemaVersion: 1;
-  unit: FloorPlanUnit;
-  coordSystem: {
-    plane: "xz";
-    upAxis: "y";
-  };
-  params: FloorPlanParams;
-  walls: FloorPlanWall[];
-  openings: FloorPlanOpening[];
-  rooms?: FloorPlanRoom[];
-  dimensions?: FloorPlanDimension[];
-  source?: FloorPlanSource;
-}
 
 export type SurfaceId = string;
 
@@ -277,7 +206,6 @@ export interface Database {
           version: number;
           created_by: UUID | null;
           message: string | null;
-          floor_plan: FloorPlanData;
           customization: CustomizationData;
           snapshot_path: string | null;
           created_at: string;
@@ -289,7 +217,6 @@ export interface Database {
           version: number;
           created_by?: UUID | null;
           message?: string | null;
-          floor_plan?: FloorPlanData;
           customization?: CustomizationData;
           snapshot_path?: string | null;
           created_at?: string;
@@ -301,7 +228,6 @@ export interface Database {
           version?: number;
           created_by?: UUID | null;
           message?: string | null;
-          floor_plan?: FloorPlanData;
           customization?: CustomizationData;
           snapshot_path?: string | null;
           created_at?: string;
@@ -425,64 +351,10 @@ export interface Database {
         };
         Relationships: [];
       };
-      floorplans: {
-        Row: {
-          id: UUID;
-          project_id: UUID;
-          object_path: string;
-          original_file_name: string | null;
-          mime_type: string | null;
-          width: number | null;
-          height: number | null;
-          status: string;
-          error_code: string | null;
-          error: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: UUID;
-          project_id: UUID;
-          object_path: string;
-          original_file_name?: string | null;
-          mime_type?: string | null;
-          width?: number | null;
-          height?: number | null;
-          status?: string;
-          error_code?: string | null;
-          error?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: UUID;
-          project_id?: UUID;
-          object_path?: string;
-          original_file_name?: string | null;
-          mime_type?: string | null;
-          width?: number | null;
-          height?: number | null;
-          status?: string;
-          error_code?: string | null;
-          error?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "floorplans_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       jobs: {
         Row: {
           id: UUID;
           type: string;
-          floorplan_id: UUID | null;
           payload: Json;
           status: string;
           progress: number;
@@ -504,7 +376,6 @@ export interface Database {
         Insert: {
           id?: UUID;
           type: string;
-          floorplan_id?: UUID | null;
           payload?: Json;
           status?: string;
           progress?: number;
@@ -526,7 +397,6 @@ export interface Database {
         Update: {
           id?: UUID;
           type?: string;
-          floorplan_id?: UUID | null;
           payload?: Json;
           status?: string;
           progress?: number;
@@ -545,59 +415,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "jobs_floorplan_id_fkey";
-            columns: ["floorplan_id"];
-            isOneToOne: false;
-            referencedRelation: "floorplans";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      floorplan_results: {
-        Row: {
-          id: UUID;
-          floorplan_id: UUID;
-          wall_coordinates: Json;
-          room_polygons: Json;
-          scale: number;
-          scene_json: Json;
-          diagnostics: Json | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: UUID;
-          floorplan_id: UUID;
-          wall_coordinates?: Json;
-          room_polygons?: Json;
-          scale: number;
-          scene_json?: Json;
-          diagnostics?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: UUID;
-          floorplan_id?: UUID;
-          wall_coordinates?: Json;
-          room_polygons?: Json;
-          scale?: number;
-          scene_json?: Json;
-          diagnostics?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "floorplan_results_floorplan_id_fkey";
-            columns: ["floorplan_id"];
-            isOneToOne: true;
-            referencedRelation: "floorplans";
-            referencedColumns: ["id"];
-          }
-        ];
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
@@ -606,7 +424,6 @@ export interface Database {
         Args: {
           p_project_id: UUID;
           p_message?: string | null;
-          p_floor_plan?: FloorPlanData;
           p_customization?: CustomizationData;
           p_snapshot_path?: string | null;
         };

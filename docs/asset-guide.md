@@ -7,14 +7,18 @@ Plan2Space의 메인 자산 경로는 **deskterior 카탈로그 + Blender/오픈
 - Blender 원본: `assets/blender/deskterior/*.blend`
 - 런타임 GLB: `apps/web/public/assets/models/*/*.glb|*.gltf`
 - 카탈로그: `apps/web/public/assets/catalog/manifest.json`
-- 동기화 스크립트:
+- 운영 스크립트:
 
 ```bash
+npm --workspace apps/web run assets:export:deskterior -- --report
+npm --workspace apps/web run assets:export:deskterior
 npm --workspace apps/web run assets:sync:deskterior
+npm --workspace apps/web run assets:verify:deskterior
 ```
 
 위 스크립트는 아래를 수행합니다.
 
+- Blender source(.blend) 존재/신선도 검사 + 런타임 GLB export
 - Plan2Space 제작 deskterior 자산(p2s_*) upsert
 - 오픈소스 desk/chair/lamp 메타데이터(brand/options/externalUrl) 보강
 - 제품 인스펙터 표준 필드(thumbnail/price/options/externalUrl/brand) 유지

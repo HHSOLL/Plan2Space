@@ -1,5 +1,3 @@
-import { ArrowRight } from "lucide-react";
-
 type BuilderFooterProps = {
   stepIndex: number;
   isFinalStep: boolean;
@@ -15,25 +13,38 @@ export function BuilderFooter({
   onBack,
   onNext
 }: BuilderFooterProps) {
+  const primaryLabel = isFinalStep ? (isCreating ? "공간 생성 중..." : "이 공간 디자인하기") : "다음";
+
   return (
-    <div className="mt-8 flex items-center gap-3 border-t border-black/10 pt-6">
-      <button
-        type="button"
-        onClick={onBack}
-        disabled={stepIndex === 0}
-        className="inline-flex flex-1 items-center justify-center rounded-full border border-black/15 bg-white px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#2e251d] transition disabled:opacity-35"
-      >
-        돌아가기
-      </button>
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={isCreating}
-        className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-full bg-[#11100e] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isFinalStep ? (isCreating ? "공간 생성 중..." : "이 공간 디자인하기") : "다음"}
-        <ArrowRight className="h-4 w-4" />
-      </button>
+    <div className="border-t border-black/10 bg-white pt-6">
+      {stepIndex === 0 ? (
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={isCreating}
+          className="inline-flex h-14 w-full items-center justify-center rounded-full bg-[#111111] px-6 text-base font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {primaryLabel}
+        </button>
+      ) : (
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-14 flex-1 items-center justify-center rounded-full border border-black/20 bg-white px-6 text-base font-semibold text-[#1c1814] transition hover:border-black/40"
+          >
+            돌아가기
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={isCreating}
+            className="inline-flex h-14 flex-[1.25] items-center justify-center rounded-full bg-[#111111] px-6 text-base font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {primaryLabel}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

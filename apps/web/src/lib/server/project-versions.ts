@@ -1,10 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "../../../../../types/database";
+import type { ProductDimensionsMm } from "../builder/catalog";
 import { deriveBlankRoomShell } from "../domain/room-shell";
 import type { Floor, Opening, ScaleInfo, Wall } from "../stores/useSceneStore";
 
-const DEFAULT_WALL_HEIGHT = 2.8;
 const ASSET_ANCHOR_TYPES = new Set([
   "floor",
   "wall",
@@ -62,14 +62,7 @@ const RoomShellSchema = z.object({
 
 export const SaveVersionSchema = z.object({
   message: z.string().optional(),
-  topology: z.object({
-    scale: z.number(),
-    scaleInfo: z.record(z.string(), z.unknown()).optional(),
-    walls: z.array(z.record(z.string(), z.unknown())),
-    openings: z.array(z.record(z.string(), z.unknown())),
-    floors: z.array(z.record(z.string(), z.unknown())).optional()
-  }),
-  roomShell: RoomShellSchema.optional(),
+  roomShell: RoomShellSchema,
   assets: z.array(z.record(z.string(), z.unknown())).default([]),
   materials: z.object({
     wallIndex: z.number(),
@@ -90,8 +83,7 @@ export const SaveVersionSchema = z.object({
 });
 
 type SaveVersionPayload = z.infer<typeof SaveVersionSchema>;
-type TopologyPayload = SaveVersionPayload["topology"];
-type RoomShellPayload = NonNullable<SaveVersionPayload["roomShell"]>;
+type RoomShellPayload = SaveVersionPayload["roomShell"];
 type MaterialsPayload = SaveVersionPayload["materials"];
 type LightingPayload = NonNullable<SaveVersionPayload["lighting"]>;
 type ProjectRow = Pick<Database["public"]["Tables"]["projects"]["Row"], "id" | "owner_id" | "meta" | "current_version_id">;
@@ -113,7 +105,7 @@ export class ProjectVersionApiError extends Error {
 }
 
 function resolveUploadBucket() {
-  return process.env.FLOORPLAN_UPLOAD_BUCKET ?? process.env.NEXT_PUBLIC_FLOORPLAN_UPLOAD_BUCKET ?? "floor-plans";
+  return process.env.PROJECT_MEDIA_BUCKET ?? process.env.NEXT_PUBLIC_PROJECT_MEDIA_BUCKET ?? "project-media";
 }
 
 function createPrivilegedSupabaseClient(userScopedSupabase: SupabaseClient<Database>) {
@@ -155,6 +147,43 @@ function normalizeAssetMetadataPrice(value: unknown) {
   return normalizeAssetMetadataText(value);
 }
 
+function normalizeAssetMetadataBoolean(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return false;
+}
+
+function normalizeAssetMetadataDimensionValue(value: unknown) {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function normalizeAssetMetadataDimensionsMm(value: unknown): ProductDimensionsMm | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const width = normalizeAssetMetadataDimensionValue(value.width);
+  const depth = normalizeAssetMetadataDimensionValue(value.depth);
+  const height = normalizeAssetMetadataDimensionValue(value.height);
+
+  if (width === null || depth === null || height === null) {
+    return null;
+  }
+
+  return {
+    width,
+    depth,
+    height
+  };
+}
+
 function resolveAssetProductRecord(asset: Record<string, unknown>) {
   return isRecord(asset.product) ? asset.product : null;
 }
@@ -172,6 +201,11 @@ function buildAssetProductMetadata(asset: Record<string, unknown>) {
   const thumbnailUrl = normalizeAssetMetadataUrl(
     product?.thumbnail ?? asset.thumbnailUrl ?? asset.imageUrl ?? asset.previewImageUrl
   );
+  const dimensionsMm = normalizeAssetMetadataDimensionsMm(product?.dimensionsMm ?? asset.dimensionsMm);
+  const finishColor = normalizeAssetMetadataText(product?.finishColor ?? asset.finishColor);
+  const finishMaterial = normalizeAssetMetadataText(product?.finishMaterial ?? asset.finishMaterial);
+  const detailNotes = normalizeAssetMetadataText(product?.detailNotes ?? asset.detailNotes);
+  const scaleLocked = normalizeAssetMetadataBoolean(product?.scaleLocked ?? asset.scaleLocked);
 
   return {
     ...(productId ? { productId } : {}),
@@ -182,7 +216,12 @@ function buildAssetProductMetadata(asset: Record<string, unknown>) {
     ...(price !== null ? { price } : {}),
     ...(variant ? { variant } : {}),
     ...(productUrl ? { productUrl } : {}),
-    ...(thumbnailUrl ? { thumbnailUrl } : {})
+    ...(thumbnailUrl ? { thumbnailUrl } : {}),
+    dimensionsMm,
+    finishColor,
+    finishMaterial,
+    detailNotes,
+    scaleLocked
   };
 }
 
@@ -235,80 +274,12 @@ function mimeToExtension(mime: string) {
   return "bin";
 }
 
-function buildProjectVersionFloorPlan(topology: TopologyPayload) {
-  const scale = topology.scale;
-  const walls = topology.walls;
-  const openings = topology.openings;
-  const floors = Array.isArray(topology.floors) ? topology.floors : [];
-  const wallHeight = walls.reduce((max, wall) => Math.max(max, Number(wall.height) || DEFAULT_WALL_HEIGHT), DEFAULT_WALL_HEIGHT);
-  const wallThickness = walls.length > 0 ? Math.max(0.02, Number(walls[0]?.thickness ?? 0.2) * scale) : 0.2;
-
-  return {
-    schemaVersion: 1,
-    unit: "m",
-    coordSystem: {
-      plane: "xz",
-      upAxis: "y"
-    },
-    params: {
-      wallHeight,
-      wallThickness,
-      ceilingHeight: wallHeight
-    },
-    walls: walls.map((wall) => ({
-      id: wall.id,
-      a: [Number(wall.start?.[0] ?? 0) * scale, Number(wall.start?.[1] ?? 0) * scale],
-      b: [Number(wall.end?.[0] ?? 0) * scale, Number(wall.end?.[1] ?? 0) * scale],
-      thickness: Number(wall.thickness ?? 12) * scale,
-      height: Number(wall.height ?? wallHeight)
-    })),
-    openings: openings.map((opening) => ({
-      id: opening.id,
-      wallId: opening.wallId,
-      type: opening.type,
-      offset: Number(opening.offset ?? 0) * scale,
-      width: Number(opening.width ?? 90) * scale,
-      height: Number(opening.height ?? 210) * scale,
-      isEntrance: Boolean(opening.isEntrance),
-      verticalOffset:
-        typeof opening.verticalOffset === "number" ? Number(opening.verticalOffset) * scale : undefined,
-      sillHeight: typeof opening.sillHeight === "number" ? Number(opening.sillHeight) * scale : undefined
-    })),
-    source: {
-      kind: "manual_2d_editor",
-      raw: topology.scaleInfo
-        ? {
-            scaleInfo: topology.scaleInfo
-          }
-        : undefined
-    },
-    floors: floors.map((floor) => ({
-      id: floor.id,
-      outline: Array.isArray(floor.outline)
-        ? floor.outline.map((point: unknown) => [
-            Number((point as [number, number])?.[0] ?? 0) * scale,
-            Number((point as [number, number])?.[1] ?? 0) * scale
-          ])
-        : [],
-      materialId: typeof floor.materialId === "string" ? floor.materialId : null
-    }))
-  };
-}
-
-function buildRoomShell(topology: TopologyPayload, roomShell?: RoomShellPayload) {
-  const scale = typeof roomShell?.scale === "number" ? roomShell.scale : topology.scale;
-  const resolvedScaleInfo = toScaleInfo(roomShell?.scaleInfo ?? topology.scaleInfo, scale);
-  const walls = Array.isArray(roomShell?.walls)
-    ? (roomShell.walls as Array<Record<string, unknown>>)
-    : (topology.walls as Array<Record<string, unknown>>);
-  const openings = Array.isArray(roomShell?.openings)
-    ? (roomShell.openings as Array<Record<string, unknown>>)
-    : (topology.openings as Array<Record<string, unknown>>);
-  const floors = Array.isArray(roomShell?.floors)
-    ? (roomShell.floors as Array<Record<string, unknown>>)
-    : Array.isArray(topology.floors)
-      ? (topology.floors as Array<Record<string, unknown>>)
-      : [];
+function buildRoomShell(roomShell: RoomShellPayload) {
+  const scale = roomShell.scale;
+  const resolvedScaleInfo = toScaleInfo(roomShell.scaleInfo, scale);
+  const walls = roomShell.walls as Array<Record<string, unknown>>;
+  const openings = roomShell.openings as Array<Record<string, unknown>>;
+  const floors = roomShell.floors as Array<Record<string, unknown>>;
   const derivedShell = deriveBlankRoomShell({
     scale,
     scaleInfo: resolvedScaleInfo,
@@ -324,29 +295,29 @@ function buildRoomShell(topology: TopologyPayload, roomShell?: RoomShellPayload)
     openings,
     floors,
     ceilings:
-      Array.isArray(roomShell?.ceilings) && roomShell.ceilings.length > 0
+      Array.isArray(roomShell.ceilings) && roomShell.ceilings.length > 0
         ? (roomShell.ceilings as Array<Record<string, unknown>>)
         : (derivedShell.ceilings as unknown as Array<Record<string, unknown>>),
     rooms:
-      Array.isArray(roomShell?.rooms) && roomShell.rooms.length > 0
+      Array.isArray(roomShell.rooms) && roomShell.rooms.length > 0
         ? (roomShell.rooms as Array<Record<string, unknown>>)
         : (derivedShell.rooms as unknown as Array<Record<string, unknown>>),
     cameraAnchors:
-      Array.isArray(roomShell?.cameraAnchors) && roomShell.cameraAnchors.length > 0
+      Array.isArray(roomShell.cameraAnchors) && roomShell.cameraAnchors.length > 0
         ? (roomShell.cameraAnchors as Array<Record<string, unknown>>)
         : (derivedShell.cameraAnchors as unknown as Array<Record<string, unknown>>),
     navGraph: {
       nodes:
-        Array.isArray(roomShell?.navGraph?.nodes) && roomShell.navGraph.nodes.length > 0
+        Array.isArray(roomShell.navGraph?.nodes) && roomShell.navGraph.nodes.length > 0
           ? (roomShell.navGraph.nodes as Array<Record<string, unknown>>)
           : (derivedShell.navGraph.nodes as unknown as Array<Record<string, unknown>>),
       edges:
-        Array.isArray(roomShell?.navGraph?.edges) && roomShell.navGraph.edges.length > 0
+        Array.isArray(roomShell.navGraph?.edges) && roomShell.navGraph.edges.length > 0
           ? (roomShell.navGraph.edges as Array<Record<string, unknown>>)
           : (derivedShell.navGraph.edges as unknown as Array<Record<string, unknown>>)
     },
     entranceId:
-      typeof roomShell?.entranceId === "string" && roomShell.entranceId.length > 0
+      typeof roomShell.entranceId === "string" && roomShell.entranceId.length > 0
         ? roomShell.entranceId
         : derivedShell.entranceId
   };
@@ -354,10 +325,10 @@ function buildRoomShell(topology: TopologyPayload, roomShell?: RoomShellPayload)
 
 function resolveLightingSettings(lighting?: Partial<LightingPayload>): LightingPayload {
   const fallbackLighting: LightingPayload = {
-    ambientIntensity: 0.35,
-    hemisphereIntensity: 0.4,
-    directionalIntensity: 1.05,
-    environmentBlur: 0.2
+    ambientIntensity: 0.44,
+    hemisphereIntensity: 0.54,
+    directionalIntensity: 1.24,
+    environmentBlur: 0.14
   };
 
   return {
@@ -381,13 +352,12 @@ function resolveLightingSettings(lighting?: Partial<LightingPayload>): LightingP
 }
 
 function buildSceneDocument(
-  topology: TopologyPayload,
-  roomShell: RoomShellPayload | undefined,
+  roomShell: RoomShellPayload,
   assets: Array<Record<string, unknown>>,
   materials: MaterialsPayload,
   lighting?: Partial<LightingPayload>
 ) {
-  const resolvedRoomShell = buildRoomShell(topology, roomShell);
+  const resolvedRoomShell = buildRoomShell(roomShell);
   const normalizedLighting = resolveLightingSettings(lighting);
 
   return {
@@ -432,14 +402,13 @@ function buildSceneDocument(
 }
 
 function buildProjectVersionCustomization(
-  topology: TopologyPayload,
-  roomShell: RoomShellPayload | undefined,
+  roomShell: RoomShellPayload,
   assets: Array<Record<string, unknown>>,
   materials: MaterialsPayload,
   lighting?: Partial<LightingPayload>
 ) {
   const normalizedLighting = resolveLightingSettings(lighting);
-  const sceneDocument = buildSceneDocument(topology, roomShell, assets, materials, lighting);
+  const sceneDocument = buildSceneDocument(roomShell, assets, materials, lighting);
 
   return {
     schemaVersion: 1,
@@ -573,16 +542,7 @@ export async function createProjectVersion(
     }
   }
 
-  const floorPlan = buildProjectVersionFloorPlan({
-    scale: payload.topology.scale,
-    scaleInfo: payload.topology.scaleInfo,
-    walls: payload.topology.walls as Array<Record<string, unknown>>,
-    openings: payload.topology.openings as Array<Record<string, unknown>>,
-    floors: Array.isArray(payload.topology.floors) ? (payload.topology.floors as Array<Record<string, unknown>>) : []
-  });
-
   const customization = buildProjectVersionCustomization(
-    payload.topology,
     payload.roomShell,
     payload.assets as Array<Record<string, unknown>>,
     payload.materials,
@@ -592,8 +552,6 @@ export async function createProjectVersion(
   const createVersion = await supabase.rpc("create_project_version", {
     p_project_id: input.projectId,
     p_message: payload.message ?? "Manual save",
-    p_floor_plan:
-      floorPlan as unknown as Database["public"]["Functions"]["create_project_version"]["Args"]["p_floor_plan"],
     p_customization:
       customization as Database["public"]["Functions"]["create_project_version"]["Args"]["p_customization"],
     p_snapshot_path: snapshotPath

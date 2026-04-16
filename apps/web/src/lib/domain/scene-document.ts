@@ -1,4 +1,5 @@
 import { normalizeAssetSupportProfile } from "../scene/support-profiles";
+import type { ProductDimensionsMm, ProductPhysicalMetadata } from "../builder/catalog";
 import type { AssetSupportProfile } from "../scene/support-profiles";
 import type {
   CameraAnchor,
@@ -55,7 +56,7 @@ export type ProductMetadata = {
   previewImageUrl?: string;
   supportAssetId?: string | null;
   supportProfile?: AssetSupportProfile | null;
-};
+} & Partial<ProductPhysicalMetadata>;
 
 export type SceneObject = SceneAsset & {
   metadata?: ProductMetadata;
@@ -112,6 +113,8 @@ export type SceneStorePatch = {
   entranceId: string | null;
 };
 
+type SceneAssetProductWithPhysicalMetadata = NonNullable<SceneAsset["product"]> & ProductPhysicalMetadata;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -148,22 +151,72 @@ function toMetadataPrice(value: unknown) {
   return toMetadataText(value);
 }
 
-function toSceneAssetProduct(metadata: ProductMetadata | undefined): SceneAsset["product"] {
-  if (!metadata) return null;
-  const id = toMetadataText(metadata.productId ?? metadata.catalogItemId);
-  const name = toMetadataText(metadata.label ?? metadata.name);
-  const category = toMetadataText(metadata.category);
+function toMetadataBoolean(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return false;
+}
+
+function toMetadataDimensionValue(value: unknown) {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function toMetadataDimensionsMm(value: unknown): ProductDimensionsMm | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const width = toMetadataDimensionValue(value.width);
+  const depth = toMetadataDimensionValue(value.depth);
+  const height = toMetadataDimensionValue(value.height);
+
+  if (width === null || depth === null || height === null) {
+    return null;
+  }
+
+  return {
+    width,
+    depth,
+    height
+  };
+}
+
+function toSceneAssetProduct(
+  metadata: ProductMetadata | undefined,
+  product: SceneAsset["product"] | undefined
+): SceneAssetProductWithPhysicalMetadata | null {
+  const productRecord = isRecord(product) ? (product as Record<string, unknown>) : null;
+  const id = toMetadataText(metadata?.productId ?? metadata?.catalogItemId ?? productRecord?.id);
+  const name = toMetadataText(metadata?.label ?? metadata?.name ?? productRecord?.name);
+  const category = toMetadataText(metadata?.category ?? productRecord?.category);
   if (!id || !name || !category) return null;
 
   return {
     id,
     name,
     category,
-    brand: toMetadataText(metadata.vendor),
-    price: toMetadataPrice(metadata.price),
-    options: toMetadataText(metadata.variant),
-    externalUrl: toMetadataUrl(metadata.productUrl ?? metadata.externalUrl),
-    thumbnail: toMetadataUrl(metadata.thumbnailUrl ?? metadata.imageUrl ?? metadata.previewImageUrl)
+    brand: toMetadataText(metadata?.vendor ?? productRecord?.brand),
+    price: toMetadataPrice(metadata?.price ?? productRecord?.price),
+    options: toMetadataText(metadata?.variant ?? productRecord?.options),
+    externalUrl: toMetadataUrl(metadata?.productUrl ?? metadata?.externalUrl ?? productRecord?.externalUrl),
+    thumbnail: toMetadataUrl(
+      metadata?.thumbnailUrl ??
+        metadata?.imageUrl ??
+        metadata?.previewImageUrl ??
+        productRecord?.thumbnail
+    ),
+    dimensionsMm: toMetadataDimensionsMm(metadata?.dimensionsMm ?? productRecord?.dimensionsMm),
+    finishColor: toMetadataText(metadata?.finishColor ?? productRecord?.finishColor),
+    finishMaterial: toMetadataText(metadata?.finishMaterial ?? productRecord?.finishMaterial),
+    detailNotes: toMetadataText(metadata?.detailNotes ?? productRecord?.detailNotes),
+    scaleLocked: toMetadataBoolean(metadata?.scaleLocked ?? productRecord?.scaleLocked)
   };
 }
 
@@ -233,10 +286,10 @@ function parseSceneDocumentFromVersion(version: Record<string, unknown>): SceneD
       floorMaterialIndex: toSafeNumber(rawMaterialOverride?.floorMaterialIndex, 0)
     },
     lighting: {
-      ambientIntensity: toSafeNumber(rawLighting?.ambientIntensity, 0.35),
-      hemisphereIntensity: toSafeNumber(rawLighting?.hemisphereIntensity, 0.4),
-      directionalIntensity: toSafeNumber(rawLighting?.directionalIntensity, 1.05),
-      environmentBlur: toSafeNumber(rawLighting?.environmentBlur, 0.2)
+      ambientIntensity: toSafeNumber(rawLighting?.ambientIntensity, 0.44),
+      hemisphereIntensity: toSafeNumber(rawLighting?.hemisphereIntensity, 0.54),
+      directionalIntensity: toSafeNumber(rawLighting?.directionalIntensity, 1.24),
+      environmentBlur: toSafeNumber(rawLighting?.environmentBlur, 0.14)
     }
   };
 
@@ -267,7 +320,7 @@ export function toSceneStorePatch(scene: SceneDocumentBootstrap): SceneStorePatc
     assets: scene.document.nodes.map((node) => ({
       ...node,
       catalogItemId: node.metadata?.catalogItemId ?? node.catalogItemId,
-      product: toSceneAssetProduct(node.metadata) ?? node.product ?? null,
+      product: toSceneAssetProduct(node.metadata, node.product) ?? node.product ?? null,
       supportAssetId:
         (node.metadata && typeof node.metadata.supportAssetId === "string" && node.metadata.supportAssetId.length > 0
           ? node.metadata.supportAssetId

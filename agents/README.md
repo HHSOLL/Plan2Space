@@ -11,7 +11,7 @@
 ## Skill Mapping
 - Product/Architecture/Scope: `plan2space-project-core`
 - UI/UX/Interaction: `plan2space-studio-ux`
-- Blueprint AI/Pipeline: `plan2space-blueprint-ai`
+- Deskterior AI (asset generation/recommendation): `plan2space-blueprint-ai`
 - Browser QA: `playwright`
 
 ## Agent Catalog

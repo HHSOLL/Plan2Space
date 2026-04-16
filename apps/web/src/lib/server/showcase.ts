@@ -1,5 +1,7 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getSharePreviewMeta } from "../share/preview";
 import { createSupabaseServerClient } from "../supabase/server";
+import type { Database } from "../../../../../types/database";
 import {
   getShowcaseSnapshotProfileFromPreviewMeta,
   normalizeShowcaseFilters,
@@ -74,13 +76,29 @@ function resolveThumbnailBucket(metadata: Record<string, unknown> | null) {
   if (metadata && typeof metadata.thumbnailBucket === "string" && metadata.thumbnailBucket.length > 0) {
     return metadata.thumbnailBucket;
   }
-  return process.env.FLOORPLAN_UPLOAD_BUCKET ?? process.env.NEXT_PUBLIC_FLOORPLAN_UPLOAD_BUCKET ?? "floor-plans";
+  return process.env.PROJECT_MEDIA_BUCKET ?? process.env.NEXT_PUBLIC_PROJECT_MEDIA_BUCKET ?? "project-media";
+}
+
+function createShowcaseReadSupabaseClient(): SupabaseClient<Database> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (url && serviceRoleKey) {
+    return createClient<Database>(url, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+  }
+
+  return createSupabaseServerClient();
 }
 
 async function resolveProjectThumbnail(thumbnailPath: string | null, metadata: Record<string, unknown> | null) {
   if (!thumbnailPath) return undefined;
 
-  const supabase = createSupabaseServerClient();
+  const supabase = createShowcaseReadSupabaseClient();
   const signed = await supabase.storage
     .from(resolveThumbnailBucket(metadata))
     .createSignedUrl(thumbnailPath, 60 * 60);
@@ -163,7 +181,7 @@ function matchesFilters(row: ShowcaseRow, filters: ReturnType<typeof normalizeSh
 }
 
 function buildBaseShowcaseQuery() {
-  const supabase = createSupabaseServerClient();
+  const supabase = createShowcaseReadSupabaseClient();
   return supabase
     .from("shared_projects")
     .select(
@@ -190,7 +208,7 @@ function applyCursor<T extends ReturnType<typeof buildBaseShowcaseQuery>>(
 }
 
 async function countAllShowcaseRows() {
-  const supabase = createSupabaseServerClient();
+  const supabase = createShowcaseReadSupabaseClient();
   const lookup = await supabase
     .from("shared_projects")
     .select("id", { count: "exact", head: true })

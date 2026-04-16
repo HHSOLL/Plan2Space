@@ -131,7 +131,7 @@ test("capture full visual QA pack", async ({ page, baseURL }) => {
   await signInButton.click();
   await page.waitForTimeout(1800);
 
-  await gotoAndHydrate(page, `${targetBaseUrl}/project/${projectId}`, ["Share", "Walk", "Top"], "project editor");
+  await gotoAndHydrate(page, `${targetBaseUrl}/project/${projectId}`, ["Share", "Preview", "Top"], "project editor");
   await capture(page, "05-editor-top-view.png");
 
   const editorWalkButton = resolveWalkToggleButton(page);
@@ -139,17 +139,17 @@ test("capture full visual QA pack", async ({ page, baseURL }) => {
     await editorWalkButton.dispatchEvent("click");
     const enteredWalk = await waitForAnyVisibleText(
       page,
-      ["Walkthrough review mode active.", "Walkthrough mode", "Read-only walkthrough"],
+      ["Preview mode active.", "Immersive preview", "Read-only preview"],
       5000
     );
     if (!enteredWalk) {
-      fallbackNotes.push("06-editor-walk-view.png captured before walk mode latch completed.");
+      fallbackNotes.push("06-editor-immersive-view.png captured before preview mode latch completed.");
     }
     await page.waitForTimeout(1300);
   } else {
-    fallbackNotes.push("06-editor-walk-view.png captured with Walk disabled (scale/layout gate).");
+    fallbackNotes.push("06-editor-immersive-view.png captured with Preview disabled (scale/layout gate).");
   }
-  await capture(page, "06-editor-walk-view.png");
+  await capture(page, "06-editor-immersive-view.png");
 
   const shareButton = page.getByRole("button", { name: "Share" }).first();
   await expect(shareButton).toBeVisible({ timeout: 20_000 });
@@ -178,15 +178,15 @@ test("capture full visual QA pack", async ({ page, baseURL }) => {
   const sharedWalkButton = resolveWalkToggleButton(page);
   if (await sharedWalkButton.isEnabled()) {
     await sharedWalkButton.dispatchEvent("click");
-    const enteredWalk = await waitForAnyVisibleText(page, ["Immersive walkthrough", "Read-only walkthrough"], 5000);
+    const enteredWalk = await waitForAnyVisibleText(page, ["Immersive preview", "Read-only preview"], 5000);
     if (!enteredWalk) {
-      fallbackNotes.push("09-shared-walk-hotspots.png captured while shared walk mode remained in top view.");
+      fallbackNotes.push("09-shared-immersive-hotspots.png captured while shared preview remained in top view.");
     }
     await page.waitForTimeout(1300);
   } else {
-    fallbackNotes.push("09-shared-walk-hotspots.png captured with Walk disabled (scale/layout gate).");
+    fallbackNotes.push("09-shared-immersive-hotspots.png captured with Preview disabled (scale/layout gate).");
   }
-  await capture(page, "09-shared-walk-hotspots.png");
+  await capture(page, "09-shared-immersive-hotspots.png");
 
   await gotoAndHydrate(
     page,
@@ -224,10 +224,10 @@ test("capture full visual QA pack", async ({ page, baseURL }) => {
           "03-builder-step3-openings.png",
           "04-builder-step4-style.png",
           "05-editor-top-view.png",
-          "06-editor-walk-view.png",
+          "06-editor-immersive-view.png",
           "07-editor-share-modal.png",
           "08-shared-top-view.png",
-          "09-shared-walk-hotspots.png",
+          "09-shared-immersive-hotspots.png",
           "10-community.png",
           "11-gallery.png",
           "12-shared-expired.png"

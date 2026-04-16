@@ -11,8 +11,6 @@ test.before(async () => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
   process.env.CORS_ORIGINS =
     "http://localhost:3100,https://plan2space.vercel.app,https://plan2-space-web-*.vercel.app,https://plan2space-*.vercel.app";
-  process.env.ENABLE_LIGHTWEIGHT_API_ROUTES = "true";
-  process.env.ENABLE_LEGACY_API_ROUTES = "false";
 
   envModule = await import(`./env.ts?test=${Date.now()}`);
 });
@@ -46,7 +44,7 @@ test("isCorsOriginAllowed accepts exact and wildcard matches", () => {
   assert.equal(envModule.isCorsOriginAllowed("https://evil.example.com", rules), false);
 });
 
-test("env flag parsing keeps booleans stable", () => {
-  assert.equal(envModule.env.ENABLE_LIGHTWEIGHT_API_ROUTES, true);
-  assert.equal(envModule.env.ENABLE_LEGACY_API_ROUTES, false);
+test("env exposes numeric API_PORT", () => {
+  assert.equal(typeof envModule.env.API_PORT, "number");
+  assert.equal(Number.isFinite(envModule.env.API_PORT), true);
 });

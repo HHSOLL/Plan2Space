@@ -72,66 +72,6 @@ jobs:
           fi
           npm --workspace apps/web run smoke:preview-runtime -- --url=${E2E_VERCEL_PREVIEW_URL} --mode=must-not-embed --expected=${E2E_RAILWAY_API_URL}
 
-  legacy-floorplan-eval:
-    if: ${{ vars.LEGACY_PIPELINE_CI_ENABLED == 'true' }}
-    runs-on: ubuntu-latest
-    needs: web
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      SNAPTRUDE_API_KEY: ${{ secrets.SNAPTRUDE_API_KEY }}
-      FLOORPLAN_PROVIDER_ORDER: anthropic,openai,snaptrude
-      FLOORPLAN_MIN_ACCEPT_SCORE: 25
-      FLOORPLAN_EARLY_STOP_SCORE: 80
-      FLOORPLAN_CACHE_DHASH_THRESHOLD: 0
-      FLOORPLAN_CACHE_SIZE_TOLERANCE_RATIO: 0.02
-      FLOORPLAN_MIN_WALL_THICKNESS: 6
-      FLOORPLAN_ORPHAN_MAX_LENGTH: 60
-      RAILWAY_PIPELINE_EVAL_ENABLED: ${{ vars.RAILWAY_PIPELINE_EVAL_ENABLED }}
-      E2E_RAILWAY_API_URL: ${{ secrets.E2E_RAILWAY_API_URL }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Skip gate when fixtures or provider keys are missing
-        id: gate_guard
-        run: |
-          if [ "${RAILWAY_PIPELINE_EVAL_ENABLED}" != "true" ]; then
-            echo "run_gate=false" >> "$GITHUB_OUTPUT"
-            echo "Railway eval gate disabled by configuration."
-            exit 0
-          fi
-          if [ ! -d "apps/web/fixtures/floorplans" ]; then
-            echo "run_gate=false" >> "$GITHUB_OUTPUT"
-            echo "No fixtures at apps/web/fixtures/floorplans. Skipping floorplan eval gate."
-            exit 0
-          fi
-          FIXTURE_COUNT=$(find apps/web/fixtures/floorplans -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | wc -l | tr -d ' ')
-          if [ "$FIXTURE_COUNT" = "0" ]; then
-            echo "run_gate=false" >> "$GITHUB_OUTPUT"
-            echo "No fixture images found. Skipping floorplan eval gate."
-            exit 0
-          fi
-          if [ -z "${ANTHROPIC_API_KEY}${OPENAI_API_KEY}${SNAPTRUDE_API_KEY}" ]; then
-            echo "run_gate=false" >> "$GITHUB_OUTPUT"
-            echo "No provider API keys configured. Skipping floorplan eval gate."
-            exit 0
-          fi
-          if [ -z "${E2E_RAILWAY_API_URL}" ]; then
-            echo "run_gate=false" >> "$GITHUB_OUTPUT"
-            echo "E2E_RAILWAY_API_URL is missing. Skipping floorplan eval gate."
-            exit 0
-          fi
-          echo "run_gate=true" >> "$GITHUB_OUTPUT"
-      - name: Run floorplan eval and gate
-        if: steps.gate_guard.outputs.run_gate == 'true'
-        run: |
-          npm --workspace apps/web run legacy:eval:floorplan -- --api=${E2E_RAILWAY_API_URL}
-          npm --workspace apps/web run legacy:eval:floorplan:gate -- --input=${PWD}/apps/web/.eval/floorplan/summary.json --minSuccessRate=0.9 --minExteriorLoopClosure=0.95 --minOpeningAttach=0.92 --maxRecoverableRate=0.2 --maxUnknownScaleRate=0.2 --minChannelSuccessRate=0.75 --maxChannelRecoverableRate=0.35
-
   api:
     runs-on: ubuntu-latest
     steps:
@@ -154,8 +94,6 @@ jobs:
         run: npm --workspace apps/api run typecheck --if-present
       - if: steps.api_guard.outputs.has_api == 'true'
         run: npm --workspace apps/api run test --if-present
-      - if: steps.api_guard.outputs.has_api == 'true'
-        run: npm --workspace apps/api run test:route-gates --if-present
 
   worker:
     runs-on: ubuntu-latest
@@ -179,31 +117,3 @@ jobs:
         run: npm --workspace apps/worker run typecheck --if-present
       - if: steps.worker_guard.outputs.has_worker == 'true'
         run: npm --workspace apps/worker run test --if-present
-
-  legacy-intake-e2e:
-    if: ${{ vars.LEGACY_PIPELINE_CI_ENABLED == 'true' }}
-    runs-on: ubuntu-latest
-    needs: [web, api, worker]
-    env:
-      E2E_RAILWAY_API_URL: ${{ secrets.E2E_RAILWAY_API_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Guard intake e2e secrets
-        id: intake_e2e_guard
-        run: |
-          if [ -z "${E2E_RAILWAY_API_URL}" ] || [ -z "${NEXT_PUBLIC_SUPABASE_URL}" ] || [ -z "${NEXT_PUBLIC_SUPABASE_ANON_KEY}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
-            echo "run_e2e=false" >> "$GITHUB_OUTPUT"
-            echo "Remote intake E2E secrets are missing. Skipping."
-            exit 0
-          fi
-          echo "run_e2e=true" >> "$GITHUB_OUTPUT"
-      - if: steps.intake_e2e_guard.outputs.run_e2e == 'true'
-        run: npm --workspace apps/web run legacy:e2e:intake -- --api=${E2E_RAILWAY_API_URL}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessagesSquare, Sparkles, Users } from "lucide-react";
+import { Sparkles, Users } from "lucide-react";
 import { PublishedSnapshotCard } from "../../components/project/PublishedSnapshotCard";
 import {
   buildPageHref,
@@ -65,16 +65,6 @@ async function fetchShowcaseArchivePage(
   }
 }
 
-function StatusCard({ label, value, description }: { label: string; value: string | number; description: string }) {
-  return (
-    <div className="rounded-[24px] border border-black/10 bg-white/78 p-6 shadow-[0_16px_44px_rgba(68,52,34,0.08)]">
-      <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">{label}</div>
-      <div className="mt-4 text-3xl font-semibold text-[#171411]">{value}</div>
-      <p className="mt-3 text-sm leading-7 text-[#61574e]">{description}</p>
-    </div>
-  );
-}
-
 export default async function CommunityPage({ searchParams }: { searchParams?: ShowcaseSearchParams }) {
   const filters = normalizeShowcaseFilters({
     room: readSearchParam(searchParams?.room),
@@ -103,8 +93,6 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
       }, new Map())
       .entries()
   );
-  const featuredSnapshots = snapshots.slice(0, Math.min(3, snapshots.length));
-  const recentSnapshots = snapshots.slice(featuredSnapshots.length);
   const latestPublish = snapshots[0]?.published_at ?? null;
   const loadMoreHref = nextCursor ? buildPageHref("/community", filters, nextCursor, totalPublished) : null;
   const statusDescription = showcaseError
@@ -114,56 +102,58 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
       : `현재 공개된 발행 장면 ${totalPublished}개를 탐색할 수 있습니다.`;
 
   return (
-    <div className="min-h-screen bg-[#f3efe8] px-4 pb-20 pt-24 text-[#171411] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-[1440px]">
-        <header className="border-b border-black/8 pb-8">
-          <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a8177]">
-            <Users className="h-4 w-4" />
-            <span>커뮤니티</span>
-          </div>
-          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <h1 className="text-4xl font-semibold tracking-tight text-[#171411] sm:text-6xl">
-                커뮤니티에서 둘러보기
+    <div className="min-h-screen bg-[#f6f5f1] px-4 pb-20 pt-10 text-[#171411] sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1500px]">
+        <header>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a8177]">
+                <Users className="h-4 w-4" />
+                <span>커뮤니티</span>
+              </div>
+              <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-[#171411] sm:text-[44px]">
+                공유된 공간
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#625a51]">
-                공개된 발행 장면을 큐레이션 기준으로 빠르게 탐색합니다. 모든 카드는 동일한 읽기 전용 뷰어를 엽니다.
-              </p>
             </div>
-            <div className="rounded-lg border border-black/10 bg-white/78 px-4 py-3 text-sm text-[#625a51] shadow-[0_10px_30px_rgba(42,31,21,0.06)]">
-              {statusDescription}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/gallery"
+                className="rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-bold text-[#625a51] transition hover:border-black/20 hover:bg-[#f8f7f4]"
+              >
+                가구 완비
+              </Link>
+              <Link
+                href="/community"
+                className="rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-bold text-[#171411]"
+              >
+                커뮤니티
+              </Link>
             </div>
           </div>
-
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm leading-6 text-[#625a51]">
+            <span>{statusDescription}</span>
+            {!showcaseError ? (
+              <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                컬렉션 {collections.length}개
+              </span>
+            ) : null}
+            {!showcaseError && latestPublish ? (
+              <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                최근 발행 {formatDate(latestPublish)}
+              </span>
+            ) : null}
+          </div>
           <ShowcaseFilterRail pathname="/community" filters={filters} activeFilterCount={activeFilterCount} />
         </header>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-3">
-          <StatusCard
-            label="공개 장면"
-            value={showcaseError ? "-" : totalPublished}
-            description="커뮤니티와 갤러리에서 동일한 공유 스냅샷을 사용합니다."
-          />
-          <StatusCard
-            label="노출 컬렉션"
-            value={showcaseError ? "-" : collections.length}
-            description="현재 화면에 노출된 장면 기준으로 집계한 제품 컬렉션 수입니다."
-          />
-          <StatusCard
-            label="최근 발행"
-            value={formatDate(latestPublish)}
-            description="최근 발행 장면도 동일한 읽기 전용 뷰어 경로로 확인합니다."
-          />
-        </section>
-
         {showcaseError ? (
-          <section className="mt-10 rounded-[28px] border border-[#c06e3d]/18 bg-[#fff8f3] p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.06)]">
+          <section className="mt-6 rounded-[18px] border border-[#c06e3d]/18 bg-[#fff8f3] p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.06)]">
             <div className="text-[10px] font-semibold tracking-[0.22em] text-[#b56a3e]">커뮤니티를 불러올 수 없습니다</div>
             <h2 className="mt-4 text-3xl font-semibold">공개 장면 목록을 확인하지 못했습니다.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">{showcaseError}</p>
           </section>
         ) : snapshots.length === 0 && hasMore ? (
-          <section className="mt-10 rounded-[28px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
+          <section className="mt-6 rounded-[18px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
             <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">조건에 맞는 장면을 아직 찾지 못했습니다</div>
             <h2 className="mt-4 text-3xl font-semibold">현재 불러온 범위에서는 결과가 없습니다.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
@@ -173,21 +163,21 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
               {loadMoreHref ? (
                 <Link
                   href={loadMoreHref}
-                  className="inline-flex rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
+                  className="inline-flex rounded-full border border-black/10 bg-white px-5 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
                 >
                   더 보기
                 </Link>
               ) : null}
               <Link
                 href="/community"
-                className="inline-flex rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
+                className="inline-flex rounded-full border border-black/10 bg-white px-5 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-[#faf7f2]"
               >
                 필터 초기화
               </Link>
             </div>
           </section>
         ) : snapshots.length === 0 && activeFilterCount > 0 ? (
-          <section className="mt-10 rounded-[28px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
+          <section className="mt-6 rounded-[18px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
             <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">조건과 일치하는 장면이 없습니다</div>
             <h2 className="mt-4 text-3xl font-semibold">필터 조합을 다시 선택해 주세요.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
@@ -201,7 +191,7 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
             </Link>
           </section>
         ) : snapshots.length === 0 ? (
-          <section className="mt-10 rounded-[28px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
+          <section className="mt-6 rounded-[18px] border border-dashed border-black/12 bg-white/72 p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.05)]">
             <div className="text-[10px] font-semibold tracking-[0.22em] text-[#8a7c70]">아직 공개된 장면이 없습니다</div>
             <h2 className="mt-4 text-3xl font-semibold">커뮤니티에 노출된 장면이 없습니다.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#61574e]">
@@ -209,53 +199,31 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
             </p>
           </section>
         ) : (
-          <>
-            <section className="mt-10">
-              <div className="mb-6 flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a7c70]">
-                <Sparkles className="h-4 w-4" />
-                <span>추천 장면</span>
-              </div>
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {featuredSnapshots.map((snapshot) => (
-                  <PublishedSnapshotCard
-                    key={snapshot.id}
-                    token={snapshot.token}
-                    thumbnail={snapshot.thumbnail}
-                    previewMeta={snapshot.previewMeta}
-                    publishedAt={snapshot.published_at}
-                  />
-                ))}
-              </div>
-            </section>
-
-            {recentSnapshots.length > 0 ? (
-              <section className="mt-12">
-                <div className="mb-6 flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a7c70]">
-                  <MessagesSquare className="h-4 w-4" />
-                  <span>최신 발행 장면</span>
-                </div>
-                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                  {recentSnapshots.map((snapshot) => (
-                    <PublishedSnapshotCard
-                      key={snapshot.id}
-                      token={snapshot.token}
-                      thumbnail={snapshot.thumbnail}
-                      previewMeta={snapshot.previewMeta}
-                      publishedAt={snapshot.published_at}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-          </>
+          <section className="mt-6">
+            <div className="mb-4 flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a7c70]">
+              <Sparkles className="h-4 w-4" />
+              <span>공개 피드</span>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {snapshots.map((snapshot) => (
+                <PublishedSnapshotCard
+                  key={snapshot.id}
+                  token={snapshot.token}
+                  thumbnail={snapshot.thumbnail}
+                  previewMeta={snapshot.previewMeta}
+                  publishedAt={snapshot.published_at}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {!showcaseError && snapshots.length > 0 && hasMore && Boolean(loadMoreHref) ? (
-          <div className="mt-10 flex justify-center">
+          <div className="mt-8 flex justify-center">
             {loadMoreHref ? (
               <Link
                 href={loadMoreHref}
-                className="inline-flex items-center rounded-md border border-black/10 bg-white/88 px-5 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-white"
+                className="inline-flex items-center rounded-full border border-black/10 bg-white/88 px-6 py-3 text-[11px] font-semibold text-[#52483f] transition hover:border-black/20 hover:bg-white"
               >
                 다음 장면 더 보기
               </Link>

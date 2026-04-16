@@ -4,7 +4,10 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { BuilderLibraryShelf } from "../../../../components/editor/BuilderLibraryShelf";
-import { useEditorStore, type EditorViewMode } from "../../../../lib/stores/useEditorStore";
+import {
+  useEditorStore,
+  type EditorViewMode
+} from "../../../../lib/stores/useEditorStore";
 import { useProjectStore } from "../../../../lib/stores/useProjectStore";
 import {
   useAssetSelector,
@@ -24,7 +27,7 @@ import { ShareModal } from "../../../../components/editor/ShareModal";
 import { useAssetCatalog } from "../../../../components/editor/useAssetCatalog";
 import { useEditorSaveSession } from "../../../../components/editor/useEditorSaveSession";
 import { StudioWorkspacePanel } from "../../../../components/layout/StudioWorkspaceShell";
-import { PanelLeft, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
+import { Redo2, Undo2 } from "lucide-react";
 import "../../../../lib/polyfills/progress-event";
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
@@ -45,6 +48,7 @@ import {
 } from "../../../../lib/domain/scene-document";
 import { constrainPlacementToAnchor, inferAnchorTypeForCatalogItem } from "../../../../lib/scene/anchors";
 import { normalizeSceneAnchorType } from "../../../../lib/scene/anchor-types";
+import { getLightingPreset, type LightingPresetId } from "../../../../lib/scene/lighting-presets";
 
 const STARTER_SET_OFFSETS: Array<[number, number]> = [
   [-2.2, -1.2],
@@ -85,8 +89,10 @@ export default function ProjectEditorPage() {
   const setPanels = useEditorStore((state) => state.setPanels);
   const resetShellState = useEditorStore((state) => state.resetShellState);
   const transformMode = useEditorStore((state) => state.transformMode);
+  const transformSpace = useEditorStore((state) => state.transformSpace);
   const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
   const setTransformMode = useEditorStore((state) => state.setTransformMode);
+  const setTransformSpace = useEditorStore((state) => state.setTransformSpace);
   const {
     walls,
     openings,
@@ -197,10 +203,6 @@ export default function ProjectEditorPage() {
         return "empty";
       }
 
-      if (bootstrapResponse.source === "revision_layout") {
-        toast.message("고정된 장면 버전에서 불러왔습니다. 저장하면 현재 프로젝트 스냅샷으로 반영됩니다.");
-      }
-
       applyMappedScene(bootstrapResponse.bootstrap);
       setViewMode("top");
       return "version";
@@ -291,23 +293,36 @@ export default function ProjectEditorPage() {
   const addCatalogItemToScene = useCallback(
     (item: LibraryCatalogItem) => {
       const id = createAssetId();
+      const productSnapshot = toCatalogProductSnapshot(item);
+      const supportProfile = item.supportProfile ?? null;
+      const inferredAnchorType = inferAnchorTypeForCatalogItem(item);
       const anchoredPlacement = constrainPlacementToAnchor(
         {
           position: [sceneCenter.x, 0, sceneCenter.z],
           rotation: [0, 0, 0],
-          anchorType: inferAnchorTypeForCatalogItem(item),
+          anchorType: inferredAnchorType,
           supportAssetId: null
         },
-        anchorContext
+        {
+          ...anchorContext,
+          activeAsset: {
+            id,
+            assetId: item.assetId,
+            catalogItemId: item.id,
+            product: productSnapshot,
+            supportProfile,
+            scale: item.scale
+          }
+        }
       );
       addFurniture({
         id,
         assetId: item.assetId,
         catalogItemId: item.id,
-        product: toCatalogProductSnapshot(item),
+        product: productSnapshot,
         anchorType: anchoredPlacement.anchorType,
         supportAssetId: anchoredPlacement.supportAssetId,
-        supportProfile: item.supportProfile ?? null,
+        supportProfile,
         position: anchoredPlacement.position,
         rotation: anchoredPlacement.rotation,
         scale: item.scale,
@@ -334,26 +349,38 @@ export default function ProjectEditorPage() {
 
     selectedItems.slice(0, STARTER_SET_OFFSETS.length).forEach((item, index) => {
       const [offsetX, offsetZ] = STARTER_SET_OFFSETS[index] ?? [0, 0];
+      const id = createAssetId();
+      const productSnapshot = toCatalogProductSnapshot(item);
+      const supportProfile = item.supportProfile ?? null;
+      const inferredAnchorType = inferAnchorTypeForCatalogItem(item);
       const anchoredPlacement = constrainPlacementToAnchor(
         {
           position: [sceneCenter.x + offsetX, 0, sceneCenter.z + offsetZ],
           rotation: [0, 0, 0],
-          anchorType: inferAnchorTypeForCatalogItem(item),
+          anchorType: inferredAnchorType,
           supportAssetId: null
         },
         {
           ...anchorContext,
-          sceneAssets: nextSceneAssets
+          sceneAssets: nextSceneAssets,
+          activeAsset: {
+            id,
+            assetId: item.assetId,
+            catalogItemId: item.id,
+            product: productSnapshot,
+            supportProfile,
+            scale: item.scale
+          }
         }
       );
       const nextAsset = {
-        id: createAssetId(),
+        id,
         assetId: item.assetId,
         catalogItemId: item.id,
-        product: toCatalogProductSnapshot(item),
+        product: productSnapshot,
         anchorType: anchoredPlacement.anchorType,
         supportAssetId: anchoredPlacement.supportAssetId,
-        supportProfile: item.supportProfile ?? null,
+        supportProfile,
         position: anchoredPlacement.position,
         rotation: anchoredPlacement.rotation,
         scale: item.scale,
@@ -442,6 +469,15 @@ export default function ProjectEditorPage() {
   const commitLightingSetting = useCallback(() => {
     recordSnapshot("조명 변경");
   }, [recordSnapshot]);
+  const applyLightingPreset = useCallback(
+    (presetId: LightingPresetId) => {
+      const preset = getLightingPreset(presetId);
+      if (!preset) return;
+      setLighting(preset.settings);
+      recordSnapshot(`조명 프리셋 변경: ${preset.label}`);
+    },
+    [recordSnapshot, setLighting]
+  );
 
   const hasSceneGeometry = walls.length > 0 || floors.length > 0;
   const canEnter3D = hasSceneGeometry && !getScaleGateMessage(scale, scaleInfo);
@@ -460,13 +496,6 @@ export default function ProjectEditorPage() {
 
   const savePayload = useMemo(
     () => ({
-      topology: {
-        scale,
-        scaleInfo,
-        walls,
-        openings,
-        floors
-      },
       roomShell: {
         scale,
         scaleInfo,
@@ -532,8 +561,16 @@ export default function ProjectEditorPage() {
     if (!isSceneVisible || isTopEditorVisible) return;
     setPanels({ assets: false, properties: false });
     setTransformMode("translate");
+    setTransformSpace("world");
     setIsTransforming(false);
-  }, [isSceneVisible, isTopEditorVisible, setIsTransforming, setPanels, setTransformMode]);
+  }, [
+    isSceneVisible,
+    isTopEditorVisible,
+    setIsTransforming,
+    setPanels,
+    setTransformMode,
+    setTransformSpace
+  ]);
 
   const showAssetPanel = panels.assets || !panels.properties;
   const activateAssetPanel = () => setPanels({ assets: true, properties: false });
@@ -592,12 +629,15 @@ export default function ProjectEditorPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#e7e4de] text-[#1f1b16]">
-
+    <div className="relative min-h-screen bg-[#efefec] text-[#1f1b16]">
       <ProjectEditorHeader
         title={headerTitle}
         viewMode={viewMode}
+        canShowPanels={isTopEditorVisible}
+        activePanel={showAssetPanel ? "assets" : "properties"}
         onBack={() => router.push("/studio")}
+        onShowAssets={activateAssetPanel}
+        onShowInspector={activateInspectorPanel}
         onOpenShare={() => setIsShareOpen(true)}
         onSave={() => {
           void triggerManualSave();
@@ -608,10 +648,8 @@ export default function ProjectEditorPage() {
         lastSavedAt={lastSavedAt}
       />
 
-      {/* Primary Workspace */}
-      <div className="relative h-screen w-full overflow-hidden px-3 pb-24 pt-20 sm:px-6 sm:pb-24 sm:pt-24 lg:px-12">
+      <div className="relative h-screen w-full overflow-hidden px-2 pb-24 pt-20 sm:px-4 sm:pb-20 sm:pt-[4.5rem] xl:px-6">
         <AnimatePresence mode="popLayout" initial={false}>
-          {/* Step 1: Builder launch */}
           {showLaunchState ? (
             <BuilderLaunchState
               metrics={launchMetrics}
@@ -621,7 +659,6 @@ export default function ProjectEditorPage() {
             />
           ) : null}
 
-          {/* Step 4: 3D Workspace */}
           {isSceneVisible && (
             <motion.div
               key="workspace_state"
@@ -632,30 +669,7 @@ export default function ProjectEditorPage() {
             >
               <div className="flex h-full min-h-0 w-full gap-4 xl:gap-6">
                 {isTopEditorVisible ? (
-                  <StudioWorkspacePanel className="hidden h-full w-[420px] shrink-0 overflow-hidden xl:flex xl:flex-col">
-                    <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f665b]">편집 패널</div>
-                      <div className="flex items-center gap-1 rounded-full bg-[#f6f1e9] p-1">
-                        <button
-                          type="button"
-                          onClick={activateAssetPanel}
-                          className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
-                            showAssetPanel ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                          }`}
-                        >
-                          목록
-                        </button>
-                        <button
-                          type="button"
-                          onClick={activateInspectorPanel}
-                          className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
-                            panels.properties ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                          }`}
-                        >
-                          속성
-                        </button>
-                      </div>
-                    </div>
+                  <StudioWorkspacePanel className="hidden h-full w-[368px] shrink-0 overflow-hidden xl:flex xl:flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto">
                       {showAssetPanel ? (
                         <BuilderLibraryShelf
@@ -680,6 +694,7 @@ export default function ProjectEditorPage() {
                           layout="inline"
                           className="h-full"
                           transformMode={transformMode}
+                          transformSpace={transformSpace}
                           wallMaterialIndex={wallMaterialIndex}
                           floorMaterialIndex={floorMaterialIndex}
                           lighting={lighting}
@@ -689,10 +704,12 @@ export default function ProjectEditorPage() {
                           selectedAsset={selectedAsset}
                           selectedAssetMeta={selectedCatalogItem}
                           onTransformModeChange={setTransformMode}
+                          onTransformSpaceChange={setTransformSpace}
                           onWallMaterialChange={applyWallFinish}
                           onFloorMaterialChange={applyFloorFinish}
                           onLightingChange={applyLightingSetting}
                           onLightingCommit={commitLightingSetting}
+                          onApplyLightingPreset={applyLightingPreset}
                           onUpdateAsset={updateAssetFromInspector}
                           onRemoveAsset={removeAssetFromInspector}
                           formatAssetLabel={formatAssetIdLabel}
@@ -702,7 +719,7 @@ export default function ProjectEditorPage() {
                   </StudioWorkspacePanel>
                 ) : null}
 
-                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-[22px] border border-black/10 bg-[#d8d8d6] shadow-[0_20px_54px_rgba(16,18,22,0.2)] sm:rounded-[30px] p2s-workspace-viewport">
+                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden p2s-workspace-viewport">
                   {isTopEditorVisible && (
                     <>
                       <MobileEditorControls
@@ -716,7 +733,7 @@ export default function ProjectEditorPage() {
                       />
 
                       <StudioWorkspacePanel
-                        className={`absolute inset-y-3 left-3 z-[30] flex w-[min(86vw,420px)] flex-col rounded-[28px] border border-black/10 bg-[#f7f5f1]/95 shadow-[0_18px_44px_rgba(17,19,22,0.18)] backdrop-blur-xl transition-all duration-300 xl:hidden ${
+                        className={`absolute inset-y-3 left-3 z-[30] flex w-[min(86vw,368px)] flex-col overflow-hidden rounded-[24px] border border-black/10 bg-white/96 shadow-[0_18px_44px_rgba(17,19,22,0.14)] transition-all duration-300 xl:hidden ${
                           panels.assets ? "translate-x-0 opacity-100" : "-translate-x-[108%] opacity-0 pointer-events-none"
                         }`}
                       >
@@ -737,21 +754,12 @@ export default function ProjectEditorPage() {
                           onAddItem={addCatalogItemToScene}
                         />
                       </StudioWorkspacePanel>
-                      {!panels.assets ? (
-                        <button
-                          type="button"
-                          onClick={toggleAssetPanel}
-                          className="absolute left-2 top-1/2 z-[24] hidden -translate-y-1/2 items-center gap-2 rounded-r-full border border-black/10 bg-white/92 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#51483f] shadow-[0_10px_24px_rgba(19,21,24,0.14)] transition hover:bg-[#f4efe7] md:inline-flex xl:hidden"
-                        >
-                          <PanelLeft className="h-4 w-4" />
-                          목록
-                        </button>
-                      ) : null}
 
                       <BuilderInspectorPanel
                         visible={panels.properties}
                         className="xl:hidden"
                         transformMode={transformMode}
+                        transformSpace={transformSpace}
                         wallMaterialIndex={wallMaterialIndex}
                         floorMaterialIndex={floorMaterialIndex}
                         lighting={lighting}
@@ -761,26 +769,40 @@ export default function ProjectEditorPage() {
                         selectedAsset={selectedAsset}
                         selectedAssetMeta={selectedCatalogItem}
                         onTransformModeChange={setTransformMode}
+                        onTransformSpaceChange={setTransformSpace}
                         onWallMaterialChange={applyWallFinish}
                         onFloorMaterialChange={applyFloorFinish}
                         onLightingChange={applyLightingSetting}
                         onLightingCommit={commitLightingSetting}
+                        onApplyLightingPreset={applyLightingPreset}
                         onUpdateAsset={updateAssetFromInspector}
                         onRemoveAsset={removeAssetFromInspector}
                         formatAssetLabel={formatAssetIdLabel}
                       />
-                      {!panels.properties ? (
-                        <button
-                          type="button"
-                          onClick={toggleInspectorPanel}
-                          className="absolute right-2 top-1/2 z-[24] hidden -translate-y-1/2 items-center gap-2 rounded-l-full border border-black/10 bg-white/92 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#51483f] shadow-[0_10px_24px_rgba(19,21,24,0.14)] transition hover:bg-[#f4efe7] md:inline-flex xl:hidden"
-                        >
-                          <SlidersHorizontal className="h-4 w-4" />
-                          속성
-                        </button>
-                      ) : null}
                     </>
                   )}
+
+                  <div className="pointer-events-none absolute right-4 top-4 z-[24] flex flex-col gap-3">
+                    <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-black/10 bg-white/96 p-1 shadow-[0_10px_24px_rgba(19,21,24,0.12)]">
+                      <button
+                        type="button"
+                        onClick={() => triggerZoomControl("in")}
+                        className="rounded-full px-3 py-2 text-[16px] font-bold text-[#4d453a] transition hover:bg-[#f2eee7]"
+                        aria-label="확대"
+                      >
+                        +
+                      </button>
+                      <div className="mx-2 h-px bg-black/10" />
+                      <button
+                        type="button"
+                        onClick={() => triggerZoomControl("out")}
+                        className="rounded-full px-3 py-2 text-[16px] font-bold text-[#4d453a] transition hover:bg-[#f2eee7]"
+                        aria-label="축소"
+                      >
+                        -
+                      </button>
+                    </div>
+                  </div>
 
                   <ProjectEditorViewport
                     gl={
@@ -802,29 +824,20 @@ export default function ProjectEditorPage() {
       </div>
 
       {isSceneVisible ? (
-        <div className="pointer-events-none fixed inset-x-3 bottom-4 z-[100] flex items-end justify-between gap-3 sm:inset-x-8 sm:bottom-8">
-          <div className="pointer-events-auto hidden rounded-full border border-black/10 bg-white/92 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#6a6258] shadow-[0_12px_28px_rgba(19,21,24,0.14)] backdrop-blur-xl lg:inline-flex lg:items-center lg:gap-3">
-            <span>{isTopEditorVisible ? "편집 모드" : "워크뷰 모드"}</span>
-            <span className="h-3 w-px bg-black/15" />
-            <span>{mobileStatusText}</span>
-            <span className="h-3 w-px bg-black/15" />
-            <AssetCountBadge />
-          </div>
-
-          <div className="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-[28px] border border-black/10 bg-white/95 px-3 py-2 shadow-[0_16px_34px_rgba(16,18,22,0.18)] backdrop-blur-xl sm:gap-3 sm:px-4">
-            <div className="hidden min-w-[72px] pl-1 sm:block">
-              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">카메라</div>
-              <div className="mt-1 text-[11px] font-medium text-[#5b5248]">
-                {viewMode === "top" ? "상단뷰" : "워크뷰"}
-              </div>
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-3 sm:bottom-6">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-black/10 bg-white/96 p-1.5 shadow-[0_16px_34px_rgba(16,18,22,0.14)]">
+            <div className="hidden items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#8a8177] sm:inline-flex">
+              <span>{mobileStatusText}</span>
+              <span className="h-3 w-px bg-black/10" />
+              <AssetCountBadge />
             </div>
-            <div className="flex items-center gap-1 rounded-full bg-[#f6f1e9] p-1">
+            <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
               <button
                 type="button"
                 onClick={() => requestViewMode("top")}
                 className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition sm:px-4 ${
                   viewMode === "top"
-                    ? "bg-[#1f1b16] text-white shadow-[0_10px_20px_rgba(16,18,22,0.16)]"
+                    ? "bg-white text-[#1f1b16] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
                     : "text-[#4d453a] hover:bg-white"
                 }`}
               >
@@ -836,7 +849,7 @@ export default function ProjectEditorPage() {
                 disabled={!canEnter3D}
                 className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition sm:px-4 ${
                   viewMode === "walk"
-                    ? "bg-[#1f1b16] text-white shadow-[0_10px_20px_rgba(16,18,22,0.16)]"
+                    ? "bg-white text-[#1f1b16] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
                     : "text-[#4d453a] hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
                 }`}
               >
@@ -845,12 +858,12 @@ export default function ProjectEditorPage() {
             </div>
             {isTopEditorVisible ? (
               <>
-                <span className="mx-0.5 h-8 w-px bg-black/10" />
-                <div className="flex items-center gap-1 rounded-full bg-[#f6f1e9] p-1">
+                <span className="mx-1 h-7 w-px bg-black/10" />
+                <div className="hidden items-center gap-1 rounded-full bg-[#f4f4f1] p-1 md:flex">
                   <button
                     type="button"
                     onClick={toggleAssetPanel}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
                       showAssetPanel ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
                     }`}
                   >
@@ -859,7 +872,7 @@ export default function ProjectEditorPage() {
                   <button
                     type="button"
                     onClick={toggleInspectorPanel}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
                       panels.properties ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
                     }`}
                   >
@@ -868,7 +881,7 @@ export default function ProjectEditorPage() {
                   <button
                     type="button"
                     onClick={() => setTransformMode("translate")}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition sm:px-4 ${
+                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
                       transformMode === "translate" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
                     }`}
                   >
@@ -877,63 +890,58 @@ export default function ProjectEditorPage() {
                   <button
                     type="button"
                     onClick={() => setTransformMode("rotate")}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition sm:px-4 ${
+                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
                       transformMode === "rotate" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
                     }`}
                   >
                     회전
                   </button>
-                  <button
-                    type="button"
-                    onClick={undo}
-                    disabled={!canUndo}
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4d453a] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent sm:px-4"
-                  >
-                    <Undo2 className="h-3.5 w-3.5" />
-                    실행 취소
-                  </button>
-                  <button
-                    type="button"
-                    onClick={redo}
-                    disabled={!canRedo}
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4d453a] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent sm:px-4"
-                  >
-                    <Redo2 className="h-3.5 w-3.5" />
-                    다시 실행
-                  </button>
                 </div>
               </>
             ) : null}
-            <span className="mx-0.5 h-8 w-px bg-black/10" />
-            <div className="flex items-center gap-1 rounded-full bg-[#f6f1e9] p-1">
+            <span className="mx-1 h-7 w-px bg-black/10" />
+            <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
               <button
                 type="button"
-                onClick={() => triggerZoomControl("in")}
-                className="rounded-full px-3 py-2 text-[11px] font-bold text-[#4d453a] transition hover:bg-white sm:px-4"
-                aria-label="확대"
+                onClick={undo}
+                disabled={!canUndo}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4d453a] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
               >
-                +
+                <Undo2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">실행 취소</span>
               </button>
               <button
                 type="button"
-                onClick={() => triggerZoomControl("out")}
-                className="rounded-full px-3 py-2 text-[11px] font-bold text-[#4d453a] transition hover:bg-white sm:px-4"
-                aria-label="축소"
+                onClick={redo}
+                disabled={!canRedo}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4d453a] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
               >
-                -
+                <Redo2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">다시 실행</span>
+              </button>
+            </div>
+            <span className="mx-1 hidden h-7 w-px bg-black/10 sm:block" />
+            <div className="hidden items-center gap-1 rounded-full bg-[#f4f4f1] p-1 sm:flex">
+              <button
+                type="button"
+                onClick={() => setTransformSpace("world")}
+                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                  transformSpace === "world" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
+                }`}
+              >
+                월드
+              </button>
+              <button
+                type="button"
+                onClick={() => setTransformSpace("local")}
+                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                  transformSpace === "local" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
+                }`}
+              >
+                로컬
               </button>
             </div>
           </div>
-
-          <button
-            onClick={() => {
-              router.push("/studio");
-            }}
-            className="pointer-events-auto rounded-full border border-black/10 bg-white/92 p-3 shadow-[0_12px_28px_rgba(19,21,24,0.14)] backdrop-blur-xl transition hover:border-red-400/40 hover:bg-red-50"
-            aria-label="에디터 나가기"
-          >
-            <RotateCcw className="h-5 w-5 text-[#4a4338] transition-colors hover:text-red-600" />
-          </button>
         </div>
       ) : null}
 
@@ -943,7 +951,7 @@ export default function ProjectEditorPage() {
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
       />
-    </div >
+    </div>
   );
 }
 

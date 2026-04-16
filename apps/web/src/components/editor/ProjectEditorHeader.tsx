@@ -1,15 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronLeft, Share2 } from "lucide-react";
+import { ChevronLeft, PanelLeftOpen, Save, Share2, SlidersHorizontal } from "lucide-react";
 import { EditorStatusBadge } from "./EditorStatusBadge";
-import { SaveButton } from "./SaveButton";
 import type { EditorViewMode } from "../../lib/stores/useEditorStore";
 
 type ProjectEditorHeaderProps = {
   title: string;
   viewMode: EditorViewMode;
+  canShowPanels: boolean;
+  activePanel: "assets" | "properties";
   onBack: () => void;
+  onShowAssets: () => void;
+  onShowInspector: () => void;
   onOpenShare: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -21,7 +24,11 @@ type ProjectEditorHeaderProps = {
 export function ProjectEditorHeader({
   title,
   viewMode,
+  canShowPanels,
+  activePanel,
   onBack,
+  onShowAssets,
+  onShowInspector,
   onOpenShare,
   onSave,
   isSaving,
@@ -30,45 +37,70 @@ export function ProjectEditorHeader({
   lastSavedAt
 }: ProjectEditorHeaderProps) {
   const modeLabel = viewMode === "walk" ? "워크뷰" : "상단뷰";
-  const modeDescription =
-    viewMode === "walk"
-      ? "워크뷰 검토 모드가 활성화되었습니다."
-      : "상단뷰 편집 모드가 활성화되었습니다.";
 
   return (
-    <div className="pointer-events-none fixed inset-x-3 top-3 z-[100] flex items-start justify-between gap-3 sm:inset-x-8 sm:top-6 sm:items-center">
-      <div className="pointer-events-auto flex min-w-0 items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="group rounded-[18px] border border-black/10 bg-white/95 p-3 shadow-[0_14px_30px_rgba(29,24,18,0.12)] transition hover:border-black/20 hover:bg-[#f7f1e7] active:scale-95"
-          aria-label="프로젝트 목록으로 이동"
-        >
-          <ChevronLeft className="h-5 w-5 text-[#625a51] transition-colors group-hover:text-[#171411]" />
-        </button>
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] border-b border-black/10 bg-white/95 backdrop-blur-xl">
+      <div className="pointer-events-auto flex h-16 items-center gap-2 px-3 sm:px-5 xl:px-8">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="group flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white transition hover:border-black/20 hover:bg-[#f4f4f1] active:scale-95"
+            aria-label="프로젝트 목록으로 이동"
+          >
+            <ChevronLeft className="h-4 w-4 text-[#625a51] transition-colors group-hover:text-[#171411]" />
+          </button>
+
+          {canShowPanels ? (
+            <div className="hidden items-center rounded-full border border-black/10 bg-[#f3f3f0] p-1 xl:flex">
+              <button
+                type="button"
+                onClick={onShowAssets}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                  activePanel === "assets"
+                    ? "bg-white text-[#171411] shadow-[0_6px_18px_rgba(17,19,22,0.08)]"
+                    : "text-[#6d6459] hover:bg-white"
+                }`}
+              >
+                <PanelLeftOpen className="h-3.5 w-3.5" />
+                추가
+              </button>
+              <button
+                type="button"
+                onClick={onShowInspector}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                  activePanel === "properties"
+                    ? "bg-white text-[#171411] shadow-[0_6px_18px_rgba(17,19,22,0.08)]"
+                    : "text-[#6d6459] hover:bg-white"
+                }`}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                속성
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex min-w-0 flex-col rounded-[20px] border border-black/10 bg-white/95 px-4 py-3 shadow-[0_14px_30px_rgba(29,24,18,0.12)] sm:min-w-[300px] sm:px-5"
+          className="flex min-w-0 flex-1 items-center gap-3"
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="truncate text-[9px] font-bold uppercase tracking-[0.2em] text-[#8a8177] sm:text-[10px]">
-              공간 편집기
-            </span>
-            <span className="rounded-full border border-black/10 bg-[#f6f1e9] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#6b6258]">
-              {modeLabel}
-            </span>
+          <div className="min-w-0">
+            <div className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-[#8a8177]">
+              제목 없는 디자인
+            </div>
+            <h1 className="truncate text-sm font-semibold leading-none text-[#171411] sm:text-[15px]">
+              {title}
+            </h1>
           </div>
-          <h1 className="mt-2 max-w-[44vw] truncate font-outfit text-sm font-semibold leading-none tracking-normal text-[#171411] sm:max-w-none sm:text-base">
-            {title}
-          </h1>
-          <p className="mt-2 text-[11px] leading-5 text-[#7a7167]">{modeDescription}</p>
+          <span className="hidden h-4 w-px bg-black/10 lg:block" />
+          <span className="hidden rounded-full border border-black/10 bg-[#f7f7f4] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#625a51] lg:inline-flex">
+            {modeLabel}
+          </span>
         </motion.div>
-      </div>
 
-      <div className="pointer-events-auto flex items-start gap-2 sm:items-center sm:gap-3">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2">
           <EditorStatusBadge
             isDirty={isDirty}
             isSaving={isSaving}
@@ -79,21 +111,20 @@ export function ProjectEditorHeader({
           <button
             type="button"
             onClick={onOpenShare}
-            className="hidden items-center gap-2 rounded-[18px] border border-black/10 bg-white/95 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51] shadow-[0_14px_30px_rgba(29,24,18,0.12)] transition hover:border-black/20 hover:bg-[#f7f1e7] hover:text-[#171411] sm:flex"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-[#625a51] transition hover:border-black/20 hover:bg-[#f4f4f1] hover:text-[#171411]"
+            aria-label="공유"
           >
             <Share2 className="h-4 w-4" />
-            <span>공유</span>
           </button>
-          <div className="hidden sm:block">
-            <SaveButton
-              onClick={onSave}
-              isSaving={isSaving}
-              disabled={!isDirty && !saveError}
-              className="flex items-center gap-2 rounded-[18px] bg-[#171411] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-[0_14px_30px_rgba(29,24,18,0.16)] transition hover:bg-black disabled:opacity-45 active:scale-95"
-              label="저장"
-              savingLabel="저장 중"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving || (!isDirty && !saveError)}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-[#171411] bg-[#171411] px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <Save className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{isSaving ? "저장 중" : "저장"}</span>
+          </button>
         </div>
       </div>
     </div>

@@ -9,9 +9,6 @@ export type ProjectRecord = {
   thumbnail?: string;
   metadata?: Record<string, unknown>;
   current_version_id?: string | null;
-  source_layout_revision_id?: string | null;
-  resolution_state?: "reused" | "generated" | "reuse_invalidated" | null;
-  created_from_intake_session_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -42,7 +39,7 @@ function resolveThumbnailBucket(metadata: Record<string, unknown> | null | undef
   if (metadata && typeof metadata.thumbnailBucket === "string" && metadata.thumbnailBucket.length > 0) {
     return metadata.thumbnailBucket;
   }
-  return process.env.FLOORPLAN_UPLOAD_BUCKET ?? process.env.NEXT_PUBLIC_FLOORPLAN_UPLOAD_BUCKET ?? "floor-plans";
+  return process.env.PROJECT_MEDIA_BUCKET ?? process.env.NEXT_PUBLIC_PROJECT_MEDIA_BUCKET ?? "project-media";
 }
 
 async function resolveProjectThumbnail(
@@ -65,16 +62,6 @@ async function mapProjectRecord(
   project: SelectedProjectRow
 ): Promise<ProjectRecord> {
   const metadata = (project.meta as unknown as Record<string, unknown> | null) ?? null;
-  const sourceLayoutRevisionId =
-    typeof metadata?.source_layout_revision_id === "string" ? metadata.source_layout_revision_id : null;
-  const resolutionState =
-    metadata?.resolution_state === "reused" ||
-    metadata?.resolution_state === "generated" ||
-    metadata?.resolution_state === "reuse_invalidated"
-      ? metadata.resolution_state
-      : null;
-  const createdFromIntakeSessionId =
-    typeof metadata?.created_from_intake_session_id === "string" ? metadata.created_from_intake_session_id : null;
 
   return {
     id: project.id,
@@ -84,9 +71,6 @@ async function mapProjectRecord(
     thumbnail: await resolveProjectThumbnail(supabase, project.thumbnail_path, metadata),
     metadata: metadata ?? undefined,
     current_version_id: project.current_version_id,
-    source_layout_revision_id: sourceLayoutRevisionId,
-    resolution_state: resolutionState,
-    created_from_intake_session_id: createdFromIntakeSessionId,
     created_at: project.created_at,
     updated_at: project.updated_at
   };

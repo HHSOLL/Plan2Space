@@ -5,7 +5,6 @@ export type JobStatus = "queued" | "running" | "retrying" | "succeeded" | "faile
 export type JobResponse = {
   id: string;
   type: string;
-  floorplanId?: string | null;
   status: JobStatus;
   attempts: number;
   maxAttempts?: number;

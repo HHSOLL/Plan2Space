@@ -151,7 +151,7 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/28 backdrop-blur-sm px-4 sm:px-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -160,19 +160,19 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            className="w-full max-w-lg rounded-[32px] border border-white/10 bg-white/10 p-8 text-white shadow-2xl"
+            className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-white p-6 text-[#171411] shadow-[0_24px_80px_rgba(17,19,22,0.18)] sm:p-8"
           >
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-white/50">
+                <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.28em] text-[#8a8177]">
                   <Link2 className="h-4 w-4" />
                   공유 링크
                 </div>
-                <h2 className="text-3xl font-outfit font-light">읽기 전용 공유 설정</h2>
+                <h2 className="text-2xl font-semibold sm:text-3xl">읽기 전용 공유 설정</h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition"
+                className="rounded-full border border-black/10 p-3 text-[#625a51] transition hover:bg-[#f4f4f1]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -180,9 +180,9 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {project ? (
-                <div className="sm:col-span-2 rounded-[24px] border border-white/10 bg-black/20 p-4">
+                <div className="sm:col-span-2 rounded-[24px] border border-black/10 bg-[#faf9f7] p-4">
                   <div className="grid gap-4 sm:grid-cols-[150px_minmax(0,1fr)]">
-                    <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white/5">
+                    <div className="overflow-hidden rounded-[20px] border border-black/10 bg-white">
                       {project.thumbnail ? (
                         <img src={project.thumbnail} alt={project.name} className="h-full w-full object-cover" />
                       ) : (
@@ -195,17 +195,17 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[10px] uppercase tracking-[0.24em] text-white/45">최신 저장 스냅샷</div>
-                      <div className="mt-3 text-base font-medium text-white">{project.name}</div>
+                      <div className="text-[10px] uppercase tracking-[0.24em] text-[#8a8177]">최신 저장 스냅샷</div>
+                      <div className="mt-3 text-base font-medium text-[#171411]">{project.name}</div>
                       {project.description ? (
-                        <p className="mt-2 text-sm leading-6 text-white/55">{project.description}</p>
+                        <p className="mt-2 text-sm leading-6 text-[#625a51]">{project.description}</p>
                       ) : null}
                       {assetSummary ? (
                         <div className="mt-4 flex flex-wrap gap-2">
                           {assetSummary.collections.slice(0, 3).map((collection) => (
                             <span
                               key={collection.label}
-                              className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/65"
+                              className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#625a51]"
                             >
                               {collection.label} {collection.count}
                             </span>
@@ -217,28 +217,28 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                 </div>
               ) : null}
 
-              <label className="space-y-2 text-[10px] uppercase tracking-[0.3em] text-white/60">
+              <label className="space-y-2 text-[10px] uppercase tracking-[0.22em] text-[#8a8177]">
                 링크 유형
                 <select
                   value={shareType}
                   onChange={(event) => setShareType(event.target.value as "temporary" | "permanent")}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80"
+                  className="mt-2 w-full rounded-[18px] border border-black/10 bg-[#f4f4f1] px-4 py-3 text-sm text-[#171411] outline-none focus:border-black/20"
                 >
                   <option value="temporary">임시 링크 (24시간)</option>
                   <option value="permanent">상시 링크</option>
                 </select>
               </label>
-              <div className="space-y-2 text-[10px] uppercase tracking-[0.3em] text-white/60">
+              <div className="space-y-2 text-[10px] uppercase tracking-[0.22em] text-[#8a8177]">
                 권한 모드
-                <div className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
+                <div className="mt-2 w-full rounded-[18px] border border-black/10 bg-[#f4f4f1] px-4 py-3 text-sm text-[#171411]">
                   읽기 전용
                 </div>
               </div>
               <label
                 className={`sm:col-span-2 rounded-2xl border px-4 py-4 text-sm transition ${
                   canPublishToGallery
-                    ? "border-white/10 bg-black/20 text-white/80"
-                    : "border-white/8 bg-black/10 text-white/35"
+                    ? "border-black/10 bg-[#faf9f7] text-[#171411]"
+                    : "border-black/8 bg-[#f6f5f2] text-[#a29a8f]"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -247,15 +247,15 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                     checked={publishToGallery}
                     disabled={!canPublishToGallery}
                     onChange={(event) => setPublishToGallery(event.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-white/20 bg-transparent"
+                    className="mt-1 h-4 w-4 rounded border-black/20 bg-transparent"
                   />
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/55">갤러리 게시</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#8a8177]">갤러리 게시</div>
                     <p className="mt-2 text-sm leading-6">
                       이 스냅샷을 공개 쇼케이스 아카이브에 노출합니다.
                     </p>
                     {!canPublishToGallery ? (
-                      <p className="mt-2 text-xs leading-5 text-white/35">
+                      <p className="mt-2 text-xs leading-5 text-[#9a9186]">
                         갤러리 게시는 상시 + 읽기 전용 링크에서만 허용됩니다.
                       </p>
                     ) : null}
@@ -264,31 +264,31 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
               </label>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-200/10 px-4 py-3 text-xs leading-6 text-amber-50/85">
+            <div className="mt-4 rounded-2xl border border-black/10 bg-[#f4f4f1] px-4 py-3 text-xs leading-6 text-[#625a51]">
               새 링크는 생성 시점의 최신 저장 스냅샷에 고정되며, 공유 페이지는 항상 읽기 전용 뷰어로 열립니다.
             </div>
 
             <button
               onClick={handleCreateShare}
               disabled={createShareMutation.isPending}
-              className="mt-6 w-full rounded-full border border-white/10 bg-white/90 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.4em] text-black hover:bg-white disabled:opacity-50"
+              className="mt-6 w-full rounded-full border border-[#171411] bg-[#171411] px-6 py-4 text-[10px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-black disabled:opacity-50"
             >
               {createShareMutation.isPending ? "생성 중..." : "스냅샷 링크 만들기"}
             </button>
 
             <div className="mt-6">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">활성 링크</div>
+              <div className="text-[10px] uppercase tracking-[0.24em] text-[#8a8177]">활성 링크</div>
               <div className="mt-3 max-h-60 space-y-3 overflow-y-auto pr-1">
                 {isLoading ? (
-                  <div className="text-xs text-white/50">공유 링크를 불러오는 중...</div>
+                  <div className="text-xs text-[#8a8177]">공유 링크를 불러오는 중...</div>
                 ) : sharedLinks.length > 0 ? (
                   sharedLinks.map((link) => {
                     const shareCapabilities = resolveShareCapabilities(link.permissions);
                     const previewMeta = getSharePreviewMeta(link.preview_meta);
                     const canPublishLink = !link.expires_at && shareCapabilities.permission === "view";
                     return (
-                      <div key={link.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                        <div className="flex items-center justify-between text-[11px] text-white/70">
+                      <div key={link.id} className="rounded-2xl border border-black/10 bg-[#faf9f7] p-4">
+                        <div className="flex items-center justify-between text-[11px] text-[#625a51]">
                           <span>
                             {shareCapabilities.accessLabel}
                             {link.expires_at ? ` • 만료 ${new Date(link.expires_at).toLocaleDateString()}` : ""}
@@ -296,26 +296,26 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                           <button
                             onClick={() => deleteShareMutation.mutate(link.id)}
                             disabled={deleteShareMutation.isPending}
-                            className="flex items-center gap-1 text-red-300 hover:text-red-200"
+                            className="flex items-center gap-1 text-red-500 hover:text-red-600"
                           >
                             <Trash2 className="h-3 w-3" />
                             삭제
                           </button>
                         </div>
                         {previewMeta ? (
-                          <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
+                          <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">
                             {previewMeta.versionNumber ? (
-                              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2">
+                              <span className="rounded-full border border-black/10 bg-white px-3 py-2">
                                 스냅샷 v{previewMeta.versionNumber}
                               </span>
                             ) : null}
                             {previewMeta.assetSummary?.primaryCollection ? (
-                              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2">
+                              <span className="rounded-full border border-black/10 bg-white px-3 py-2">
                                 {previewMeta.assetSummary.primaryCollection}
                               </span>
                             ) : null}
                             {link.is_gallery_visible ? (
-                              <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-emerald-100">
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
                                 게시됨
                               </span>
                             ) : null}
@@ -332,12 +332,12 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                                 })
                               }
                               disabled={togglePublishMutation.isPending}
-                            className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/70 transition hover:bg-white/[0.12] disabled:opacity-50"
-                          >
+                              className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#625a51] transition hover:bg-[#f4f4f1] disabled:opacity-50"
+                            >
                               {link.is_gallery_visible ? "갤러리에서 내리기" : "갤러리에 게시"}
                             </button>
                           ) : (
-                            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#9a9186]">
                               상시 읽기 전용 링크만 게시할 수 있습니다
                             </span>
                           )}
@@ -347,11 +347,11 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                             type="text"
                             value={`${window.location.origin}/shared/${link.token}`}
                             readOnly
-                            className="flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/70"
+                            className="flex-1 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs text-[#625a51]"
                           />
                           <button
                             onClick={() => handleCopyLink(link.token)}
-                            className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-[10px] uppercase tracking-[0.3em] text-white/70 hover:bg-white/20"
+                            className="flex items-center gap-2 rounded-lg border border-black/10 bg-[#f4f4f1] px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#625a51] transition hover:bg-[#ecebe7]"
                           >
                             <Copy className="h-3 w-3" />
                             {copiedToken === link.token ? "복사됨" : "복사"}
@@ -361,7 +361,7 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                     );
                   })
                 ) : (
-                  <div className="text-xs text-white/50">생성된 공유 링크가 없습니다.</div>
+                  <div className="text-xs text-[#8a8177]">생성된 공유 링크가 없습니다.</div>
                 )}
               </div>
             </div>

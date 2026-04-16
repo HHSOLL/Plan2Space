@@ -19,7 +19,8 @@
 - 스택/디렉토리/상태 경계 강제
 - `useEditorStore` vs `useSceneStore` 경계 유지
 - 렌더 루프의 불필요한 상태 갱신 차단
-- 파이프라인 비가역 제약(semantic -> 2D correction -> procedural 3D) 유지
+- room-first 빌더/에디터/뷰어 경계 유지
+- 레거시 floorplan/intake 파이프라인 재유입 방지
 
 ## Deliverables
 - 아키텍처 변경: `docs/master-guide.md`

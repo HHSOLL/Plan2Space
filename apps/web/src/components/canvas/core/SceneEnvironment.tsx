@@ -15,6 +15,25 @@ type EnvironmentSource =
   | { type: "preset"; value: "apartment" | "city" | "studio" };
 
 const FALLBACK_ENVIRONMENT: EnvironmentSource = { type: "preset", value: "apartment" };
+const HDRI_PREFERENCE_IDS = [
+  "kiara_interior",
+  "hotel_room",
+  "photo_studio_loft_hall",
+  "photo_studio_01",
+  "small_empty_room_1"
+] as const;
+
+function pickPreferredEnvironment(list: HdriEntry[]): EnvironmentSource | null {
+  for (const preferredId of HDRI_PREFERENCE_IDS) {
+    const matched = list.find((entry) => entry.id === preferredId && typeof entry.path === "string" && entry.path.length > 0);
+    if (matched) {
+      return { type: "file", value: matched.path };
+    }
+  }
+
+  const first = list.find((entry) => typeof entry.path === "string" && entry.path.length > 0);
+  return first ? { type: "file", value: first.path } : null;
+}
 
 export default function SceneEnvironment() {
   const lighting = useShellSelector((slice) => slice.lighting);
@@ -27,8 +46,9 @@ export default function SceneEnvironment() {
       .then((data) => {
         if (!active) return;
         const list = Array.isArray(data) ? (data as HdriEntry[]) : [];
-        if (list.length > 0 && list[0].path) {
-          setEnvironment({ type: "file", value: list[0].path });
+        const preferred = pickPreferredEnvironment(list);
+        if (preferred) {
+          setEnvironment(preferred);
         }
       })
       .catch(() => {
@@ -51,11 +71,11 @@ export default function SceneEnvironment() {
         />
       )}
       <ContactShadows
-        opacity={0.45}
-        scale={24}
-        blur={3.2}
-        far={8}
-        resolution={1024}
+        opacity={0.5}
+        scale={26}
+        blur={2.6}
+        far={10}
+        resolution={2048}
         color="#000000"
       />
     </>

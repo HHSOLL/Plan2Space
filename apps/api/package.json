@@ -7,9 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test",
-    "test:route-gates": "node --import tsx --test src/app.route-gates.test.ts",
-    "backfill:legacy-project-versions": "tsx scripts/backfill-legacy-project-versions.ts"
+    "test": "node --import tsx --test"
   },
   "dependencies": {
     "@plan2space/contracts": "0.0.0",
