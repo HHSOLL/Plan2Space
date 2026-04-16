@@ -35,6 +35,8 @@ import {
 import {
   buildBuilderScene,
   builderFloorFinishes,
+  getBuilderDimensionControls,
+  normalizeBuilderSceneInput,
   builderTemplates,
   builderWallFinishes,
   type BuilderTemplateId
@@ -129,7 +131,6 @@ function parseWindowStyle(value: string | null): WindowStyle {
 function StudioBuilderPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const defaultTemplateId = builderTemplates[0]?.id ?? "rect-studio";
   const [intent, setIntent] = useState<"template" | "custom">("template");
   const { session } = useAuthStore();
   const isAuthenticated = Boolean(session?.user);
@@ -257,21 +258,6 @@ function StudioBuilderPageContent() {
         setTemplateOptions(config.templates);
         setWallFinishOptions(config.wallFinishes);
         setFloorFinishOptions(config.floorFinishes);
-        const routeOverrides = routeOverridesRef.current;
-        const hydratedTemplate =
-          config.templates.find((template) => template.id === (routeOverrides.templateId ?? defaultTemplateId)) ?? config.templates[0];
-        if (!hydratedTemplate) return;
-        setTemplateId(hydratedTemplate.id);
-        setWidth(routeOverrides.width ?? hydratedTemplate.defaultWidth);
-        setDepth(routeOverrides.depth ?? hydratedTemplate.defaultDepth);
-        setNookWidth(routeOverrides.nookWidth ?? hydratedTemplate.defaultNookWidth ?? 2.8);
-        setNookDepth(routeOverrides.nookDepth ?? hydratedTemplate.defaultNookDepth ?? 2.4);
-        if (routeOverrides.wallMaterialIndex !== null) {
-          setWallMaterialIndex(routeOverrides.wallMaterialIndex);
-        }
-        if (routeOverrides.floorMaterialIndex !== null) {
-          setFloorMaterialIndex(routeOverrides.floorMaterialIndex);
-        }
       })
       .catch(() => {
         if (!active) return;
@@ -283,17 +269,50 @@ function StudioBuilderPageContent() {
     return () => {
       active = false;
     };
-  }, [defaultTemplateId]);
+  }, []);
 
   const activeStep = BUILDER_STEPS[stepIndex] ?? BUILDER_STEPS[0];
   const previewMode: BuilderPreviewMode = stepIndex <= 1 ? "top" : "builder-preview";
   const isFinalStep = stepIndex === BUILDER_STEPS.length - 1;
-  const supportsSecondaryDimensions =
-    templateId === "l-shape" ||
-    templateId === "cut-shape" ||
-    templateId === "t-shape" ||
-    templateId === "u-shape" ||
-    templateId === "slanted-shape";
+  const normalizedBuilderInput = useMemo(
+    () =>
+      normalizeBuilderSceneInput({
+        templateId,
+        width,
+        depth,
+        nookWidth,
+        nookDepth
+      }),
+    [depth, nookDepth, nookWidth, templateId, width]
+  );
+
+  useEffect(() => {
+    if (Math.abs(width - normalizedBuilderInput.width) > 0.0001) {
+      setWidth(normalizedBuilderInput.width);
+    }
+    if (Math.abs(depth - normalizedBuilderInput.depth) > 0.0001) {
+      setDepth(normalizedBuilderInput.depth);
+    }
+    if (
+      typeof normalizedBuilderInput.nookWidth === "number" &&
+      Math.abs(nookWidth - normalizedBuilderInput.nookWidth) > 0.0001
+    ) {
+      setNookWidth(normalizedBuilderInput.nookWidth);
+    }
+    if (
+      typeof normalizedBuilderInput.nookDepth === "number" &&
+      Math.abs(nookDepth - normalizedBuilderInput.nookDepth) > 0.0001
+    ) {
+      setNookDepth(normalizedBuilderInput.nookDepth);
+    }
+  }, [depth, nookDepth, nookWidth, normalizedBuilderInput, width]);
+
+  const dimensionControls = useMemo(
+    () => getBuilderDimensionControls(normalizedBuilderInput),
+    [normalizedBuilderInput]
+  );
+  const exposesNookWidth = dimensionControls.some((control) => control.id === "nookWidth");
+  const exposesNookDepth = dimensionControls.some((control) => control.id === "nookDepth");
 
   const activeWallFinish = useMemo(
     () => wallFinishOptions.find((finish) => finish.id === wallMaterialIndex) ?? wallFinishOptions[0] ?? builderWallFinishes[0],
@@ -305,15 +324,8 @@ function StudioBuilderPageContent() {
   );
 
   const baseScene = useMemo(
-    () =>
-      buildBuilderScene({
-        templateId,
-        width,
-        depth,
-        nookWidth,
-        nookDepth
-      }),
-    [templateId, width, depth, nookWidth, nookDepth]
+    () => buildBuilderScene(normalizedBuilderInput),
+    [normalizedBuilderInput]
   );
   const {
     openings,
@@ -478,17 +490,19 @@ function StudioBuilderPageContent() {
     nextQuery.set("intent", intent);
     nextQuery.set("step", BUILDER_STEPS[stepIndex]?.id ?? BUILDER_STEPS[0].id);
     nextQuery.set("templateId", templateId);
-    nextQuery.set("width", String(width));
-    nextQuery.set("depth", String(depth));
+    nextQuery.set("width", String(normalizedBuilderInput.width));
+    nextQuery.set("depth", String(normalizedBuilderInput.depth));
     nextQuery.set("wall", String(wallMaterialIndex));
     nextQuery.set("floor", String(floorMaterialIndex));
     nextQuery.set("projectName", projectName);
     nextQuery.set("doorStyle", doorStyle);
     nextQuery.set("windowStyle", windowStyle);
 
-    if (supportsSecondaryDimensions) {
-      nextQuery.set("nookWidth", String(nookWidth));
-      nextQuery.set("nookDepth", String(nookDepth));
+    if (exposesNookWidth) {
+      nextQuery.set("nookWidth", String(normalizedBuilderInput.nookWidth ?? nookWidth));
+    }
+    if (exposesNookDepth) {
+      nextQuery.set("nookDepth", String(normalizedBuilderInput.nookDepth ?? nookDepth));
     }
     if (starterSetPreset !== "none") {
       nextQuery.set("seed", starterSetPreset);
@@ -517,17 +531,19 @@ function StudioBuilderPageContent() {
     intent,
     nookDepth,
     nookWidth,
+    normalizedBuilderInput,
     projectName,
     router,
     searchParams,
     starterSetPreset,
     starterTemplateId,
     stepIndex,
-    supportsSecondaryDimensions,
     templateId,
     wallMaterialIndex,
     width,
-    windowStyle
+    windowStyle,
+    exposesNookDepth,
+    exposesNookWidth
   ]);
 
   const handleAddOpening = useCallback(
@@ -543,12 +559,38 @@ function StudioBuilderPageContent() {
   const handleTemplateSelect = (nextTemplateId: BuilderTemplateId) => {
     const nextTemplate = templateOptions.find((template) => template.id === nextTemplateId);
     if (!nextTemplate) return;
+    const normalizedTemplateInput = normalizeBuilderSceneInput({
+      templateId: nextTemplate.id,
+      width: nextTemplate.defaultWidth,
+      depth: nextTemplate.defaultDepth,
+      nookWidth: nextTemplate.defaultNookWidth,
+      nookDepth: nextTemplate.defaultNookDepth
+    });
     setTemplateId(nextTemplate.id);
-    setWidth(nextTemplate.defaultWidth);
-    setDepth(nextTemplate.defaultDepth);
-    setNookWidth(nextTemplate.defaultNookWidth ?? 2.8);
-    setNookDepth(nextTemplate.defaultNookDepth ?? 2.4);
+    setWidth(normalizedTemplateInput.width);
+    setDepth(normalizedTemplateInput.depth);
+    setNookWidth(normalizedTemplateInput.nookWidth ?? 2.8);
+    setNookDepth(normalizedTemplateInput.nookDepth ?? 2.4);
   };
+
+  const handleDimensionControlChange = useCallback(
+    (controlId: "width" | "depth" | "nookWidth" | "nookDepth", value: number) => {
+      if (controlId === "width") {
+        setWidth(value);
+        return;
+      }
+      if (controlId === "depth") {
+        setDepth(value);
+        return;
+      }
+      if (controlId === "nookWidth") {
+        setNookWidth(value);
+        return;
+      }
+      setNookDepth(value);
+    },
+    []
+  );
 
   const setStepWithRoute = useCallback(
     (nextStepIndex: number) => {
@@ -563,17 +605,19 @@ function StudioBuilderPageContent() {
     query.set("intent", intent);
     query.set("step", BUILDER_STEPS[stepIndex]?.id ?? BUILDER_STEPS[0].id);
     query.set("templateId", templateId);
-    query.set("width", String(width));
-    query.set("depth", String(depth));
+    query.set("width", String(normalizedBuilderInput.width));
+    query.set("depth", String(normalizedBuilderInput.depth));
     query.set("wall", String(wallMaterialIndex));
     query.set("floor", String(floorMaterialIndex));
     query.set("projectName", projectName);
     query.set("doorStyle", doorStyle);
     query.set("windowStyle", windowStyle);
 
-    if (supportsSecondaryDimensions) {
-      query.set("nookWidth", String(nookWidth));
-      query.set("nookDepth", String(nookDepth));
+    if (exposesNookWidth) {
+      query.set("nookWidth", String(normalizedBuilderInput.nookWidth ?? nookWidth));
+    }
+    if (exposesNookDepth) {
+      query.set("nookDepth", String(normalizedBuilderInput.nookDepth ?? nookDepth));
     }
     if (starterSetPreset !== "none") {
       query.set("seed", starterSetPreset);
@@ -589,21 +633,21 @@ function StudioBuilderPageContent() {
     return `/studio/builder?${query.toString()}`;
   }, [
     addSecondaryWindow,
-    depth,
     doorStyle,
     floorMaterialIndex,
     intent,
     nookDepth,
     nookWidth,
+    normalizedBuilderInput,
     projectName,
     starterSetPreset,
     starterTemplateId,
     stepIndex,
-    supportsSecondaryDimensions,
     templateId,
     wallMaterialIndex,
-    width,
-    windowStyle
+    windowStyle,
+    exposesNookDepth,
+    exposesNookWidth
   ]);
 
   const persistAuthDraft = useCallback(() => {
@@ -613,10 +657,10 @@ function StudioBuilderPageContent() {
       intent,
       stepIndex,
       templateId,
-      width,
-      depth,
-      nookWidth,
-      nookDepth,
+      width: normalizedBuilderInput.width,
+      depth: normalizedBuilderInput.depth,
+      nookWidth: normalizedBuilderInput.nookWidth ?? nookWidth,
+      nookDepth: normalizedBuilderInput.nookDepth ?? nookDepth,
       wallMaterialIndex,
       floorMaterialIndex,
       projectName,
@@ -632,12 +676,12 @@ function StudioBuilderPageContent() {
     window.sessionStorage.setItem(BUILDER_AUTH_DRAFT_KEY, JSON.stringify(draft));
   }, [
     addSecondaryWindow,
-    depth,
     doorStyle,
     floorMaterialIndex,
     intent,
     nookDepth,
     nookWidth,
+    normalizedBuilderInput,
     openings,
     projectDescription,
     projectName,
@@ -646,7 +690,6 @@ function StudioBuilderPageContent() {
     stepIndex,
     templateId,
     wallMaterialIndex,
-    width,
     windowStyle
   ]);
 
@@ -710,11 +753,11 @@ function StudioBuilderPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f2ef] px-4 pb-6 pt-24 text-[#171411] sm:px-6 sm:pt-28 lg:px-8 xl:h-screen xl:overflow-hidden xl:pb-8">
-      <div className="mx-auto max-w-[1540px] xl:flex xl:h-[calc(100vh-8.5rem)] xl:flex-col">
-        <StudioWorkspaceShell className="gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(340px,34vw)_minmax(0,1fr)]">
-          <StudioWorkspacePanel className="flex flex-col rounded-none border-0 border-b border-black/10 bg-white shadow-none xl:min-h-0 xl:border-b-0 xl:border-r xl:border-black/10">
-            <div className="min-h-0 flex-1 overflow-y-auto p-6 sm:p-8 xl:p-9">
+    <div className="h-[100dvh] overflow-hidden bg-[#f3f2ef] px-3 pb-3 pt-14 text-[#171411] sm:px-4 sm:pt-14 lg:px-6">
+      <div className="mx-auto h-full max-w-[1540px]">
+        <StudioWorkspaceShell className="h-full min-h-0 gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] lg:grid-cols-[minmax(340px,34vw)_minmax(0,1fr)]">
+          <StudioWorkspacePanel className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] rounded-none border-0 border-b border-black/10 bg-white shadow-none lg:border-b-0 lg:border-r lg:border-black/10">
+            <div className="min-h-0 overflow-y-auto p-6 sm:p-8 xl:p-9">
               <BuilderStepHeader activeStep={activeStep} />
 
               <div className="mt-8 space-y-6">
@@ -729,16 +772,10 @@ function StudioBuilderPageContent() {
                 {stepIndex === 1 ? (
                   <BuilderDimensionsStep
                     unit={dimensionUnit}
-                    supportsSecondaryDimensions={supportsSecondaryDimensions}
-                    width={width}
-                    depth={depth}
-                    nookWidth={nookWidth}
-                    nookDepth={nookDepth}
+                    templateId={templateId}
+                    controls={dimensionControls}
                     onUnitChange={setDimensionUnit}
-                    onWidthChange={setWidth}
-                    onDepthChange={setDepth}
-                    onNookWidthChange={setNookWidth}
-                    onNookDepthChange={setNookDepth}
+                    onControlChange={handleDimensionControlChange}
                   />
                 ) : null}
 
@@ -795,10 +832,9 @@ function StudioBuilderPageContent() {
           <BuilderPreviewPane
             stepId={activeStep.id}
             previewMode={previewMode}
-            width={width}
-            depth={depth}
             unit={dimensionUnit}
             outline={scene.floors[0]?.outline ?? []}
+            wallEntries={wallEntries}
             wallFinishName={activeWallFinish.name}
             floorFinishName={activeFloorFinish.name}
             doorCount={scene.openings.filter((opening) => opening.type === "door").length}

@@ -133,11 +133,14 @@ Added:
 - 홈/선택/빌더 상단에 브랜드 + 로그인/로그아웃 단순 bar 규칙을 추가.
 - 선택 템플릿이 builder를 거치지 않고 저장된 project를 만든 뒤 editor로 직접 진입하는 기준을 명시.
 - builder step 2 치수 overlay가 실제 floor outline을 사용해야 한다는 규칙을 추가.
+- builder 치수 state는 shape별 clamp를 거친 정규화 값과 실제 생성 geometry가 항상 일치해야 한다는 규칙을 추가.
 
 Updated:
 - builder를 "템플릿 보정 + 맞춤 생성" 공용 진입점에서 "맞춤형 방 생성 전용" 흐름으로 좁힘.
 - builder desktop shell을 viewport 높이에 맞춰 페이지 스크롤 없이 유지하고, 내부 rail만 최소 스크롤을 허용하는 구조로 갱신.
 - storage bucket 미준비 시 thumbnail upload를 복구/재시도하고, 실패해도 save 자체는 계속하도록 저장 규칙을 강화.
+- 전역 top bar를 compact height + 주요 페이지 이동(home/select/create/studio/gallery/community) 기준으로 통일.
+- desktop editor shell을 "좌측 카탈로그 고정 + 중앙 viewport + 필요 시 우측 inspector overlay + 축소된 bottom toolbar" 구조로 구체화.
 
 Removed/Deprecated:
 - 템플릿 선택이 `/studio/builder` 쿼리스트링 복원 경로를 항상 거친다는 가정.

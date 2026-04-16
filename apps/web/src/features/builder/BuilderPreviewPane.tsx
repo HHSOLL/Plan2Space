@@ -4,14 +4,14 @@ import type { Opening, Vector2 } from "../../lib/stores/useSceneStore";
 import { SceneViewport } from "../../components/editor/SceneViewport";
 import type { EditorViewMode } from "../../lib/stores/useEditorStore";
 import type { BuilderStepId } from "./types";
+import type { BuilderWallEntry } from "./types";
 
 type BuilderPreviewPaneProps = {
   stepId: BuilderStepId;
   previewMode: Extract<EditorViewMode, "top" | "builder-preview">;
-  width: number;
-  depth: number;
   unit: "ft" | "cm";
   outline: Vector2[];
+  wallEntries: BuilderWallEntry[];
   wallFinishName: string;
   floorFinishName: string;
   doorCount: number;
@@ -74,37 +74,34 @@ function buildScaledOutline(outline: Vector2[]) {
   };
 }
 
-function DimensionOverlay({
-  outline,
-  width,
-  depth,
-  unit
-}: {
-  outline: Vector2[];
-  width: number;
-  depth: number;
-  unit: "ft" | "cm";
-}) {
+function DimensionOverlay({ outline, wallEntries, unit }: { outline: Vector2[]; wallEntries: BuilderWallEntry[]; unit: "ft" | "cm" }) {
   const scaled = buildScaledOutline(outline);
+  const segments = scaled.points.map((point, index) => {
+    const next = scaled.points[(index + 1) % scaled.points.length]!;
+    const dx = next[0] - point[0];
+    const dy = next[1] - point[1];
+    const length = Math.hypot(dx, dy) || 1;
+    const midpointX = (point[0] + next[0]) / 2;
+    const midpointY = (point[1] + next[1]) / 2;
+    const normalX = -dy / length;
+    const normalY = dx / length;
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    const normalizedAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
+    const wall = wallEntries[index];
+
+    return {
+      id: wall?.id ?? `wall-${index}`,
+      label: formatDimension(wall?.length ?? 0, unit),
+      x: midpointX + normalX * 28,
+      y: midpointY + normalY * 28,
+      angle: normalizedAngle
+    };
+  });
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-10 py-12">
       <svg viewBox="0 0 820 560" className="h-full max-h-[560px] w-full max-w-[900px]" aria-hidden>
         <path d={scaled.path} fill="rgba(255,255,255,0.18)" stroke="#202020" strokeWidth="6" strokeLinejoin="round" />
-
-        <line x1={scaled.bounds.minX} y1={scaled.bounds.minY - 26} x2={scaled.bounds.maxX} y2={scaled.bounds.minY - 26} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.minX} y1={scaled.bounds.maxY + 26} x2={scaled.bounds.maxX} y2={scaled.bounds.maxY + 26} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.minX - 26} y1={scaled.bounds.minY} x2={scaled.bounds.minX - 26} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.maxX + 26} y1={scaled.bounds.minY} x2={scaled.bounds.maxX + 26} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
-
-        <line x1={scaled.bounds.minX} y1={scaled.bounds.minY - 34} x2={scaled.bounds.minX} y2={scaled.bounds.minY - 14} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.maxX} y1={scaled.bounds.minY - 34} x2={scaled.bounds.maxX} y2={scaled.bounds.minY - 14} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.minX} y1={scaled.bounds.maxY + 14} x2={scaled.bounds.minX} y2={scaled.bounds.maxY + 38} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.maxX} y1={scaled.bounds.maxY + 14} x2={scaled.bounds.maxX} y2={scaled.bounds.maxY + 38} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.minX - 34} y1={scaled.bounds.minY} x2={scaled.bounds.minX - 14} y2={scaled.bounds.minY} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.minX - 34} y1={scaled.bounds.maxY} x2={scaled.bounds.minX - 14} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.maxX + 14} y1={scaled.bounds.minY} x2={scaled.bounds.maxX + 34} y2={scaled.bounds.minY} stroke="#8f8f8f" strokeWidth="2" />
-        <line x1={scaled.bounds.maxX + 14} y1={scaled.bounds.maxY} x2={scaled.bounds.maxX + 34} y2={scaled.bounds.maxY} stroke="#8f8f8f" strokeWidth="2" />
 
         {scaled.points.map(([x, y]) => (
           <g key={`${x}-${y}`}>
@@ -113,34 +110,22 @@ function DimensionOverlay({
           </g>
         ))}
 
-        <text x="410" y={scaled.bounds.minY - 44} textAnchor="middle" fill="#6f6f6f" fontSize="24" fontWeight="600">
-          {formatDimension(width, unit)}
-        </text>
-        <text x="410" y={scaled.bounds.maxY + 58} textAnchor="middle" fill="#6f6f6f" fontSize="24" fontWeight="600">
-          {formatDimension(width, unit)}
-        </text>
-        <text
-          x={scaled.bounds.minX - 62}
-          y="280"
-          textAnchor="middle"
-          fill="#6f6f6f"
-          fontSize="24"
-          fontWeight="600"
-          transform={`rotate(-90 ${scaled.bounds.minX - 62} 280)`}
-        >
-          {formatDimension(depth, unit)}
-        </text>
-        <text
-          x={scaled.bounds.maxX + 62}
-          y="280"
-          textAnchor="middle"
-          fill="#6f6f6f"
-          fontSize="24"
-          fontWeight="600"
-          transform={`rotate(90 ${scaled.bounds.maxX + 62} 280)`}
-        >
-          {formatDimension(depth, unit)}
-        </text>
+        {segments.map((segment) => (
+          <g key={segment.id} transform={`translate(${segment.x} ${segment.y}) rotate(${segment.angle})`}>
+            <rect
+              x="-34"
+              y="-13"
+              width="68"
+              height="26"
+              rx="13"
+              fill="rgba(255,255,255,0.92)"
+              stroke="#d1cec7"
+            />
+            <text textAnchor="middle" dominantBaseline="central" fill="#6f6f6f" fontSize="17" fontWeight="700">
+              {segment.label}
+            </text>
+          </g>
+        ))}
       </svg>
     </div>
   );
@@ -219,10 +204,9 @@ function StyleSummary({
 export function BuilderPreviewPane({
   stepId,
   previewMode,
-  width,
-  depth,
   unit,
   outline,
+  wallEntries,
   wallFinishName,
   floorFinishName,
   doorCount,
@@ -235,10 +219,10 @@ export function BuilderPreviewPane({
     <motion.section
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative min-h-[360px] overflow-hidden bg-[#d7d7d3] xl:min-h-0 xl:h-full"
+      className="relative min-h-[320px] overflow-hidden bg-[#d7d7d3] lg:h-full lg:min-h-0"
     >
       <SceneViewport
-        className="h-full min-h-[360px] !rounded-none !border-0 !shadow-none xl:min-h-0 xl:h-full"
+        className="h-full min-h-[320px] !rounded-none !border-0 !shadow-none lg:min-h-0 lg:h-full"
         camera={previewMode === "top" ? { fov: 42, position: [0, 10.5, 0.01] } : { fov: 46, position: [8, 5, 8] }}
         toneMappingExposure={1.02}
         chromeTone="light"
@@ -246,7 +230,7 @@ export function BuilderPreviewPane({
         interactionMode="preview"
       />
 
-      {stepId === "dimension" ? <DimensionOverlay outline={outline} width={width} depth={depth} unit={unit} /> : null}
+      {stepId === "dimension" ? <DimensionOverlay outline={outline} wallEntries={wallEntries} unit={unit} /> : null}
       {stepId === "opening" ? (
         <OpeningOverlay
           selectedWallLabel={selectedWallLabel}

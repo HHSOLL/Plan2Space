@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LayoutGrid, Search, Sparkles, Star } from "lucide-react";
+import { ChevronDown, LayoutGrid, Search, Sparkles } from "lucide-react";
 import type {
   LibraryCatalogCategory,
   LibraryCatalogCategoryId,
@@ -63,25 +63,17 @@ function AssetCard({
     >
       <article className="flex flex-col">
         <div
-          className={`relative aspect-[4/5] overflow-hidden rounded-[16px] border border-black/10 ${preview.surface} transition duration-200 group-hover:border-black/20 group-hover:shadow-[0_10px_24px_rgba(17,19,22,0.08)]`}
+          className={`relative aspect-[4/5] overflow-hidden rounded-[14px] border border-black/8 ${preview.surface} transition duration-200 group-hover:border-black/20`}
         >
-          <span
-            className={`absolute left-2 top-2 inline-flex max-w-[calc(100%-1rem)] truncate rounded-full border px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] ${preview.chip}`}
-          >
-            {item.collection}
-          </span>
           {placed ? (
-            <span className="absolute right-2 top-2 rounded-full border border-emerald-700/10 bg-emerald-50 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-800">
-              배치됨
-            </span>
+            <span className="absolute right-2 top-2 inline-flex h-2.5 w-2.5 rounded-full bg-[#171411]" />
           ) : null}
-          <div className="absolute inset-x-4 bottom-4 h-4 rounded-full bg-black/10 blur-lg" />
-          <div className="absolute inset-x-3 bottom-3 h-5 rounded-[10px] border border-black/10 bg-white/45" />
-          <div className="absolute bottom-5 left-1/2 h-9 w-9 -translate-x-1/2 rounded-[12px] border border-black/10 bg-white/65 shadow-[0_10px_18px_rgba(0,0,0,0.08)]" />
+          <div className="absolute inset-x-4 bottom-4 h-3 rounded-full bg-black/10 blur-md" />
         </div>
 
-        <div className="mt-2 space-y-1 px-0.5">
+        <div className="mt-2 space-y-0.5 px-0.5">
           <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-[#171411]">{item.label}</p>
+          <p className="line-clamp-1 text-[10px] leading-4 text-[#61594f]">{item.collection}</p>
           <p className="line-clamp-1 text-[10px] leading-4 text-[#61594f]">{secondaryLine}</p>
           <p className="line-clamp-1 text-[10px] leading-4 text-[#9a9186]">{tertiaryLine}</p>
         </div>
@@ -108,11 +100,11 @@ export function BuilderLibraryShelf({
 }: BuilderLibraryShelfProps) {
   const activeCategoryMeta = categories.find((category) => category.id === activeCategory) ?? categories[0] ?? null;
   const isPlaced = (item: LibraryCatalogItem) => placedItemKeys.has(item.id) || placedItemKeys.has(item.assetId);
-  const featuredCount = hasActiveFilters ? 0 : featuredItems.length;
+  const heroSuggestion = hasActiveFilters ? null : spotlightItem ?? featuredItems[0] ?? null;
 
   return (
     <div className="flex h-full flex-col bg-white text-[#171411]">
-      <div className="border-b border-black/10 px-4 py-4">
+      <div className="border-b border-black/8 px-4 py-4">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#948b80]" />
           <input
@@ -125,16 +117,16 @@ export function BuilderLibraryShelf({
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8f867a]">카테고리</div>
-            <div className="mt-1 inline-flex items-center gap-1 text-lg font-semibold text-[#171411]">
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8f867a]">카테고리</div>
+            <div className="mt-1 inline-flex items-center gap-1 text-base font-semibold text-[#171411]">
               <span>{activeCategoryMeta?.label ?? "전체"}</span>
               <ChevronDown className="h-4 w-4 text-[#8f867a]" />
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8f867a]">장면 제품</div>
-            <div className="mt-1 text-sm font-semibold text-[#171411]">{assetCount}개</div>
+          <div className="text-right text-[10px] leading-4 text-[#8f867a]">
+            <div>{catalogCount}개 제품</div>
+            <div>{assetCount}개 배치됨</div>
           </div>
         </div>
 
@@ -155,27 +147,18 @@ export function BuilderLibraryShelf({
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="text-[10px] leading-4 text-[#7d756b]">
+            {heroSuggestion ? `${heroSuggestion.label} 같은 제품을 바로 추가할 수 있습니다.` : "가구를 골라 바로 배치해보세요."}
+          </div>
           <button
             type="button"
             onClick={onAddStarterSet}
-            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#171411] transition hover:bg-[#f4f4f1]"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#171411] transition hover:bg-[#f4f4f1]"
           >
             <Sparkles className="h-3.5 w-3.5" />
             빠른 세트
           </button>
-          {spotlightItem ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#f4f4f1] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#61594f]">
-              <Star className="h-3.5 w-3.5" />
-              추천 {spotlightItem.label}
-            </span>
-          ) : null}
-          {!hasActiveFilters && featuredCount > 0 ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#f4f4f1] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#61594f]">
-              <LayoutGrid className="h-3.5 w-3.5" />
-              추천 {featuredCount}개
-            </span>
-          ) : null}
         </div>
       </div>
 
@@ -194,10 +177,6 @@ export function BuilderLibraryShelf({
             </p>
           </div>
         )}
-      </div>
-
-      <div className="border-t border-black/10 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#8f867a]">
-        카탈로그 {catalogCount}개
       </div>
     </div>
   );
