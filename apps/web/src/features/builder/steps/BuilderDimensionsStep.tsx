@@ -1,15 +1,11 @@
+import type { BuilderDimensionControl, BuilderTemplateId } from "../../../lib/builder/templates";
+
 type BuilderDimensionsStepProps = {
   unit: "ft" | "cm";
-  supportsSecondaryDimensions: boolean;
-  width: number;
-  depth: number;
-  nookWidth: number;
-  nookDepth: number;
+  templateId: BuilderTemplateId;
+  controls: BuilderDimensionControl[];
   onUnitChange: (nextUnit: "ft" | "cm") => void;
-  onWidthChange: (value: number) => void;
-  onDepthChange: (value: number) => void;
-  onNookWidthChange: (value: number) => void;
-  onNookDepthChange: (value: number) => void;
+  onControlChange: (id: BuilderDimensionControl["id"], value: number) => void;
 };
 
 function formatDimension(meters: number, unit: "ft" | "cm") {
@@ -21,54 +17,58 @@ function formatDimension(meters: number, unit: "ft" | "cm") {
 }
 
 function DimensionControl({
-  label,
-  value,
-  min,
-  max,
-  step,
+  control,
   unit,
   onChange
 }: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
+  control: BuilderDimensionControl;
   unit: "ft" | "cm";
   onChange: (value: number) => void;
 }) {
   return (
     <label className="block space-y-2">
       <div className="flex items-center justify-between text-sm font-semibold text-[#2b2621]">
-        <span>{label}</span>
-        <span className="text-[#7c7266]">{formatDimension(value, unit)}</span>
+        <span>{control.label}</span>
+        <span className="text-[#7c7266]">{formatDimension(control.value, unit)}</span>
       </div>
       <input
         type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
+        min={control.min}
+        max={control.max}
+        step={control.step}
+        value={control.value}
         onChange={(event) => onChange(Number(event.target.value))}
         className="h-2 w-full cursor-pointer accent-[#171411]"
       />
+      {control.hint ? <p className="text-xs leading-5 text-[#8a8177]">{control.hint}</p> : null}
     </label>
   );
 }
 
-function MiniShapePreview({ supportsSecondaryDimensions }: { supportsSecondaryDimensions: boolean }) {
+function ShapeGuide({ templateId }: { templateId: BuilderTemplateId }) {
+  const fill = "#ffffff";
+  const stroke = "#171411";
+  const common = {
+    fill,
+    stroke,
+    strokeWidth: 4,
+    strokeLinejoin: "round" as const
+  };
+
+  const shapes: Record<BuilderTemplateId, JSX.Element> = {
+    "rect-studio": <rect x="40" y="32" width="100" height="74" {...common} />,
+    "l-shape": <path d="M40 106V56H92V32H140V106Z" {...common} />,
+    "cut-shape": <path d="M40 106V32H140V76L108 106Z" {...common} />,
+    "t-shape": <path d="M40 32H140V62H104V106H76V62H40Z" {...common} />,
+    "u-shape": <path d="M40 32H140V106H108V70H72V106H40Z" {...common} />,
+    "slanted-shape": <path d="M40 50L58 32H122L140 50V106H40Z" {...common} />
+  };
+
   return (
     <div className="flex justify-center pt-2">
       <svg viewBox="0 0 180 140" className="h-[120px] w-[150px]" aria-hidden>
-        {supportsSecondaryDimensions ? (
-          <path d="M40 100V40H132V78H100V100Z" fill="#ffffff" stroke="#171411" strokeWidth="4" strokeLinejoin="round" />
-        ) : (
-          <rect x="40" y="40" width="92" height="60" fill="#ffffff" stroke="#171411" strokeWidth="4" />
-        )}
-        <line x1="40" y1="40" x2="40" y2="100" stroke="#f4d000" strokeWidth="4" />
-        <circle cx="34" cy="72" r="11" fill="#ffffff" stroke="#171411" strokeWidth="2" />
-        <path d="M33 67.5V77.5M33 67.5C29.5 67.5 27 70 27 73.5M33 67.5C36.5 67.5 39 70 39 73.5" stroke="#171411" strokeLinecap="round" strokeWidth="2" />
-        <path d="M18 73H24M42 73H48" stroke="#171411" strokeLinecap="round" strokeWidth="2" />
+        {shapes[templateId]}
+        <circle cx="40" cy="32" r="7" fill="#ffffff" stroke="#171411" strokeWidth="2" />
       </svg>
     </div>
   );
@@ -76,47 +76,24 @@ function MiniShapePreview({ supportsSecondaryDimensions }: { supportsSecondaryDi
 
 export function BuilderDimensionsStep({
   unit,
-  supportsSecondaryDimensions,
-  width,
-  depth,
-  nookWidth,
-  nookDepth,
+  templateId,
+  controls,
   onUnitChange,
-  onWidthChange,
-  onDepthChange,
-  onNookWidthChange,
-  onNookDepthChange
+  onControlChange
 }: BuilderDimensionsStepProps) {
   return (
     <div className="space-y-7">
-      <MiniShapePreview supportsSecondaryDimensions={supportsSecondaryDimensions} />
+      <ShapeGuide templateId={templateId} />
 
       <div className="space-y-4">
-        <DimensionControl label="가로" value={width} min={4} max={10} step={0.2} unit={unit} onChange={onWidthChange} />
-        <DimensionControl label="세로" value={depth} min={3.6} max={8} step={0.2} unit={unit} onChange={onDepthChange} />
-
-        {supportsSecondaryDimensions ? (
-          <>
-            <DimensionControl
-              label="보조 가로"
-              value={nookWidth}
-              min={1.6}
-              max={4}
-              step={0.1}
-              unit={unit}
-              onChange={onNookWidthChange}
-            />
-            <DimensionControl
-              label="보조 세로"
-              value={nookDepth}
-              min={1.4}
-              max={3.6}
-              step={0.1}
-              unit={unit}
-              onChange={onNookDepthChange}
-            />
-          </>
-        ) : null}
+        {controls.map((control) => (
+          <DimensionControl
+            key={control.id}
+            control={control}
+            unit={unit}
+            onChange={(value) => onControlChange(control.id, value)}
+          />
+        ))}
       </div>
 
       <div className="overflow-hidden rounded-full border border-black/15 bg-white">

@@ -135,10 +135,12 @@ Removed/Deprecated:
 Added:
 - P1 범위에 `템플릿 선택 -> 즉시 editor 진입` 경로와 desktop builder shell fit을 명시.
 - thumbnail storage bucket 누락 시 save fallback/retry를 P1 안정화 항목에 추가.
+- P1 안정화 항목에 shape별 치수 clamp 정규화와 geometry 동기화 검증을 추가.
 
 Updated:
 - 템플릿 진입 완료 기준을 "builder 초기값 복원"에서 "saved project 생성 후 editor 직행"으로 변경.
 - builder 완료 기준에 "페이지 무스크롤", "실제 floor outline 기반 치수 overlay"를 추가.
+- P2 editor chrome 기준을 "slim rail" 일반론에서 "desktop left catalog 고정 + compact header + compact bottom toolbar"로 구체화.
 
 Removed/Deprecated:
 - 템플릿 선택이 항상 builder step flow를 지난다는 완료 조건.

@@ -271,10 +271,12 @@ Added:
 - 홈/선택/빌더 상단 bar의 브랜드/로그인 상태 확인 항목 추가.
 - 템플릿 선택 시 editor 직행과 same-mode `더보기` 검증 항목 추가.
 - builder step 2 치수 overlay와 room shape 동기화 확인 항목 추가.
+- shape별 `nook`/포켓/컷 치수를 과하게 넣어도 UI 값과 실제 geometry가 같은 정규화 값으로 맞춰지는지 확인하는 항목 추가.
 
 Updated:
 - 핵심 QA 순서를 `선택 템플릿 -> builder 이동`에서 `선택 템플릿 -> editor 직행`, `공간 만들기 -> builder 4-step` 분기 구조로 갱신.
 - builder shell 기대값을 "split shell"에서 "desktop viewport fit + 내부 rail scroll only" 기준으로 구체화.
+- editor QA 기대값을 "기능 노출"에서 "좌측 카탈로그 고정 + compact 상단바/하단 toolbar" 기준으로 구체화.
 
 Removed/Deprecated:
 - 템플릿 선택 후 builder 세부값 보정이 기본 회귀 경로라는 전제.

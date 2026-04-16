@@ -107,6 +107,18 @@ export type BuilderSceneInput = {
   nookDepth?: number;
 };
 
+export type BuilderDimensionField = "width" | "depth" | "nookWidth" | "nookDepth";
+
+export type BuilderDimensionControl = {
+  id: BuilderDimensionField;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  hint?: string;
+};
+
 export type BuilderScene = {
   scale: number;
   scaleInfo: ScaleInfo;
@@ -118,17 +130,79 @@ export type BuilderScene = {
 const DEFAULT_WALL_THICKNESS = 0.16;
 const DEFAULT_WALL_HEIGHT = 2.8;
 
+type BuilderWallSegment = {
+  key: string;
+  start: [number, number];
+  end: [number, number];
+};
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function polygonToWalls(points: Array<[number, number]>): Wall[] {
-  return points.map((point, index) => {
-    const next = points[(index + 1) % points.length]!;
+export function normalizeBuilderSceneInput(input: BuilderSceneInput): BuilderSceneInput {
+  const template = builderTemplates.find((entry) => entry.id === input.templateId) ?? builderTemplates[0]!;
+  const width = clamp(input.width, 4, 10);
+  const depth = clamp(input.depth, 3.6, 8);
+  const defaultNookWidth = input.nookWidth ?? template.defaultNookWidth ?? 2.8;
+  const defaultNookDepth = input.nookDepth ?? template.defaultNookDepth ?? 2.4;
+
+  switch (input.templateId) {
+    case "l-shape":
+      return {
+        templateId: input.templateId,
+        width,
+        depth,
+        nookWidth: clamp(defaultNookWidth, 1.6, Math.min(4, Math.max(1.6, width - 1.6))),
+        nookDepth: clamp(defaultNookDepth, 1.4, Math.min(3.6, Math.max(1.4, depth - 1)))
+      };
+    case "cut-shape":
+      return {
+        templateId: input.templateId,
+        width,
+        depth,
+        nookWidth: clamp(defaultNookWidth, 1.2, Math.min(3.6, Math.max(1.2, width - 1.2))),
+        nookDepth: clamp(defaultNookDepth, 1, Math.min(3.2, Math.max(1, depth - 0.9)))
+      };
+    case "t-shape":
+      return {
+        templateId: input.templateId,
+        width,
+        depth,
+        nookWidth: clamp(defaultNookWidth, 1.8, Math.min(4.8, Math.max(1.8, width - 1.2))),
+        nookDepth: clamp(defaultNookDepth, 1.4, Math.min(3.8, Math.max(1.4, depth - 1.1)))
+      };
+    case "u-shape":
+      return {
+        templateId: input.templateId,
+        width,
+        depth,
+        nookWidth: clamp(defaultNookWidth, 1.4, Math.min(4.2, Math.max(1.4, width - 1.8))),
+        nookDepth: clamp(defaultNookDepth, 0.9, Math.min(2.8, Math.max(0.9, depth - 1.5)))
+      };
+    case "slanted-shape":
+      return {
+        templateId: input.templateId,
+        width,
+        depth,
+        nookDepth: clamp(defaultNookDepth, 0.6, Math.min(2.4, Math.min(width, depth) * 0.35))
+      };
+    case "rect-studio":
+    default:
+      return {
+        templateId: input.templateId,
+        width,
+        depth
+      };
+  }
+}
+
+function segmentsToWalls(segments: BuilderWallSegment[]): Wall[] {
+  return segments.map((segment) => {
     return {
-      id: `wall-${index + 1}`,
-      start: point,
-      end: next,
+      id: `wall-${segment.key}`,
+      start: segment.start,
+      end: segment.end,
       thickness: DEFAULT_WALL_THICKNESS,
       height: DEFAULT_WALL_HEIGHT,
       type: "exterior"
@@ -150,45 +224,46 @@ function getWallOrientationScore(wall: Wall) {
   return horizontalSpan - verticalSpan;
 }
 
-function buildPolygon(input: BuilderSceneInput) {
-  const width = input.width;
-  const depth = input.depth;
-  const nookWidth = clamp(input.nookWidth ?? width * 0.34, 1.2, Math.max(1.2, width - 1.6));
-  const nookDepth = clamp(input.nookDepth ?? depth * 0.32, 1.0, Math.max(1.0, depth - 1.4));
+function buildSegments(input: BuilderSceneInput): BuilderWallSegment[] {
+  const normalizedInput = normalizeBuilderSceneInput(input);
+  const width = normalizedInput.width;
+  const depth = normalizedInput.depth;
+  const nookWidth = normalizedInput.nookWidth ?? clamp(width * 0.34, 1.2, Math.max(1.2, width - 1.6));
+  const nookDepth = normalizedInput.nookDepth ?? clamp(depth * 0.32, 1.0, Math.max(1.0, depth - 1.4));
 
-  switch (input.templateId) {
+  switch (normalizedInput.templateId) {
     case "l-shape":
       return [
-        [0, 0],
-        [width, 0],
-        [width, depth - nookDepth],
-        [width - nookWidth, depth - nookDepth],
-        [width - nookWidth, depth],
-        [0, depth]
-      ] as Array<[number, number]>;
+        { key: "south", start: [0, 0], end: [width, 0] },
+        { key: "east", start: [width, 0], end: [width, depth - nookDepth] },
+        { key: "inner-south", start: [width, depth - nookDepth], end: [width - nookWidth, depth - nookDepth] },
+        { key: "inner-east", start: [width - nookWidth, depth - nookDepth], end: [width - nookWidth, depth] },
+        { key: "north", start: [width - nookWidth, depth], end: [0, depth] },
+        { key: "west", start: [0, depth], end: [0, 0] }
+      ];
     case "cut-shape":
       return [
-        [0, 0],
-        [width, 0],
-        [width, depth - nookDepth],
-        [width - nookWidth, depth],
-        [0, depth]
-      ] as Array<[number, number]>;
+        { key: "south", start: [0, 0], end: [width, 0] },
+        { key: "east", start: [width, 0], end: [width, depth - nookDepth] },
+        { key: "cut", start: [width, depth - nookDepth], end: [width - nookWidth, depth] },
+        { key: "north", start: [width - nookWidth, depth], end: [0, depth] },
+        { key: "west", start: [0, depth], end: [0, 0] }
+      ];
     case "t-shape": {
       const stemWidth = clamp(input.nookWidth ?? width * 0.4, 1.8, Math.max(1.8, width - 1.2));
       const stemDepth = clamp(input.nookDepth ?? depth * 0.38, 1.4, Math.max(1.4, depth - 1.1));
       const halfStem = stemWidth / 2;
       const center = width / 2;
       return [
-        [0, 0],
-        [width, 0],
-        [width, stemDepth],
-        [center + halfStem, stemDepth],
-        [center + halfStem, depth],
-        [center - halfStem, depth],
-        [center - halfStem, stemDepth],
-        [0, stemDepth]
-      ] as Array<[number, number]>;
+        { key: "south", start: [0, 0], end: [width, 0] },
+        { key: "east-lower", start: [width, 0], end: [width, stemDepth] },
+        { key: "shoulder-east", start: [width, stemDepth], end: [center + halfStem, stemDepth] },
+        { key: "stem-east", start: [center + halfStem, stemDepth], end: [center + halfStem, depth] },
+        { key: "north", start: [center + halfStem, depth], end: [center - halfStem, depth] },
+        { key: "stem-west", start: [center - halfStem, depth], end: [center - halfStem, stemDepth] },
+        { key: "shoulder-west", start: [center - halfStem, stemDepth], end: [0, stemDepth] },
+        { key: "west-lower", start: [0, stemDepth], end: [0, 0] }
+      ];
     }
     case "u-shape": {
       const notchWidth = clamp(input.nookWidth ?? width * 0.3, 1.4, Math.max(1.4, width - 1.8));
@@ -196,35 +271,92 @@ function buildPolygon(input: BuilderSceneInput) {
       const halfNotch = notchWidth / 2;
       const center = width / 2;
       return [
-        [0, 0],
-        [width, 0],
-        [width, depth],
-        [center + halfNotch, depth],
-        [center + halfNotch, depth - notchDepth],
-        [center - halfNotch, depth - notchDepth],
-        [center - halfNotch, depth],
-        [0, depth]
-      ] as Array<[number, number]>;
+        { key: "south", start: [0, 0], end: [width, 0] },
+        { key: "east", start: [width, 0], end: [width, depth] },
+        { key: "north-east", start: [width, depth], end: [center + halfNotch, depth] },
+        { key: "pocket-east", start: [center + halfNotch, depth], end: [center + halfNotch, depth - notchDepth] },
+        { key: "pocket-floor", start: [center + halfNotch, depth - notchDepth], end: [center - halfNotch, depth - notchDepth] },
+        { key: "pocket-west", start: [center - halfNotch, depth - notchDepth], end: [center - halfNotch, depth] },
+        { key: "north-west", start: [center - halfNotch, depth], end: [0, depth] },
+        { key: "west", start: [0, depth], end: [0, 0] }
+      ];
     }
     case "slanted-shape": {
       const bevel = clamp(input.nookDepth ?? Math.min(width, depth) * 0.18, 0.6, Math.min(width, depth) * 0.35);
       return [
-        [0, 0],
-        [width, 0],
-        [width, depth - bevel],
-        [width - bevel, depth],
-        [bevel, depth],
-        [0, depth - bevel]
-      ] as Array<[number, number]>;
+        { key: "south", start: [0, 0], end: [width, 0] },
+        { key: "east", start: [width, 0], end: [width, depth - bevel] },
+        { key: "north-east-angle", start: [width, depth - bevel], end: [width - bevel, depth] },
+        { key: "north", start: [width - bevel, depth], end: [bevel, depth] },
+        { key: "north-west-angle", start: [bevel, depth], end: [0, depth - bevel] },
+        { key: "west", start: [0, depth - bevel], end: [0, 0] }
+      ];
     }
     case "rect-studio":
     default:
       return [
-        [0, 0],
-        [width, 0],
-        [width, depth],
-        [0, depth]
-      ] as Array<[number, number]>;
+        { key: "south", start: [0, 0], end: [width, 0] },
+        { key: "east", start: [width, 0], end: [width, depth] },
+        { key: "north", start: [width, depth], end: [0, depth] },
+        { key: "west", start: [0, depth], end: [0, 0] }
+      ];
+  }
+}
+
+export function getBuilderDimensionControls(input: BuilderSceneInput): BuilderDimensionControl[] {
+  const normalizedInput = normalizeBuilderSceneInput(input);
+  const base = [
+    {
+      id: "width",
+      label: normalizedInput.templateId === "t-shape" ? "상단 가로" : "가로",
+      min: 4,
+      max: 10,
+      step: 0.2,
+      value: normalizedInput.width
+    },
+    {
+      id: "depth",
+      label: normalizedInput.templateId === "u-shape" ? "전체 세로" : "세로",
+      min: 3.6,
+      max: 8,
+      step: 0.2,
+      value: normalizedInput.depth
+    }
+  ] satisfies BuilderDimensionControl[];
+
+  switch (normalizedInput.templateId) {
+    case "l-shape":
+      return [
+        ...base,
+        { id: "nookWidth", label: "확장부 가로", min: 1.6, max: 4, step: 0.1, value: normalizedInput.nookWidth ?? 2.8 },
+        { id: "nookDepth", label: "확장부 세로", min: 1.4, max: 3.6, step: 0.1, value: normalizedInput.nookDepth ?? 2.4 }
+      ];
+    case "cut-shape":
+      return [
+        ...base,
+        { id: "nookWidth", label: "컷 가로", min: 1.2, max: 3.6, step: 0.1, value: normalizedInput.nookWidth ?? 2 },
+        { id: "nookDepth", label: "컷 깊이", min: 1, max: 3.2, step: 0.1, value: normalizedInput.nookDepth ?? 1.6 }
+      ];
+    case "t-shape":
+      return [
+        ...base,
+        { id: "nookWidth", label: "기둥 가로", min: 1.8, max: 4.8, step: 0.1, value: normalizedInput.nookWidth ?? 3 },
+        { id: "nookDepth", label: "기둥 세로", min: 1.4, max: 3.8, step: 0.1, value: normalizedInput.nookDepth ?? 2.2 }
+      ];
+    case "u-shape":
+      return [
+        ...base,
+        { id: "nookWidth", label: "포켓 가로", min: 1.4, max: 4.2, step: 0.1, value: normalizedInput.nookWidth ?? 2.4 },
+        { id: "nookDepth", label: "포켓 깊이", min: 0.9, max: 2.8, step: 0.1, value: normalizedInput.nookDepth ?? 1.4 }
+      ];
+    case "slanted-shape":
+      return [
+        ...base,
+        { id: "nookDepth", label: "사선 깊이", min: 0.6, max: 2.4, step: 0.1, value: normalizedInput.nookDepth ?? 1.4 }
+      ];
+    case "rect-studio":
+    default:
+      return base;
   }
 }
 
@@ -293,8 +425,9 @@ function buildOpenings(walls: Wall[], templateId: BuilderTemplateId): Opening[] 
 }
 
 export function buildBuilderScene(input: BuilderSceneInput): BuilderScene {
-  const polygon = buildPolygon(input);
-  const walls = polygonToWalls(polygon);
+  const segments = buildSegments(input);
+  const polygon = segments.map((segment) => segment.start);
+  const walls = segmentsToWalls(segments);
   const openings = buildOpenings(walls, input.templateId);
 
   return {

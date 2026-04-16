@@ -10,7 +10,6 @@ import {
 } from "../../../../lib/stores/useEditorStore";
 import { useProjectStore } from "../../../../lib/stores/useProjectStore";
 import {
-  useAssetSelector,
   useAssetStore,
   useCameraStore,
   usePublishStore,
@@ -27,7 +26,6 @@ import { ShareModal } from "../../../../components/editor/ShareModal";
 import { useAssetCatalog } from "../../../../components/editor/useAssetCatalog";
 import { useEditorSaveSession } from "../../../../components/editor/useEditorSaveSession";
 import { StudioWorkspacePanel } from "../../../../components/layout/StudioWorkspaceShell";
-import { Redo2, Undo2 } from "lucide-react";
 import "../../../../lib/polyfills/progress-event";
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
@@ -548,15 +546,6 @@ export default function ProjectEditorPage() {
     ready: !isInitialLoad,
     autosaveDelayMs: 2500
   });
-  const mobileStatusText = isSaving
-    ? "저장 중..."
-    : saveError
-      ? "저장 실패"
-      : isDirty
-        ? "저장되지 않은 변경"
-        : lastSavedAt
-          ? "저장 완료"
-          : "준비됨";
   useEffect(() => {
     if (!isSceneVisible || isTopEditorVisible) return;
     setPanels({ assets: false, properties: false });
@@ -648,7 +637,7 @@ export default function ProjectEditorPage() {
         lastSavedAt={lastSavedAt}
       />
 
-      <div className="relative h-screen w-full overflow-hidden px-2 pb-24 pt-20 sm:px-4 sm:pb-20 sm:pt-[4.5rem] xl:px-6">
+      <div className="relative h-screen w-full overflow-hidden px-2 pb-20 pt-12 sm:px-3 sm:pb-16 xl:px-4">
         <AnimatePresence mode="popLayout" initial={false}>
           {showLaunchState ? (
             <BuilderLaunchState
@@ -667,54 +656,26 @@ export default function ProjectEditorPage() {
               exit={{ opacity: 0 }}
               className="h-full w-full"
             >
-              <div className="flex h-full min-h-0 w-full gap-4 xl:gap-6">
+              <div className="flex h-full min-h-0 w-full gap-3 xl:gap-3">
                 {isTopEditorVisible ? (
-                  <StudioWorkspacePanel className="hidden h-full w-[368px] shrink-0 overflow-hidden xl:flex xl:flex-col">
+                  <StudioWorkspacePanel className="hidden h-full w-[332px] shrink-0 overflow-hidden !rounded-[24px] !border-black/10 !shadow-none xl:flex xl:flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto">
-                      {showAssetPanel ? (
-                        <BuilderLibraryShelf
-                          items={filteredLibraryCatalog}
-                          featuredItems={featuredLibraryCatalog}
-                          spotlightItem={librarySpotlightItem}
-                          categories={libraryCategories}
-                          query={libraryQuery}
-                          activeCategory={libraryCategory}
-                          catalogCount={libraryCatalog.length}
-                          assetCount={assets.length}
-                          hasActiveFilters={libraryHasActiveFilters}
-                          placedItemKeys={placedItemKeys}
-                          onQueryChange={setLibraryQuery}
-                          onCategoryChange={setLibraryCategory}
-                          onAddStarterSet={addStarterSetToScene}
-                          onAddItem={addCatalogItemToScene}
-                        />
-                      ) : (
-                        <BuilderInspectorPanel
-                          visible={true}
-                          layout="inline"
-                          className="h-full"
-                          transformMode={transformMode}
-                          transformSpace={transformSpace}
-                          wallMaterialIndex={wallMaterialIndex}
-                          floorMaterialIndex={floorMaterialIndex}
-                          lighting={lighting}
-                          wallsCount={walls.length}
-                          floorsCount={floors.length}
-                          assetsCount={assets.length}
-                          selectedAsset={selectedAsset}
-                          selectedAssetMeta={selectedCatalogItem}
-                          onTransformModeChange={setTransformMode}
-                          onTransformSpaceChange={setTransformSpace}
-                          onWallMaterialChange={applyWallFinish}
-                          onFloorMaterialChange={applyFloorFinish}
-                          onLightingChange={applyLightingSetting}
-                          onLightingCommit={commitLightingSetting}
-                          onApplyLightingPreset={applyLightingPreset}
-                          onUpdateAsset={updateAssetFromInspector}
-                          onRemoveAsset={removeAssetFromInspector}
-                          formatAssetLabel={formatAssetIdLabel}
-                        />
-                      )}
+                      <BuilderLibraryShelf
+                        items={filteredLibraryCatalog}
+                        featuredItems={featuredLibraryCatalog}
+                        spotlightItem={librarySpotlightItem}
+                        categories={libraryCategories}
+                        query={libraryQuery}
+                        activeCategory={libraryCategory}
+                        catalogCount={libraryCatalog.length}
+                        assetCount={assets.length}
+                        hasActiveFilters={libraryHasActiveFilters}
+                        placedItemKeys={placedItemKeys}
+                        onQueryChange={setLibraryQuery}
+                        onCategoryChange={setLibraryCategory}
+                        onAddStarterSet={addStarterSetToScene}
+                        onAddItem={addCatalogItemToScene}
+                      />
                     </div>
                   </StudioWorkspacePanel>
                 ) : null}
@@ -758,6 +719,31 @@ export default function ProjectEditorPage() {
                       <BuilderInspectorPanel
                         visible={panels.properties}
                         className="xl:hidden"
+                        transformMode={transformMode}
+                        transformSpace={transformSpace}
+                        wallMaterialIndex={wallMaterialIndex}
+                        floorMaterialIndex={floorMaterialIndex}
+                        lighting={lighting}
+                        wallsCount={walls.length}
+                        floorsCount={floors.length}
+                        assetsCount={assets.length}
+                        selectedAsset={selectedAsset}
+                        selectedAssetMeta={selectedCatalogItem}
+                        onTransformModeChange={setTransformMode}
+                        onTransformSpaceChange={setTransformSpace}
+                        onWallMaterialChange={applyWallFinish}
+                        onFloorMaterialChange={applyFloorFinish}
+                        onLightingChange={applyLightingSetting}
+                        onLightingCommit={commitLightingSetting}
+                        onApplyLightingPreset={applyLightingPreset}
+                        onUpdateAsset={updateAssetFromInspector}
+                        onRemoveAsset={removeAssetFromInspector}
+                        formatAssetLabel={formatAssetIdLabel}
+                      />
+
+                      <BuilderInspectorPanel
+                        visible={panels.properties}
+                        className="hidden xl:flex xl:w-[304px]"
                         transformMode={transformMode}
                         transformSpace={transformSpace}
                         wallMaterialIndex={wallMaterialIndex}
@@ -826,12 +812,18 @@ export default function ProjectEditorPage() {
       {isSceneVisible ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-3 sm:bottom-6">
           <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-black/10 bg-white/96 p-1.5 shadow-[0_16px_34px_rgba(16,18,22,0.14)]">
-            <div className="hidden items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#8a8177] sm:inline-flex">
-              <span>{mobileStatusText}</span>
-              <span className="h-3 w-px bg-black/10" />
-              <AssetCountBadge />
-            </div>
             <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
+              {isTopEditorVisible ? (
+                <button
+                  type="button"
+                  onClick={toggleAssetPanel}
+                  className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition sm:px-4 xl:hidden ${
+                    panels.assets ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
+                  }`}
+                >
+                  항목뷰
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => requestViewMode("top")}
@@ -859,25 +851,7 @@ export default function ProjectEditorPage() {
             {isTopEditorVisible ? (
               <>
                 <span className="mx-1 h-7 w-px bg-black/10" />
-                <div className="hidden items-center gap-1 rounded-full bg-[#f4f4f1] p-1 md:flex">
-                  <button
-                    type="button"
-                    onClick={toggleAssetPanel}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-                      showAssetPanel ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                    }`}
-                  >
-                    목록
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleInspectorPanel}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-                      panels.properties ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                    }`}
-                  >
-                    속성
-                  </button>
+                <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
                   <button
                     type="button"
                     onClick={() => setTransformMode("translate")}
@@ -899,48 +873,6 @@ export default function ProjectEditorPage() {
                 </div>
               </>
             ) : null}
-            <span className="mx-1 h-7 w-px bg-black/10" />
-            <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
-              <button
-                type="button"
-                onClick={undo}
-                disabled={!canUndo}
-                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4d453a] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">실행 취소</span>
-              </button>
-              <button
-                type="button"
-                onClick={redo}
-                disabled={!canRedo}
-                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4d453a] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
-              >
-                <Redo2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">다시 실행</span>
-              </button>
-            </div>
-            <span className="mx-1 hidden h-7 w-px bg-black/10 sm:block" />
-            <div className="hidden items-center gap-1 rounded-full bg-[#f4f4f1] p-1 sm:flex">
-              <button
-                type="button"
-                onClick={() => setTransformSpace("world")}
-                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-                  transformSpace === "world" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                }`}
-              >
-                월드
-              </button>
-              <button
-                type="button"
-                onClick={() => setTransformSpace("local")}
-                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-                  transformSpace === "local" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                }`}
-              >
-                로컬
-              </button>
-            </div>
           </div>
         </div>
       ) : null}
@@ -952,14 +884,5 @@ export default function ProjectEditorPage() {
         onClose={() => setIsShareOpen(false)}
       />
     </div>
-  );
-}
-
-function AssetCountBadge() {
-  const assetsCount = useAssetSelector((slice) => slice.assets.length);
-  return (
-    <span className="text-[10px] font-bold text-[#6a6258] uppercase tracking-[0.1em]">
-      제품: {assetsCount}
-    </span>
   );
 }
