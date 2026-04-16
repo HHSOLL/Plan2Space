@@ -5,16 +5,18 @@
 
 @layer base {
   :root {
-    --background: 60 20% 99%;
+    --background: 48 13% 95%;
     --foreground: 20 10% 10%;
-    --border: 40 5% 90%;
+    --border: 40 5% 88%;
     --p2s-accent: #171411;
-    --p2s-surface: #f7f4ef;
-    --p2s-viewport: #d2d2cf;
+    --p2s-surface: #f5f4f0;
+    --p2s-rail: #ffffff;
+    --p2s-rail-muted: #f3f3f0;
+    --p2s-viewport: #d4d4d0;
   }
 
   body {
-    @apply bg-[#fdfdfc] text-[#1a1a1a] antialiased;
+    @apply bg-[#f2f2ee] text-[#1a1a1a] antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 
@@ -39,17 +41,17 @@
   }
 
   .p2s-workspace-shell {
-    @apply grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)];
+    @apply grid gap-4 xl:grid-cols-[368px_minmax(0,1fr)];
   }
 
   .p2s-workspace-panel {
-    @apply rounded-[30px] border border-black/10 shadow-[0_22px_60px_rgba(68,52,34,0.12)] backdrop-blur;
-    background-color: rgba(255, 255, 255, 0.8);
+    @apply rounded-[24px] border border-black/10 shadow-[0_18px_44px_rgba(31,27,22,0.08)] backdrop-blur;
+    background-color: rgba(255, 255, 255, 0.94);
   }
 
   .p2s-workspace-viewport {
-    @apply rounded-[30px] border border-black/10 shadow-[0_24px_70px_rgba(68,52,34,0.12)] backdrop-blur;
-    background-color: rgba(255, 255, 255, 0.72);
+    @apply rounded-[28px] border border-black/10 shadow-[0_18px_54px_rgba(31,27,22,0.12)] backdrop-blur;
+    background-color: var(--p2s-viewport);
   }
 
   .glass {
@@ -91,10 +93,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(23, 20, 17, 0.12);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(23, 20, 17, 0.2);
 }

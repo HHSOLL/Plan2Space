@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Armchair, BedSingle, Grid2x2, Monitor, Shapes } from "lucide-react";
 import {
   normalizeShowcaseFilters,
   type ShowcaseDensityFilter,
@@ -9,12 +10,12 @@ import {
 
 export type ShowcaseSearchParams = Record<string, string | string[] | undefined>;
 
-export const ROOM_FILTER_OPTIONS: Array<{ id: ShowcaseRoomFilter; label: string }> = [
-  { id: "all", label: "전체" },
-  { id: "living", label: "거실" },
-  { id: "workspace", label: "작업실" },
-  { id: "bedroom", label: "침실" },
-  { id: "flex", label: "멀티룸" }
+export const ROOM_FILTER_OPTIONS: Array<{ id: ShowcaseRoomFilter; label: string; icon: typeof Grid2x2 }> = [
+  { id: "all", label: "전체", icon: Grid2x2 },
+  { id: "living", label: "거실", icon: Armchair },
+  { id: "workspace", label: "작업실", icon: Monitor },
+  { id: "bedroom", label: "침실", icon: BedSingle },
+  { id: "flex", label: "멀티룸", icon: Shapes }
 ];
 
 export const TONE_FILTER_OPTIONS: Array<{ id: ShowcaseToneFilter; label: string }> = [
@@ -71,34 +72,41 @@ export function parseTotalHint(rawValue: string | null) {
 }
 
 function ShowcaseFilterRow({
-  label,
   pathname,
   filters,
   field,
-  options
+  options,
+  prominent = false
 }: {
-  label: string;
   pathname: string;
   filters: ShowcaseFilters;
   field: "room" | "tone" | "density";
-  options: Array<{ id: string; label: string }>;
+  options: Array<{ id: string; label: string; icon?: typeof Grid2x2 }>;
+  prominent?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold tracking-[0.16em] text-[#8a8177]">
-      <span className="mr-2">{label}</span>
+    <div className="flex flex-wrap items-center gap-2">
       {options.map((option) => {
         const isActive = filters[field] === option.id;
+        const Icon = option.icon;
 
         return (
           <Link
             key={option.id}
             href={buildFilterHref(pathname, filters, { [field]: option.id })}
-            className={`shrink-0 rounded-md px-4 py-2.5 text-[11px] font-semibold transition ${
+            className={`shrink-0 rounded-full transition ${
+              prominent
+                ? "inline-flex items-center gap-2 px-4 py-3 text-[11px] font-semibold"
+                : "px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em]"
+            } ${
               isActive
                 ? "bg-[#171411] text-white"
-                : "border border-black/10 bg-white/88 text-[#625a51] hover:border-black/20 hover:bg-white"
+                : prominent
+                  ? "bg-[#f4f4f1] text-[#625a51] hover:bg-[#ecebe7]"
+                  : "border border-black/10 bg-white text-[#625a51] hover:border-black/20 hover:bg-[#f8f7f4]"
             }`}
           >
+            {Icon ? <Icon className="h-4 w-4" /> : null}
             {option.label}
           </Link>
         );
@@ -117,38 +125,36 @@ export function ShowcaseFilterRail({
   activeFilterCount: number;
 }) {
   return (
-    <div className="mt-7 space-y-3">
-      <ShowcaseFilterRow
-        label="공간 유형"
-        pathname={pathname}
-        filters={filters}
-        field="room"
-        options={ROOM_FILTER_OPTIONS}
-      />
-      <ShowcaseFilterRow
-        label="톤"
-        pathname={pathname}
-        filters={filters}
-        field="tone"
-        options={TONE_FILTER_OPTIONS}
-      />
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mt-5 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <ShowcaseFilterRow
-          label="밀도"
           pathname={pathname}
           filters={filters}
-          field="density"
-          options={DENSITY_FILTER_OPTIONS}
+          field="room"
+          options={ROOM_FILTER_OPTIONS}
+          prominent={true}
         />
         {activeFilterCount > 0 ? (
           <Link
             href={pathname}
-            className="ml-2 inline-flex items-center rounded-md px-2 py-2 text-[11px] font-semibold text-[#7b6f64] transition hover:text-[#171411]"
+            className="inline-flex rounded-full border border-black/10 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#7b6f64] transition hover:border-black/20 hover:bg-[#f8f7f4]"
           >
             필터 초기화
           </Link>
         ) : null}
       </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8a8177]">톤</span>
+        <ShowcaseFilterRow pathname={pathname} filters={filters} field="tone" options={TONE_FILTER_OPTIONS} />
+      </div>
+
+      <ShowcaseFilterRow
+        pathname={pathname}
+        filters={filters}
+        field="density"
+        options={DENSITY_FILTER_OPTIONS}
+      />
     </div>
   );
 }

@@ -95,23 +95,23 @@ export function BuilderInspectorPanel({
   const activeLightingPresetId = inferLightingPresetId(lighting);
   const containerClassName =
     layout === "inline"
-      ? `flex h-full min-h-0 flex-col ${className ?? ""}`.trim()
-      : `absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,340px)] flex-col rounded-[28px] border border-black/10 bg-[#f7f5f1]/95 shadow-[0_18px_44px_rgba(17,19,22,0.18)] backdrop-blur-xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
+      ? `flex h-full min-h-0 flex-col bg-white ${className ?? ""}`.trim()
+      : `absolute inset-y-3 right-3 z-[30] flex w-[min(86vw,340px)] flex-col rounded-[24px] border border-black/10 bg-white/96 shadow-[0_18px_44px_rgba(17,19,22,0.14)] backdrop-blur-xl transition-all duration-300 xl:inset-y-5 xl:right-5 ${
           visible ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[108%] opacity-0"
         } ${className ?? ""}`.trim();
 
   return (
     <aside className={containerClassName}>
-      <div className="border-b border-black/10 px-5 py-4">
-        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f665b]">
+      <div className="border-b border-black/10 px-4 py-4">
+        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#6f665b]">
           <SlidersHorizontal className="h-4 w-4" />
           속성 패널
         </div>
-        <p className="mt-3 text-sm text-[#5f574d]">
+        <p className="mt-2 text-sm leading-6 text-[#5f574d]">
           마감재와 선택한 제품의 배치/변형 값을 조정합니다.
         </p>
       </div>
-      <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">변형 모드</p>
           <div className="grid grid-cols-2 gap-2">
@@ -123,10 +123,10 @@ export function BuilderInspectorPanel({
                 key={mode.id}
                 type="button"
                 onClick={() => onTransformModeChange(mode.id as TransformMode)}
-                className={`rounded-2xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
+                className={`rounded-full px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
                   transformMode === mode.id
                     ? "bg-[#1c1a17] text-white"
-                    : "border border-black/10 bg-white text-[#4e473d] hover:border-black/20"
+                    : "border border-black/10 bg-[#f4f4f1] text-[#4e473d] hover:border-black/20 hover:bg-white"
                 }`}
               >
                 {mode.label}
@@ -146,10 +146,10 @@ export function BuilderInspectorPanel({
                 key={space.id}
                 type="button"
                 onClick={() => onTransformSpaceChange(space.id as TransformSpace)}
-                className={`rounded-2xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
+                className={`rounded-full px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
                   transformSpace === space.id
                     ? "bg-[#1c1a17] text-white"
-                    : "border border-black/10 bg-white text-[#4e473d] hover:border-black/20"
+                    : "border border-black/10 bg-[#f4f4f1] text-[#4e473d] hover:border-black/20 hover:bg-white"
                 }`}
               >
                 {space.label}
@@ -169,10 +169,10 @@ export function BuilderInspectorPanel({
                 key={finish.id}
                 type="button"
                 onClick={() => onWallMaterialChange(finish.id)}
-                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
                   wallMaterialIndex === finish.id
                     ? "bg-[#1c1a17] text-white"
-                    : "border border-black/10 bg-white text-[#5f584e] hover:border-black/20"
+                    : "border border-black/10 bg-[#f4f4f1] text-[#5f584e] hover:border-black/20 hover:bg-white"
                 }`}
               >
                 {finish.name}
@@ -189,10 +189,10 @@ export function BuilderInspectorPanel({
                 key={finish.id}
                 type="button"
                 onClick={() => onFloorMaterialChange(finish.id)}
-                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
                   floorMaterialIndex === finish.id
                     ? "bg-[#1c1a17] text-white"
-                    : "border border-black/10 bg-white text-[#5f584e] hover:border-black/20"
+                    : "border border-black/10 bg-[#f4f4f1] text-[#5f584e] hover:border-black/20 hover:bg-white"
                 }`}
               >
                 {finish.name}
@@ -201,7 +201,7 @@ export function BuilderInspectorPanel({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
+        <div className="space-y-3 rounded-[20px] border border-black/10 bg-[#faf9f7] p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">조명</p>
           <div className="grid gap-2">
             {LIGHTING_PRESETS.map((preset) => {
@@ -211,12 +211,12 @@ export function BuilderInspectorPanel({
                   key={preset.id}
                   type="button"
                   onClick={() => onApplyLightingPreset(preset.id)}
-                  className={`rounded-xl border px-3 py-2 text-left transition ${
-                    isActive
-                      ? "border-[#1c1a17] bg-[#1c1a17] text-white"
-                      : "border-black/10 bg-[#faf9f7] text-[#4e473d] hover:border-black/20"
-                  }`}
-                >
+                    className={`rounded-[16px] border px-3 py-2 text-left transition ${
+                      isActive
+                        ? "border-[#1c1a17] bg-[#1c1a17] text-white"
+                        : "border-black/10 bg-white text-[#4e473d] hover:border-black/20"
+                    }`}
+                  >
                   <div className="text-[10px] font-bold uppercase tracking-[0.16em]">{preset.label}</div>
                   <div className={`mt-1 text-[11px] leading-4 ${isActive ? "text-white/80" : "text-[#6f665a]"}`}>
                     {preset.description}
@@ -283,7 +283,7 @@ export function BuilderInspectorPanel({
           </label>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
+        <div className="space-y-3 rounded-[20px] border border-black/10 bg-[#faf9f7] p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">공간 요약</p>
           <div className="space-y-2 text-sm text-[#4f473d]">
             <div className="flex items-center justify-between">
@@ -301,7 +301,7 @@ export function BuilderInspectorPanel({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-black/10 bg-white p-4">
+        <div className="space-y-3 rounded-[20px] border border-black/10 bg-[#faf9f7] p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">선택 항목</p>
           {selectedAsset ? (
             <div className="space-y-4">
@@ -322,7 +322,7 @@ export function BuilderInspectorPanel({
                 <div className="mt-1 text-xs text-[#83796d]">{selectedAsset.id}</div>
               </div>
               {dimensionsLabel || productFinishColor || productFinishMaterial || productDetailNotes ? (
-                <div className="space-y-3 rounded-[18px] border border-black/10 bg-[#faf9f7] p-3">
+                <div className="space-y-3 rounded-[18px] border border-black/10 bg-white p-3">
                   <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
                     실제 규격
                   </div>

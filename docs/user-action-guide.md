@@ -68,8 +68,11 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 ## 3) 배포 전 체크리스트
 
 - 빌더/에디터/뷰어 공통 레이아웃이 유지되는지 확인
+- 에디터 상단 bar, 좌측 rail, 우측 zoom rail, 하단 pill toolbar가 레퍼런스 7번 shell로 노출되는지 확인
+- shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
 - 뷰어에 편집 affordance가 노출되지 않는지 확인
 - 갤러리/커뮤니티 카드가 `/shared/[token]` 읽기 전용 뷰어로 이동하는지 확인
+- 갤러리/커뮤니티 피드가 레퍼런스 8번 기준의 4열 카드 밀도와 상단 filter rail을 유지하는지 확인
 - 제품 클릭 시 정보 drawer가 열리고 최소 필드가 노출되는지 확인
   - 제품명
   - 카테고리
@@ -238,6 +241,27 @@ Updated:
 
 Removed/Deprecated:
 - 드래그 중에는 room bounds 보정이 없어도 괜찮다는 운영 가정.
+
+## 2026-04-16 변경 동기화 (Editor Reference Chrome Pass)
+Added:
+- editor QA에 상단 bar, slim catalog rail, right zoom rail, bottom pill toolbar, light share modal 확인 항목을 추가.
+
+Updated:
+- 배포 전 체크리스트의 editor shell 기대값을 레퍼런스 7번 이미지 기준으로 갱신.
+
+Removed/Deprecated:
+- editor share modal이 dark glass 테마를 유지한다는 기대값.
+
+## 2026-04-16 변경 동기화 (Shared Viewer + Furnished Feed Reference Pass)
+Added:
+- shared viewer QA에 상단 light bar, 우측 zoom rail, 하단 readonly status pill, hotspot drawer 상세 카드 확인 항목을 추가.
+- gallery/community QA에 레퍼런스 8번식 4열 카드 밀도와 상단 filter rail 확인 항목을 추가.
+
+Updated:
+- 공유/커뮤니티 회귀를 “링크 열림” 수준에서 “viewer chrome + hotspot detail + furnished feed density”까지 확장.
+
+Removed/Deprecated:
+- community featured/recent 분리 섹션과 shared viewer hero metric strip을 전제로 한 확인 포인트.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Operations)
 Added:

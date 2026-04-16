@@ -37,6 +37,7 @@
 - 스냅/배치/회전 정밀도 개선 및 뷰어 hotspot 신뢰도 강화
 - floor/surface 배치에 wall clearance + inter-asset separation + support re-clamp 기반 물리 솔버 적용
 - 상단뷰 에디터에 world/local transform space 토글과 live placement clamp 적용
+- 에디터 shell을 레퍼런스 7번 기준(top bar / slim catalog rail / grey viewport / bottom pill toolbar)으로 통일
 - Blender 알려진 슬롯 기준(`DeskWood`, `DeskMetal`, `StandWood`, `StandPad`, `LampBody`, `LampAccent`, `LampBulb`)의 slot-aware finish 매핑 적용
 - 오픈소스/공식문서/논문 기반 개선안은 `docs/research-roadmap.md`를 기준으로 추적
 
@@ -45,6 +46,8 @@
 
 진행:
 - publish -> shared viewer -> gallery/community 데이터 흐름 안정화
+- shared viewer shell을 editor read-only mirror(top bar / hotspot drawer / grey viewport / right zoom rail / bottom pill status)로 통일
+- gallery/community를 레퍼런스 8번 이미지 기준의 4열 furnished-space feed + URL 기반 filter rail로 통일
 - 공유 씬 성능 예산(초기 로드, draw call, texture budget) 모니터링
 - 활동성 지표(조회/반응) 수집 및 피드 랭킹 개선
 
@@ -104,6 +107,27 @@ Updated:
 
 Removed/Deprecated:
 - gizmo 배치 보정이 drag 종료 후 한 번만 일어난다는 전제.
+
+## 2026-04-16 변경 동기화 (Editor Reference Chrome Pass)
+Added:
+- P2 범위에 editor reference chrome 통일(top bar, slim catalog rail, right zoom rail, bottom pill toolbar, light share modal)을 명시.
+
+Updated:
+- 데스크테리어 편집 경험 목표를 “정밀 배치”에서 “정밀 배치 + 레퍼런스형 shell 일관성”까지 확장.
+
+Removed/Deprecated:
+- editor 상단/하단을 개별 floating card들로 유지하던 이전 shell.
+
+## 2026-04-16 변경 동기화 (Shared Viewer + Furnished Feed Reference Pass)
+Added:
+- P3 범위에 shared viewer read-only mirror shell과 hotspot drawer 중심 상세 정보 구조를 명시.
+- gallery/community의 레퍼런스 8번식 4열 furnished feed와 URL 기반 filter rail 유지 규칙을 명시.
+
+Updated:
+- 커뮤니티 공유/조회 경험 목표를 “데이터 흐름 안정화”에서 “데이터 흐름 안정화 + 레퍼런스형 viewer/feed chrome 일관성”까지 확장.
+
+Removed/Deprecated:
+- shared viewer hero metric strip과 community featured/recent 분리 카드 레이아웃.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

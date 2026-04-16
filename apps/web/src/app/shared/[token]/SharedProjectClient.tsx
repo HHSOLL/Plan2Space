@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Box, Link2, Play } from "lucide-react";
+import { Link2 } from "lucide-react";
 import { ProductHotspotDrawer } from "../../../components/viewer/ProductHotspotDrawer";
 import { ReadOnlyViewerViewport } from "../../../components/viewer/ReadOnlyViewerViewport";
-import { StudioMetricGrid } from "../../../components/editor/StudioMetricGrid";
-import { StudioModeToggle } from "../../../components/editor/StudioModeToggle";
 import { StudioWorkspaceShell } from "../../../components/layout/StudioWorkspaceShell";
 import { useAssetCatalog } from "../../../components/editor/useAssetCatalog";
 import { getScaleGateMessage } from "../../../lib/ai/scaleInfo";
@@ -273,10 +271,6 @@ export function SharedProjectClient({
     [assetHotspots, selectedAssetId]
   );
   const selectedHotspotLabel = selectedHotspot?.name ?? null;
-  const viewerModes = [
-    { id: "top", label: "상단뷰", icon: Box },
-    { id: "walk", label: "워크뷰", icon: Play, enabled: canEnterWalk }
-  ];
 
   if (isVersionMappingFailed) {
     return (
@@ -310,94 +304,78 @@ export function SharedProjectClient({
   }
 
   return (
-    <div className="min-h-screen bg-[#ece8e1] text-[#1f1b16]">
-      <div className="mx-auto max-w-[1680px] px-4 pb-10 pt-6 sm:px-8 sm:pt-8">
-        <div className="rounded-[30px] border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(247,243,236,0.86))] px-5 py-5 shadow-[0_18px_42px_rgba(28,22,16,0.08)] backdrop-blur-xl sm:px-7 sm:py-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[#7e7367]">
+    <div className="min-h-screen bg-[#efefec] text-[#1f1b16]">
+      <div className="sticky top-0 z-[100] border-b border-black/10 bg-white/95 backdrop-blur-xl">
+        <div className="flex min-h-16 items-center gap-3 px-3 py-3 sm:px-5 xl:px-8">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a8177]">
               <Link2 className="h-4 w-4" />
               공유 장면
             </div>
-            <h1 className="mt-4 text-4xl font-light tracking-tight text-[#18130f] sm:text-5xl">{projectName}</h1>
-            {projectDescription ? (
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-[#5f564b] sm:text-[15px]">{projectDescription}</p>
-            ) : null}
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7e7367]">
-                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">{shareCapabilities.accessLabel}</span>
-                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">
-                  제품 {scenePayload.assets.length}개
-                </span>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-sm font-semibold text-[#171411] sm:text-[15px]">{projectName}</h1>
+              <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                {shareCapabilities.accessLabel}
+              </span>
+              <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                제품 {scenePayload.assets.length}개
+              </span>
               {pinnedVersionNumber ? (
-                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">버전 {pinnedVersionNumber}</span>
-              ) : null}
-              {expiresAt ? (
-                <span className="rounded-full border border-black/10 bg-white px-3 py-1.5">
-                  만료 {new Date(expiresAt).toLocaleDateString()}
+                <span className="rounded-full border border-black/10 bg-[#f4f4f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                  버전 {pinnedVersionNumber}
                 </span>
               ) : null}
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 lg:min-w-[420px] lg:items-end">
-            <div className="flex flex-wrap items-center gap-3">
-              {shareCapabilities.showPreviewNotice ? (
-                <div className="rounded-full border border-amber-500/30 bg-amber-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5a25]">
-                  읽기 전용 링크
-                </div>
-              ) : null}
-              <StudioModeToggle
-                value={viewMode}
-                modes={viewerModes}
-                onChange={(modeId) => setViewMode(modeId as "top" | "walk")}
-                variant="solid"
-                className="!rounded-full !border !border-black/10 !bg-white/95 !p-1 !shadow-[0_12px_30px_rgba(20,22,24,0.14)] [&>button]:!rounded-full [&>button]:!px-4 [&>button]:!py-2.5 [&>button]:!text-[#5a5147] [&>button:hover]:!bg-[#f2eee7] [&>button:hover]:!text-[#201b16]"
-              />
-            </div>
-            <StudioMetricGrid
-              items={[
-                {
-                  label: "스냅샷",
-                  value: pinnedVersionNumber ? `고정 v${pinnedVersionNumber}` : "공유 장면"
-                },
-                {
-                  label: "배치 제품",
-                  value: `${scenePayload.assets.length}개`
-                },
-                {
-                  label: "장면",
-                  value:
-                    scenePayload.rooms.length > 0
-                      ? `${scenePayload.rooms.length}개 구역`
-                      : `${scenePayload.floors.length}개 바닥 면`
-                },
-                {
-                  label: "권한",
-                  value: shareCapabilities.showPreviewNotice ? "읽기 전용" : "공유 뷰어"
-                }
-              ]}
-              gridClassName="grid w-full gap-3 sm:grid-cols-2 lg:min-w-[420px]"
-              cardClassName="rounded-[18px] border border-black/10 bg-white/80 px-4 py-3"
-              labelClassName="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8a7c70]"
-              valueClassName="mt-2 text-sm font-semibold text-[#1f1b16]"
-            />
-          </div>
+          <div className="flex shrink-0 items-center gap-2 rounded-full border border-black/10 bg-[#f4f4f1] p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("top")}
+              className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                viewMode === "top"
+                  ? "bg-white text-[#171411] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
+                  : "text-[#625a51] hover:bg-white"
+              }`}
+            >
+              상단뷰
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("walk")}
+              disabled={!canEnterWalk}
+              className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:px-4 ${
+                viewMode === "walk"
+                  ? "bg-white text-[#171411] shadow-[0_8px_20px_rgba(16,18,22,0.08)]"
+                  : "text-[#625a51] hover:bg-white disabled:cursor-not-allowed disabled:text-[#b0a79c] disabled:hover:bg-transparent"
+              }`}
+            >
+              워크뷰
+            </button>
           </div>
         </div>
+      </div>
 
-        <StudioWorkspaceShell className="mt-6">
-          <ReadOnlyViewerViewport
-            viewMode={viewMode === "walk" ? "walk" : "top"}
-            selectedLabel={selectedHotspotLabel}
-            showReadOnlyNotice={shareCapabilities.showPreviewNotice}
-          />
+      <div className="px-2 pb-10 pt-4 sm:px-4 xl:px-6">
+        <div className="mb-4 flex flex-wrap items-center gap-2 px-1">
+          {projectDescription ? (
+            <p className="max-w-3xl text-sm leading-6 text-[#625a51]">{projectDescription}</p>
+          ) : null}
+          {expiresAt ? (
+            <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+              만료 {new Date(expiresAt).toLocaleDateString()}
+            </span>
+          ) : null}
+          {shareCapabilities.showPreviewNotice ? (
+            <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+              읽기 전용 링크
+            </span>
+          ) : null}
+        </div>
 
-          <ProductHotspotDrawer
-            hotspots={assetHotspots}
-            selectedHotspotId={selectedAssetId}
-            onSelectHotspot={setSelectedAssetId}
-          >
-            <div className="rounded-[18px] border border-black/10 bg-white p-4">
+        <StudioWorkspaceShell>
+          <ProductHotspotDrawer hotspots={assetHotspots} selectedHotspotId={selectedAssetId} onSelectHotspot={setSelectedAssetId}>
+            <div className="rounded-[20px] border border-black/10 bg-white p-4">
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7e7367]">배치 요약</div>
                 {summaryItemsForRail && summaryItemsForRail.length > 0 ? (
                   <div className="mt-3 space-y-2">
@@ -468,8 +446,14 @@ export function SharedProjectClient({
                     ))}
                   </div>
                 ) : null}
-              </div>
+            </div>
           </ProductHotspotDrawer>
+
+          <ReadOnlyViewerViewport
+            viewMode={viewMode === "walk" ? "walk" : "top"}
+            selectedLabel={selectedHotspotLabel}
+            showReadOnlyNotice={shareCapabilities.showPreviewNotice}
+          />
         </StudioWorkspaceShell>
       </div>
     </div>
