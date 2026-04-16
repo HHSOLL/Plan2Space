@@ -1,9 +1,10 @@
-import type { BuilderDimensionControl, BuilderTemplateId } from "../../../lib/builder/templates";
+import type { Vector2 } from "../../../lib/stores/useSceneStore";
+import type { BuilderDimensionControl } from "../../../lib/builder/templates";
 
 type BuilderDimensionsStepProps = {
   unit: "ft" | "cm";
-  templateId: BuilderTemplateId;
   controls: BuilderDimensionControl[];
+  outline: Vector2[];
   onUnitChange: (nextUnit: "ft" | "cm") => void;
   onControlChange: (id: BuilderDimensionControl["id"], value: number) => void;
 };
@@ -45,30 +46,44 @@ function DimensionControl({
   );
 }
 
-function ShapeGuide({ templateId }: { templateId: BuilderTemplateId }) {
-  const fill = "#ffffff";
-  const stroke = "#171411";
-  const common = {
-    fill,
-    stroke,
-    strokeWidth: 4,
-    strokeLinejoin: "round" as const
-  };
+function buildGuidePath(outline: Vector2[]) {
+  const fallback: Vector2[] = [
+    [0, 0],
+    [6.4, 0],
+    [6.4, 4.8],
+    [0, 4.8]
+  ];
+  const source = outline.length >= 3 ? outline : fallback;
+  const minX = Math.min(...source.map(([x]) => x));
+  const maxX = Math.max(...source.map(([x]) => x));
+  const minY = Math.min(...source.map(([, y]) => y));
+  const maxY = Math.max(...source.map(([, y]) => y));
+  const width = Math.max(maxX - minX, 0.01);
+  const height = Math.max(maxY - minY, 0.01);
+  const viewportWidth = 100;
+  const viewportHeight = 74;
+  const scale = Math.min(viewportWidth / width, viewportHeight / height);
+  const offsetX = (180 - width * scale) / 2;
+  const offsetY = (140 - height * scale) / 2;
 
-  const shapes: Record<BuilderTemplateId, JSX.Element> = {
-    "rect-studio": <rect x="40" y="32" width="100" height="74" {...common} />,
-    "l-shape": <path d="M40 106V56H92V32H140V106Z" {...common} />,
-    "cut-shape": <path d="M40 106V32H140V76L108 106Z" {...common} />,
-    "t-shape": <path d="M40 32H140V62H104V106H76V62H40Z" {...common} />,
-    "u-shape": <path d="M40 32H140V106H108V70H72V106H40Z" {...common} />,
-    "slanted-shape": <path d="M40 50L58 32H122L140 50V106H40Z" {...common} />
-  };
+  const points = source.map(([x, y]) => [offsetX + (x - minX) * scale, offsetY + (maxY - y) * scale] as const);
+  const path = points
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(" ")
+    .concat(" Z");
 
+  return { path, points };
+}
+
+function ShapeGuide({ outline }: { outline: Vector2[] }) {
+  const guide = buildGuidePath(outline);
   return (
     <div className="flex justify-center pt-2">
       <svg viewBox="0 0 180 140" className="h-[120px] w-[150px]" aria-hidden>
-        {shapes[templateId]}
-        <circle cx="40" cy="32" r="7" fill="#ffffff" stroke="#171411" strokeWidth="2" />
+        <path d={guide.path} fill="#ffffff" stroke="#171411" strokeWidth="4" strokeLinejoin="round" />
+        {guide.points.map(([x, y]) => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="6" fill="#ffffff" stroke="#171411" strokeWidth="2" />
+        ))}
       </svg>
     </div>
   );
@@ -76,14 +91,14 @@ function ShapeGuide({ templateId }: { templateId: BuilderTemplateId }) {
 
 export function BuilderDimensionsStep({
   unit,
-  templateId,
   controls,
+  outline,
   onUnitChange,
   onControlChange
 }: BuilderDimensionsStepProps) {
   return (
     <div className="space-y-7">
-      <ShapeGuide templateId={templateId} />
+      <ShapeGuide outline={outline} />
 
       <div className="space-y-4">
         {controls.map((control) => (

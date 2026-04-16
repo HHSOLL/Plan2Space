@@ -23,12 +23,20 @@ export function PremiumNavbar() {
   const isEditor = pathname?.startsWith("/project/");
   const isSharedViewer = pathname?.startsWith("/shared/");
   const navItems = [
-    { name: "홈", href: "/" },
-    { name: "공간 선택", href: "/studio/select?mode=empty" },
-    { name: "공간 만들기", action: "builder" as const },
-    { name: "내 공간", action: "projects" as const },
-    { name: "갤러리", action: "gallery" as const },
-    { name: "커뮤니티", action: "community" as const }
+    { name: "홈", href: "/", match: (path: string | null) => path === "/" },
+    {
+      name: "공간 선택",
+      href: "/studio/select?mode=empty",
+      match: (path: string | null) => Boolean(path?.startsWith("/studio/select"))
+    },
+    {
+      name: "공간 만들기",
+      action: "builder" as const,
+      match: (path: string | null) => Boolean(path?.startsWith("/studio/builder"))
+    },
+    { name: "내 공간", action: "projects" as const, match: (path: string | null) => path === "/studio" },
+    { name: "갤러리", action: "gallery" as const, match: (path: string | null) => path === "/gallery" },
+    { name: "커뮤니티", action: "community" as const, match: (path: string | null) => path === "/community" }
   ] as const;
 
   if (isEditor || isSharedViewer) {
@@ -66,8 +74,8 @@ export function PremiumNavbar() {
   return (
     <>
       <nav className="fixed left-0 right-0 top-0 z-[100] border-b border-[#e8e3dc] bg-white/88 backdrop-blur-md">
-        <div className="mx-auto flex h-12 max-w-[1540px] items-center justify-between px-4 sm:px-5 lg:px-6">
-          <div className="flex items-center gap-5">
+        <div className="mx-auto flex h-12 max-w-[1540px] items-center justify-between gap-4 px-4 sm:px-5 lg:px-6">
+          <div className="flex items-center">
             <motion.button
               type="button"
               initial={{ opacity: 0 }}
@@ -77,10 +85,12 @@ export function PremiumNavbar() {
             >
               Plan2Space
             </motion.button>
+          </div>
 
-            <div className="hidden items-center gap-4 text-[10px] font-semibold tracking-[0.01em] text-[#6d655c] md:flex">
+          <div className="hidden min-w-0 flex-1 items-center justify-end gap-6 md:flex">
+            <div className="flex items-center gap-4 text-[10px] font-semibold tracking-[0.01em] text-[#6d655c]">
               {navItems.map((item) => {
-                const isActive = "href" in item ? pathname === item.href : false;
+                const isActive = item.match(pathname);
                 return (
                   <button
                     key={item.name}
@@ -93,14 +103,15 @@ export function PremiumNavbar() {
                 );
               })}
             </div>
-          </div>
-
-          <div className="hidden items-center gap-3 md:flex">
             {isAuthenticated ? (
               <>
-                <span className="max-w-[180px] truncate text-[11px] text-[#8b8277]">
+                <button
+                  type="button"
+                  onClick={() => router.push("/my")}
+                  className="max-w-[180px] truncate text-[11px] text-[#8b8277] transition hover:text-black"
+                >
                   {user?.name ?? user?.email ?? "내 프로젝트"}
-                </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => void logout()}
@@ -148,9 +159,16 @@ export function PremiumNavbar() {
 
             {isAuthenticated ? (
               <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="truncate text-[10px] text-[#777777]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    router.push("/my");
+                  }}
+                  className="truncate text-[10px] text-[#777777]"
+                >
                   {user?.name ?? user?.email ?? "내 프로젝트"}
-                </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {

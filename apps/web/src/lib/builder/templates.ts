@@ -250,8 +250,8 @@ function buildSegments(input: BuilderSceneInput): BuilderWallSegment[] {
         { key: "west", start: [0, depth], end: [0, 0] }
       ];
     case "t-shape": {
-      const stemWidth = clamp(input.nookWidth ?? width * 0.4, 1.8, Math.max(1.8, width - 1.2));
-      const stemDepth = clamp(input.nookDepth ?? depth * 0.38, 1.4, Math.max(1.4, depth - 1.1));
+      const stemWidth = normalizedInput.nookWidth ?? clamp(width * 0.4, 1.8, Math.max(1.8, width - 1.2));
+      const stemDepth = normalizedInput.nookDepth ?? clamp(depth * 0.38, 1.4, Math.max(1.4, depth - 1.1));
       const halfStem = stemWidth / 2;
       const center = width / 2;
       return [
@@ -266,8 +266,8 @@ function buildSegments(input: BuilderSceneInput): BuilderWallSegment[] {
       ];
     }
     case "u-shape": {
-      const notchWidth = clamp(input.nookWidth ?? width * 0.3, 1.4, Math.max(1.4, width - 1.8));
-      const notchDepth = clamp(input.nookDepth ?? depth * 0.28, 0.9, Math.max(0.9, depth - 1.5));
+      const notchWidth = normalizedInput.nookWidth ?? clamp(width * 0.3, 1.4, Math.max(1.4, width - 1.8));
+      const notchDepth = normalizedInput.nookDepth ?? clamp(depth * 0.28, 0.9, Math.max(0.9, depth - 1.5));
       const halfNotch = notchWidth / 2;
       const center = width / 2;
       return [
@@ -282,7 +282,7 @@ function buildSegments(input: BuilderSceneInput): BuilderWallSegment[] {
       ];
     }
     case "slanted-shape": {
-      const bevel = clamp(input.nookDepth ?? Math.min(width, depth) * 0.18, 0.6, Math.min(width, depth) * 0.35);
+      const bevel = normalizedInput.nookDepth ?? clamp(Math.min(width, depth) * 0.18, 0.6, Math.min(width, depth) * 0.35);
       return [
         { key: "south", start: [0, 0], end: [width, 0] },
         { key: "east", start: [width, 0], end: [width, depth - bevel] },

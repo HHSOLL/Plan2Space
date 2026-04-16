@@ -753,9 +753,9 @@ function StudioBuilderPageContent() {
   };
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-[#f3f2ef] px-3 pb-3 pt-14 text-[#171411] sm:px-4 sm:pt-14 lg:px-6">
+    <div className="h-[100dvh] overflow-hidden bg-[#f3f2ef] px-3 pb-3 pt-3 text-[#171411] sm:px-4 md:pt-4 lg:px-6">
       <div className="mx-auto h-full max-w-[1540px]">
-        <StudioWorkspaceShell className="h-full min-h-0 gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] lg:grid-cols-[minmax(340px,34vw)_minmax(0,1fr)]">
+        <StudioWorkspaceShell className="h-full min-h-0 gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] md:grid-cols-[minmax(340px,34vw)_minmax(0,1fr)]">
           <StudioWorkspacePanel className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] rounded-none border-0 border-b border-black/10 bg-white shadow-none lg:border-b-0 lg:border-r lg:border-black/10">
             <div className="min-h-0 overflow-y-auto p-6 sm:p-8 xl:p-9">
               <BuilderStepHeader activeStep={activeStep} />
@@ -772,8 +772,8 @@ function StudioBuilderPageContent() {
                 {stepIndex === 1 ? (
                   <BuilderDimensionsStep
                     unit={dimensionUnit}
-                    templateId={templateId}
                     controls={dimensionControls}
+                    outline={scene.floors[0]?.outline ?? []}
                     onUnitChange={setDimensionUnit}
                     onControlChange={handleDimensionControlChange}
                   />

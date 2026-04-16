@@ -20,10 +20,10 @@ function getSnapTolerance(walls: Wall[]) {
   const thicknesses = walls
     .map((wall) => wall.thickness)
     .filter((value) => Number.isFinite(value) && value > 0);
-  if (thicknesses.length === 0) return 2;
+  if (thicknesses.length === 0) return 0.02;
   const sorted = [...thicknesses].sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)] ?? 2;
-  return Math.max(2, Math.min(8, median * 0.4));
+  return Math.max(0.01, Math.min(0.08, median * 0.35));
 }
 
 function snapValue(value: number, tolerance: number) {

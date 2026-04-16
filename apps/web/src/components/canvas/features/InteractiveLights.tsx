@@ -50,11 +50,15 @@ function LightFixture({ spec }: { spec: LightSpec }) {
 
   return (
     <group ref={rootRef} position={spec.position}>
-      <mesh ref={bulbRef} castShadow={false} receiveShadow={false}>
-        <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial color="#fff5d6" emissive="#fff1c2" emissiveIntensity={1.2} roughness={0.25} />
+      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.11, 0.11, 0.03, 24]} />
+        <meshStandardMaterial color="#f1eee7" roughness={0.82} />
       </mesh>
-      <pointLight ref={lightRef} intensity={spec.intensity} distance={6} decay={2.2} color="#fff1c2" />
+      <mesh ref={bulbRef} position={[0, 0.025, 0]} castShadow={false} receiveShadow={false}>
+        <cylinderGeometry args={[0.06, 0.06, 0.02, 24]} />
+        <meshStandardMaterial color="#fff5d6" emissive="#fff1c2" emissiveIntensity={0.95} roughness={0.18} />
+      </mesh>
+      <pointLight ref={lightRef} intensity={spec.intensity} distance={5.5} decay={2.3} color="#fff1c2" />
     </group>
   );
 }
@@ -92,15 +96,15 @@ export default function InteractiveLights() {
     const depth = Math.max(2, bounds.maxZ - bounds.minZ);
     const height = 2.35;
     const specs: LightSpec[] = [
-      { id: "light-center", position: [centerX, height, centerZ], intensity: 1.1 }
+      { id: "light-center", position: [centerX, height, centerZ], intensity: 0.78 }
     ];
     if (width > 5) {
-      specs.push({ id: "light-east", position: [centerX + width * 0.2, height, centerZ], intensity: 0.9 });
-      specs.push({ id: "light-west", position: [centerX - width * 0.2, height, centerZ], intensity: 0.9 });
+      specs.push({ id: "light-east", position: [centerX + width * 0.2, height, centerZ], intensity: 0.66 });
+      specs.push({ id: "light-west", position: [centerX - width * 0.2, height, centerZ], intensity: 0.66 });
     }
     if (depth > 5) {
-      specs.push({ id: "light-north", position: [centerX, height, centerZ - depth * 0.2], intensity: 0.8 });
-      specs.push({ id: "light-south", position: [centerX, height, centerZ + depth * 0.2], intensity: 0.8 });
+      specs.push({ id: "light-north", position: [centerX, height, centerZ - depth * 0.2], intensity: 0.58 });
+      specs.push({ id: "light-south", position: [centerX, height, centerZ + depth * 0.2], intensity: 0.58 });
     }
     return specs;
   }, [scale, walls]);
