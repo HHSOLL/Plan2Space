@@ -55,10 +55,10 @@ export default function StudioPage() {
               </button>
               <button
                 type="button"
-                onClick={() => router.push("/studio/builder?intent=template")}
+                onClick={() => router.push("/studio/select?mode=empty")}
                 className="inline-flex items-center gap-3 rounded-full border border-white/20 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#f7efe5] transition hover:border-white/50 hover:bg-white/5"
               >
-                템플릿 선택
+                공간 선택
               </button>
               <button
                 type="button"
@@ -127,10 +127,10 @@ export default function StudioPage() {
             </button>
             <button
               type="button"
-              onClick={() => router.push("/studio/builder?intent=template")}
+              onClick={() => router.push("/studio/select?mode=empty")}
               className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-white/80 px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2f261d] transition hover:border-black/35 hover:bg-white"
             >
-              템플릿으로 시작
+              공간 선택
             </button>
           </motion.div>
         )}

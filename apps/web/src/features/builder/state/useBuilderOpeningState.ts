@@ -33,6 +33,7 @@ export function useBuilderOpeningState({
 
   const openingDraftsRef = useRef<Opening[]>([]);
   const previousWallSignatureRef = useRef<string | null>(null);
+  const previousStyleSignatureRef = useRef<string | null>(null);
   const previousWallsRef = useRef<Wall[]>(walls);
 
   const wallSignature = useMemo(
@@ -50,23 +51,33 @@ export function useBuilderOpeningState({
     openingDraftsRef.current = openingDrafts;
   }, [openingDrafts]);
 
+  const styleSignature = `${doorStyle}:${windowStyle}:${addSecondaryWindow ? "1" : "0"}`;
+
   useEffect(() => {
     const wallSignatureChanged = previousWallSignatureRef.current !== wallSignature;
-    if (!wallSignatureChanged) return;
+    const styleSignatureChanged = previousStyleSignatureRef.current !== styleSignature;
+    if (!wallSignatureChanged && !styleSignatureChanged) return;
+
     previousWallSignatureRef.current = wallSignature;
+    previousStyleSignatureRef.current = styleSignature;
     const previousWalls = previousWallsRef.current;
     const hasDrafts = openingDraftsRef.current.length > 0;
 
     const sourceOpenings =
-      hasDrafts && previousWalls.length > 0
+      wallSignatureChanged && hasDrafts && previousWalls.length > 0
         ? remapOpeningsToWalls(openingDraftsRef.current, previousWalls, walls)
-        : tuneOpenings(templateOpenings, walls, {
-            doorStyle,
-            windowStyle,
-            addSecondaryWindow
-          });
+        : hasDrafts
+          ? openingDraftsRef.current
+          : templateOpenings;
 
-    const nextDrafts = normalizeOpenings(sourceOpenings, walls);
+    const nextDrafts = normalizeOpenings(
+      tuneOpenings(sourceOpenings, walls, {
+        doorStyle,
+        windowStyle,
+        addSecondaryWindow
+      }),
+      walls
+    );
 
     setOpeningDrafts(nextDrafts);
     setSelectedOpeningId((current) =>
@@ -79,7 +90,7 @@ export function useBuilderOpeningState({
       return nextDrafts[0]?.wallId ?? walls[0]?.id ?? null;
     });
     previousWallsRef.current = walls;
-  }, [addSecondaryWindow, doorStyle, templateOpenings, wallSignature, walls, windowStyle]);
+  }, [addSecondaryWindow, doorStyle, styleSignature, templateOpenings, wallSignature, walls, windowStyle]);
 
   const openings = useMemo(() => normalizeOpenings(openingDrafts, walls), [openingDrafts, walls]);
   const selectedOpening = useMemo(
@@ -192,6 +203,15 @@ export function useBuilderOpeningState({
     [doorStyle, openings, selectedWallId, walls, windowStyle]
   );
 
+  const replaceOpenings = useCallback(
+    (nextOpenings: Opening[]) => {
+      setOpeningDrafts(normalizeOpenings(nextOpenings, walls));
+      setSelectedOpeningId(nextOpenings[0]?.id ?? null);
+      setSelectedWallId(nextOpenings[0]?.wallId ?? walls[0]?.id ?? null);
+    },
+    [walls]
+  );
+
   return {
     openings,
     selectedOpeningId,
@@ -204,6 +224,7 @@ export function useBuilderOpeningState({
     setOpeningPatch,
     setEntranceOpening,
     deleteOpening,
-    addOpening
+    addOpening,
+    replaceOpenings
   };
 }

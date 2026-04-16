@@ -1,13 +1,15 @@
 # Plan2Space
 
-Plan2Space는 **빈 방을 만들고, 가구를 배치해 편집한 뒤, 발행하고, 동일한 읽기 전용 3D 뷰어로 공유하는 공간 우선 인테리어 제품**입니다.
+Plan2Space는 **홈에서 빠르게 방을 고르고 만들고, 데스크테리어를 편집한 뒤, 발행하고, 동일한 읽기 전용 3D 뷰어로 공유하는 공간 우선 인테리어 제품**입니다.
 
 ## 핵심 사용자 흐름
 
-1. `/studio/builder`에서 방 모양/치수/문창/스타일 설정
-2. `/project/[id]` 에디터에서 가구 배치, 이동/회전, 저장
-3. 공유 모달에서 링크 발행 및 갤러리 공개
-4. `/shared/[token]`, `/gallery`, `/community`에서 동일한 읽기 전용 뷰어로 확인
+1. `/`에서 `공간 선택` 또는 `공간 만들기` 진입
+2. `/studio/select`에서 빈 공간/가구 배치 템플릿 선택 또는 `/studio/builder?intent=custom`으로 맞춤 빌더 진입
+3. `/studio/builder`에서 방 모양/치수/문창/스타일 설정
+4. `/project/[id]` 에디터에서 가구 배치, 이동/회전, 저장
+5. 공유 모달에서 링크 발행 및 갤러리 공개
+6. `/shared/[token]`, `/gallery`, `/community`에서 동일한 읽기 전용 3D 뷰어로 확인
 
 ## 빠른 시작
 
@@ -64,6 +66,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 
 - `docs/master-guide.md`
 - `docs/implementation-plan.md`
+- `docs/file-role-index.md`
 - `docs/performance-budget.md`
 - `docs/3d-visual-engine.md`
 - `docs/user-action-guide.md`

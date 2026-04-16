@@ -6,10 +6,14 @@
 
 - `apps/web/src/app/page.tsx`
   - 랜딩
+- `apps/web/src/app/studio/select/page.tsx`
+  - 공간 템플릿 선택
 - `apps/web/src/app/studio/page.tsx`
   - 스튜디오 허브
 - `apps/web/src/app/studio/builder/page.tsx`
   - 룸 빌더 4단계
+- `apps/web/src/app/studio/create/page.tsx`
+  - 맞춤 빌더 진입 alias
 - `apps/web/src/app/(editor)/project/[id]/page.tsx`
   - 에디터
 - `apps/web/src/app/shared/[token]/page.tsx`

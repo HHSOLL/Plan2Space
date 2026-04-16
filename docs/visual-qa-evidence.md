@@ -13,22 +13,22 @@
 
 ## 필수 캡처 12장
 
-1. `/studio/create`: 빌더 셸 route-parity (step rail + preview)
-2. `/studio/builder` step 1: template 선택 + 우측 preview dominance
-3. `/studio/builder` step 3: door/window authoring + wall target chips
-4. `/studio/builder` step 4: finish swatches + summary + primary CTA
-5. `/project/[id]` top view: 상단 chrome + 중심 viewport + 하단 view bar
-6. `/project/[id]` immersive preview: 탑뷰와 구분되는 몰입형 시점
-7. `/project/[id]` 공유 모달: permanent/view-only/publish 흐름
-8. `/shared/[token]` top view: 읽기 전용 헤더/메트릭/inspection rail
-9. `/shared/[token]` viewer immersive shot: hotspot 선택 ↔ 상품 패널 연동
-10. `/community`: featured + collection pulse + pinned feed 구조
-11. `/gallery`: filter chips + 안정적인 카드 그리드/카운트
+1. `/`: 시작하기 화면의 2-way 진입 카드
+2. `/studio/select`: 빈 공간 또는 가구 배치 템플릿 그리드
+3. `/studio/builder` step 1: 고정 split shell + 좌측 shape 선택 + 우측 preview
+4. `/studio/builder` step 2: top-view 치수 오버레이
+5. `/studio/builder` step 3: door/window 스타일 카탈로그 + 선택 상태
+6. `/studio/builder` step 4: finish swatches + 최종 CTA
+7. `/project/[id]` top view: 상단 chrome + 중심 viewport + 하단 view bar
+8. `/project/[id]` immersive preview: 탑뷰와 구분되는 몰입형 시점
+9. `/project/[id]` 공유 모달: permanent/view-only/publish 흐름
+10. `/shared/[token]` top view: 읽기 전용 헤더/메트릭/inspection rail
+11. `/community` 또는 `/gallery`: 피드/카드 구조와 탐색 rail
 12. `/shared/[token-expired]`: branded 만료 링크 복구 상태
 
 ## Pass 기준
 
-- 빌더: left panel + right preview 구성에서 정보 밀도/가독성 유지
+- 빌더: 고정 split shell, step chip/summary 카드 없이 레퍼런스 밀도 유지
 - 에디터: 캔버스 우선 구조, chrome은 보조 역할
 - 뷰어: 편집 도구 느낌 없이 명확한 읽기 전용 프레젠테이션
 - 커뮤니티/갤러리: 단순 카드 나열이 아니라 큐레이션/탐색 구조 명확

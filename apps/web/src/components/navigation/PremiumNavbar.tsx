@@ -22,8 +22,9 @@ export function PremiumNavbar() {
 
     const isEditor = pathname?.startsWith("/project/");
     const isHome = pathname === "/";
+    const isStartFlow = pathname?.startsWith("/studio/select") || pathname?.startsWith("/studio/builder");
 
-    if (isEditor) {
+    if (isEditor || isHome || isStartFlow) {
         return null;
     }
 
@@ -31,14 +32,14 @@ export function PremiumNavbar() {
         setIsMobileMenuOpen(false);
         const requiresAuth = action === 'builder' || action === 'projects';
         if (!isAuthenticated && requiresAuth) {
-            setAuthNextPath(action === 'builder' ? "/studio/builder" : "/studio");
+            setAuthNextPath(action === 'builder' ? "/studio/builder?intent=custom" : "/studio");
             setIsAuthOpen(true);
             return;
         }
 
         switch (action) {
             case 'builder':
-                router.push("/studio/builder");
+                router.push("/studio/builder?intent=custom");
                 break;
             case 'projects':
                 router.push("/studio");
@@ -124,7 +125,7 @@ export function PremiumNavbar() {
                         ) : !isHome ? (
                             <button
                                 onClick={() => {
-                                    setAuthNextPath("/studio/builder");
+                                    setAuthNextPath("/studio/builder?intent=custom");
                                     setIsAuthOpen(true);
                                 }}
                                 className="px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
@@ -186,7 +187,7 @@ export function PremiumNavbar() {
                             <button
                                 onClick={() => {
                                     setIsMobileMenuOpen(false);
-                                    setAuthNextPath("/studio/builder");
+                                    setAuthNextPath("/studio/builder?intent=custom");
                                     setIsAuthOpen(true);
                                 }}
                                 className="w-full px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"

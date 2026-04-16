@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { Suspense, useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AuthPopup } from "../../../components/overlay/AuthPopup";
 import { StudioWorkspacePanel, StudioWorkspaceShell } from "../../../components/layout/StudioWorkspaceShell";
@@ -18,9 +17,7 @@ import {
   WINDOW_STYLE_LABEL
 } from "../../../features/builder/constants";
 import { buildPreviewDataUrl } from "../../../features/builder/logic/preview";
-import {
-  getWallLength,
-} from "../../../features/builder/logic/openings";
+import { getWallLength } from "../../../features/builder/logic/openings";
 import { useBuilderOpeningState } from "../../../features/builder/state/useBuilderOpeningState";
 import { useBuilderSceneSync } from "../../../features/builder/state/useBuilderSceneSync";
 import { BuilderDimensionsStep } from "../../../features/builder/steps/BuilderDimensionsStep";
@@ -28,8 +25,13 @@ import { BuilderOpeningsStep } from "../../../features/builder/steps/BuilderOpen
 import { BuilderShapeStep } from "../../../features/builder/steps/BuilderShapeStep";
 import { BuilderStyleStep } from "../../../features/builder/steps/BuilderStyleStep";
 import type { DoorStyle, WindowStyle } from "../../../features/builder/types";
+import { fetchAssetCatalog } from "../../../lib/api/catalog";
 import { fetchRoomTemplateConfig, type BuilderFinishOption } from "../../../lib/api/room-templates";
 import { createProjectDraft, saveProject } from "../../../lib/api/project";
+import {
+  DEFAULT_CATALOG,
+  buildProjectAssetSummary
+} from "../../../lib/builder/catalog";
 import {
   buildBuilderScene,
   builderFloorFinishes,
@@ -37,14 +39,97 @@ import {
   builderWallFinishes,
   type BuilderTemplateId
 } from "../../../lib/builder/templates";
+import { buildSeededSceneAssets } from "../../../lib/builder/seeded-assets";
+import {
+  isFurnishedRoomTemplateId,
+  type FurnishedRoomTemplateId,
+  type TemplateSeedPreset
+} from "../../../lib/builder/template-browser";
 import { deriveBlankRoomShell } from "../../../lib/domain/room-shell";
+import type { Opening } from "../../../lib/stores/useSceneStore";
 import { useAuthStore } from "../../../lib/stores/useAuthStore";
 import type { EditorViewMode } from "../../../lib/stores/useEditorStore";
 
 type BuilderPreviewMode = Extract<EditorViewMode, "top" | "builder-preview">;
+const BUILDER_AUTH_DRAFT_KEY = "plan2space:builder-auth-draft";
 
-export default function StudioBuilderPage() {
+type RouteOverrides = {
+  templateId: BuilderTemplateId | null;
+  width: number | null;
+  depth: number | null;
+  nookWidth: number | null;
+  nookDepth: number | null;
+  wallMaterialIndex: number | null;
+  floorMaterialIndex: number | null;
+  projectName: string | null;
+  seedPreset: TemplateSeedPreset;
+  seedTemplateId: FurnishedRoomTemplateId | null;
+  doorStyle: DoorStyle | null;
+  windowStyle: WindowStyle | null;
+  addSecondaryWindow: boolean | null;
+};
+
+type BuilderAuthDraft = {
+  intent: "template" | "custom";
+  stepIndex: number;
+  templateId: BuilderTemplateId;
+  width: number;
+  depth: number;
+  nookWidth: number;
+  nookDepth: number;
+  wallMaterialIndex: number;
+  floorMaterialIndex: number;
+  projectName: string;
+  projectDescription: string;
+  doorStyle: DoorStyle;
+  windowStyle: WindowStyle;
+  addSecondaryWindow: boolean;
+  starterSetPreset: TemplateSeedPreset;
+  starterTemplateId: FurnishedRoomTemplateId | null;
+  openings: Opening[];
+};
+
+function isBuilderTemplateId(value: string | null): value is BuilderTemplateId {
+  return builderTemplates.some((template) => template.id === value);
+}
+
+function parsePositiveNumber(value: string | null) {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseIntegerValue(value: string | null) {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function parseSeedPreset(value: string | null): TemplateSeedPreset {
+  if (value === "partial" || value === "full") {
+    return value;
+  }
+  return "none";
+}
+
+function parseDoorStyle(value: string | null): DoorStyle {
+  if (value === "double" || value === "french") {
+    return value;
+  }
+  return "single";
+}
+
+function parseWindowStyle(value: string | null): WindowStyle {
+  if (value === "wide") {
+    return value;
+  }
+  return "single";
+}
+
+function StudioBuilderPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultTemplateId = builderTemplates[0]?.id ?? "rect-studio";
   const [intent, setIntent] = useState<"template" | "custom">("template");
   const { session } = useAuthStore();
   const isAuthenticated = Boolean(session?.user);
@@ -62,32 +147,106 @@ export default function StudioBuilderPage() {
   const [doorStyle, setDoorStyle] = useState<DoorStyle>("single");
   const [windowStyle, setWindowStyle] = useState<WindowStyle>("single");
   const [addSecondaryWindow, setAddSecondaryWindow] = useState(false);
-  const [previewMode, setPreviewMode] = useState<BuilderPreviewMode>("builder-preview");
   const [stepIndex, setStepIndex] = useState(0);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [templateOptions, setTemplateOptions] = useState(builderTemplates);
   const [wallFinishOptions, setWallFinishOptions] = useState<BuilderFinishOption[]>([...builderWallFinishes]);
   const [floorFinishOptions, setFloorFinishOptions] = useState<BuilderFinishOption[]>([...builderFloorFinishes]);
+  const [starterSetPreset, setStarterSetPreset] = useState<TemplateSeedPreset>("none");
+  const [starterTemplateId, setStarterTemplateId] = useState<FurnishedRoomTemplateId | null>(null);
+  const [catalogSnapshot, setCatalogSnapshot] = useState(DEFAULT_CATALOG);
+  const [pendingOpeningRestore, setPendingOpeningRestore] = useState<Opening[] | null>(null);
+  const [authRestoreResolved, setAuthRestoreResolved] = useState(false);
+  const routeOverridesRef = useRef<RouteOverrides>({
+    templateId: null,
+    width: null,
+    depth: null,
+    nookWidth: null,
+    nookDepth: null,
+    wallMaterialIndex: null,
+    floorMaterialIndex: null,
+    projectName: null,
+    seedPreset: "none",
+    seedTemplateId: null,
+    doorStyle: null,
+    windowStyle: null,
+    addSecondaryWindow: null
+  });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const query = new URLSearchParams(window.location.search);
+    const query = new URLSearchParams(searchParams.toString());
     const nextIntent = query.get("intent") === "custom" ? "custom" : "template";
     const nextStepIndex = resolveBuilderStepIndex(query.get("step"));
+    const requestedTemplateId = query.get("templateId");
+    const routeTemplateId = isBuilderTemplateId(requestedTemplateId) ? requestedTemplateId : null;
+    const nextProjectName = query.get("projectName")?.trim() || null;
+    const nextWidth = parsePositiveNumber(query.get("width"));
+    const nextDepth = parsePositiveNumber(query.get("depth"));
+    const nextNookWidth = parsePositiveNumber(query.get("nookWidth"));
+    const nextNookDepth = parsePositiveNumber(query.get("nookDepth"));
+    const nextWallMaterialIndex = parseIntegerValue(query.get("wall"));
+    const nextFloorMaterialIndex = parseIntegerValue(query.get("floor"));
+    const nextSeedPreset = parseSeedPreset(query.get("seed"));
+    const requestedSeedTemplateId = query.get("scenePreset");
+    const nextSeedTemplateId = isFurnishedRoomTemplateId(requestedSeedTemplateId) ? requestedSeedTemplateId : null;
+    const nextDoorStyle = parseDoorStyle(query.get("doorStyle"));
+    const nextWindowStyle = parseWindowStyle(query.get("windowStyle"));
+    const nextAddSecondaryWindow = query.get("secondaryWindow") === "1";
+
+    routeOverridesRef.current = {
+      templateId: routeTemplateId,
+      width: nextWidth,
+      depth: nextDepth,
+      nookWidth: nextNookWidth,
+      nookDepth: nextNookDepth,
+      wallMaterialIndex: nextWallMaterialIndex,
+      floorMaterialIndex: nextFloorMaterialIndex,
+      projectName: nextProjectName,
+      seedPreset: nextSeedPreset,
+      seedTemplateId: nextSeedTemplateId,
+      doorStyle: nextDoorStyle,
+      windowStyle: nextWindowStyle,
+      addSecondaryWindow: nextAddSecondaryWindow
+    };
+
     setIntent(nextIntent);
     setStepIndex(nextStepIndex);
-    setProjectName((current) => {
-      if (current === "새 공간 디자인" || current === "맞춤 공간 디자인") {
-        return nextIntent === "custom" ? "맞춤 공간 디자인" : "새 공간 디자인";
-      }
-      return current;
-    });
+    setStarterSetPreset(nextSeedPreset);
+    setStarterTemplateId(nextSeedTemplateId);
+    setDoorStyle(nextDoorStyle);
+    setWindowStyle(nextWindowStyle);
+    setAddSecondaryWindow(nextAddSecondaryWindow);
 
-    query.set("intent", nextIntent);
-    query.set("step", BUILDER_STEPS[nextStepIndex]?.id ?? BUILDER_STEPS[0].id);
-    router.replace(`/studio/builder?${query.toString()}`, { scroll: false });
-  }, [router]);
+    if (routeTemplateId) {
+      setTemplateId(routeTemplateId);
+    }
+    if (nextWidth !== null) setWidth(nextWidth);
+    if (nextDepth !== null) setDepth(nextDepth);
+    if (nextNookWidth !== null) setNookWidth(nextNookWidth);
+    if (nextNookDepth !== null) setNookDepth(nextNookDepth);
+    if (nextWallMaterialIndex !== null) setWallMaterialIndex(nextWallMaterialIndex);
+    if (nextFloorMaterialIndex !== null) setFloorMaterialIndex(nextFloorMaterialIndex);
+    setProjectName(nextProjectName ?? (nextIntent === "custom" ? "맞춤 공간 디자인" : "새 공간 디자인"));
+  }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchAssetCatalog()
+      .then((catalog) => {
+        if (!active) return;
+        setCatalogSnapshot(catalog);
+      })
+      .catch(() => {
+        if (!active) return;
+        setCatalogSnapshot(DEFAULT_CATALOG);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -98,16 +257,21 @@ export default function StudioBuilderPage() {
         setTemplateOptions(config.templates);
         setWallFinishOptions(config.wallFinishes);
         setFloorFinishOptions(config.floorFinishes);
-        setTemplateId((currentTemplateId) => {
-          const hydratedTemplate =
-            config.templates.find((template) => template.id === currentTemplateId) ?? config.templates[0];
-          if (!hydratedTemplate) return currentTemplateId;
-          setWidth(hydratedTemplate.defaultWidth);
-          setDepth(hydratedTemplate.defaultDepth);
-          setNookWidth(hydratedTemplate.defaultNookWidth ?? 2.8);
-          setNookDepth(hydratedTemplate.defaultNookDepth ?? 2.4);
-          return hydratedTemplate.id;
-        });
+        const routeOverrides = routeOverridesRef.current;
+        const hydratedTemplate =
+          config.templates.find((template) => template.id === (routeOverrides.templateId ?? defaultTemplateId)) ?? config.templates[0];
+        if (!hydratedTemplate) return;
+        setTemplateId(hydratedTemplate.id);
+        setWidth(routeOverrides.width ?? hydratedTemplate.defaultWidth);
+        setDepth(routeOverrides.depth ?? hydratedTemplate.defaultDepth);
+        setNookWidth(routeOverrides.nookWidth ?? hydratedTemplate.defaultNookWidth ?? 2.8);
+        setNookDepth(routeOverrides.nookDepth ?? hydratedTemplate.defaultNookDepth ?? 2.4);
+        if (routeOverrides.wallMaterialIndex !== null) {
+          setWallMaterialIndex(routeOverrides.wallMaterialIndex);
+        }
+        if (routeOverrides.floorMaterialIndex !== null) {
+          setFloorMaterialIndex(routeOverrides.floorMaterialIndex);
+        }
       })
       .catch(() => {
         if (!active) return;
@@ -119,13 +283,10 @@ export default function StudioBuilderPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [defaultTemplateId]);
 
-  const activeTemplate = useMemo(
-    () => templateOptions.find((template) => template.id === templateId) ?? templateOptions[0] ?? builderTemplates[0],
-    [templateId, templateOptions]
-  );
   const activeStep = BUILDER_STEPS[stepIndex] ?? BUILDER_STEPS[0];
+  const previewMode: BuilderPreviewMode = stepIndex <= 1 ? "top" : "builder-preview";
   const isFinalStep = stepIndex === BUILDER_STEPS.length - 1;
   const supportsSecondaryDimensions =
     templateId === "l-shape" ||
@@ -166,7 +327,8 @@ export default function StudioBuilderPage() {
     setOpeningPatch,
     setEntranceOpening,
     deleteOpening,
-    addOpening
+    addOpening,
+    replaceOpenings
   } = useBuilderOpeningState({
     walls: baseScene.walls,
     templateOpenings: baseScene.openings,
@@ -174,6 +336,100 @@ export default function StudioBuilderPage() {
     windowStyle,
     addSecondaryWindow
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const restoreQuery = new URLSearchParams(window.location.search);
+    const shouldRestoreAuthDraft = restoreQuery.get("authRestore") === "1";
+    if (!shouldRestoreAuthDraft) {
+      window.sessionStorage.removeItem(BUILDER_AUTH_DRAFT_KEY);
+      setAuthRestoreResolved(true);
+      return;
+    }
+    const rawDraft = window.sessionStorage.getItem(BUILDER_AUTH_DRAFT_KEY);
+    if (!rawDraft) {
+      setAuthRestoreResolved(true);
+      return;
+    }
+
+    window.sessionStorage.removeItem(BUILDER_AUTH_DRAFT_KEY);
+    restoreQuery.delete("authRestore");
+    router.replace(`/studio/builder?${restoreQuery.toString()}`, { scroll: false });
+
+    try {
+      const draft = JSON.parse(rawDraft) as Partial<BuilderAuthDraft>;
+      const restoredTemplateId =
+        draft.templateId && isBuilderTemplateId(draft.templateId) ? draft.templateId : null;
+      const restoredDoorStyle = draft.doorStyle ? parseDoorStyle(draft.doorStyle) : null;
+      const restoredWindowStyle = draft.windowStyle ? parseWindowStyle(draft.windowStyle) : null;
+      const restoredSeedPreset = draft.starterSetPreset ? parseSeedPreset(draft.starterSetPreset) : "none";
+      const restoredSeedTemplateId =
+        draft.starterTemplateId && isFurnishedRoomTemplateId(draft.starterTemplateId) ? draft.starterTemplateId : null;
+
+      routeOverridesRef.current = {
+        templateId: restoredTemplateId,
+        width: typeof draft.width === "number" ? draft.width : routeOverridesRef.current.width,
+        depth: typeof draft.depth === "number" ? draft.depth : routeOverridesRef.current.depth,
+        nookWidth: typeof draft.nookWidth === "number" ? draft.nookWidth : routeOverridesRef.current.nookWidth,
+        nookDepth: typeof draft.nookDepth === "number" ? draft.nookDepth : routeOverridesRef.current.nookDepth,
+        wallMaterialIndex:
+          typeof draft.wallMaterialIndex === "number"
+            ? draft.wallMaterialIndex
+            : routeOverridesRef.current.wallMaterialIndex,
+        floorMaterialIndex:
+          typeof draft.floorMaterialIndex === "number"
+            ? draft.floorMaterialIndex
+            : routeOverridesRef.current.floorMaterialIndex,
+        projectName: typeof draft.projectName === "string" ? draft.projectName : routeOverridesRef.current.projectName,
+        seedPreset: restoredSeedPreset,
+        seedTemplateId: restoredSeedTemplateId,
+        doorStyle: restoredDoorStyle,
+        windowStyle: restoredWindowStyle,
+        addSecondaryWindow:
+          typeof draft.addSecondaryWindow === "boolean"
+            ? draft.addSecondaryWindow
+            : routeOverridesRef.current.addSecondaryWindow
+      };
+
+      if (draft.intent === "custom" || draft.intent === "template") {
+        setIntent(draft.intent);
+      }
+      if (typeof draft.stepIndex === "number") {
+        setStepIndex(Math.max(0, Math.min(BUILDER_STEPS.length - 1, draft.stepIndex)));
+      }
+      if (restoredTemplateId) {
+        setTemplateId(restoredTemplateId);
+      }
+      if (typeof draft.width === "number") setWidth(draft.width);
+      if (typeof draft.depth === "number") setDepth(draft.depth);
+      if (typeof draft.nookWidth === "number") setNookWidth(draft.nookWidth);
+      if (typeof draft.nookDepth === "number") setNookDepth(draft.nookDepth);
+      if (typeof draft.wallMaterialIndex === "number") setWallMaterialIndex(draft.wallMaterialIndex);
+      if (typeof draft.floorMaterialIndex === "number") setFloorMaterialIndex(draft.floorMaterialIndex);
+      if (typeof draft.projectName === "string") setProjectName(draft.projectName);
+      if (typeof draft.projectDescription === "string") setProjectDescription(draft.projectDescription);
+      if (restoredDoorStyle) setDoorStyle(restoredDoorStyle);
+      if (restoredWindowStyle) setWindowStyle(restoredWindowStyle);
+      if (typeof draft.addSecondaryWindow === "boolean") setAddSecondaryWindow(draft.addSecondaryWindow);
+      setStarterSetPreset(restoredSeedPreset);
+      if (restoredSeedTemplateId) {
+        setStarterTemplateId(restoredSeedTemplateId);
+      }
+      if (Array.isArray(draft.openings)) {
+        setPendingOpeningRestore(draft.openings as Opening[]);
+      }
+    } catch {
+      window.sessionStorage.removeItem(BUILDER_AUTH_DRAFT_KEY);
+    } finally {
+      setAuthRestoreResolved(true);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!pendingOpeningRestore) return;
+    replaceOpenings(pendingOpeningRestore);
+    setPendingOpeningRestore(null);
+  }, [pendingOpeningRestore, replaceOpenings]);
 
   const scene = useMemo(
     () => ({
@@ -214,6 +470,66 @@ export default function StudioBuilderPage() {
     wallMaterialIndex,
     floorMaterialIndex
   });
+
+  useEffect(() => {
+    if (!authRestoreResolved) return;
+
+    const nextQuery = new URLSearchParams();
+    nextQuery.set("intent", intent);
+    nextQuery.set("step", BUILDER_STEPS[stepIndex]?.id ?? BUILDER_STEPS[0].id);
+    nextQuery.set("templateId", templateId);
+    nextQuery.set("width", String(width));
+    nextQuery.set("depth", String(depth));
+    nextQuery.set("wall", String(wallMaterialIndex));
+    nextQuery.set("floor", String(floorMaterialIndex));
+    nextQuery.set("projectName", projectName);
+    nextQuery.set("doorStyle", doorStyle);
+    nextQuery.set("windowStyle", windowStyle);
+
+    if (supportsSecondaryDimensions) {
+      nextQuery.set("nookWidth", String(nookWidth));
+      nextQuery.set("nookDepth", String(nookDepth));
+    }
+    if (starterSetPreset !== "none") {
+      nextQuery.set("seed", starterSetPreset);
+    }
+    if (starterTemplateId) {
+      nextQuery.set("scenePreset", starterTemplateId);
+    }
+    if (addSecondaryWindow) {
+      nextQuery.set("secondaryWindow", "1");
+    }
+
+    const nextQueryString = nextQuery.toString();
+    const currentQueryString = searchParams.toString();
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    router.replace(`/studio/builder?${nextQueryString}`, { scroll: false });
+  }, [
+    addSecondaryWindow,
+    authRestoreResolved,
+    depth,
+    doorStyle,
+    floorMaterialIndex,
+    intent,
+    nookDepth,
+    nookWidth,
+    projectName,
+    router,
+    searchParams,
+    starterSetPreset,
+    starterTemplateId,
+    stepIndex,
+    supportsSecondaryDimensions,
+    templateId,
+    wallMaterialIndex,
+    width,
+    windowStyle
+  ]);
+
   const handleAddOpening = useCallback(
     (type: "door" | "window") => {
       const createdId = addOpening(type);
@@ -238,17 +554,105 @@ export default function StudioBuilderPage() {
     (nextStepIndex: number) => {
       const clamped = Math.max(0, Math.min(BUILDER_STEPS.length - 1, nextStepIndex));
       setStepIndex(clamped);
-      if (typeof window === "undefined") return;
-      const query = new URLSearchParams(window.location.search);
-      query.set("intent", intent);
-      query.set("step", BUILDER_STEPS[clamped]?.id ?? BUILDER_STEPS[0].id);
-      router.replace(`/studio/builder?${query.toString()}`, { scroll: false });
     },
-    [intent, router]
+    []
   );
+
+  const authNextPath = useMemo(() => {
+    const query = new URLSearchParams();
+    query.set("intent", intent);
+    query.set("step", BUILDER_STEPS[stepIndex]?.id ?? BUILDER_STEPS[0].id);
+    query.set("templateId", templateId);
+    query.set("width", String(width));
+    query.set("depth", String(depth));
+    query.set("wall", String(wallMaterialIndex));
+    query.set("floor", String(floorMaterialIndex));
+    query.set("projectName", projectName);
+    query.set("doorStyle", doorStyle);
+    query.set("windowStyle", windowStyle);
+
+    if (supportsSecondaryDimensions) {
+      query.set("nookWidth", String(nookWidth));
+      query.set("nookDepth", String(nookDepth));
+    }
+    if (starterSetPreset !== "none") {
+      query.set("seed", starterSetPreset);
+    }
+    if (starterTemplateId) {
+      query.set("scenePreset", starterTemplateId);
+    }
+    if (addSecondaryWindow) {
+      query.set("secondaryWindow", "1");
+    }
+    query.set("authRestore", "1");
+
+    return `/studio/builder?${query.toString()}`;
+  }, [
+    addSecondaryWindow,
+    depth,
+    doorStyle,
+    floorMaterialIndex,
+    intent,
+    nookDepth,
+    nookWidth,
+    projectName,
+    starterSetPreset,
+    starterTemplateId,
+    stepIndex,
+    supportsSecondaryDimensions,
+    templateId,
+    wallMaterialIndex,
+    width,
+    windowStyle
+  ]);
+
+  const persistAuthDraft = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const draft: BuilderAuthDraft = {
+      intent,
+      stepIndex,
+      templateId,
+      width,
+      depth,
+      nookWidth,
+      nookDepth,
+      wallMaterialIndex,
+      floorMaterialIndex,
+      projectName,
+      projectDescription,
+      doorStyle,
+      windowStyle,
+      addSecondaryWindow,
+      starterSetPreset,
+      starterTemplateId,
+      openings
+    };
+
+    window.sessionStorage.setItem(BUILDER_AUTH_DRAFT_KEY, JSON.stringify(draft));
+  }, [
+    addSecondaryWindow,
+    depth,
+    doorStyle,
+    floorMaterialIndex,
+    intent,
+    nookDepth,
+    nookWidth,
+    openings,
+    projectDescription,
+    projectName,
+    starterSetPreset,
+    starterTemplateId,
+    stepIndex,
+    templateId,
+    wallMaterialIndex,
+    width,
+    windowStyle
+  ]);
 
   const handleCreate = async () => {
     if (!isAuthenticated) {
+      persistAuthDraft();
       setIsAuthOpen(true);
       return;
     }
@@ -260,6 +664,7 @@ export default function StudioBuilderPage() {
 
     setIsCreating(true);
     try {
+      const seededAssets = buildSeededSceneAssets(catalogSnapshot, derivedRoomShell, starterSetPreset, starterTemplateId);
       const project = await createProjectDraft({
         name: projectName.trim(),
         description: projectDescription.trim() || "빌더에서 생성한 기본 공간"
@@ -267,7 +672,7 @@ export default function StudioBuilderPage() {
 
       await saveProject(project.id, {
         roomShell: derivedRoomShell,
-        assets: [],
+        assets: seededAssets,
         materials: {
           wallIndex: wallMaterialIndex,
           floorIndex: floorMaterialIndex
@@ -279,9 +684,10 @@ export default function StudioBuilderPage() {
           environmentBlur: 0.2
         },
         thumbnailDataUrl: previewDataUrl,
+        assetSummary: buildProjectAssetSummary(catalogSnapshot, seededAssets),
         projectName: projectName.trim(),
         projectDescription: projectDescription.trim() || "빌더에서 생성한 기본 공간",
-        message: "빌더 초기 장면"
+        message: starterSetPreset === "none" ? "빌더 초기 장면" : "빌더 템플릿 장면"
       });
 
       router.push(`/project/${project.id}?origin=builder`);
@@ -304,104 +710,78 @@ export default function StudioBuilderPage() {
     setStepWithRoute(stepIndex - 1);
   };
 
-  const triggerZoomControl = useCallback((direction: "in" | "out") => {
-    if (typeof window === "undefined") return;
-    window.dispatchEvent(new CustomEvent("plan2space:zoom", { detail: { direction } }));
-  }, []);
-
   return (
-    <div className="min-h-screen bg-[#f5f1e8] pb-16 pt-24 text-[#171411]">
-      <div className="mx-auto max-w-[1540px] px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/studio")}
-            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4d443b] transition hover:border-black/40 hover:text-black"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            프로젝트 목록
-          </button>
-          <div className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a6f64]">
-            {intent === "template" ? "템플릿 빠른 시작" : "맞춤 빌더"}
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#f3f2ef] pb-10 pt-16 text-[#171411] sm:pt-20">
+      <div className="mx-auto max-w-[1540px] px-4 sm:px-6 lg:px-8">
+        <StudioWorkspaceShell className="gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] xl:min-h-[820px] xl:grid-cols-[minmax(360px,36vw)_minmax(0,1fr)]">
+          <StudioWorkspacePanel className="flex flex-col rounded-none border-0 border-b border-black/10 bg-white shadow-none xl:border-b-0 xl:border-r xl:border-black/10">
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 xl:p-10">
+              <BuilderStepHeader activeStep={activeStep} />
 
-        <StudioWorkspaceShell className="mt-6">
-          <StudioWorkspacePanel className="p-6 sm:p-8">
-            <BuilderStepHeader
-              activeStep={activeStep}
-              steps={BUILDER_STEPS}
-              stepIndex={stepIndex}
-              onStepChange={setStepWithRoute}
-            />
+              <div className="mt-10 space-y-6">
+                {stepIndex === 0 ? (
+                  <BuilderShapeStep
+                    templateOptions={templateOptions}
+                    templateId={templateId}
+                    onSelectTemplate={handleTemplateSelect}
+                  />
+                ) : null}
 
-            <div className="mt-8 space-y-6">
-              {stepIndex === 0 ? (
-                <BuilderShapeStep
-                  templateOptions={templateOptions}
-                  templateId={templateId}
-                  onSelectTemplate={handleTemplateSelect}
-                />
-              ) : null}
+                {stepIndex === 1 ? (
+                  <BuilderDimensionsStep
+                    unit={dimensionUnit}
+                    supportsSecondaryDimensions={supportsSecondaryDimensions}
+                    width={width}
+                    depth={depth}
+                    nookWidth={nookWidth}
+                    nookDepth={nookDepth}
+                    onUnitChange={setDimensionUnit}
+                    onWidthChange={setWidth}
+                    onDepthChange={setDepth}
+                    onNookWidthChange={setNookWidth}
+                    onNookDepthChange={setNookDepth}
+                  />
+                ) : null}
 
-              {stepIndex === 1 ? (
-                <BuilderDimensionsStep
-                  unit={dimensionUnit}
-                  supportsSecondaryDimensions={supportsSecondaryDimensions}
-                  width={width}
-                  depth={depth}
-                  nookWidth={nookWidth}
-                  nookDepth={nookDepth}
-                  onUnitChange={setDimensionUnit}
-                  onWidthChange={setWidth}
-                  onDepthChange={setDepth}
-                  onNookWidthChange={setNookWidth}
-                  onNookDepthChange={setNookDepth}
-                />
-              ) : null}
+                {stepIndex === 2 ? (
+                  <BuilderOpeningsStep
+                    doorStyle={doorStyle}
+                    windowStyle={windowStyle}
+                    addSecondaryWindow={addSecondaryWindow}
+                    doorStyleLabels={DOOR_STYLE_LABEL}
+                    windowStyleLabels={WINDOW_STYLE_LABEL}
+                    wallEntries={wallEntries}
+                    selectedWallId={selectedWallId}
+                    selectedWallOpenings={selectedWallOpenings}
+                    selectedOpeningId={selectedOpeningId}
+                    selectedOpening={selectedOpening}
+                    selectedOpeningWall={selectedOpeningWall}
+                    onDoorStyleChange={setDoorStyle}
+                    onWindowStyleChange={setWindowStyle}
+                    onAddSecondaryWindowChange={setAddSecondaryWindow}
+                    onSelectWall={setSelectedWallId}
+                    onSelectOpening={setSelectedOpeningId}
+                    onAddOpening={handleAddOpening}
+                    onDeleteOpening={deleteOpening}
+                    onPatchOpening={setOpeningPatch}
+                    onSetEntrance={setEntranceOpening}
+                    getWallLength={getWallLength}
+                  />
+                ) : null}
 
-              {stepIndex === 2 ? (
-                <BuilderOpeningsStep
-                  doorStyle={doorStyle}
-                  windowStyle={windowStyle}
-                  addSecondaryWindow={addSecondaryWindow}
-                  doorStyleLabels={DOOR_STYLE_LABEL}
-                  windowStyleLabels={WINDOW_STYLE_LABEL}
-                  wallEntries={wallEntries}
-                  selectedWallId={selectedWallId}
-                  selectedWallOpenings={selectedWallOpenings}
-                  selectedOpeningId={selectedOpeningId}
-                  selectedOpening={selectedOpening}
-                  selectedOpeningWall={selectedOpeningWall}
-                  onDoorStyleChange={setDoorStyle}
-                  onWindowStyleChange={setWindowStyle}
-                  onAddSecondaryWindowChange={setAddSecondaryWindow}
-                  onSelectWall={setSelectedWallId}
-                  onSelectOpening={setSelectedOpeningId}
-                  onAddOpening={handleAddOpening}
-                  onDeleteOpening={deleteOpening}
-                  onPatchOpening={setOpeningPatch}
-                  onSetEntrance={setEntranceOpening}
-                  getWallLength={getWallLength}
-                />
-              ) : null}
-
-              {stepIndex === 3 ? (
-                <BuilderStyleStep
-                  projectName={projectName}
-                  projectDescription={projectDescription}
-                  wallMaterialIndex={wallMaterialIndex}
-                  floorMaterialIndex={floorMaterialIndex}
-                  wallFinishOptions={wallFinishOptions}
-                  floorFinishOptions={floorFinishOptions}
-                  wallFinishSwatch={WALL_FINISH_SWATCH}
-                  floorFinishSwatch={FLOOR_FINISH_SWATCH}
-                  onProjectNameChange={setProjectName}
-                  onProjectDescriptionChange={setProjectDescription}
-                  onWallMaterialIndexChange={setWallMaterialIndex}
-                  onFloorMaterialIndexChange={setFloorMaterialIndex}
-                />
-              ) : null}
+                {stepIndex === 3 ? (
+                  <BuilderStyleStep
+                    wallMaterialIndex={wallMaterialIndex}
+                    floorMaterialIndex={floorMaterialIndex}
+                    wallFinishOptions={wallFinishOptions}
+                    floorFinishOptions={floorFinishOptions}
+                    wallFinishSwatch={WALL_FINISH_SWATCH}
+                    floorFinishSwatch={FLOOR_FINISH_SWATCH}
+                    onWallMaterialIndexChange={setWallMaterialIndex}
+                    onFloorMaterialIndexChange={setFloorMaterialIndex}
+                  />
+                ) : null}
+              </div>
             </div>
 
             <BuilderFooter
@@ -414,27 +794,40 @@ export default function StudioBuilderPage() {
           </StudioWorkspacePanel>
 
           <BuilderPreviewPane
+            stepId={activeStep.id}
             previewMode={previewMode}
-            activeTemplateName={activeTemplate.name}
             width={width}
             depth={depth}
-            openingCount={scene.openings.length}
-            stepIndex={stepIndex}
+            unit={dimensionUnit}
             wallFinishName={activeWallFinish.name}
             floorFinishName={activeFloorFinish.name}
             doorCount={scene.openings.filter((opening) => opening.type === "door").length}
             windowCount={scene.openings.filter((opening) => opening.type === "window").length}
-            onPreviewModeChange={setPreviewMode}
-            onZoomControl={triggerZoomControl}
+            selectedWallLabel={wallEntries.find((wall) => wall.id === selectedWallId)?.label ?? null}
+            selectedOpening={selectedOpening}
+            onDeleteSelectedOpening={selectedOpening ? () => deleteOpening(selectedOpening.id) : null}
           />
         </StudioWorkspaceShell>
       </div>
 
       <AuthPopup
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        nextPath={`/studio/builder?intent=${intent}`}
+        onClose={() => {
+          if (typeof window !== "undefined") {
+            window.sessionStorage.removeItem(BUILDER_AUTH_DRAFT_KEY);
+          }
+          setIsAuthOpen(false);
+        }}
+        nextPath={authNextPath}
       />
     </div>
+  );
+}
+
+export default function StudioBuilderPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f3f2ef]" />}>
+      <StudioBuilderPageContent />
+    </Suspense>
   );
 }

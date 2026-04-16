@@ -14,7 +14,13 @@
 목표: IKEA Kreativ 스타일 room builder 완성도 강화
 
 진행:
-- 빌더 단계(Shape/Dimension/Opening/Style) 미세 UX 개선
+- 홈 시작하기 2-way 진입(`공간 선택`/`공간 만들기`)과 레퍼런스형 카드 레이아웃 적용
+- `빈 공간`/`가구가 비치된 공간` 템플릿 브라우저 추가
+- 템플릿 선택값을 쿼리스트링으로 builder에 전달해 방 형태/치수/마감/seeded asset 초기값을 복원
+- furnished template별 시드 자산 구성을 분리하고 pre-seeded editor 회귀 항목에 포함
+- 빌더를 레퍼런스 4-step split shell로 재구성하고 단계별 preview camera/overlay를 정렬
+- 빌더 단계(Shape/Dimension/Opening/Style)를 레퍼런스 density 기준으로 재작성
+- 개구부 스타일 retune 및 auth restore 이후 상태 덮어쓰기 버그 수정
 - 템플릿 기반 방 생성 속도 개선
 - 저장 직후 에디터/뷰어 일관성 확인 자동화
 
@@ -67,6 +73,26 @@ Updated:
 Removed/Deprecated:
 - legacy 트랙 및 `docs/legacy/*` 아카이브 참조.
 - floorplan eval/blind gate/intake e2e 기반 완료 조건.
+
+## 2026-04-16 변경 동기화 (Reference Start Flow + Template Browser)
+Added:
+- P1 범위에 홈 시작하기 화면, 공간 선택 브라우저, seeded template bootstrapping을 명시.
+
+Updated:
+- room builder 완료 조건을 "직접 생성" 단일 경로에서 "템플릿 선택 + 맞춤 생성" 이중 경로로 확장.
+
+Removed/Deprecated:
+- 사용자가 빌더 내부에서만 템플릿을 고른다는 전제.
+
+## 2026-04-16 변경 동기화 (Reference 4-Step Builder Shell)
+Added:
+- P1 범위에 레퍼런스 4-step builder shell, dimension overlay, opening/style step catalog UI를 명시.
+
+Updated:
+- builder 완료 기준을 "기능 존재"에서 "레퍼런스 쉘/단계 밀도/복원 안정성"까지 확장.
+
+Removed/Deprecated:
+- 이전 builder 상단 퀵 액션/step chip/summary card 중심 레이아웃.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

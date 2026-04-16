@@ -6,13 +6,15 @@
 Plan2Space의 메인 제품은 **IKEA Kreativ 스타일 room-first 데스크테리어 빌더/에디터/뷰어/커뮤니티**입니다.
 
 핵심 경로:
-1. `/studio/builder`에서 빈 방을 생성
-2. `/project/[id]`에서 데스크테리어 배치/편집/저장
-3. 공유 모달에서 링크 발행
-4. `/shared/[token]`, `/gallery`, `/community`에서 읽기 전용 3D 뷰어로 조회
+1. `/` 시작하기 화면에서 `공간 선택` 또는 `공간 만들기` 진입점을 선택
+2. `/studio/select`에서 빈 공간 템플릿 또는 가구가 배치된 템플릿을 고른다
+3. `/studio/builder`에서 맞춤형 방 생성 또는 템플릿 세부값 보정 후 프로젝트를 만든다
+4. `/project/[id]`에서 데스크테리어 배치/편집/저장
+5. 공유 모달에서 링크 발행
+6. `/shared/[token]`, `/gallery`, `/community`에서 읽기 전용 3D 뷰어로 조회
 
 ## 제품 규칙
-- 빌더/에디터/뷰어/갤러리/커뮤니티는 같은 디자인 시스템을 사용한다.
+- 홈/선택/빌더/에디터/뷰어/갤러리/커뮤니티는 같은 디자인 시스템을 사용한다.
 - 레이아웃 기본은 `상단 app bar + 좌측 패널 + 우측 viewport`다.
 - 좌측 패널 폭은 400~440px(기본 420px)로 고정한다.
 - 뷰어는 읽기 전용이며 편집 affordance를 노출하지 않는다.
@@ -64,6 +66,30 @@ Updated:
 Removed/Deprecated:
 - `docs/legacy/*` 및 floorplan/intake compatibility를 메인 기준으로 참조하던 항목.
 - legacy 파이프라인 보존 전제.
+
+## 2026-04-16 변경 동기화 (Reference Start Flow + Template Browser)
+Added:
+- 홈 시작하기 화면(`/`)과 템플릿 선택 화면(`/studio/select`)을 메인 제품 경로에 추가.
+- 빈 공간 템플릿과 가구 배치 템플릿을 같은 빌더/에디터 계약으로 연결하는 기준을 명시.
+
+Updated:
+- 핵심 경로를 `홈 -> 공간 선택/공간 만들기 -> builder -> editor -> share/view/community` 순서로 재정의.
+- 동일 디자인 시스템 적용 범위를 홈/선택 화면까지 확장.
+
+Removed/Deprecated:
+- 사용자가 항상 `/studio/builder`에서 직접 시작한다는 가정.
+
+## 2026-04-16 변경 동기화 (Reference 4-Step Builder Shell)
+Added:
+- `/studio/builder`를 레퍼런스 기준의 고정 4-step split shell(좌측 white configurator + 우측 grey viewport)로 정렬.
+- step 2는 top-view 치수 오버레이, step 3/4는 isometric preview를 기본값으로 사용하는 규칙을 추가.
+
+Updated:
+- 빌더 단계 UI를 `모양 -> 치수 -> 문/창문 -> 스타일` 레퍼런스 레이아웃 기준으로 재정의.
+- 개구부 스타일 변경과 로그인 복귀 초안 복원이 빌더 상태를 덮어쓰지 않도록 restore 동작을 강화.
+
+Removed/Deprecated:
+- 빌더 내부 상단 quick-start badge, step chip, preview summary 카드 중심의 이전 shell.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Runtime Pass)
 Added:
