@@ -1,206 +1,237 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useRouter, usePathname } from "next/navigation";
-import { LogOut, Menu, Search, UserRound, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { LogOut, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../../lib/stores/useAuthStore";
 import { AuthPopup } from "../overlay/AuthPopup";
 
 export function PremiumNavbar() {
-    const router = useRouter();
-    const pathname = usePathname();
-    const { user, session, logout } = useAuthStore();
-    const isAuthenticated = Boolean(session?.user);
-    const [isAuthOpen, setIsAuthOpen] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [authNextPath, setAuthNextPath] = useState<string | undefined>(undefined);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, session, logout } = useAuthStore();
+  const isAuthenticated = Boolean(session?.user);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authNextPath, setAuthNextPath] = useState<string | undefined>(undefined);
 
-    useEffect(() => {
-        setIsMobileMenuOpen(false);
-    }, [pathname]);
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
-    const isEditor = pathname?.startsWith("/project/");
-    const isHome = pathname === "/";
-    const isStartFlow = pathname?.startsWith("/studio/select") || pathname?.startsWith("/studio/builder");
+  const isEditor = pathname?.startsWith("/project/");
+  const isSharedViewer = pathname?.startsWith("/shared/");
+  const isStartFlow = pathname?.startsWith("/studio/select") || pathname?.startsWith("/studio/builder");
+  const isHome = pathname === "/";
+  const isSimpleMode = isHome || isStartFlow;
 
-    if (isEditor || isHome || isStartFlow) {
-        return null;
+  if (isEditor || isSharedViewer) {
+    return null;
+  }
+
+  const openAuth = (nextPath: string) => {
+    setAuthNextPath(nextPath);
+    setIsAuthOpen(true);
+  };
+
+  const handleAction = (action: "builder" | "projects" | "gallery" | "community") => {
+    setIsMobileMenuOpen(false);
+
+    if (!isAuthenticated && (action === "builder" || action === "projects")) {
+      openAuth(action === "builder" ? "/studio/builder?intent=custom" : "/studio");
+      return;
     }
 
-    const handleAction = (action: string) => {
-        setIsMobileMenuOpen(false);
-        const requiresAuth = action === 'builder' || action === 'projects';
-        if (!isAuthenticated && requiresAuth) {
-            setAuthNextPath(action === 'builder' ? "/studio/builder?intent=custom" : "/studio");
-            setIsAuthOpen(true);
-            return;
-        }
+    if (action === "builder") {
+      router.push("/studio/builder?intent=custom");
+      return;
+    }
+    if (action === "projects") {
+      router.push("/studio");
+      return;
+    }
+    if (action === "gallery") {
+      router.push("/gallery");
+      return;
+    }
+    router.push("/community");
+  };
 
-        switch (action) {
-            case 'builder':
-                router.push("/studio/builder?intent=custom");
-                break;
-            case 'projects':
-                router.push("/studio");
-                break;
-            case 'gallery':
-                router.push("/gallery");
-                break;
-            case 'community':
-                router.push("/community");
-                break;
-        }
-    };
-
+  if (isSimpleMode) {
     return (
-        <>
-            <nav className={`fixed left-0 right-0 z-[100] transition-all duration-500 ${isHome ? 'top-4 sm:top-5' : 'top-0 border-b border-[#e5e5e0] bg-white/80 backdrop-blur-md'}`}>
-                <div className={`mx-auto ${isHome ? 'max-w-[1440px] px-4 sm:px-6 lg:px-10' : 'max-w-[1440px] px-4 sm:px-6 lg:px-12 py-4 sm:py-6'}`}>
-                    <div className={`flex items-center justify-between ${isHome ? 'rounded-full border border-white/70 bg-white/92 px-5 py-4 shadow-[0_18px_45px_rgba(48,34,17,0.14)] backdrop-blur-xl sm:px-7' : ''}`}>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => router.push("/")}
-                    >
-                        <span className={`font-outfit font-medium uppercase ${isHome ? 'text-sm sm:text-base tracking-[0.28em] text-[#241c14]' : 'text-base sm:text-xl tracking-[0.15em] sm:tracking-[0.2em]'}`}>Plan2Space</span>
-                    </motion.div>
+      <>
+        <nav className="fixed left-0 right-0 top-0 z-[100] border-b border-[#ece8e2] bg-white/92 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[1820px] items-center justify-between px-5 py-4 sm:px-8 lg:px-12">
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => router.push("/")}
+              className="text-left text-[20px] font-semibold tracking-[-0.04em] text-[#181818]"
+            >
+              Plan2Space
+            </motion.button>
 
-                    <div className={`hidden md:flex items-center ${isHome ? 'gap-8 text-[10px] font-semibold tracking-[0.18em] text-[#6e6255]' : 'gap-12 text-[10px] font-bold uppercase tracking-[0.2em] text-[#666666]'}`}>
-                        {[
-                            { name: '홈', action: 'home' },
-                            { name: '방 만들기', action: 'builder' },
-                            { name: '내 공간', action: 'projects' },
-                            { name: '갤러리', action: 'gallery' },
-                            { name: '커뮤니티', action: 'community' }
-                        ].map((item) => (
-                            <button
-                                key={item.name}
-                                onClick={() => item.action === 'home' ? router.push("/") : handleAction(item.action)}
-                                className={`transition-colors hover:text-black ${pathname === (item.action === 'home' ? '/' : item.action === 'projects' ? '/studio' : item.action === 'builder' ? '/studio/builder' : '/' + item.action) ? 'text-black' : ''}`}
-                            >
-                                {item.name}
-                            </button>
-                        ))}
-                    </div>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <span className="hidden text-sm text-[#6e665d] sm:block">
+                  {user?.name ?? user?.email ?? "내 공간"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-[#1f1f1f] px-5 text-sm font-semibold text-[#1a1a1a] transition hover:bg-[#111111] hover:text-white"
+                >
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuth(pathname ?? "/")}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+              >
+                로그인
+              </button>
+            )}
+          </div>
+        </nav>
 
-                    <div className={`hidden md:flex items-center ${isHome ? 'gap-4' : 'gap-8'}`}>
-                        {isHome && (
-                            <>
-                                <button
-                                    type="button"
-                                    aria-label="갤러리 열기"
-                                    onClick={() => router.push("/gallery")}
-                                    className="rounded-full border border-[#e7ddd0] p-2.5 text-[#47392a] transition-colors hover:bg-[#f3ece2]"
-                                >
-                                    <Search className="h-4 w-4" />
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label={isAuthenticated ? "내 공간 열기" : "로그인"}
-                                    onClick={() => {
-                                        if (isAuthenticated) {
-                                            router.push("/studio");
-                                            return;
-                                        }
-                                        setAuthNextPath(pathname ?? "/");
-                                        setIsAuthOpen(true);
-                                    }}
-                                    className="rounded-full border border-[#e7ddd0] p-2.5 text-[#47392a] transition-colors hover:bg-[#f3ece2]"
-                                >
-                                    <UserRound className="h-4 w-4" />
-                                </button>
-                            </>
-                        )}
-                        {isAuthenticated ? (
-                            <div className="flex items-center gap-4">
-                                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999]">
-                                    {user?.name ?? user?.email ?? "내 프로젝트"}
-                                </span>
-                                <button onClick={() => void logout()} className="p-2 hover:bg-black/5 rounded-full transition-colors group">
-                                    <LogOut className="w-4 h-4 text-black/20 group-hover:text-red-400" />
-                                </button>
-                            </div>
-                        ) : !isHome ? (
-                            <button
-                                onClick={() => {
-                                    setAuthNextPath("/studio/builder?intent=custom");
-                                    setIsAuthOpen(true);
-                                }}
-                                className="px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
-                            >
-                                방 만들기
-                            </button>
-                        ) : null}
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-                        className={`md:hidden p-2 rounded-full border ${isHome ? 'border-[#e7ddd0] bg-white' : 'border-[#e5e5e0] bg-white/70'}`}
-                        aria-label="모바일 메뉴 열기/닫기"
-                    >
-                        {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-                    </button>
-                    </div>
-                </div>
-
-                {isMobileMenuOpen && (
-                    <div className={`mx-auto mt-3 md:hidden max-w-[1440px] space-y-4 px-4 ${isHome ? '' : 'border-t border-[#e5e5e0] bg-white/95 py-4 backdrop-blur-md'}`}>
-                        <div className={isHome ? 'rounded-[28px] border border-[#e5dbcf] bg-white/95 p-4 shadow-[0_18px_40px_rgba(49,34,16,0.12)] backdrop-blur-md' : ''}>
-                        <div className="grid grid-cols-1 gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#666666]">
-                            {[
-                                { name: '홈', action: 'home' },
-                                { name: '방 만들기', action: 'builder' },
-                                { name: '내 공간', action: 'projects' },
-                                { name: '갤러리', action: 'gallery' },
-                                { name: '커뮤니티', action: 'community' }
-                            ].map((item) => (
-                                <button
-                                    key={item.name}
-                                    onClick={() => item.action === 'home' ? router.push("/") : handleAction(item.action)}
-                                    className="w-full rounded-full border border-[#e5e5e0] px-4 py-2 text-left hover:text-black hover:border-black transition-colors"
-                                >
-                                    {item.name}
-                                </button>
-                            ))}
-                        </div>
-
-                        {isAuthenticated ? (
-                            <div className="flex items-center justify-between gap-3 pt-2">
-                                <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#777777] truncate">
-                                    {user?.name ?? user?.email ?? "내 프로젝트"}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsMobileMenuOpen(false);
-                                        void logout();
-                                    }}
-                                    className="p-2 hover:bg-black/5 rounded-full transition-colors group"
-                                >
-                                    <LogOut className="w-4 h-4 text-black/30 group-hover:text-red-400" />
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => {
-                                    setIsMobileMenuOpen(false);
-                                    setAuthNextPath("/studio/builder?intent=custom");
-                                    setIsAuthOpen(true);
-                                }}
-                                className="w-full px-6 py-2 border border-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
-                            >
-                                방 만들기
-                            </button>
-                        )}
-                        </div>
-                    </div>
-                )}
-            </nav>
-
-            <AuthPopup isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} nextPath={authNextPath} />
-        </>
+        <AuthPopup isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} nextPath={authNextPath} />
+      </>
     );
+  }
+
+  return (
+    <>
+      <nav className="fixed left-0 right-0 top-0 z-[100] border-b border-[#e5e5e0] bg-white/80 backdrop-blur-md">
+        <div className="mx-auto max-w-[1440px] px-4 py-4 sm:px-6 sm:py-6 lg:px-12">
+          <div className="flex items-center justify-between">
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => router.push("/")}
+              className="font-outfit text-base font-medium uppercase tracking-[0.15em] text-[#241c14] sm:text-xl sm:tracking-[0.2em]"
+            >
+              Plan2Space
+            </motion.button>
+
+            <div className="hidden items-center gap-12 text-[10px] font-bold uppercase tracking-[0.2em] text-[#666666] md:flex">
+              {[
+                { name: "홈", href: "/" },
+                { name: "방 만들기", action: "builder" as const },
+                { name: "내 공간", action: "projects" as const },
+                { name: "갤러리", action: "gallery" as const },
+                { name: "커뮤니티", action: "community" as const }
+              ].map((item) => {
+                const isActive = "href" in item ? pathname === item.href : false;
+                return (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => ("href" in item ? router.push(item.href) : handleAction(item.action))}
+                    className={`transition-colors hover:text-black ${isActive ? "text-black" : ""}`}
+                  >
+                    {item.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="hidden items-center gap-4 md:flex">
+              {isAuthenticated ? (
+                <>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999]">
+                    {user?.name ?? user?.email ?? "내 프로젝트"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-[11px] font-semibold text-[#181818] transition hover:border-black/30"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAuth("/studio/builder?intent=custom")}
+                  className="rounded-full border border-black px-6 py-2 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-black hover:text-white"
+                >
+                  로그인
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="rounded-full border border-[#e5e5e0] bg-white/70 p-2 md:hidden"
+              aria-label="모바일 메뉴 열기/닫기"
+            >
+              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        {isMobileMenuOpen ? (
+          <div className="mx-auto max-w-[1440px] border-t border-[#e5e5e0] bg-white/95 px-4 py-4 backdrop-blur-md md:hidden">
+            <div className="grid grid-cols-1 gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#666666]">
+              {[
+                { name: "홈", href: "/" },
+                { name: "방 만들기", action: "builder" as const },
+                { name: "내 공간", action: "projects" as const },
+                { name: "갤러리", action: "gallery" as const },
+                { name: "커뮤니티", action: "community" as const }
+              ].map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => ("href" in item ? router.push(item.href) : handleAction(item.action))}
+                  className="w-full rounded-full border border-[#e5e5e0] px-4 py-2 text-left transition-colors hover:border-black hover:text-black"
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+
+            {isAuthenticated ? (
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="truncate text-[10px] font-bold uppercase tracking-[0.08em] text-[#777777]">
+                  {user?.name ?? user?.email ?? "내 프로젝트"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    void logout();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-[11px] font-semibold text-[#181818]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openAuth("/studio/builder?intent=custom");
+                }}
+                className="mt-3 w-full rounded-full border border-black px-6 py-2 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-black hover:text-white"
+              >
+                로그인
+              </button>
+            )}
+          </div>
+        ) : null}
+      </nav>
+
+      <AuthPopup isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} nextPath={authNextPath} />
+    </>
+  );
 }

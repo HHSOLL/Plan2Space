@@ -108,6 +108,40 @@ function resolveUploadBucket() {
   return process.env.PROJECT_MEDIA_BUCKET ?? process.env.NEXT_PUBLIC_PROJECT_MEDIA_BUCKET ?? "project-media";
 }
 
+function isRecoverableThumbnailUploadError(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("bucket") ||
+    normalized.includes("object not found") ||
+    normalized.includes("not found") ||
+    normalized.includes("permission") ||
+    normalized.includes("policy") ||
+    normalized.includes("row-level security")
+  );
+}
+
+async function ensureUploadBucket(
+  supabase: SupabaseClient<Database>,
+  bucketName: string
+) {
+  const lookup = await supabase.storage.getBucket(bucketName);
+  if (!lookup.error && lookup.data) {
+    return true;
+  }
+
+  const create = await supabase.storage.createBucket(bucketName, {
+    public: false,
+    fileSizeLimit: 5 * 1024 * 1024,
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/svg+xml"]
+  });
+
+  if (!create.error) {
+    return true;
+  }
+
+  return create.error.message.toLowerCase().includes("already exists");
+}
+
 function createPrivilegedSupabaseClient(userScopedSupabase: SupabaseClient<Database>) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -510,17 +544,31 @@ export async function createProjectVersion(
 
   if (payload.thumbnailDataUrl) {
     const parsed = dataUrlToBuffer(payload.thumbnailDataUrl);
+    const uploadBucket = resolveUploadBucket();
     snapshotPath = `${input.ownerId}/${input.projectId}/thumbnail-${Date.now()}.${mimeToExtension(parsed.mime)}`;
-    const upload = await privilegedSupabase.storage.from(resolveUploadBucket()).upload(snapshotPath, parsed.buffer, {
+    let upload = await privilegedSupabase.storage.from(uploadBucket).upload(snapshotPath, parsed.buffer, {
       contentType: parsed.mime,
       upsert: true
     });
 
-    if (upload.error) {
-      throw new ProjectVersionApiError(500, upload.error.message);
+    if (upload.error && isRecoverableThumbnailUploadError(upload.error.message)) {
+      const bucketReady = await ensureUploadBucket(privilegedSupabase, uploadBucket);
+      if (bucketReady) {
+        upload = await privilegedSupabase.storage.from(uploadBucket).upload(snapshotPath, parsed.buffer, {
+          contentType: parsed.mime,
+          upsert: true
+        });
+      }
     }
 
-    nextMeta.thumbnailBucket = resolveUploadBucket();
+    if (upload.error) {
+      if (!isRecoverableThumbnailUploadError(upload.error.message)) {
+        throw new ProjectVersionApiError(500, upload.error.message);
+      }
+      snapshotPath = null;
+    } else {
+      nextMeta.thumbnailBucket = uploadBucket;
+    }
   }
 
   if (payload.assetSummary !== undefined) {

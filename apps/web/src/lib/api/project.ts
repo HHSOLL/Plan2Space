@@ -49,6 +49,12 @@ export type ProjectSceneBootstrapResponse = {
   bootstrap: SceneDocumentBootstrap | null;
 };
 
+export type CreateStudioProjectInput = {
+  name: string;
+  description?: string | null;
+  scene: SaveProjectPayload;
+};
+
 async function requestJson<T>(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers ?? {});
   if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
@@ -85,6 +91,16 @@ export async function createProjectDraft(payload: {
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export async function createStudioProject(input: CreateStudioProjectInput) {
+  const project = await createProjectDraft({
+    name: input.name,
+    description: input.description ?? null
+  });
+
+  await saveProject(project.id, input.scene);
+  return project;
 }
 
 export async function fetchLatestProjectVersion(projectId: string) {

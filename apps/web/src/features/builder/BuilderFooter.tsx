@@ -16,7 +16,7 @@ export function BuilderFooter({
   const primaryLabel = isFinalStep ? (isCreating ? "공간 생성 중..." : "이 공간 디자인하기") : "다음";
 
   return (
-    <div className="border-t border-black/10 bg-white pt-6">
+    <div className="border-t border-black/10 bg-white px-6 py-5 xl:sticky xl:bottom-0 xl:z-10 xl:px-9">
       {stepIndex === 0 ? (
         <button
           type="button"
