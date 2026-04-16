@@ -41,7 +41,7 @@
   }
 
   .p2s-workspace-shell {
-    @apply grid gap-4 lg:grid-cols-[368px_minmax(0,1fr)];
+    @apply grid gap-4 md:grid-cols-[368px_minmax(0,1fr)];
   }
 
   .p2s-workspace-panel {

@@ -145,6 +145,30 @@ Updated:
 Removed/Deprecated:
 - 템플릿 선택이 `/studio/builder` 쿼리스트링 복원 경로를 항상 거친다는 가정.
 
+## 2026-04-16 변경 동기화 (Builder 3D UX Stabilization)
+Added:
+- builder step 2 좌측 guide도 template icon이 아니라 실제 생성된 floor outline 기반으로 표시하는 기준을 추가.
+- opening/style preview 카메라를 room center orbit + wheel zoom 중심 탐색 UX로 고정.
+
+Updated:
+- exterior polygon 복원 시 wall 좌표 snap tolerance를 meter 단위 room shell에 맞게 보수적으로 유지하도록 갱신.
+- `t-shape`/`u-shape`/`slanted-shape` geometry는 정규화된 nook/bevel 값을 직접 사용하도록 명시.
+
+Removed/Deprecated:
+- preview orbit이 MapControls 기본 pan/rotate 조합에 의존한다는 가정.
+
+## 2026-04-16 변경 동기화 (Community + Studio Shell Differentiation)
+Added:
+- `/community`를 질문/피드백/챌린지 성격의 커뮤니티 허브로 구분하는 규칙을 추가.
+- `/studio`를 gallery 톤의 개인 프로젝트 아카이브로 재정의하고, 프로젝트 필터/검색 UI를 허용한다.
+- 전역 navbar 탭을 우측 정렬로 통일하고, non-editor 페이지에는 navbar 높이만큼의 전역 오프셋을 적용한다.
+
+Updated:
+- gallery는 발행 장면 아카이브, community는 대화 중심 허브라는 역할 차이를 명시.
+
+Removed/Deprecated:
+- gallery/community를 거의 동일한 피드 레이아웃으로 유지하던 이전 가정.
+
 ## 2026-04-14 변경 동기화 (Physical Fidelity Runtime Pass)
 Added:
 - 실측/마감 메타데이터를 catalog -> save pipeline -> sceneDocument -> viewer hotspot까지 유지하는 계약을 기본 규칙으로 추가.

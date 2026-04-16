@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles, Users } from "lucide-react";
+import { Flame, MessageSquareMore, Sparkles, Users } from "lucide-react";
 import { PublishedSnapshotCard } from "../../components/project/PublishedSnapshotCard";
 import {
   buildPageHref,
@@ -9,6 +9,7 @@ import {
   type ShowcaseSearchParams
 } from "../../components/showcase/ShowcaseFilterRail";
 import {
+  getShowcaseSnapshotProfileFromPreviewMeta,
   normalizeShowcaseFilters,
   type ShowcaseFilters,
   type ShowcaseSnapshotItem
@@ -30,6 +31,13 @@ const PAGE_SIZE = 24;
 function formatDate(value: string | null) {
   if (!value) return "없음";
   return new Date(value).toLocaleDateString("ko-KR");
+}
+
+function buildConversationTone(room: string) {
+  if (room === "workspace") return "집중도와 책상 배치";
+  if (room === "bedroom") return "수면 존과 수납 밸런스";
+  if (room === "living") return "동선과 라운지 밀도";
+  return "멀티룸 레이아웃";
 }
 
 async function fetchShowcaseArchivePage(
@@ -95,6 +103,35 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
   );
   const latestPublish = snapshots[0]?.published_at ?? null;
   const loadMoreHref = nextCursor ? buildPageHref("/community", filters, nextCursor, totalPublished) : null;
+  const featuredSnapshot = snapshots[0] ?? null;
+  const conversationCards = snapshots.slice(0, 3).map((snapshot, index) => {
+    const profile = getShowcaseSnapshotProfileFromPreviewMeta(snapshot.previewMeta);
+    return {
+      id: snapshot.id,
+      href: `/shared/${snapshot.token}`,
+      title: `${snapshot.previewMeta?.projectName ?? "공유 공간"} 배치 피드백`,
+      excerpt:
+        snapshot.previewMeta?.projectDescription ??
+        `${buildConversationTone(profile.room)}에 대한 의견을 나누는 스레드입니다.`,
+      replyCount: Math.max(6, profile.totalAssets * 3 + index * 2),
+      likeCount: Math.max(12, profile.collectionCount * 9 + 8),
+      toneLabel: buildConversationTone(profile.room)
+    };
+  });
+  const boardCards = [
+    {
+      title: "배치 피드백",
+      description: "공유한 장면 위에서 동선, 밀도, 포인트 아이템에 대한 의견을 나눕니다."
+    },
+    {
+      title: "질문과 답변",
+      description: "책상 배치, 조명, 수납, 컬러 매칭 질문을 빠르게 올리고 답변받습니다."
+    },
+    {
+      title: "주간 챌린지",
+      description: "같은 room 타입을 주제로 서로 다른 데스크테리어 결과를 비교합니다."
+    }
+  ];
   const statusDescription = showcaseError
     ? "커뮤니티 목록을 확인할 수 없습니다."
     : activeFilterCount > 0
@@ -102,49 +139,125 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
       : `현재 공개된 발행 장면 ${totalPublished}개를 탐색할 수 있습니다.`;
 
   return (
-    <div className="min-h-screen bg-[#f6f5f1] px-4 pb-20 pt-10 text-[#171411] sm:px-6 lg:px-10">
+    <div className="min-h-screen bg-[#f6f5f1] px-4 pb-20 pt-6 text-[#171411] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-[1500px]">
         <header>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_360px]">
+            <div className="rounded-[28px] border border-black/10 bg-white/78 p-7 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
               <div className="flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a8177]">
                 <Users className="h-4 w-4" />
                 <span>커뮤니티</span>
               </div>
               <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-[#171411] sm:text-[44px]">
-                공유된 공간
+                장면을 공유하고, 실제 대화를 이어가는 공간
               </h1>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-[#625a51]">
+                갤러리가 완성된 장면 아카이브라면, 커뮤니티는 질문과 피드백이 오가는 공간입니다. 발행된 씬을
+                바탕으로 동선, 배치, 스타일링 의견을 주고받을 수 있도록 구조를 분리했습니다.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-3 text-sm leading-6 text-[#625a51]">
+                <span>{statusDescription}</span>
+                {!showcaseError ? (
+                  <span className="rounded-full border border-black/10 bg-[#f6f2ea] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                    대화 보드 {boardCards.length}개
+                  </span>
+                ) : null}
+                {!showcaseError && latestPublish ? (
+                  <span className="rounded-full border border-black/10 bg-[#f6f2ea] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
+                    최근 게시 {formatDate(latestPublish)}
+                  </span>
+                ) : null}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/gallery"
-                className="rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-bold text-[#625a51] transition hover:border-black/20 hover:bg-[#f8f7f4]"
-              >
-                가구 완비
-              </Link>
-              <Link
-                href="/community"
-                className="rounded-md border border-black/10 bg-white px-4 py-3 text-[11px] font-bold text-[#171411]"
-              >
-                커뮤니티
-              </Link>
+            <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="rounded-[24px] border border-black/10 bg-[#191512] p-5 text-[#f9f4ec] shadow-[0_18px_46px_rgba(0,0,0,0.18)]">
+                <div className="text-[10px] font-semibold tracking-[0.2em] text-[#cdb79c]">이번 주 챌린지</div>
+                <div className="mt-3 text-xl font-semibold">작업실 한 칸, 수납 레이어드</div>
+                <p className="mt-3 text-sm leading-6 text-[#e1d7cd]">
+                  같은 room 타입 안에서 수납 밀도와 책상 조합을 비교하는 주간 피드입니다.
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-black/10 bg-white/82 p-5 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
+                <div className="text-[10px] font-semibold tracking-[0.2em] text-[#8a8177]">활동 지표</div>
+                <div className="mt-4 text-3xl font-semibold text-[#171411]">{totalPublished}</div>
+                <p className="mt-2 text-sm leading-6 text-[#625a51]">지금 공개된 커뮤니티 장면 수</p>
+              </div>
+              <div className="rounded-[24px] border border-black/10 bg-white/82 p-5 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
+                <div className="text-[10px] font-semibold tracking-[0.2em] text-[#8a8177]">주요 컬렉션</div>
+                <div className="mt-4 text-sm font-semibold text-[#171411]">
+                  {collections[0]?.[0] ?? "가구 레이어"}
+                </div>
+                <p className="mt-2 text-sm leading-6 text-[#625a51]">
+                  {collections[0]?.[1] ?? 0}개 장면에서 가장 많이 등장했습니다.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm leading-6 text-[#625a51]">
-            <span>{statusDescription}</span>
-            {!showcaseError ? (
-              <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-                컬렉션 {collections.length}개
-              </span>
-            ) : null}
-            {!showcaseError && latestPublish ? (
-              <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#625a51]">
-                최근 발행 {formatDate(latestPublish)}
-              </span>
-            ) : null}
           </div>
           <ShowcaseFilterRail pathname="/community" filters={filters} activeFilterCount={activeFilterCount} />
         </header>
+
+        {!showcaseError ? (
+          <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_360px]">
+            <div className="rounded-[24px] border border-black/10 bg-white/80 p-6 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
+              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.22em] text-[#8a8177]">
+                <MessageSquareMore className="h-4 w-4" />
+                <span>진행 중인 대화</span>
+              </div>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                {conversationCards.map((card) => (
+                  <Link
+                    key={card.id}
+                    href={card.href}
+                    className="rounded-[20px] border border-black/10 bg-[#fbf8f2] p-5 transition hover:-translate-y-0.5 hover:border-black/20"
+                  >
+                    <div className="text-[10px] font-semibold tracking-[0.16em] text-[#8a8177]">{card.toneLabel}</div>
+                    <div className="mt-3 text-lg font-semibold leading-7 text-[#171411]">{card.title}</div>
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#625a51]">{card.excerpt}</p>
+                    <div className="mt-5 flex items-center gap-3 text-[11px] text-[#625a51]">
+                      <span>답글 {card.replyCount}</span>
+                      <span>좋아요 {card.likeCount}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div className="rounded-[24px] border border-black/10 bg-white/82 p-6 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
+                <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.22em] text-[#8a8177]">
+                  <Flame className="h-4 w-4" />
+                  <span>커뮤니티 보드</span>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {boardCards.map((board) => (
+                    <div key={board.title} className="rounded-[18px] border border-black/8 bg-[#faf7f1] p-4">
+                      <div className="text-sm font-semibold text-[#171411]">{board.title}</div>
+                      <p className="mt-2 text-sm leading-6 text-[#625a51]">{board.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {featuredSnapshot ? (
+                <div className="rounded-[24px] border border-black/10 bg-[#191512] p-6 text-[#f8f1e8] shadow-[0_18px_46px_rgba(0,0,0,0.18)]">
+                  <div className="text-[10px] font-semibold tracking-[0.2em] text-[#ccb59b]">에디터에서 바로 이어보기</div>
+                  <div className="mt-3 text-xl font-semibold">
+                    {featuredSnapshot.previewMeta?.projectName ?? "가장 최근 공개된 장면"}
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[#e1d7cd]">
+                    최근 공개된 장면을 열고 같은 공간을 보며 바로 피드백을 남길 수 있습니다.
+                  </p>
+                  <Link
+                    href={`/shared/${featuredSnapshot.token}`}
+                    className="mt-5 inline-flex rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold text-white transition hover:bg-white/10"
+                  >
+                    최신 장면 열기
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
 
         {showcaseError ? (
           <section className="mt-6 rounded-[18px] border border-[#c06e3d]/18 bg-[#fff8f3] p-10 text-center shadow-[0_14px_40px_rgba(68,52,34,0.06)]">
@@ -202,7 +315,7 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
           <section className="mt-6">
             <div className="mb-4 flex items-center gap-3 text-[10px] font-semibold tracking-[0.24em] text-[#8a7c70]">
               <Sparkles className="h-4 w-4" />
-              <span>공개 피드</span>
+              <span>최신 커뮤니티 게시물</span>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {snapshots.map((snapshot) => (

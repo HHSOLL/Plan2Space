@@ -31,6 +31,10 @@
 - Preview/Viewer: 읽기 중심 탐색 카메라 UX
 - 모드 전환은 편집 상태를 깨지 않아야 한다.
 
+추가 기준:
+- builder opening/style preview는 room center를 target으로 하는 orbit camera를 사용한다.
+- preview orbit은 wheel zoom과 drag rotation을 기본 제스처로 제공하고 pan은 보조 동작으로 제한하거나 비활성화한다.
+
 ## 뷰어 규칙
 - `apps/web/src/components/viewer/ReadOnlySceneViewport.tsx`
 - `apps/web/src/components/viewer/ProductHotspotDrawer.tsx`

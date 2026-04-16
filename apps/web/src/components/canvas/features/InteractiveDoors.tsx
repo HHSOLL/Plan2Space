@@ -16,19 +16,32 @@ type DoorSpec = {
   bottomOffset: number;
 };
 
+type WindowSpec = {
+  id: string;
+  position: [number, number, number];
+  angle: number;
+  width: number;
+  height: number;
+  thickness: number;
+  sillHeight: number;
+};
+
 function DoorLeaf({ door }: { door: DoorSpec }) {
   const registry = useInteractionRegistry();
   const rootRef = useRef<THREE.Group | null>(null);
   const pivotRef = useRef<THREE.Group | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const openAngle = -Math.PI / 2;
+  const openAngle = -Math.PI / 2.2;
+  const frameThickness = Math.max(0.05, door.thickness * 0.8);
+  const jambWidth = Math.max(0.06, door.width * 0.045);
+  const headerHeight = Math.max(0.08, door.height * 0.05);
 
   useEffect(() => {
     if (!pivotRef.current) return;
     gsap.to(pivotRef.current.rotation, {
       y: isOpen ? openAngle : 0,
-      duration: 0.6,
+      duration: 0.55,
       ease: "power2.out"
     });
   }, [isOpen, openAngle]);
@@ -47,11 +60,68 @@ function DoorLeaf({ door }: { door: DoorSpec }) {
   }, [registry]);
 
   return (
-    <group ref={rootRef} position={[door.position[0], door.bottomOffset, door.position[2]]} rotation={[0, door.angle, 0]}>
-      <group ref={pivotRef}>
-        <mesh ref={meshRef} position={[door.width / 2, door.height / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[door.width, door.height, door.thickness]} />
-          <meshStandardMaterial color="#c7b79f" roughness={0.55} metalness={0.05} />
+    <group ref={rootRef} position={door.position} rotation={[0, door.angle, 0]}>
+      <group position={[0, door.bottomOffset, 0]}>
+        <mesh position={[door.width / 2, door.height + headerHeight / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[door.width + jambWidth * 2, headerHeight, frameThickness]} />
+          <meshStandardMaterial color="#f1ece4" roughness={0.72} />
+        </mesh>
+        <mesh position={[-jambWidth / 2, door.height / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[jambWidth, door.height, frameThickness]} />
+          <meshStandardMaterial color="#f1ece4" roughness={0.72} />
+        </mesh>
+        <mesh position={[door.width + jambWidth / 2, door.height / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[jambWidth, door.height, frameThickness]} />
+          <meshStandardMaterial color="#f1ece4" roughness={0.72} />
+        </mesh>
+        <group ref={pivotRef}>
+          <mesh ref={meshRef} position={[door.width / 2, door.height / 2, frameThickness * 0.15]} castShadow receiveShadow>
+            <boxGeometry args={[door.width, door.height, door.thickness]} />
+            <meshStandardMaterial color="#d8c7b1" roughness={0.56} metalness={0.04} />
+          </mesh>
+          <mesh position={[door.width * 0.84, door.height / 2, door.thickness * 0.65]} castShadow receiveShadow>
+            <sphereGeometry args={[Math.max(0.018, door.width * 0.018), 18, 18]} />
+            <meshStandardMaterial color="#8d8f93" roughness={0.28} metalness={0.82} />
+          </mesh>
+          <mesh position={[door.width * 0.46, door.height * 0.62, door.thickness * 0.55]} castShadow receiveShadow>
+            <boxGeometry args={[door.width * 0.48, door.height * 0.18, door.thickness * 0.12]} />
+            <meshStandardMaterial color="#ccb99c" roughness={0.68} />
+          </mesh>
+        </group>
+      </group>
+    </group>
+  );
+}
+
+function WindowFrame({ window }: { window: WindowSpec }) {
+  const frameDepth = Math.max(0.05, window.thickness * 0.78);
+  const frameWidth = Math.max(0.045, window.width * 0.04);
+  const mullionWidth = Math.max(0.035, window.width * 0.03);
+
+  return (
+    <group position={window.position} rotation={[0, window.angle, 0]}>
+      <group position={[0, window.sillHeight, 0]}>
+        <mesh position={[window.width / 2, window.height / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[window.width + frameWidth * 2, window.height + frameWidth * 2, frameDepth]} />
+          <meshStandardMaterial color="#f1f2f4" roughness={0.42} metalness={0.08} />
+        </mesh>
+        <mesh position={[window.width / 2, window.height / 2, frameDepth * 0.18]} castShadow receiveShadow>
+          <boxGeometry args={[window.width - frameWidth * 1.2, window.height - frameWidth * 1.2, frameDepth * 0.28]} />
+          <meshStandardMaterial
+            color="#d9ebf6"
+            transparent
+            opacity={0.44}
+            roughness={0.08}
+            metalness={0.1}
+          />
+        </mesh>
+        <mesh position={[window.width / 2, window.height / 2, frameDepth * 0.22]} castShadow receiveShadow>
+          <boxGeometry args={[mullionWidth, window.height - frameWidth, frameDepth * 0.34]} />
+          <meshStandardMaterial color="#f7f8f9" roughness={0.36} metalness={0.06} />
+        </mesh>
+        <mesh position={[window.width / 2, window.height / 2, frameDepth * 0.22]} castShadow receiveShadow>
+          <boxGeometry args={[window.width - frameWidth, mullionWidth, frameDepth * 0.34]} />
+          <meshStandardMaterial color="#f7f8f9" roughness={0.36} metalness={0.06} />
         </mesh>
       </group>
     </group>
@@ -63,7 +133,7 @@ export default function InteractiveDoors() {
   const openings = useShellSelector((slice) => slice.openings);
   const scale = useShellSelector((slice) => slice.scale);
 
-  const doors = useMemo(() => {
+  const doorSpecs = useMemo(() => {
     return openings
       .filter((opening) => opening.type === "door")
       .map((opening) => {
@@ -71,29 +141,22 @@ export default function InteractiveDoors() {
         if (!wall) return null;
         const dx = wall.end[0] - wall.start[0];
         const dz = wall.end[1] - wall.start[1];
-        const length = Math.hypot(dx, dz);
+        const length = Math.hypot(dx, dz) * scale;
         if (!Number.isFinite(length) || length <= 0) return null;
         const angle = Math.atan2(dz, dx);
-        const ux = dx / length;
-        const uz = dz / length;
-        const width = Math.max(0.6, opening.width * scale);
-        const height = Math.max(1.9, opening.height * scale);
-        const thickness = Math.max(0.04, wall.thickness * scale * 0.35);
+        const ux = dx / Math.hypot(dx, dz);
+        const uz = dz / Math.hypot(dx, dz);
+        const width = Math.max(0.72, opening.width * scale);
+        const height = Math.max(1.95, opening.height * scale);
+        const thickness = Math.max(0.045, wall.thickness * scale * 0.34);
         const offset = Math.min(Math.max(0, opening.offset * scale), Math.max(0, length - width));
-        const bottomOffset =
-          typeof opening.verticalOffset === "number"
-            ? opening.verticalOffset * scale
-            : typeof opening.sillHeight === "number"
-              ? opening.sillHeight * scale
-              : 0;
-        const position: [number, number, number] = [
-          wall.start[0] * scale + ux * offset,
-          0,
-          wall.start[1] * scale + uz * offset
-        ];
+        const bottomOffset = typeof opening.verticalOffset === "number" ? opening.verticalOffset * scale : 0;
+        const startX = wall.start[0] * scale + ux * offset;
+        const startZ = wall.start[1] * scale + uz * offset;
+
         return {
           id: opening.id,
-          position,
+          position: [startX, 0, startZ] as [number, number, number],
           angle,
           width,
           height,
@@ -104,12 +167,50 @@ export default function InteractiveDoors() {
       .filter((entry): entry is DoorSpec => Boolean(entry));
   }, [openings, scale, walls]);
 
-  if (doors.length === 0) return null;
+  const windowSpecs = useMemo(() => {
+    return openings
+      .filter((opening) => opening.type === "window")
+      .map((opening) => {
+        const wall = walls.find((item) => item.id === opening.wallId);
+        if (!wall) return null;
+        const dx = wall.end[0] - wall.start[0];
+        const dz = wall.end[1] - wall.start[1];
+        const rawLength = Math.hypot(dx, dz);
+        const length = rawLength * scale;
+        if (!Number.isFinite(length) || length <= 0 || rawLength <= 0) return null;
+        const angle = Math.atan2(dz, dx);
+        const ux = dx / rawLength;
+        const uz = dz / rawLength;
+        const width = Math.max(0.92, opening.width * scale);
+        const height = Math.max(0.88, opening.height * scale);
+        const thickness = Math.max(0.04, wall.thickness * scale * 0.45);
+        const offset = Math.min(Math.max(0, opening.offset * scale), Math.max(0, length - width));
+        const sillHeight = typeof opening.sillHeight === "number" ? opening.sillHeight * scale : 0.9;
+        const startX = wall.start[0] * scale + ux * offset;
+        const startZ = wall.start[1] * scale + uz * offset;
+
+        return {
+          id: opening.id,
+          position: [startX, 0, startZ] as [number, number, number],
+          angle,
+          width,
+          height,
+          thickness,
+          sillHeight
+        } satisfies WindowSpec;
+      })
+      .filter((entry): entry is WindowSpec => Boolean(entry));
+  }, [openings, scale, walls]);
+
+  if (doorSpecs.length === 0 && windowSpecs.length === 0) return null;
 
   return (
     <group>
-      {doors.map((door) => (
+      {doorSpecs.map((door) => (
         <DoorLeaf key={door.id} door={door} />
+      ))}
+      {windowSpecs.map((window) => (
+        <WindowFrame key={window.id} window={window} />
       ))}
     </group>
   );

@@ -66,24 +66,6 @@ export function ProjectEditorHeader({
             >
               Plan2Space
             </button>
-            <div className="hidden items-center gap-4 xl:flex">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <button
-                    key={link.href}
-                    type="button"
-                    onClick={() => router.push(link.href)}
-                    className={`text-[10px] font-semibold tracking-[0.02em] transition ${
-                      isActive ? "text-[#171411]" : "text-[#8a8177] hover:text-[#171411]"
-                    }`}
-                  >
-                    {link.label}
-                  </button>
-                );
-              })}
-            </div>
-
             <button
               type="button"
               onClick={onBack}
@@ -112,6 +94,24 @@ export function ProjectEditorHeader({
           </motion.div>
 
           <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-4 xl:flex">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <button
+                    key={link.href}
+                    type="button"
+                    onClick={() => router.push(link.href)}
+                    className={`text-[10px] font-semibold tracking-[0.02em] transition ${
+                      isActive ? "text-[#171411]" : "text-[#8a8177] hover:text-[#171411]"
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                );
+              })}
+            </div>
+
             {canShowPanels ? (
               <>
                 <button
@@ -139,9 +139,13 @@ export function ProjectEditorHeader({
 
             {isAuthenticated ? (
               <>
-                <span className="hidden max-w-[160px] truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[#999999] xl:block">
+                <button
+                  type="button"
+                  onClick={() => router.push("/my")}
+                  className="hidden max-w-[160px] truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[#999999] transition hover:text-[#171411] xl:block"
+                >
                   {user?.name ?? user?.email ?? "내 프로젝트"}
-                </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => void logout()}

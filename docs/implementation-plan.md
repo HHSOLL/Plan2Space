@@ -22,6 +22,8 @@
 - 빌더 단계(Shape/Dimension/Opening/Style)를 레퍼런스 density 기준으로 재작성
 - 개구부 스타일 retune 및 auth restore 이후 상태 덮어쓰기 버그 수정
 - builder desktop shell 무스크롤 fit 및 실 floor outline 기반 dimension overlay 적용
+- builder exterior polygon/snap 안정화 및 shape-specific geometry 정합성 보강
+- opening/style step preview에 orbit/zoom 카메라 UX 적용
 - 템플릿 기반 방 생성 속도 개선
 - 저장 직후 에디터/뷰어 일관성 확인 자동화
 - project-media bucket 미구성 시 thumbnail upload 복구/재시도로 저장 실패를 완화
@@ -144,6 +146,17 @@ Updated:
 
 Removed/Deprecated:
 - 템플릿 선택이 항상 builder step flow를 지난다는 완료 조건.
+
+## 2026-04-16 변경 동기화 (Community + Studio Shell Differentiation)
+Added:
+- P3 범위에 community 대화형 허브 구조(토론/챌린지/최신 게시물 구분)를 추가.
+- `/studio` 개인 아카이브를 gallery 톤 카드 피드 + 필터/검색 구조로 정리하는 UI 슬라이스를 추가.
+
+Updated:
+- 전역 navbar 정렬 기준을 우측 탭 구조로 맞추고, non-editor surface 레이아웃 오프셋 점검을 P3 UX 안정화 항목에 포함.
+
+Removed/Deprecated:
+- `/community`와 `/gallery`가 동일한 구조로만 유지된다는 가정.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

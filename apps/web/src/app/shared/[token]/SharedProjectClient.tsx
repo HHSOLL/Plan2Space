@@ -306,9 +306,13 @@ export function SharedProjectClient({
               <div className="flex shrink-0 items-center gap-2">
                 {isAuthenticated ? (
                   <>
-                    <span className="hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999] xl:block">
+                    <button
+                      type="button"
+                      onClick={() => router.push("/my")}
+                      className="hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999] transition hover:text-[#171411] xl:block"
+                    >
                       {user?.name ?? user?.email ?? "내 공간"}
-                    </span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => void logout()}
@@ -401,9 +405,13 @@ export function SharedProjectClient({
             <div className="flex shrink-0 items-center gap-2">
               {isAuthenticated ? (
                 <>
-                  <span className="hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999] xl:block">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/my")}
+                    className="hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-[0.1em] text-[#999999] transition hover:text-[#171411] xl:block"
+                  >
                     {user?.name ?? user?.email ?? "내 공간"}
-                  </span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => void logout()}

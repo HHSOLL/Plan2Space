@@ -1,6 +1,6 @@
 "use client";
 
-import { MapControls, OrthographicCamera, PerspectiveCamera, PointerLockControls } from "@react-three/drei";
+import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CapsuleCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -168,6 +168,7 @@ export default function CameraRig() {
   const zoom = Math.max(30, 120 / radius);
   const builderDistance = Math.max(3.4, radius * 1.15);
   const builderHeight = Math.max(2.4, radius * 0.72);
+  const builderTargetY = Math.max(1.05, radius * 0.08);
 
   const initialPosition = useMemo((): [number, number, number] => {
     const preferredAnchor =
@@ -260,20 +261,22 @@ export default function CameraRig() {
           fov={42}
           near={0.1}
           far={2000}
-          position={[centerX + builderDistance * 0.62, builderHeight, centerZ + builderDistance * 0.72]}
+          position={[centerX + builderDistance * 0.82, builderHeight + 0.5, centerZ + builderDistance * 0.92]}
         />
-        <MapControls
+        <OrbitControls
           ref={mapControlsRef}
-          target={[centerX, 0.6, centerZ]}
+          target={[centerX, builderTargetY, centerZ]}
           enabled={!isTransforming}
           enableRotate
-          enablePan
+          enablePan={false}
           enableZoom
           enableDamping
-          dampingFactor={0.08}
-          minPolarAngle={Math.PI * 0.18}
-          maxPolarAngle={Math.PI * 0.46}
-          minDistance={Math.max(2, radius * 0.45)}
+          dampingFactor={0.09}
+          rotateSpeed={0.8}
+          zoomSpeed={0.95}
+          minPolarAngle={Math.PI * 0.22}
+          maxPolarAngle={Math.PI * 0.48}
+          minDistance={Math.max(2.2, radius * 0.62)}
           maxDistance={Math.max(16, radius * 3.2)}
         />
       </>

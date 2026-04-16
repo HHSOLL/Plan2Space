@@ -106,7 +106,7 @@ export default function ProceduralCeiling() {
     <group position={[0, wallHeight, 0]} visible={viewMode === "walk"}>
       {geometries.map((entry) => (
         <mesh key={entry.id} geometry={entry.geometry} castShadow receiveShadow>
-          <meshStandardMaterial color="#1f1f1f" roughness={0.9} side={THREE.DoubleSide} />
+          <meshStandardMaterial color="#f2efe8" roughness={0.96} side={THREE.DoubleSide} />
         </mesh>
       ))}
     </group>

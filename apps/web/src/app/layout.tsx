@@ -18,6 +18,7 @@ export const metadata = {
 };
 
 import { Providers } from "../components/providers/Providers";
+import { AppViewportShell } from "../components/navigation/AppViewportShell";
 import { PremiumNavbar } from "../components/navigation/PremiumNavbar";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -28,9 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <SonnerToaster />
         <Providers>
           <PremiumNavbar />
-          <main className="relative min-h-screen w-full overflow-x-hidden pt-20 md:pt-0">
-            {children}
-          </main>
+          <AppViewportShell>{children}</AppViewportShell>
         </Providers>
       </body>
     </html>
