@@ -169,6 +169,7 @@ Added:
 
 Updated:
 - 편집 경험 목표를 `reference chrome`에서 `reference chrome + top-view legibility + walk-view entry framing`까지 확장.
+- P2 안정화 기준에 top-view camera drag와 furniture transform interaction 분리, concave room wall offset 정합성을 추가.
 
 Removed/Deprecated:
 - top-view 편집이 pan/move affordance와 별도 `목록/속성/항목뷰` 보조 UI에 의존한다는 가정.

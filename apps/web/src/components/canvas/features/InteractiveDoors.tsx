@@ -61,7 +61,7 @@ function DoorLeaf({ door }: { door: DoorSpec }) {
   }, [registry]);
 
   return (
-    <group ref={rootRef} position={door.position} rotation={[0, door.angle, 0]}>
+    <group ref={rootRef} name={`door:${door.id}`} position={door.position} rotation={[0, door.angle, 0]}>
       <group position={[0, door.bottomOffset, 0]}>
         <mesh position={[door.width / 2, door.height + headerHeight / 2, 0]} castShadow receiveShadow>
           <boxGeometry args={[door.width + jambWidth * 2, headerHeight, frameThickness]} />
@@ -100,7 +100,7 @@ function WindowFrame({ window }: { window: WindowSpec }) {
   const mullionWidth = Math.max(0.035, window.width * 0.03);
 
   return (
-    <group position={window.position} rotation={[0, window.angle, 0]}>
+    <group name={`window:${window.id}`} position={window.position} rotation={[0, window.angle, 0]}>
       <group position={[0, window.sillHeight, 0]}>
         <mesh position={[window.width / 2, window.height / 2, 0]} castShadow receiveShadow>
           <boxGeometry args={[window.width + frameWidth * 2, window.height + frameWidth * 2, frameDepth]} />

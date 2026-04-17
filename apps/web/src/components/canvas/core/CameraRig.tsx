@@ -163,7 +163,7 @@ function WalkRig({
 }
 
 export default function CameraRig() {
-  const { gl } = useThree();
+  const { gl, scene, camera: activeCamera } = useThree();
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const walls = useShellSelector((slice) => slice.walls);
@@ -176,6 +176,8 @@ export default function CameraRig() {
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);
   const controlsRef = useRef<any>(null);
   const topRotationRef = useRef(0);
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const pointerRef = useRef(new THREE.Vector2());
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerZ = (bounds.minZ + bounds.maxZ) / 2;
@@ -287,8 +289,32 @@ export default function CameraRig() {
     let startX = 0;
     let startRotation = topRotationRef.current;
 
+    const shouldBlockTopRotation = (clientX: number, clientY: number) => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return false;
+      pointerRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointerRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycasterRef.current.setFromCamera(pointerRef.current, orthoRef.current ?? activeCamera);
+
+      return raycasterRef.current.intersectObjects(scene.children, true).some((hit) => {
+        let node: THREE.Object3D | null = hit.object;
+        while (node) {
+          if (node.name.startsWith("furniture:")) return true;
+          if (node.name.startsWith("wall:")) return true;
+          if (node.name.startsWith("top-wall:")) return true;
+          if (node.name.startsWith("door:")) return true;
+          if (node.name.startsWith("window:")) return true;
+          if (node.type.startsWith("TransformControls")) return true;
+          node = node.parent;
+        }
+        return false;
+      });
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
+      if (isTransforming) return;
+      if (shouldBlockTopRotation(event.clientX, event.clientY)) return;
       dragging = true;
       startX = event.clientX;
       startRotation = topRotationRef.current;
@@ -324,7 +350,7 @@ export default function CameraRig() {
       window.removeEventListener("pointerup", handlePointerUp);
       element.removeEventListener("wheel", handleWheel);
     };
-  }, [applyTopCamera, gl.domElement, viewMode]);
+  }, [activeCamera, applyTopCamera, gl.domElement, isTransforming, scene, viewMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -13,8 +13,42 @@ function polygonArea(points: [number, number][]) {
   return sum / 2;
 }
 
-function pointsMatch(left: [number, number], right: [number, number], tolerance = POINT_TOLERANCE) {
-  return Math.abs(left[0] - right[0]) <= tolerance && Math.abs(left[1] - right[1]) <= tolerance;
+function isPointOnSegment(point: [number, number], start: [number, number], end: [number, number], tolerance = POINT_TOLERANCE) {
+  const [px, py] = point;
+  const [x1, y1] = start;
+  const [x2, y2] = end;
+  const cross = (px - x1) * (y2 - y1) - (py - y1) * (x2 - x1);
+  if (Math.abs(cross) > tolerance) return false;
+  const dot = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
+  if (dot < -tolerance) return false;
+  const squaredLength = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+  if (dot - squaredLength > tolerance) return false;
+  return true;
+}
+
+function isPointInsidePolygon(point: [number, number], polygon: [number, number][]) {
+  let inside = false;
+
+  for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index, index += 1) {
+    const start = polygon[index]!;
+    const end = polygon[previous]!;
+
+    if (isPointOnSegment(point, start, end)) {
+      return true;
+    }
+
+    const [x1, y1] = start;
+    const [x2, y2] = end;
+    const intersects =
+      y1 > point[1] !== y2 > point[1] &&
+      point[0] < ((x2 - x1) * (point[1] - y1)) / (y2 - y1 + Number.EPSILON) + x1;
+
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
 }
 
 function polygonCentroid(points: [number, number][]) {
@@ -48,6 +82,7 @@ function resolvePrimaryOutline(floors: Floor[]) {
 }
 
 export function getWallPlaneOffset(wall: Wall, floors: Floor[], scale: number) {
+  const resolvedScale = Number.isFinite(scale) && scale > POINT_TOLERANCE ? scale : 1;
   const rawDx = wall.end[0] - wall.start[0];
   const rawDy = wall.end[1] - wall.start[1];
   const rawLength = Math.hypot(rawDx, rawDy);
@@ -63,26 +98,30 @@ export function getWallPlaneOffset(wall: Wall, floors: Floor[], scale: number) {
 
   const midpointX = (wall.start[0] + wall.end[0]) / 2;
   const midpointY = (wall.start[1] + wall.end[1]) / 2;
-  const distance = Math.max(0.02, wall.thickness * scale) / 2;
+  const rawDistance = Math.max(0.02 / resolvedScale, wall.thickness) / 2;
+  const rawSampleDistance = rawDistance + Math.max(POINT_TOLERANCE * 4, wall.thickness * 0.2);
 
   const candidateNormalA = [rawDy / rawLength, -rawDx / rawLength] as const;
   const candidateNormalB = [-candidateNormalA[0], -candidateNormalA[1]] as const;
 
-  const outwardCandidate = [candidateNormalA, candidateNormalB]
-    .map((candidate) => {
-      const sampleX = midpointX + candidate[0] * distance;
-      const sampleY = midpointY + candidate[1] * distance;
-      const distanceToCentroid = Math.hypot(sampleX - centroid[0], sampleY - centroid[1]);
-      return {
-        candidate,
-        distanceToCentroid
-      };
-    })
-    .sort((left, right) => right.distanceToCentroid - left.distanceToCentroid)[0]?.candidate;
+  const candidates = [candidateNormalA, candidateNormalB].map((candidate) => {
+    const sampleX = midpointX + candidate[0] * rawSampleDistance;
+    const sampleY = midpointY + candidate[1] * rawSampleDistance;
+    const distanceToCentroid = Math.hypot(sampleX - centroid[0], sampleY - centroid[1]);
+    return {
+      candidate,
+      outside: !isPointInsidePolygon([sampleX, sampleY], outline),
+      distanceToCentroid
+    };
+  });
+
+  const outwardCandidate =
+    candidates.find((entry) => entry.outside)?.candidate ??
+    candidates.sort((left, right) => right.distanceToCentroid - left.distanceToCentroid)[0]?.candidate;
 
   if (!outwardCandidate) {
     return [0, 0] as const;
   }
 
-  return [outwardCandidate[0] * distance, outwardCandidate[1] * distance] as const;
+  return [outwardCandidate[0] * rawDistance * resolvedScale, outwardCandidate[1] * rawDistance * resolvedScale] as const;
 }

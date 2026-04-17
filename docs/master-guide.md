@@ -189,6 +189,7 @@ Added:
 Updated:
 - 상단뷰는 ceiling을 숨기고, 워크뷰만 ceiling을 노출하는 몰입감 기준을 제품 기본값으로 고정.
 - share modal은 작은 viewport에서도 카드 전체가 보이고 내부만 스크롤되도록 반응형 규칙을 강화.
+- 상단뷰 카메라 회전은 빈 공간 drag에서만 시작하고, 자산 선택/드래그/transform gizmo 조작과 충돌하지 않도록 분리한다.
 
 Removed/Deprecated:
 - 상단뷰 pan 중심 탐색과 `목록/속성/항목뷰/이동/회전` 보조 affordance 의존.

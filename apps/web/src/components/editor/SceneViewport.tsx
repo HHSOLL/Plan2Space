@@ -16,6 +16,8 @@ import ProceduralWall from "../canvas/features/ProceduralWall";
 import Furniture from "../canvas/features/Furniture";
 import InteractiveDoors from "../canvas/features/InteractiveDoors";
 import InteractiveLights from "../canvas/features/InteractiveLights";
+import AssetTransformControls from "../canvas/interaction/AssetTransformControls";
+import EditorHotkeys from "../canvas/interaction/EditorHotkeys";
 import InteractionManager from "../canvas/interaction/InteractionManager";
 import ViewerProductHotspots from "../canvas/interaction/ViewerProductHotspots";
 import Crosshair from "../overlay/hud/Crosshair";
@@ -93,6 +95,8 @@ export function SceneViewport({
               {renderInteractiveShellControls ? <InteractiveDoors /> : null}
               {renderInteractiveShellControls ? <InteractiveLights /> : null}
               <Furniture />
+              {resolvedInteractionMode === "editor" ? <AssetTransformControls /> : null}
+              {resolvedInteractionMode === "editor" ? <EditorHotkeys /> : null}
               {renderViewerHotspots ? <ViewerProductHotspots /> : null}
             </InteractionManager>
           </PhysicsWorld>
