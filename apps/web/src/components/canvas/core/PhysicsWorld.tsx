@@ -4,6 +4,7 @@ import { Physics, CuboidCollider, RigidBody } from "@react-three/rapier";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
+import { getWallPlaneOffset } from "../../../lib/geometry/wall-placement";
 
 type PhysicsWorldProps = {
   children: ReactNode;
@@ -40,6 +41,7 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
   const walls = useShellSelector((slice) => slice.walls);
   const openings = useShellSelector((slice) => slice.openings);
+  const floors = useShellSelector((slice) => slice.floors);
   const scale = useShellSelector((slice) => slice.scale);
 
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
@@ -74,6 +76,7 @@ export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
       const height = wall.height > 0 ? wall.height : DEFAULT_HEIGHT;
       const ux = dx / length;
       const uz = dz / length;
+      const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
 
       const wallOpenings = (openingsByWall.get(wall.id) ?? [])
         .map((opening) => ({
@@ -102,7 +105,7 @@ export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
         colliders.push({
           id: wall.id,
           args: [length / 2, height / 2, thickness / 2],
-          position: [midX, height / 2, midZ],
+          position: [midX + offsetX, height / 2, midZ + offsetZ],
           rotation: [0, angle, 0]
         });
         return;
@@ -115,14 +118,14 @@ export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
         colliders.push({
           id: `${wall.id}-${index}`,
           args: [segment.length / 2, height / 2, thickness / 2],
-          position: [midX, height / 2, midZ],
+          position: [midX + offsetX, height / 2, midZ + offsetZ],
           rotation: [0, angle, 0]
         });
       });
     });
 
     return colliders;
-  }, [openings, scale, walls]);
+  }, [floors, openings, scale, walls]);
 
   return (
     <Physics gravity={[0, -9.81, 0]}>

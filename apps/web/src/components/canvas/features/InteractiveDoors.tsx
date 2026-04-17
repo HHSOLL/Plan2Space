@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
+import { getWallPlaneOffset } from "../../../lib/geometry/wall-placement";
 import { useInteractionRegistry } from "../interaction/InteractionManager";
 
 type DoorSpec = {
@@ -131,6 +132,7 @@ function WindowFrame({ window }: { window: WindowSpec }) {
 export default function InteractiveDoors() {
   const walls = useShellSelector((slice) => slice.walls);
   const openings = useShellSelector((slice) => slice.openings);
+  const floors = useShellSelector((slice) => slice.floors);
   const scale = useShellSelector((slice) => slice.scale);
 
   const doorSpecs = useMemo(() => {
@@ -146,13 +148,14 @@ export default function InteractiveDoors() {
         const angle = Math.atan2(dz, dx);
         const ux = dx / Math.hypot(dx, dz);
         const uz = dz / Math.hypot(dx, dz);
+        const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
         const width = Math.max(0.72, opening.width * scale);
         const height = Math.max(1.95, opening.height * scale);
         const thickness = Math.max(0.045, wall.thickness * scale * 0.34);
         const offset = Math.min(Math.max(0, opening.offset * scale), Math.max(0, length - width));
         const bottomOffset = typeof opening.verticalOffset === "number" ? opening.verticalOffset * scale : 0;
-        const startX = wall.start[0] * scale + ux * offset;
-        const startZ = wall.start[1] * scale + uz * offset;
+        const startX = wall.start[0] * scale + ux * offset + offsetX;
+        const startZ = wall.start[1] * scale + uz * offset + offsetZ;
 
         return {
           id: opening.id,
@@ -165,7 +168,7 @@ export default function InteractiveDoors() {
         } satisfies DoorSpec;
       })
       .filter((entry): entry is DoorSpec => Boolean(entry));
-  }, [openings, scale, walls]);
+  }, [floors, openings, scale, walls]);
 
   const windowSpecs = useMemo(() => {
     return openings
@@ -181,13 +184,14 @@ export default function InteractiveDoors() {
         const angle = Math.atan2(dz, dx);
         const ux = dx / rawLength;
         const uz = dz / rawLength;
+        const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
         const width = Math.max(0.92, opening.width * scale);
         const height = Math.max(0.88, opening.height * scale);
         const thickness = Math.max(0.04, wall.thickness * scale * 0.45);
         const offset = Math.min(Math.max(0, opening.offset * scale), Math.max(0, length - width));
         const sillHeight = typeof opening.sillHeight === "number" ? opening.sillHeight * scale : 0.9;
-        const startX = wall.start[0] * scale + ux * offset;
-        const startZ = wall.start[1] * scale + uz * offset;
+        const startX = wall.start[0] * scale + ux * offset + offsetX;
+        const startZ = wall.start[1] * scale + uz * offset + offsetZ;
 
         return {
           id: opening.id,
@@ -200,7 +204,7 @@ export default function InteractiveDoors() {
         } satisfies WindowSpec;
       })
       .filter((entry): entry is WindowSpec => Boolean(entry));
-  }, [openings, scale, walls]);
+  }, [floors, openings, scale, walls]);
 
   if (doorSpecs.length === 0 && windowSpecs.length === 0) return null;
 

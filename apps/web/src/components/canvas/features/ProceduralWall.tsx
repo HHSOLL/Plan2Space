@@ -6,6 +6,7 @@ import { useTexture } from "@react-three/drei";
 import { Geometry, Base, Subtraction } from "@react-three/csg";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
+import { getWallPlaneOffset } from "../../../lib/geometry/wall-placement";
 
 type TextureManifestEntry = {
   id: string;
@@ -23,6 +24,7 @@ function WallMesh({
 }) {
   const walls = useShellSelector((slice) => slice.walls);
   const openings = useShellSelector((slice) => slice.openings);
+  const floors = useShellSelector((slice) => slice.floors);
   const scale = useShellSelector((slice) => slice.scale);
   const wall = useMemo(() => walls.find((item) => item.id === wallId), [wallId, walls]);
   const material = useMemo(() => materialTemplate.clone(), [materialTemplate]);
@@ -38,19 +40,13 @@ function WallMesh({
     const lengthPx = Math.hypot(dx, dy);
     const length = Math.max(0.05, lengthPx * scale);
     const thickness = Math.max(0.02, wall.thickness * scale);
-    const height = wall.height > 0 ? wall.height : 2.8;
+    const height = (wall.height > 0 ? wall.height : 2.8) * scale;
     const angle = Math.atan2(dy, dx);
+    const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
+    const extendedLength = length + thickness;
 
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);
-    shape.lineTo(length, 0);
-    shape.lineTo(length, thickness);
-    shape.lineTo(0, thickness);
-    shape.closePath();
-
-    const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
-    geometry.rotateX(-Math.PI / 2);
-    geometry.translate(0, height, -thickness / 2);
+    const geometry = new THREE.BoxGeometry(extendedLength, height, thickness);
+    geometry.translate(length / 2, height / 2, 0);
     geometry.computeVertexNormals();
 
     const holes = wallOpenings
@@ -67,13 +63,13 @@ function WallMesh({
             : typeof opening.sillHeight === "number"
               ? opening.sillHeight * scale
               : opening.type === "window"
-                ? 0.9
+                ? 0.9 * scale
                 : 0;
         const holeHeight = Math.min(baseHeight, height - bottomOffset);
         if (holeHeight <= 0.05) return null;
         const depth = thickness + 0.1;
         const holeGeometry = new THREE.BoxGeometry(usableWidth, holeHeight, depth);
-        holeGeometry.translate(offset + usableWidth / 2, bottomOffset + holeHeight / 2, 0);
+        holeGeometry.translate(thickness / 2 + offset + usableWidth / 2, bottomOffset + holeHeight / 2, 0);
         return holeGeometry;
       })
       .filter((entry): entry is THREE.BoxGeometry => Boolean(entry));
@@ -81,10 +77,10 @@ function WallMesh({
     return {
       baseGeometry: geometry,
       holeGeometries: holes,
-      position: [wall.start[0] * scale, 0, wall.start[1] * scale] as [number, number, number],
+      position: [wall.start[0] * scale + offsetX, 0, wall.start[1] * scale + offsetZ] as [number, number, number],
       rotation: [0, angle, 0] as [number, number, number]
     };
-  }, [scale, wall, wallOpenings]);
+  }, [floors, scale, wall, wallOpenings]);
 
   useEffect(() => {
     return () => {

@@ -150,6 +150,17 @@ Removed/Deprecated:
 ## 2026-04-16 변경 동기화 (Community + Studio Shell Differentiation)
 Added:
 - P3 범위에 community 대화형 허브 구조(토론/챌린지/최신 게시물 구분)를 추가.
+
+## 2026-04-17 변경 동기화 (Builder Shell Alignment Fix)
+Added:
+- P1 안정화 항목에 "builder step 3/4 wall/opening/collider exterior offset 정렬" 검증을 추가.
+- P1 안정화 항목에 rect/L/U shape 브라우저 shell smoke를 명시.
+
+Updated:
+- builder opening step 완료 기준을 "개구부 배치 가능"에서 "wall/floor/opening이 한 좌표계에서 닫힌 shell로 보임"으로 강화.
+
+Removed/Deprecated:
+- rect template만 정상이어도 builder shell 안정화가 완료된다는 가정.
 - `/studio` 개인 아카이브를 gallery 톤 카드 피드 + 필터/검색 구조로 정리하는 UI 슬라이스를 추가.
 
 Updated:
