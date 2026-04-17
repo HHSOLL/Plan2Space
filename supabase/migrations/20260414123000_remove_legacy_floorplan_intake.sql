@@ -3,6 +3,11 @@
 -- Legacy finalize function is no longer used.
 drop function if exists public.finalize_intake_session(uuid, uuid, text, text);
 
+-- Remove legacy select policies before dropping referenced legacy columns.
+drop policy if exists "Jobs are viewable by project owner" on public.jobs;
+drop policy if exists "Jobs are viewable by project or intake owner" on public.jobs;
+drop policy if exists "Jobs are viewable by owner payload" on public.jobs;
+
 -- Jobs are now asset-generation-only and should not reference floorplans.
 alter table public.jobs
   drop constraint if exists jobs_floorplan_id_fkey;
@@ -16,31 +21,16 @@ alter table public.jobs
 drop table if exists public.floorplan_results cascade;
 drop table if exists public.floorplan_match_events cascade;
 drop table if exists public.floorplans cascade;
+drop table if exists public.revision_source_links cascade;
+drop table if exists public.layout_revisions cascade;
+drop table if exists public.source_assets cascade;
 
 -- Remove intake provenance columns if previous migrations introduced them.
 alter table public.projects
   drop column if exists source_layout_revision_id,
   drop column if exists created_from_intake_session_id;
 
-do $$
-begin
-  if exists (
-    select 1
-    from information_schema.tables
-    where table_schema = 'public'
-      and table_name = 'layout_revisions'
-  ) then
-    execute 'alter table public.layout_revisions drop column if exists created_from_intake_session_id';
-  end if;
-end
-$$;
-
 drop table if exists public.intake_sessions cascade;
-
--- Replace legacy select policies with payload owner policy.
-drop policy if exists "Jobs are viewable by project owner" on public.jobs;
-drop policy if exists "Jobs are viewable by project or intake owner" on public.jobs;
-drop policy if exists "Jobs are viewable by owner payload" on public.jobs;
 
 create policy "Jobs are viewable by owner payload"
 on public.jobs for select

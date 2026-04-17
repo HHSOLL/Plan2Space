@@ -12,6 +12,9 @@
 - `RAILWAY_API_URL`
 - `NEXT_PUBLIC_APP_URL` (`http://127.0.0.1:3100` 또는 배포 도메인)
 
+배포 규칙:
+- Vercel Preview에도 `SUPABASE_SERVICE_ROLE_KEY`, `RAILWAY_API_URL`를 넣어 preview server route가 production과 같은 계약으로 동작하도록 유지한다.
+
 권장:
 - `PROJECT_MEDIA_BUCKET`
 - `E2E_ROOM_FLOW_BASE_URL`
