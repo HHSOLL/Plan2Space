@@ -4,7 +4,7 @@ import { Physics, CuboidCollider, RigidBody } from "@react-three/rapier";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
-import { getWallPlaneOffset } from "../../../lib/geometry/wall-placement";
+import { getWallRenderPlacement } from "../../../lib/geometry/wall-placement";
 
 type PhysicsWorldProps = {
   children: ReactNode;
@@ -67,20 +67,20 @@ export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
     }[] = [];
 
     walls.forEach((wall) => {
-      const dx = (wall.end[0] - wall.start[0]) * scale;
-      const dz = (wall.end[1] - wall.start[1]) * scale;
-      const length = Math.hypot(dx, dz);
+      const placement = getWallRenderPlacement(wall, floors, scale);
+      const dx = placement.end[0] - placement.start[0];
+      const dz = placement.end[1] - placement.start[1];
+      const length = placement.length;
       if (!Number.isFinite(length) || length < 0.05) return;
-      const angle = Math.atan2(dz, dx);
+      const angle = -placement.angle;
       const thickness = Math.max(0.02, wall.thickness * scale);
       const height = wall.height > 0 ? wall.height : DEFAULT_HEIGHT;
       const ux = dx / length;
       const uz = dz / length;
-      const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
 
       const wallOpenings = (openingsByWall.get(wall.id) ?? [])
         .map((opening) => ({
-          offset: opening.offset * scale,
+          offset: opening.offset * scale + placement.startInset,
           width: opening.width * scale
         }))
         .filter((opening) => opening.width > 0.05)
@@ -100,12 +100,12 @@ export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
       }
 
       if (segments.length === 0) {
-        const midX = (wall.start[0] + wall.end[0]) * 0.5 * scale;
-        const midZ = (wall.start[1] + wall.end[1]) * 0.5 * scale;
+        const midX = (placement.start[0] + placement.end[0]) * 0.5;
+        const midZ = (placement.start[1] + placement.end[1]) * 0.5;
         colliders.push({
           id: wall.id,
           args: [length / 2, height / 2, thickness / 2],
-          position: [midX + offsetX, height / 2, midZ + offsetZ],
+          position: [midX, height / 2, midZ],
           rotation: [0, angle, 0]
         });
         return;
@@ -113,12 +113,12 @@ export default function PhysicsWorld({ children, debug }: PhysicsWorldProps) {
 
       segments.forEach((segment, index) => {
         const midOffset = segment.start + segment.length / 2;
-        const midX = wall.start[0] * scale + ux * midOffset;
-        const midZ = wall.start[1] * scale + uz * midOffset;
+        const midX = placement.start[0] + ux * midOffset;
+        const midZ = placement.start[1] + uz * midOffset;
         colliders.push({
           id: `${wall.id}-${index}`,
           args: [segment.length / 2, height / 2, thickness / 2],
-          position: [midX + offsetX, height / 2, midZ + offsetZ],
+          position: [midX, height / 2, midZ],
           rotation: [0, angle, 0]
         });
       });

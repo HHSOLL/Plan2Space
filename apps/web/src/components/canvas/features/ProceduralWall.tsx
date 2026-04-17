@@ -6,7 +6,7 @@ import { useTexture } from "@react-three/drei";
 import { Geometry, Base, Subtraction } from "@react-three/csg";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
-import { getWallPlaneOffset } from "../../../lib/geometry/wall-placement";
+import { getWallRenderPlacement } from "../../../lib/geometry/wall-placement";
 
 type TextureManifestEntry = {
   id: string;
@@ -35,23 +35,18 @@ function WallMesh({
     if (!wall) {
       return { baseGeometry: null, holeGeometries: [], position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number] };
     }
-    const dx = wall.end[0] - wall.start[0];
-    const dy = wall.end[1] - wall.start[1];
-    const lengthPx = Math.hypot(dx, dy);
-    const length = Math.max(0.05, lengthPx * scale);
+    const placement = getWallRenderPlacement(wall, floors, scale);
+    const length = Math.max(0.05, placement.length);
     const thickness = Math.max(0.02, wall.thickness * scale);
     const height = (wall.height > 0 ? wall.height : 2.8) * scale;
-    const angle = Math.atan2(dy, dx);
-    const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
-    const extendedLength = length + thickness;
 
-    const geometry = new THREE.BoxGeometry(extendedLength, height, thickness);
+    const geometry = new THREE.BoxGeometry(length, height, thickness);
     geometry.translate(length / 2, height / 2, 0);
     geometry.computeVertexNormals();
 
     const holes = wallOpenings
       .map((opening) => {
-        const offset = opening.offset * scale;
+        const offset = Math.max(0, opening.offset * scale + placement.startInset);
         const width = opening.width * scale;
         const baseHeight = opening.height * scale;
         if (width <= 0.05 || baseHeight <= 0.05) return null;
@@ -69,7 +64,7 @@ function WallMesh({
         if (holeHeight <= 0.05) return null;
         const depth = thickness + 0.1;
         const holeGeometry = new THREE.BoxGeometry(usableWidth, holeHeight, depth);
-        holeGeometry.translate(thickness / 2 + offset + usableWidth / 2, bottomOffset + holeHeight / 2, 0);
+        holeGeometry.translate(offset + usableWidth / 2, bottomOffset + holeHeight / 2, 0);
         return holeGeometry;
       })
       .filter((entry): entry is THREE.BoxGeometry => Boolean(entry));
@@ -77,8 +72,8 @@ function WallMesh({
     return {
       baseGeometry: geometry,
       holeGeometries: holes,
-      position: [wall.start[0] * scale + offsetX, 0, wall.start[1] * scale + offsetZ] as [number, number, number],
-      rotation: [0, angle, 0] as [number, number, number]
+      position: [placement.start[0], 0, placement.start[1]] as [number, number, number],
+      rotation: [0, -placement.angle, 0] as [number, number, number]
     };
   }, [floors, scale, wall, wallOpenings]);
 
@@ -128,21 +123,17 @@ function TopWallFootprint({
     if (!wall) {
       return null;
     }
-    const dx = wall.end[0] - wall.start[0];
-    const dy = wall.end[1] - wall.start[1];
-    const rawLength = Math.hypot(dx, dy);
-    if (!Number.isFinite(rawLength) || rawLength <= 0) {
-      return null;
-    }
-    const angle = Math.atan2(dy, dx);
-    const length = Math.max(0.08, rawLength * scale);
-    const thickness = Math.max(0.22, wall.thickness * scale * 2);
-    const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
+    const placement = getWallRenderPlacement(wall, floors, scale);
+    const thickness = Math.max(0.14, wall.thickness * scale);
 
     return {
-      position: [wall.start[0] * scale + offsetX, 0.018, wall.start[1] * scale + offsetZ] as [number, number, number],
-      rotation: [0, angle, 0] as [number, number, number],
-      length,
+      position: [
+        placement.start[0] + placement.direction[0] * (placement.length / 2),
+        0.018,
+        placement.start[1] + placement.direction[1] * (placement.length / 2)
+      ] as [number, number, number],
+      rotation: [0, -placement.angle, 0] as [number, number, number],
+      length: placement.length,
       thickness
     };
   }, [floors, scale, wall]);
@@ -158,7 +149,7 @@ function TopWallFootprint({
       castShadow={false}
       onPointerDown={onToggle}
     >
-      <boxGeometry args={[strip.length + strip.thickness, 0.036, strip.thickness]} />
+      <boxGeometry args={[strip.length, 0.036, strip.thickness]} />
       <meshStandardMaterial color="#cfc9c1" roughness={0.97} metalness={0.02} />
     </mesh>
   );
