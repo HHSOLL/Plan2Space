@@ -131,6 +131,7 @@ Added:
 Updated:
 - floor texture는 저각도 시점 shimmer를 줄이기 위해 보수적 repeat와 높은 anisotropy를 사용한다.
 - walk view contact shadow / directional shadow bias를 보수적으로 조정해 floor acne와 coplanar shimmer를 줄인다.
+- top-view camera drag는 빈 공간에서만 room rotation을 시작하고, furniture drag/transform controls hit와 충돌하지 않도록 분리한다.
 
 Removed/Deprecated:
 - top-view에서 full-height wall mesh만으로 shell legibility를 확보한다는 가정.

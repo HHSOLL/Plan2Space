@@ -474,6 +474,7 @@ function ModelInstance({ asset }: { asset: SceneAsset }) {
 function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enableDynamicLight: boolean }) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
+  const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
   const readOnly = useEditorStore((state) => state.readOnly);
   const selectedAssetId = useSelectionSelector((slice) => slice.selectedAssetId);
   const setSelectedAssetId = useSelectionSelector((slice) => slice.setSelectedAssetId);
@@ -503,6 +504,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     event.stopPropagation();
     setSelectedAssetId(asset.id);
     setIsDragging(true);
+    setIsTransforming(true);
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.setPointerCapture(event.pointerId);
   };
@@ -514,6 +516,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
       recordSnapshot("Move asset");
     }
     setIsDragging(false);
+    setIsTransforming(false);
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.releasePointerCapture(event.pointerId);
   };
@@ -546,6 +549,14 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
       rotation: anchoredPlacement.rotation
     });
   };
+
+  useEffect(() => {
+    return () => {
+      if (isDragging) {
+        setIsTransforming(false);
+      }
+    };
+  }, [isDragging, setIsTransforming]);
 
   const content = isPlaceholderAsset(asset.assetId) ? (
     <PlaceholderFurniture />
