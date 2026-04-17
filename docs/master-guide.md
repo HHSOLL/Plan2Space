@@ -169,6 +169,17 @@ Updated:
 Removed/Deprecated:
 - gallery/community를 거의 동일한 피드 레이아웃으로 유지하던 이전 가정.
 
+## 2026-04-17 변경 동기화 (Builder Shell Alignment Fix)
+Added:
+- builder step 3/4의 visible wall, opening, physics collider는 primary floor outline을 실내 경계로 간주하고 반 두께만큼 exterior 방향으로 오프셋하는 기준을 추가.
+
+Updated:
+- builder preview wall mesh는 local centerline이 아니라 "floor outline 내측면 정렬 + 코너 겹침 보정" 기준으로 렌더하도록 갱신.
+- builder preview 기본 orbit 카메라는 room shell 전체 코너가 한 번에 보이도록 더 멀고 높은 framing을 기본값으로 사용한다.
+
+Removed/Deprecated:
+- builder wall mesh가 floor outline 중심선 위에 그대로 앉아도 preview 품질이 충분하다는 가정.
+
 ## 2026-04-14 변경 동기화 (Physical Fidelity Runtime Pass)
 Added:
 - 실측/마감 메타데이터를 catalog -> save pipeline -> sceneDocument -> viewer hotspot까지 유지하는 계약을 기본 규칙으로 추가.

@@ -108,6 +108,17 @@ Removed/Deprecated:
 Added:
 - HDRI 우선 선택 정책(kiara_interior -> hotel_room -> photo_studio_loft_hall -> photo_studio_01 -> small_empty_room_1).
 - 홈 레퍼런스 기준의 조명 리밸런싱(웜 키라이트 + 쿨 필라이트 + 강화된 contact shadow) 품질 기준.
+
+## 2026-04-17 변경 동기화 (Builder Shell Alignment Fix)
+Added:
+- builder preview/runtime shell에서 wall/door/window/collider plane은 primary floor outline 기준 exterior 방향 반 두께 오프셋을 공유해야 한다.
+
+Updated:
+- procedural wall mesh는 wall local space와 opening hole local space를 동일 좌표계로 유지하고, 코너는 반 두께 겹침으로 닫히도록 렌더링 규칙을 강화.
+- builder orbit preview 기본 카메라는 room shell 전체 footprint를 우선 보여주는 framing을 사용하도록 조정.
+
+Removed/Deprecated:
+- wall mesh를 floor outline 중심선에 그대로 배치하던 preview 렌더 가정.
 - 포스트FX 기준(SSAO + 보수적 bloom + 완화된 vignette + 저강도 noise) 추가.
 
 Updated:

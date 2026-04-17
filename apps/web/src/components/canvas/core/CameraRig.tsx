@@ -166,9 +166,9 @@ export default function CameraRig() {
   const radius = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ, 1);
   const topHeight = Math.max(6, radius);
   const zoom = Math.max(30, 120 / radius);
-  const builderDistance = Math.max(3.4, radius * 1.15);
-  const builderHeight = Math.max(2.4, radius * 0.72);
-  const builderTargetY = Math.max(1.05, radius * 0.08);
+  const builderDistance = Math.max(4.8, radius * 1.45);
+  const builderHeight = Math.max(3.1, radius * 0.92);
+  const builderTargetY = Math.max(1.15, radius * 0.12);
 
   const initialPosition = useMemo((): [number, number, number] => {
     const preferredAnchor =
@@ -261,7 +261,7 @@ export default function CameraRig() {
           fov={42}
           near={0.1}
           far={2000}
-          position={[centerX + builderDistance * 0.82, builderHeight + 0.5, centerZ + builderDistance * 0.92]}
+          position={[centerX + builderDistance, builderHeight + 0.9, centerZ + builderDistance * 1.08]}
         />
         <OrbitControls
           ref={mapControlsRef}
@@ -274,9 +274,9 @@ export default function CameraRig() {
           dampingFactor={0.09}
           rotateSpeed={0.8}
           zoomSpeed={0.95}
-          minPolarAngle={Math.PI * 0.22}
-          maxPolarAngle={Math.PI * 0.48}
-          minDistance={Math.max(2.2, radius * 0.62)}
+          minPolarAngle={Math.PI * 0.2}
+          maxPolarAngle={Math.PI * 0.54}
+          minDistance={Math.max(3.2, radius * 0.85)}
           maxDistance={Math.max(16, radius * 3.2)}
         />
       </>
