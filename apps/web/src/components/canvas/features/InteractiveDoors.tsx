@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
-import { getWallPlaneOffset } from "../../../lib/geometry/wall-placement";
+import { getWallRenderPlacement } from "../../../lib/geometry/wall-placement";
 import { useInteractionRegistry } from "../interaction/InteractionManager";
 
 type DoorSpec = {
@@ -141,26 +141,21 @@ export default function InteractiveDoors() {
       .map((opening) => {
         const wall = walls.find((item) => item.id === opening.wallId);
         if (!wall) return null;
-        const dx = wall.end[0] - wall.start[0];
-        const dz = wall.end[1] - wall.start[1];
-        const length = Math.hypot(dx, dz) * scale;
+        const placement = getWallRenderPlacement(wall, floors, scale);
+        const length = placement.length;
         if (!Number.isFinite(length) || length <= 0) return null;
-        const angle = Math.atan2(dz, dx);
-        const ux = dx / Math.hypot(dx, dz);
-        const uz = dz / Math.hypot(dx, dz);
-        const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
         const width = Math.max(0.72, opening.width * scale);
         const height = Math.max(1.95, opening.height * scale);
         const thickness = Math.max(0.045, wall.thickness * scale * 0.34);
-        const offset = Math.min(Math.max(0, opening.offset * scale), Math.max(0, length - width));
+        const offset = Math.min(Math.max(0, opening.offset * scale + placement.startInset), Math.max(0, length - width));
         const bottomOffset = typeof opening.verticalOffset === "number" ? opening.verticalOffset * scale : 0;
-        const startX = wall.start[0] * scale + ux * offset + offsetX;
-        const startZ = wall.start[1] * scale + uz * offset + offsetZ;
+        const startX = placement.start[0] + placement.direction[0] * offset;
+        const startZ = placement.start[1] + placement.direction[1] * offset;
 
         return {
           id: opening.id,
           position: [startX, 0, startZ] as [number, number, number],
-          angle,
+          angle: -placement.angle,
           width,
           height,
           thickness,
@@ -176,27 +171,21 @@ export default function InteractiveDoors() {
       .map((opening) => {
         const wall = walls.find((item) => item.id === opening.wallId);
         if (!wall) return null;
-        const dx = wall.end[0] - wall.start[0];
-        const dz = wall.end[1] - wall.start[1];
-        const rawLength = Math.hypot(dx, dz);
-        const length = rawLength * scale;
-        if (!Number.isFinite(length) || length <= 0 || rawLength <= 0) return null;
-        const angle = Math.atan2(dz, dx);
-        const ux = dx / rawLength;
-        const uz = dz / rawLength;
-        const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
+        const placement = getWallRenderPlacement(wall, floors, scale);
+        const length = placement.length;
+        if (!Number.isFinite(length) || length <= 0) return null;
         const width = Math.max(0.92, opening.width * scale);
         const height = Math.max(0.88, opening.height * scale);
         const thickness = Math.max(0.04, wall.thickness * scale * 0.45);
-        const offset = Math.min(Math.max(0, opening.offset * scale), Math.max(0, length - width));
+        const offset = Math.min(Math.max(0, opening.offset * scale + placement.startInset), Math.max(0, length - width));
         const sillHeight = typeof opening.sillHeight === "number" ? opening.sillHeight * scale : 0.9;
-        const startX = wall.start[0] * scale + ux * offset + offsetX;
-        const startZ = wall.start[1] * scale + uz * offset + offsetZ;
+        const startX = placement.start[0] + placement.direction[0] * offset;
+        const startZ = placement.start[1] + placement.direction[1] * offset;
 
         return {
           id: opening.id,
           position: [startX, 0, startZ] as [number, number, number],
-          angle,
+          angle: -placement.angle,
           width,
           height,
           thickness,
