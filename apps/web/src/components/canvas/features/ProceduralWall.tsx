@@ -112,6 +112,58 @@ function WallMesh({
   );
 }
 
+function TopWallFootprint({
+  wallId,
+  onToggle
+}: {
+  wallId: string;
+  onToggle: () => void;
+}) {
+  const walls = useShellSelector((slice) => slice.walls);
+  const floors = useShellSelector((slice) => slice.floors);
+  const scale = useShellSelector((slice) => slice.scale);
+  const wall = useMemo(() => walls.find((item) => item.id === wallId), [wallId, walls]);
+
+  const strip = useMemo(() => {
+    if (!wall) {
+      return null;
+    }
+    const dx = wall.end[0] - wall.start[0];
+    const dy = wall.end[1] - wall.start[1];
+    const rawLength = Math.hypot(dx, dy);
+    if (!Number.isFinite(rawLength) || rawLength <= 0) {
+      return null;
+    }
+    const angle = Math.atan2(dy, dx);
+    const length = Math.max(0.08, rawLength * scale);
+    const thickness = Math.max(0.22, wall.thickness * scale * 2);
+    const [offsetX, offsetZ] = getWallPlaneOffset(wall, floors, scale);
+
+    return {
+      position: [wall.start[0] * scale + offsetX, 0.018, wall.start[1] * scale + offsetZ] as [number, number, number],
+      rotation: [0, angle, 0] as [number, number, number],
+      length,
+      thickness
+    };
+  }, [floors, scale, wall]);
+
+  if (!strip) return null;
+
+  return (
+    <mesh
+      name={`top-wall:${wallId}`}
+      position={strip.position}
+      rotation={strip.rotation}
+      receiveShadow={false}
+      castShadow={false}
+      onPointerDown={onToggle}
+    >
+      <boxGeometry args={[strip.length + strip.thickness, 0.036, strip.thickness]} />
+      <meshStandardMaterial color="#cfc9c1" roughness={0.97} metalness={0.02} />
+    </mesh>
+  );
+}
+
 export default function ProceduralWall() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const wallMaterialIndex = useShellSelector((slice) => slice.wallMaterialIndex);
@@ -229,15 +281,19 @@ export default function ProceduralWall() {
   return (
     <group>
       {walls.map((wall) => {
-        return (
+        const handleToggle = () => {
+          if (viewMode !== "top") return;
+          setWallMaterialIndex((wallMaterialIndex + 1) % materials.length);
+        };
+
+        return viewMode === "top" ? (
+          <TopWallFootprint key={wall.id} wallId={wall.id} onToggle={handleToggle} />
+        ) : (
           <WallMesh
             key={wall.id}
             wallId={wall.id}
             materialTemplate={activeMaterial}
-            onToggle={() => {
-              if (viewMode !== "top") return;
-              setWallMaterialIndex((wallMaterialIndex + 1) % materials.length);
-            }}
+            onToggle={handleToggle}
           />
         );
       })}

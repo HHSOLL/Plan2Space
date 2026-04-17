@@ -1,6 +1,6 @@
 "use client";
 
-import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera, PointerLockControls } from "@react-three/drei";
+import { OrbitControls, OrthographicCamera, PerspectiveCamera, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CapsuleCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -51,10 +51,14 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
 
 function WalkRig({
   initialPosition,
-  isTouch
+  initialTarget,
+  isTouch,
+  farClip
 }: {
   initialPosition: [number, number, number];
+  initialTarget: [number, number, number];
   isTouch: boolean;
+  farClip: number;
 }) {
   const bodyRef = useRef<RapierRigidBody | null>(null);
   const pointerLockRef = useRef<any>(null);
@@ -63,6 +67,16 @@ function WalkRig({
   const resetLookDelta = useMobileControlsStore((state) => state.resetLookDelta);
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
+
+  useEffect(() => {
+    const eyePosition = new THREE.Vector3(initialPosition[0], initialPosition[1] + EYE_HEIGHT, initialPosition[2]);
+    const lookTarget = new THREE.Vector3(initialTarget[0], initialTarget[1], initialTarget[2]);
+    const direction = lookTarget.sub(eyePosition).normalize();
+    if (direction.lengthSq() <= 0) return;
+    yawRef.current = Math.atan2(direction.x, direction.z);
+    pitchRef.current = Math.asin(THREE.MathUtils.clamp(direction.y, -0.98, 0.98));
+    camera.rotation.set(pitchRef.current, yawRef.current, 0, "YXZ");
+  }, [camera, initialPosition, initialTarget]);
 
   useEffect(() => {
     if (isTouch) return;
@@ -141,7 +155,7 @@ function WalkRig({
     >
       <CapsuleCollider args={[0.35, 0.6]} />
       <group position={[0, EYE_HEIGHT, 0]}>
-        <PerspectiveCamera makeDefault fov={60} near={0.1} far={1000} />
+        <PerspectiveCamera makeDefault fov={60} near={0.08} far={farClip} />
         {!isTouch ? <PointerLockControls ref={pointerLockRef} /> : null}
       </group>
     </RigidBody>
@@ -149,6 +163,7 @@ function WalkRig({
 }
 
 export default function CameraRig() {
+  const { gl } = useThree();
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const walls = useShellSelector((slice) => slice.walls);
@@ -159,16 +174,18 @@ export default function CameraRig() {
   const [isTouch, setIsTouch] = useState(false);
 
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);
-  const mapControlsRef = useRef<any>(null);
+  const controlsRef = useRef<any>(null);
+  const topRotationRef = useRef(0);
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerZ = (bounds.minZ + bounds.maxZ) / 2;
   const radius = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ, 1);
   const topHeight = Math.max(6, radius);
-  const zoom = Math.max(30, 120 / radius);
+  const zoom = Math.max(58, 210 / radius);
   const builderDistance = Math.max(4.8, radius * 1.45);
   const builderHeight = Math.max(3.1, radius * 0.92);
   const builderTargetY = Math.max(1.15, radius * 0.12);
+  const walkFarClip = Math.max(42, radius * 10);
 
   const initialPosition = useMemo((): [number, number, number] => {
     const preferredAnchor =
@@ -176,10 +193,27 @@ export default function CameraRig() {
       cameraAnchors.find((anchor) => anchor.kind === "overview") ??
       cameraAnchors.find((anchor) => anchor.kind === "room_center");
     if (preferredAnchor) {
+      const baseX = preferredAnchor.planPosition[0] * scale;
+      const baseZ = preferredAnchor.planPosition[1] * scale;
+      if (preferredAnchor.kind === "entrance" && preferredAnchor.targetPlanPosition) {
+        const targetX = preferredAnchor.targetPlanPosition[0] * scale;
+        const targetZ = preferredAnchor.targetPlanPosition[1] * scale;
+        const dx = targetX - baseX;
+        const dz = targetZ - baseZ;
+        const length = Math.hypot(dx, dz);
+        if (length > 0.001) {
+          const inwardOffset = Math.min(Math.max(0.8, radius * 0.16), Math.max(0.8, length * 0.6));
+          return [
+            baseX + (dx / length) * inwardOffset,
+            Math.max(BODY_Y, preferredAnchor.height),
+            baseZ + (dz / length) * inwardOffset
+          ];
+        }
+      }
       return [
-        preferredAnchor.planPosition[0] * scale,
+        baseX,
         Math.max(BODY_Y, preferredAnchor.height),
-        preferredAnchor.planPosition[1] * scale
+        baseZ
       ];
     }
 
@@ -203,20 +237,94 @@ export default function CameraRig() {
     return [centerX, BODY_Y, centerZ + radius * 0.4];
   }, [cameraAnchors, entranceId, openings, walls, scale, centerX, centerZ, radius]);
 
+  const initialTarget = useMemo((): [number, number, number] => {
+    const preferredAnchor =
+      cameraAnchors.find((anchor) => anchor.kind === "entrance") ??
+      cameraAnchors.find((anchor) => anchor.kind === "overview") ??
+      cameraAnchors.find((anchor) => anchor.kind === "room_center");
+
+    if (preferredAnchor?.targetPlanPosition) {
+      return [
+        preferredAnchor.targetPlanPosition[0] * scale,
+        Math.max(1.2, preferredAnchor.height * 0.72),
+        preferredAnchor.targetPlanPosition[1] * scale
+      ];
+    }
+
+    return [centerX, Math.max(1.2, builderTargetY), centerZ];
+  }, [builderTargetY, cameraAnchors, centerX, centerZ, scale]);
+
   useEffect(() => {
     const supportsTouch = typeof window !== "undefined" &&
       (window.matchMedia?.("(pointer: coarse)")?.matches || navigator.maxTouchPoints > 0);
     setIsTouch(Boolean(supportsTouch));
   }, []);
 
+  const applyTopCamera = useMemo(
+    () => (nextZoom?: number) => {
+      if (!orthoRef.current) return;
+      const camera = orthoRef.current;
+      camera.position.set(centerX, topHeight, centerZ);
+      camera.up.set(Math.sin(topRotationRef.current), 0, -Math.cos(topRotationRef.current));
+      camera.zoom = clampValue(nextZoom ?? camera.zoom ?? zoom, 32, 360);
+      camera.lookAt(centerX, 0, centerZ);
+      camera.updateProjectionMatrix();
+    },
+    [centerX, centerZ, topHeight, zoom]
+  );
+
   useEffect(() => {
-    if (viewMode === "top" && orthoRef.current) {
-      orthoRef.current.position.set(centerX, topHeight, centerZ);
-      orthoRef.current.up.set(0, 0, -1);
-      orthoRef.current.lookAt(centerX, 0, centerZ);
-      orthoRef.current.updateProjectionMatrix();
+    if (viewMode === "top") {
+      applyTopCamera(orthoRef.current?.zoom ?? zoom);
     }
-  }, [centerX, centerZ, topHeight, viewMode]);
+  }, [applyTopCamera, viewMode, zoom]);
+
+  useEffect(() => {
+    if (viewMode !== "top") return;
+
+    const element = gl.domElement;
+    let dragging = false;
+    let startX = 0;
+    let startRotation = topRotationRef.current;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      dragging = true;
+      startX = event.clientX;
+      startRotation = topRotationRef.current;
+      element.setPointerCapture?.(event.pointerId);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!dragging) return;
+      topRotationRef.current = startRotation - (event.clientX - startX) * 0.008;
+      applyTopCamera();
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      dragging = false;
+      element.releasePointerCapture?.(event.pointerId);
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (!orthoRef.current) return;
+      const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+      applyTopCamera(orthoRef.current.zoom * factor);
+    };
+
+    element.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    element.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      element.removeEventListener("wheel", handleWheel);
+    };
+  }, [applyTopCamera, gl.domElement, viewMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -228,18 +336,17 @@ export default function CameraRig() {
 
       if (viewMode === "top" && orthoRef.current) {
         const factor = direction === "in" ? 1.15 : 1 / 1.15;
-        orthoRef.current.zoom = clampValue(orthoRef.current.zoom * factor, 18, 320);
-        orthoRef.current.updateProjectionMatrix();
+        applyTopCamera(orthoRef.current.zoom * factor);
         return;
       }
 
-      if (viewMode === "builder-preview" && mapControlsRef.current) {
+      if (viewMode === "builder-preview" && controlsRef.current) {
         if (direction === "in") {
-          mapControlsRef.current.dollyIn?.(1.15);
+          controlsRef.current.dollyIn?.(1.15);
         } else {
-          mapControlsRef.current.dollyOut?.(1.15);
+          controlsRef.current.dollyOut?.(1.15);
         }
-        mapControlsRef.current.update?.();
+        controlsRef.current.update?.();
       }
     };
 
@@ -247,10 +354,10 @@ export default function CameraRig() {
     return () => {
       window.removeEventListener(ZOOM_EVENT_NAME, handleZoomEvent as EventListener);
     };
-  }, [viewMode]);
+  }, [applyTopCamera, viewMode]);
 
   if (viewMode === "walk") {
-    return <WalkRig initialPosition={initialPosition} isTouch={isTouch} />;
+    return <WalkRig initialPosition={initialPosition} initialTarget={initialTarget} isTouch={isTouch} farClip={walkFarClip} />;
   }
 
   if (viewMode === "builder-preview") {
@@ -258,13 +365,13 @@ export default function CameraRig() {
       <>
         <PerspectiveCamera
           makeDefault
-          fov={42}
+          fov={38}
           near={0.1}
           far={2000}
-          position={[centerX + builderDistance, builderHeight + 0.9, centerZ + builderDistance * 1.08]}
+          position={[centerX + builderDistance * 1.18, builderHeight + 1.45, centerZ + builderDistance * 1.18]}
         />
         <OrbitControls
-          ref={mapControlsRef}
+          ref={controlsRef}
           target={[centerX, builderTargetY, centerZ]}
           enabled={!isTransforming}
           enableRotate
@@ -286,16 +393,6 @@ export default function CameraRig() {
   return (
     <>
       <OrthographicCamera ref={orthoRef} makeDefault zoom={zoom} near={0.1} far={2000} />
-      <MapControls
-        ref={mapControlsRef}
-        target={[centerX, 0, centerZ]}
-        enabled={!isTransforming}
-        enableRotate={false}
-        enableDamping
-        dampingFactor={0.1}
-        maxPolarAngle={Math.PI / 2}
-        minPolarAngle={0}
-      />
     </>
   );
 }

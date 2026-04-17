@@ -17,8 +17,6 @@ import Furniture from "../canvas/features/Furniture";
 import InteractiveDoors from "../canvas/features/InteractiveDoors";
 import InteractiveLights from "../canvas/features/InteractiveLights";
 import InteractionManager from "../canvas/interaction/InteractionManager";
-import AssetTransformControls from "../canvas/interaction/AssetTransformControls";
-import EditorHotkeys from "../canvas/interaction/EditorHotkeys";
 import ViewerProductHotspots from "../canvas/interaction/ViewerProductHotspots";
 import Crosshair from "../overlay/hud/Crosshair";
 import MobileControls from "../overlay/hud/MobileControls";
@@ -55,7 +53,6 @@ export function SceneViewport({
   showHud = true
 }: SceneViewportProps) {
   const resolvedInteractionMode = interactionMode ?? "viewer";
-  const renderEditorTools = resolvedInteractionMode === "editor";
   const renderViewerHotspots = resolvedInteractionMode === "viewer";
   const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
   const isLightTone = chromeTone === "light";
@@ -89,12 +86,6 @@ export function SceneViewport({
             <Lights />
             <SceneEnvironment />
             <CameraRig />
-            {renderEditorTools ? (
-              <>
-                <EditorHotkeys />
-                <AssetTransformControls />
-              </>
-            ) : null}
             <InteractionManager>
               <ProceduralFloor />
               <ProceduralCeiling />

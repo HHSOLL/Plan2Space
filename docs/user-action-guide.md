@@ -59,6 +59,10 @@
 17. 공유 토큰 열기
 18. 읽기 전용 뷰어에서 제품 클릭하기
 19. 갤러리/커뮤니티에서 동일 장면 열기
+20. 에디터 상단뷰에서 drag rotation과 wheel zoom만 동작하고 pan은 되지 않는지 확인하기
+21. `추가`/`설정` 버튼이 각각 좌측 drawer를 열고, 재클릭/바깥 클릭 시 닫히며 동시에 둘 다 열리지 않는지 확인하기
+22. 워크뷰에서는 ceiling이 보이고 상단뷰에서는 ceiling이 숨겨지는지 확인하기
+23. 모바일 viewport에서 share modal이 화면 안에 들어오고 내부만 스크롤되는지 확인하기
 
 실행 명령:
 
@@ -74,6 +78,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 
 - 빌더/에디터/뷰어 공통 레이아웃이 유지되는지 확인
 - 에디터 상단 bar, 좌측 rail, 우측 zoom rail, 하단 pill toolbar가 레퍼런스 7번 shell로 노출되는지 확인
+- 상단뷰에서는 `목록/속성/항목뷰/이동/회전` 보조 UI가 사라지고 `추가/설정` drawer 패턴만 남는지 확인
 - shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
 - 뷰어에 편집 affordance가 노출되지 않는지 확인
 - 갤러리/커뮤니티 카드가 `/shared/[token]` 읽기 전용 뷰어로 이동하는지 확인
@@ -194,6 +199,7 @@ npm --workspace apps/web run assets:verify:deskterior
   - floor/surface 배치 시 벽 관통 없이 wall clearance가 적용되고, 인접 자산과 과도한 중첩이 완화되는지 확인
   - 상단뷰 하단 툴바와 속성 패널에서 `월드/로컬` 토글이 동일하게 동작하는지 확인
   - gizmo 드래그 중 방 외곽으로 나가려 하면 live clamp가 걸리고, mouse-up 후 위치가 다시 튀지 않는지 확인
+  - 상단뷰 room shell이 floor footprint를 감싸는 닫힌 strip 형태로 읽히는지 확인
   - finishColor/finishMaterial이 있는 제품은 GLB 표면 톤/질감이 기존 대비 반영되는지 확인
   - `DeskWood`/`DeskMetal`/`StandWood`/`StandPad`/`LampBody`/`LampAccent`/`LampBulb` 슬롯이 의도한 재질 특성으로 분리 반영되는지 확인
 7. 조명 제품은 뷰어에서 실제 광원 효과가 보이는지 확인한다.
@@ -258,6 +264,17 @@ Updated:
 
 Removed/Deprecated:
 - editor share modal이 dark glass 테마를 유지한다는 기대값.
+
+## 2026-04-17 변경 동기화 (Editor Top-View / Drawer QA)
+Added:
+- rotate-only orthographic top-view, shared left drawer, ceiling visibility 분리, mobile share modal fit 회귀 항목.
+- top-view wall footprint strip 가독성 확인 항목.
+
+Updated:
+- 에디터 상호작용 QA를 `기능 노출`에서 `기능 노출 + top/walk 탐색 semantics` 확인까지 확장.
+
+Removed/Deprecated:
+- 상단뷰 pan/move 토글이 기본 탐색 동작이라는 가정.
 
 ## 2026-04-16 변경 동기화 (Shared Viewer + Furnished Feed Reference Pass)
 Added:

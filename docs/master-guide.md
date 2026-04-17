@@ -180,6 +180,19 @@ Updated:
 Removed/Deprecated:
 - builder wall mesh가 floor outline 중심선 위에 그대로 앉아도 preview 품질이 충분하다는 가정.
 
+## 2026-04-17 변경 동기화 (Editor Top-View Shell + Drawer Controls)
+Added:
+- editor 상단뷰는 방 중심 기준의 rotate-only orthographic camera와 zoom 동작을 기본으로 사용한다.
+- editor 상단뷰의 벽 표시는 full-height wall mesh가 아니라 floor-level wall footprint strip으로 우선 표현한다.
+- editor 상단 bar의 `추가`/`설정`은 좌측 slide-in drawer를 공유하고, 동시에 둘 이상 열 수 없도록 규칙을 추가.
+
+Updated:
+- 상단뷰는 ceiling을 숨기고, 워크뷰만 ceiling을 노출하는 몰입감 기준을 제품 기본값으로 고정.
+- share modal은 작은 viewport에서도 카드 전체가 보이고 내부만 스크롤되도록 반응형 규칙을 강화.
+
+Removed/Deprecated:
+- 상단뷰 pan 중심 탐색과 `목록/속성/항목뷰/이동/회전` 보조 affordance 의존.
+
 ## 2026-04-14 변경 동기화 (Physical Fidelity Runtime Pass)
 Added:
 - 실측/마감 메타데이터를 catalog -> save pipeline -> sceneDocument -> viewer hotspot까지 유지하는 계약을 기본 규칙으로 추가.

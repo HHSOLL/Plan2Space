@@ -34,6 +34,9 @@
 추가 기준:
 - builder opening/style preview는 room center를 target으로 하는 orbit camera를 사용한다.
 - preview orbit은 wheel zoom과 drag rotation을 기본 제스처로 제공하고 pan은 보조 동작으로 제한하거나 비활성화한다.
+- editor top-view는 orthographic top camera를 방 중심에 고정하고 drag rotation + zoom만 허용하며 pan은 금지한다.
+- editor top-view의 room shell은 floor 위 footprint strip으로 읽혀야 하고, walk/builder-preview에서만 full-height wall mesh를 사용한다.
+- walk view 진입 시 기본 시선은 room center/entrance target을 향해야 한다.
 
 ## 뷰어 규칙
 - `apps/web/src/components/viewer/ReadOnlySceneViewport.tsx`
@@ -119,6 +122,18 @@ Updated:
 
 Removed/Deprecated:
 - wall mesh를 floor outline 중심선에 그대로 배치하던 preview 렌더 가정.
+
+## 2026-04-17 변경 동기화 (Top-View Legibility + Surface Stability)
+Added:
+- 상단뷰 room shell legibility를 위해 wall footprint strip 렌더 규칙을 추가.
+- walk view initial look target을 room center 기반으로 정렬하는 카메라 품질 기준을 추가.
+
+Updated:
+- floor texture는 저각도 시점 shimmer를 줄이기 위해 보수적 repeat와 높은 anisotropy를 사용한다.
+- walk view contact shadow / directional shadow bias를 보수적으로 조정해 floor acne와 coplanar shimmer를 줄인다.
+
+Removed/Deprecated:
+- top-view에서 full-height wall mesh만으로 shell legibility를 확보한다는 가정.
 - 포스트FX 기준(SSAO + 보수적 bloom + 완화된 vignette + 저강도 noise) 추가.
 
 Updated:

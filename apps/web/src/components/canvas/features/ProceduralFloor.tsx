@@ -137,8 +137,10 @@ export default function ProceduralFloor() {
       if (!texture) return;
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(width / 2, depth / 2);
-      texture.anisotropy = 4;
+      texture.repeat.set(Math.max(1, width / 3.4), Math.max(1, depth / 3.4));
+      texture.anisotropy = 16;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
     });
     textures.woodDiffuse.colorSpace = THREE.SRGBColorSpace;
     textures.concreteDiffuse.colorSpace = THREE.SRGBColorSpace;
@@ -164,7 +166,10 @@ export default function ProceduralFloor() {
         bumpScale: 0.012,
         roughness: 0.7,
         normalScale: new THREE.Vector2(0.35, 0.35),
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
       }),
       new THREE.MeshStandardMaterial({
         map: textures.concreteDiffuse,
@@ -174,7 +179,10 @@ export default function ProceduralFloor() {
         bumpScale: 0.015,
         roughness: 0.9,
         normalScale: new THREE.Vector2(0.35, 0.35),
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
       }),
       new THREE.MeshStandardMaterial({
         map: textures.marbleDiffuse,
@@ -184,7 +192,10 @@ export default function ProceduralFloor() {
         bumpScale: 0.01,
         roughness: 0.5,
         normalScale: new THREE.Vector2(0.3, 0.3),
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
       })
     ];
   }, [textures]);
