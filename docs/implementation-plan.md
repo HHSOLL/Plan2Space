@@ -161,6 +161,17 @@ Updated:
 
 Removed/Deprecated:
 - rect template만 정상이어도 builder shell 안정화가 완료된다는 가정.
+
+## 2026-04-17 변경 동기화 (Editor Top-View Interaction Fixes)
+Added:
+- P2 범위에 rotate-only orthographic top-view camera와 좌측 add/settings shared drawer UX를 명시.
+- P2 회귀 항목에 mobile share modal fit과 top-view/walk-view ceiling visibility 분리를 추가.
+
+Updated:
+- 편집 경험 목표를 `reference chrome`에서 `reference chrome + top-view legibility + walk-view entry framing`까지 확장.
+
+Removed/Deprecated:
+- top-view 편집이 pan/move affordance와 별도 `목록/속성/항목뷰` 보조 UI에 의존한다는 가정.
 - `/studio` 개인 아카이브를 gallery 톤 카드 피드 + 필터/검색 구조로 정리하는 UI 슬라이스를 추가.
 
 Updated:

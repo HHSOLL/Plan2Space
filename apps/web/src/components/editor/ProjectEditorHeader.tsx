@@ -13,7 +13,7 @@ type ProjectEditorHeaderProps = {
   title: string;
   viewMode: EditorViewMode;
   canShowPanels: boolean;
-  activePanel: "assets" | "properties";
+  activePanel: "assets" | "properties" | null;
   onBack: () => void;
   onShowAssets: () => void;
   onShowInspector: () => void;
@@ -42,7 +42,7 @@ export function ProjectEditorHeader({
 }: ProjectEditorHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, session, logout } = useAuthStore();
+  const { user, session } = useAuthStore();
   const isAuthenticated = Boolean(session?.user);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const modeLabel = viewMode === "walk" ? "워크뷰" : "상단뷰";
@@ -117,7 +117,11 @@ export function ProjectEditorHeader({
                 <button
                   type="button"
                   onClick={onShowAssets}
-                  className="inline-flex h-8 items-center gap-1 rounded-full border border-black/10 px-3 text-[10px] font-semibold text-[#625a51] transition hover:border-black/20 hover:bg-[#f4f4f1] xl:hidden"
+                  className={`inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[10px] font-semibold transition ${
+                    activePanel === "assets"
+                      ? "border-black bg-[#171411] text-white"
+                      : "border-black/10 text-[#625a51] hover:border-black/20 hover:bg-[#f4f4f1]"
+                  }`}
                 >
                   <LayoutGrid className="h-3.5 w-3.5" />
                   추가
@@ -138,22 +142,13 @@ export function ProjectEditorHeader({
             ) : null}
 
             {isAuthenticated ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => router.push("/my")}
-                  className="hidden max-w-[160px] truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[#999999] transition hover:text-[#171411] xl:block"
-                >
-                  {user?.name ?? user?.email ?? "내 프로젝트"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void logout()}
-                  className="inline-flex h-8 items-center rounded-full border border-black/10 px-3 text-[10px] font-semibold text-[#625a51] transition hover:border-black/20 hover:bg-[#f4f4f1]"
-                >
-                  로그아웃
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => router.push("/my")}
+                className="hidden max-w-[160px] truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[#999999] transition hover:text-[#171411] xl:block"
+              >
+                {user?.name ?? user?.email ?? "내 프로젝트"}
+              </button>
             ) : (
               <button
                 type="button"

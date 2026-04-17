@@ -151,7 +151,7 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/28 backdrop-blur-sm px-4 sm:px-6"
+          className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/28 px-4 py-4 backdrop-blur-sm sm:items-center sm:px-6 sm:py-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -160,15 +160,15 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-white p-6 text-[#171411] shadow-[0_24px_80px_rgba(17,19,22,0.18)] sm:p-8"
+            className="flex w-full max-w-2xl flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white text-[#171411] shadow-[0_24px_80px_rgba(17,19,22,0.18)] max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)]"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-black/10 px-5 py-4 sm:px-8 sm:py-5">
               <div className="space-y-2">
                 <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.28em] text-[#8a8177]">
                   <Link2 className="h-4 w-4" />
                   공유 링크
                 </div>
-                <h2 className="text-2xl font-semibold sm:text-3xl">읽기 전용 공유 설정</h2>
+                <h2 className="text-xl font-semibold sm:text-3xl">읽기 전용 공유 설정</h2>
               </div>
               <button
                 onClick={onClose}
@@ -178,7 +178,8 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
               </button>
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
+              <div className="grid gap-4 sm:grid-cols-2">
               {project ? (
                 <div className="sm:col-span-2 rounded-[24px] border border-black/10 bg-[#faf9f7] p-4">
                   <div className="grid gap-4 sm:grid-cols-[150px_minmax(0,1fr)]">
@@ -278,7 +279,7 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
 
             <div className="mt-6">
               <div className="text-[10px] uppercase tracking-[0.24em] text-[#8a8177]">활성 링크</div>
-              <div className="mt-3 max-h-60 space-y-3 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-60 space-y-3 overflow-y-auto pr-1 sm:max-h-72">
                 {isLoading ? (
                   <div className="text-xs text-[#8a8177]">공유 링크를 불러오는 중...</div>
                 ) : sharedLinks.length > 0 ? (
@@ -342,16 +343,16 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                             </span>
                           )}
                         </div>
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
                           <input
                             type="text"
                             value={`${window.location.origin}/shared/${link.token}`}
                             readOnly
-                            className="flex-1 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs text-[#625a51]"
+                            className="w-full min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs text-[#625a51]"
                           />
                           <button
                             onClick={() => handleCopyLink(link.token)}
-                            className="flex items-center gap-2 rounded-lg border border-black/10 bg-[#f4f4f1] px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#625a51] transition hover:bg-[#ecebe7]"
+                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 bg-[#f4f4f1] px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#625a51] transition hover:bg-[#ecebe7] sm:w-auto"
                           >
                             <Copy className="h-3 w-3" />
                             {copiedToken === link.token ? "복사됨" : "복사"}
@@ -363,6 +364,7 @@ export function ShareModal({ projectId, project, isOpen, onClose }: ShareModalPr
                 ) : (
                   <div className="text-xs text-[#8a8177]">생성된 공유 링크가 없습니다.</div>
                 )}
+              </div>
               </div>
             </div>
           </motion.div>

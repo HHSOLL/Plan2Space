@@ -19,13 +19,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { BuilderInspectorPanel } from "../../../../components/editor/BuilderInspectorPanel";
 import { BuilderLaunchState } from "../../../../components/editor/BuilderLaunchState";
-import { MobileEditorControls } from "../../../../components/editor/MobileEditorControls";
 import { ProjectEditorViewport } from "../../../../components/editor/ProjectEditorViewport";
 import { ProjectEditorHeader } from "../../../../components/editor/ProjectEditorHeader";
 import { ShareModal } from "../../../../components/editor/ShareModal";
 import { useAssetCatalog } from "../../../../components/editor/useAssetCatalog";
 import { useEditorSaveSession } from "../../../../components/editor/useEditorSaveSession";
-import { StudioWorkspacePanel } from "../../../../components/layout/StudioWorkspaceShell";
 import "../../../../lib/polyfills/progress-event";
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
@@ -113,7 +111,7 @@ export default function ProjectEditorPage() {
   const { assets, addFurniture, updateFurniture, removeFurniture } = useAssetStore();
   const { selectedAssetId, setSelectedAssetId } = useSelectionStore();
   const { entranceId, setEntranceId } = useCameraStore();
-  const { versionHistory, initializeHistory, recordSnapshot, undo, redo } = usePublishStore();
+  const { initializeHistory, recordSnapshot } = usePublishStore();
   const { currentProject, loadProject } = useProjectStore();
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -139,11 +137,7 @@ export default function ProjectEditorPage() {
   }, []);
 
   useEffect(() => {
-    const desktopPanels =
-      typeof window !== "undefined" && window.innerWidth >= 1280
-        ? { assets: true, properties: false }
-        : { assets: false, properties: false };
-    applyShellPreset("editor", { panels: desktopPanels });
+    applyShellPreset("editor", { panels: { assets: false, properties: false } });
     return () => {
       resetShellState();
     };
@@ -489,8 +483,7 @@ export default function ProjectEditorPage() {
   ];
   const launchPreviewItems = featuredLibraryCatalog.slice(0, 3);
   const headerTitle = currentProject?.name || (isSceneVisible ? "공간 편집 중" : hasSceneGeometry ? "상단뷰 준비 완료" : "공간 껍데기 필요");
-  const canUndo = versionHistory.currentIndex > 0;
-  const canRedo = versionHistory.currentIndex >= 0 && versionHistory.currentIndex < versionHistory.snapshots.length - 1;
+  const activePanel = panels.assets ? "assets" : panels.properties ? "properties" : null;
 
   const savePayload = useMemo(
     () => ({
@@ -561,23 +554,36 @@ export default function ProjectEditorPage() {
     setTransformSpace
   ]);
 
-  const showAssetPanel = panels.assets || !panels.properties;
+  const closePanels = useCallback(() => {
+    setPanels({ assets: false, properties: false });
+  }, [setPanels]);
   const activateAssetPanel = () => setPanels({ assets: true, properties: false });
   const activateInspectorPanel = () => setPanels({ assets: false, properties: true });
   const toggleAssetPanel = () => {
     if (panels.assets && !panels.properties) {
-      setPanels({ assets: false, properties: false });
+      closePanels();
       return;
     }
     activateAssetPanel();
   };
   const toggleInspectorPanel = () => {
     if (panels.properties && !panels.assets) {
-      setPanels({ assets: false, properties: false });
+      closePanels();
       return;
     }
     activateInspectorPanel();
   };
+
+  useEffect(() => {
+    if (!isTopEditorVisible || (!panels.assets && !panels.properties)) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closePanels();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closePanels, isTopEditorVisible, panels.assets, panels.properties]);
 
   if (isInitialLoad) {
     return (
@@ -623,10 +629,10 @@ export default function ProjectEditorPage() {
         title={headerTitle}
         viewMode={viewMode}
         canShowPanels={isTopEditorVisible}
-        activePanel={showAssetPanel ? "assets" : "properties"}
+        activePanel={activePanel}
         onBack={() => router.push("/studio")}
-        onShowAssets={activateAssetPanel}
-        onShowInspector={activateInspectorPanel}
+        onShowAssets={toggleAssetPanel}
+        onShowInspector={toggleInspectorPanel}
         onOpenShare={() => setIsShareOpen(true)}
         onSave={() => {
           void triggerManualSave();
@@ -657,114 +663,77 @@ export default function ProjectEditorPage() {
               className="h-full w-full"
             >
               <div className="flex h-full min-h-0 w-full gap-3 xl:gap-3">
-                {isTopEditorVisible ? (
-                  <StudioWorkspacePanel className="hidden h-full w-[332px] shrink-0 overflow-hidden !rounded-[24px] !border-black/10 !shadow-none xl:flex xl:flex-col">
-                    <div className="min-h-0 flex-1 overflow-y-auto">
-                      <BuilderLibraryShelf
-                        items={filteredLibraryCatalog}
-                        featuredItems={featuredLibraryCatalog}
-                        spotlightItem={librarySpotlightItem}
-                        categories={libraryCategories}
-                        query={libraryQuery}
-                        activeCategory={libraryCategory}
-                        catalogCount={libraryCatalog.length}
-                        assetCount={assets.length}
-                        hasActiveFilters={libraryHasActiveFilters}
-                        placedItemKeys={placedItemKeys}
-                        onQueryChange={setLibraryQuery}
-                        onCategoryChange={setLibraryCategory}
-                        onAddStarterSet={addStarterSetToScene}
-                        onAddItem={addCatalogItemToScene}
-                      />
-                    </div>
-                  </StudioWorkspacePanel>
-                ) : null}
-
                 <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden p2s-workspace-viewport">
                   {isTopEditorVisible && (
                     <>
-                      <MobileEditorControls
-                        visible={isTopEditorVisible}
-                        canUndo={canUndo}
-                        canRedo={canRedo}
-                        onToggleLibrary={toggleAssetPanel}
-                        onToggleInspector={toggleInspectorPanel}
-                        onUndo={undo}
-                        onRedo={redo}
-                      />
-
-                      <StudioWorkspacePanel
-                        className={`absolute inset-y-3 left-3 z-[30] flex w-[min(86vw,368px)] flex-col overflow-hidden rounded-[24px] border border-black/10 bg-white/96 shadow-[0_18px_44px_rgba(17,19,22,0.14)] transition-all duration-300 xl:hidden ${
-                          panels.assets ? "translate-x-0 opacity-100" : "-translate-x-[108%] opacity-0 pointer-events-none"
-                        }`}
-                      >
-                        <BuilderLibraryShelf
-                          items={filteredLibraryCatalog}
-                          featuredItems={featuredLibraryCatalog}
-                          spotlightItem={librarySpotlightItem}
-                          categories={libraryCategories}
-                          query={libraryQuery}
-                          activeCategory={libraryCategory}
-                          catalogCount={libraryCatalog.length}
-                          assetCount={assets.length}
-                          hasActiveFilters={libraryHasActiveFilters}
-                          placedItemKeys={placedItemKeys}
-                          onQueryChange={setLibraryQuery}
-                          onCategoryChange={setLibraryCategory}
-                          onAddStarterSet={addStarterSetToScene}
-                          onAddItem={addCatalogItemToScene}
-                        />
-                      </StudioWorkspacePanel>
-
-                      <BuilderInspectorPanel
-                        visible={panels.properties}
-                        className="xl:hidden"
-                        transformMode={transformMode}
-                        transformSpace={transformSpace}
-                        wallMaterialIndex={wallMaterialIndex}
-                        floorMaterialIndex={floorMaterialIndex}
-                        lighting={lighting}
-                        wallsCount={walls.length}
-                        floorsCount={floors.length}
-                        assetsCount={assets.length}
-                        selectedAsset={selectedAsset}
-                        selectedAssetMeta={selectedCatalogItem}
-                        onTransformModeChange={setTransformMode}
-                        onTransformSpaceChange={setTransformSpace}
-                        onWallMaterialChange={applyWallFinish}
-                        onFloorMaterialChange={applyFloorFinish}
-                        onLightingChange={applyLightingSetting}
-                        onLightingCommit={commitLightingSetting}
-                        onApplyLightingPreset={applyLightingPreset}
-                        onUpdateAsset={updateAssetFromInspector}
-                        onRemoveAsset={removeAssetFromInspector}
-                        formatAssetLabel={formatAssetIdLabel}
-                      />
-
-                      <BuilderInspectorPanel
-                        visible={panels.properties}
-                        className="hidden xl:flex xl:w-[304px]"
-                        transformMode={transformMode}
-                        transformSpace={transformSpace}
-                        wallMaterialIndex={wallMaterialIndex}
-                        floorMaterialIndex={floorMaterialIndex}
-                        lighting={lighting}
-                        wallsCount={walls.length}
-                        floorsCount={floors.length}
-                        assetsCount={assets.length}
-                        selectedAsset={selectedAsset}
-                        selectedAssetMeta={selectedCatalogItem}
-                        onTransformModeChange={setTransformMode}
-                        onTransformSpaceChange={setTransformSpace}
-                        onWallMaterialChange={applyWallFinish}
-                        onFloorMaterialChange={applyFloorFinish}
-                        onLightingChange={applyLightingSetting}
-                        onLightingCommit={commitLightingSetting}
-                        onApplyLightingPreset={applyLightingPreset}
-                        onUpdateAsset={updateAssetFromInspector}
-                        onRemoveAsset={removeAssetFromInspector}
-                        formatAssetLabel={formatAssetIdLabel}
-                      />
+                      <AnimatePresence initial={false}>
+                        {activePanel ? (
+                          <>
+                            <motion.button
+                              type="button"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              onClick={closePanels}
+                              className="absolute inset-0 z-[26] bg-white/8 backdrop-blur-[1px]"
+                              aria-label="패널 닫기"
+                            />
+                            <motion.div
+                              initial={{ x: -28, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              exit={{ x: -28, opacity: 0 }}
+                              transition={{ duration: 0.22, ease: "easeOut" }}
+                              className="absolute inset-y-3 left-3 z-[30] flex w-[min(92vw,400px)] flex-col overflow-hidden rounded-[24px] border border-black/10 bg-white/96 shadow-[0_18px_44px_rgba(17,19,22,0.14)]"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {activePanel === "assets" ? (
+                                <BuilderLibraryShelf
+                                  items={filteredLibraryCatalog}
+                                  featuredItems={featuredLibraryCatalog}
+                                  spotlightItem={librarySpotlightItem}
+                                  categories={libraryCategories}
+                                  query={libraryQuery}
+                                  activeCategory={libraryCategory}
+                                  catalogCount={libraryCatalog.length}
+                                  assetCount={assets.length}
+                                  hasActiveFilters={libraryHasActiveFilters}
+                                  placedItemKeys={placedItemKeys}
+                                  onQueryChange={setLibraryQuery}
+                                  onCategoryChange={setLibraryCategory}
+                                  onAddStarterSet={addStarterSetToScene}
+                                  onAddItem={addCatalogItemToScene}
+                                />
+                              ) : (
+                                <BuilderInspectorPanel
+                                  visible
+                                  layout="inline"
+                                  className="min-h-0"
+                                  transformMode={transformMode}
+                                  transformSpace={transformSpace}
+                                  wallMaterialIndex={wallMaterialIndex}
+                                  floorMaterialIndex={floorMaterialIndex}
+                                  lighting={lighting}
+                                  wallsCount={walls.length}
+                                  floorsCount={floors.length}
+                                  assetsCount={assets.length}
+                                  selectedAsset={selectedAsset}
+                                  selectedAssetMeta={selectedCatalogItem}
+                                  onTransformModeChange={setTransformMode}
+                                  onTransformSpaceChange={setTransformSpace}
+                                  onWallMaterialChange={applyWallFinish}
+                                  onFloorMaterialChange={applyFloorFinish}
+                                  onLightingChange={applyLightingSetting}
+                                  onLightingCommit={commitLightingSetting}
+                                  onApplyLightingPreset={applyLightingPreset}
+                                  onUpdateAsset={updateAssetFromInspector}
+                                  onRemoveAsset={removeAssetFromInspector}
+                                  formatAssetLabel={formatAssetIdLabel}
+                                />
+                              )}
+                            </motion.div>
+                          </>
+                        ) : null}
+                      </AnimatePresence>
                     </>
                   )}
 
@@ -813,17 +782,6 @@ export default function ProjectEditorPage() {
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-3 sm:bottom-6">
           <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-black/10 bg-white/96 p-1.5 shadow-[0_16px_34px_rgba(16,18,22,0.14)]">
             <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
-              {isTopEditorVisible ? (
-                <button
-                  type="button"
-                  onClick={toggleAssetPanel}
-                  className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition sm:px-4 xl:hidden ${
-                    panels.assets ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                  }`}
-                >
-                  항목뷰
-                </button>
-              ) : null}
               <button
                 type="button"
                 onClick={() => requestViewMode("top")}
@@ -848,31 +806,6 @@ export default function ProjectEditorPage() {
                 워크뷰
               </button>
             </div>
-            {isTopEditorVisible ? (
-              <>
-                <span className="mx-1 h-7 w-px bg-black/10" />
-                <div className="flex items-center gap-1 rounded-full bg-[#f4f4f1] p-1">
-                  <button
-                    type="button"
-                    onClick={() => setTransformMode("translate")}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
-                      transformMode === "translate" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                    }`}
-                  >
-                    이동
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTransformMode("rotate")}
-                    className={`rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition ${
-                      transformMode === "rotate" ? "bg-white text-[#1f1b16]" : "text-[#4d453a] hover:bg-white"
-                    }`}
-                  >
-                    회전
-                  </button>
-                </div>
-              </>
-            ) : null}
           </div>
         </div>
       ) : null}

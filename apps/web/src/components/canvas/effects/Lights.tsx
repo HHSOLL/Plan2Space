@@ -19,8 +19,8 @@ export default function Lights() {
         color="#fff0de"
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0003}
-        shadow-normalBias={0.02}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.05}
         shadow-camera-near={0.5}
         shadow-camera-far={48}
         shadow-camera-left={-14}
