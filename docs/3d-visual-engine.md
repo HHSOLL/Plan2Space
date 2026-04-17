@@ -51,6 +51,9 @@
 - 프레임 루프 내부에서 네트워크 요청 금지
 - 고비용 post-effect는 기본 비활성
 - 에디터 대비 뷰어 interaction tree 경량화 유지
+- top-view/editor precision 모드는 physics simulation, SSAO, contact shadow를 기본 비활성으로 두고 낮은 DPR/그림자 예산을 사용한다.
+- builder preview는 walk/viewer보다 가벼운 품질 프로필을 사용하고, walk/viewer만 shadow + post FX를 보수적으로 유지한다.
+- 가구 drag는 local preview 후 pointer-up 시점에 store commit을 우선 적용해 전역 scene 재직렬화를 매 pointer move마다 유발하지 않는다.
 
 ## Scene 데이터 소비 규칙
 - `apps/web/src/lib/domain/scene-document.ts`를 scene 복원의 canonical 매핑 계층으로 사용
@@ -142,3 +145,26 @@ Updated:
 
 Removed/Deprecated:
 - 깊이감 보정(occlusion) 없이 bloom/vignette만으로 룩을 구성하던 기준.
+
+## 2026-04-18 변경 동기화 (Mode-Aware Render Budget)
+Added:
+- top-view/editor precision 모드의 경량 렌더 예산(no physics, no SSAO, no contact shadows, capped DPR) 기준을 추가.
+- builder preview와 walk/viewer 사이의 mode-aware shadow/contact shadow/post FX 품질 계단을 추가.
+
+Updated:
+- shared viewport 품질 기준을 단일 최고품질 고정에서 mode/device-aware 예산 기반으로 갱신.
+- 가구 drag 상호작용 기준을 live global store write에서 local preview 후 commit 우선으로 조정.
+
+Removed/Deprecated:
+- editor/viewer/builder가 동일한 post FX, shadow, physics 비용을 항상 부담해야 한다는 가정.
+
+## 2026-04-18 변경 동기화 (Deskterior Asset Density Pass)
+Added:
+- curated Blender 자산군에 머그/북스택/트레이/스피커/플랜터를 추가하고, runtime GLB + catalog metadata + verify 계약을 함께 관리하는 기준을 추가.
+- 런타임 로더에 `EXT_meshopt_compression` 디코더와 deskterior 전용 Meshopt 최적화 스크립트 사용 기준을 추가.
+
+Updated:
+- 오픈소스 자산 활용 기준을 generic import에서 “CC0 provenance + category/brand/externalUrl 보강”까지 확장.
+
+Removed/Deprecated:
+- Blender source만 추가하고 runtime/export/metadata/verify는 수동으로 맞춘다는 운영 가정.

@@ -3,8 +3,9 @@
 import { Bloom, EffectComposer, Noise, Vignette, SSAO } from "@react-three/postprocessing";
 import { useThree } from "@react-three/fiber";
 import { Suspense, useMemo } from "react";
+import type { SceneRenderQuality } from "../../../lib/scene/render-quality";
 
-export default function PostEffects() {
+export default function PostEffects({ quality }: { quality: SceneRenderQuality }) {
   const { size, gl, scene, camera } = useThree();
 
   const isReady = useMemo(() => {
@@ -19,7 +20,7 @@ export default function PostEffects() {
     );
   }, [gl, scene, camera, size]);
 
-  if (!isReady) {
+  if (!isReady || !quality.enablePostEffects) {
     return null;
   }
 
@@ -27,23 +28,25 @@ export default function PostEffects() {
     <Suspense fallback={null}>
       <EffectComposer
         key={`${size.width}-${size.height}`}
-        multisampling={2}
-        enableNormalPass
+        multisampling={quality.composerMultisampling}
+        enableNormalPass={quality.enableSsao}
         stencilBuffer={false}
         autoClear={false}
       >
-        <SSAO
-          intensity={8}
-          radius={0.055}
-          luminanceInfluence={0.45}
-          bias={0.02}
-          worldDistanceThreshold={1}
-          worldDistanceFalloff={0.2}
-          worldProximityThreshold={0.8}
-          worldProximityFalloff={0.2}
-          samples={16}
-          rings={4}
-        />
+        {quality.enableSsao ? (
+          <SSAO
+            intensity={6.5}
+            radius={0.05}
+            luminanceInfluence={0.42}
+            bias={0.02}
+            worldDistanceThreshold={1}
+            worldDistanceFalloff={0.2}
+            worldProximityThreshold={0.8}
+            worldProximityFalloff={0.2}
+            samples={10}
+            rings={3}
+          />
+        ) : null}
         <Bloom intensity={0.35} luminanceThreshold={0.9} luminanceSmoothing={0.2} />
         <Vignette offset={0.22} darkness={0.28} />
         <Noise opacity={0.006} />

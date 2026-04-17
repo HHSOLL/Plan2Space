@@ -131,6 +131,128 @@ const CURATED_INSERTS: CatalogEntry[] = [
     detailNotes:
       "Adjustable desk lamp with integrated warm emitter. Dimensions reflect Blender-measured envelope for accurate placement.",
     scaleLocked: true
+  },
+  {
+    id: "p2s_ceramic_mug_sand",
+    label: "P2S 샌드 세라믹 머그",
+    category: "Decor",
+    assetId: "/assets/models/p2s_ceramic_mug/p2s_ceramic_mug.glb",
+    scale: [1, 1, 1],
+    description: "따뜻한 샌드 톤의 손잡이 머그입니다. 데스크와 선반 위 소품으로 바로 사용할 수 있습니다.",
+    brand: "Plan2Space Studio",
+    price: "₩14,000",
+    options: "120x84x92 mm (Blender measured envelope)",
+    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EB%A8%B8%EA%B7%B8",
+    dimensionsMm: {
+      width: 120,
+      depth: 84,
+      height: 92
+    },
+    finishColor: "Sand beige",
+    finishMaterial: "Glazed ceramic",
+    detailNotes:
+      "Single handled mug with thick ceramic wall and soft satin glaze. Dimensions reflect Blender-measured envelope for shelf and desk placement.",
+    scaleLocked: true
+  },
+  {
+    id: "p2s_book_stack_warm",
+    label: "P2S 웜 북 스택",
+    category: "Decor",
+    assetId: "/assets/models/p2s_book_stack_warm/p2s_book_stack_warm.glb",
+    scale: [1, 1, 1],
+    description: "따뜻한 컬러 커버로 구성한 책 3권 스택입니다. 데스크와 선반 스타일링용 기본 소품입니다.",
+    brand: "Plan2Space Studio",
+    price: "₩28,000",
+    options: "186x245x79 mm (Blender measured envelope)",
+    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EC%B1%85",
+    dimensionsMm: {
+      width: 186,
+      depth: 245,
+      height: 79
+    },
+    finishColor: "Terracotta / mustard / cocoa",
+    finishMaterial: "Laminated paper cover over board",
+    detailNotes:
+      "Three-book horizontal stack with a warm editorial palette for desk, shelf, and side table styling.",
+    scaleLocked: true
+  },
+  {
+    id: "p2s_desk_tray_oak",
+    label: "P2S 오크 데스크 트레이",
+    category: "Storage",
+    assetId: "/assets/models/p2s_desk_tray_oak/p2s_desk_tray_oak.glb",
+    scale: [1, 1, 1],
+    description: "소품과 문구류를 정리하는 얕은 오크 트레이입니다.",
+    brand: "Plan2Space Studio",
+    price: "₩19,000",
+    options: "240x160x36 mm (Blender measured envelope)",
+    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%ED%8A%B8%EB%A0%88%EC%9D%B4",
+    dimensionsMm: {
+      width: 240,
+      depth: 160,
+      height: 36
+    },
+    finishColor: "Light oak",
+    finishMaterial: "Oiled oak",
+    detailNotes:
+      "Low organizer tray with shallow walls sized for stationery, earbuds, or keys. The inner base acts as a furniture support surface.",
+    scaleLocked: true,
+    supportProfile: {
+      surfaces: [
+        {
+          id: "tray-base",
+          anchorTypes: ["desk_surface", "shelf_surface", "furniture_surface"],
+          center: [0, 0],
+          size: [0.22, 0.14],
+          top: 0.012,
+          margin: [0.01, 0.01]
+        }
+      ]
+    }
+  },
+  {
+    id: "p2s_compact_speaker",
+    label: "P2S 컴팩트 스피커",
+    category: "Electronics",
+    assetId: "/assets/models/p2s_compact_speaker/p2s_compact_speaker.glb",
+    scale: [1, 1, 1],
+    description: "책상 위 북쉘프 구성을 위한 컴팩트 스피커입니다.",
+    brand: "Plan2Space Studio",
+    price: "₩79,000",
+    options: "90x141x220 mm (Blender measured envelope)",
+    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%EC%8A%A4%ED%94%BC%EC%BB%A4",
+    dimensionsMm: {
+      width: 90,
+      depth: 141,
+      height: 220
+    },
+    finishColor: "Graphite black",
+    finishMaterial: "Powder-coated metal with woven grille",
+    detailNotes:
+      "Single compact desktop speaker with two front drivers and rounded cabinet edges for modern desk setups.",
+    scaleLocked: true
+  },
+  {
+    id: "p2s_desk_planter_pilea",
+    label: "P2S 필레아 데스크 플랜터",
+    category: "Plants",
+    assetId: "/assets/models/p2s_desk_planter_pilea/p2s_desk_planter_pilea.glb",
+    scale: [1, 1, 1],
+    description: "작은 라운드 잎을 가진 필레아 화분입니다. 홈오피스와 선반 코너에 맞는 소형 식물 소품입니다.",
+    brand: "Plan2Space Studio",
+    price: "₩24,000",
+    options: "100x100x125 mm (Blender measured envelope)",
+    externalUrl: "https://www.ikea.com/kr/ko/search/?q=%ED%99%94%EB%B6%84",
+    dimensionsMm: {
+      width: 100,
+      depth: 100,
+      height: 125
+    },
+    finishColor: "Clay pot / fresh green",
+    finishMaterial: "Unglazed ceramic pot with plant foliage",
+    detailNotes:
+      "Compact pilea planter with terracotta pot, soil insert, and layered leaves sized for desk corners and shelf styling.",
+    scaleLocked: true
   }
 ];
 
@@ -151,7 +273,37 @@ const CURATED_UPDATES: Record<string, Partial<CatalogEntry>> = {
     category: "Lighting",
     brand: "Poly Haven (CC0)",
     options: "오픈소스 3D 자산 · articulated lamp · light-emitter",
-    externalUrl: "https://polyhaven.com/"
+    externalUrl: "https://polyhaven.com/a/desk_lamp_arm_01"
+  },
+  book_encyclopedia_set_01: {
+    category: "Decor",
+    brand: "Poly Haven (CC0)",
+    options: "오픈소스 3D 자산 · books · desk decor",
+    externalUrl: "https://polyhaven.com/a/book_encyclopedia_set_01"
+  },
+  wooden_bookshelf_worn: {
+    category: "Storage",
+    brand: "Poly Haven (CC0)",
+    options: "오픈소스 3D 자산 · bookshelf",
+    externalUrl: "https://polyhaven.com/a/wooden_bookshelf_worn"
+  },
+  boombox: {
+    category: "Electronics",
+    brand: "Poly Haven (CC0)",
+    options: "오픈소스 3D 자산 · speaker",
+    externalUrl: "https://polyhaven.com/a/boombox"
+  },
+  gamepad: {
+    category: "Electronics",
+    brand: "Poly Haven (CC0)",
+    options: "오픈소스 3D 자산 · gamepad",
+    externalUrl: "https://polyhaven.com/a/gamepad"
+  },
+  gaming_console: {
+    category: "Electronics",
+    brand: "Poly Haven (CC0)",
+    options: "오픈소스 3D 자산 · console",
+    externalUrl: "https://polyhaven.com/a/gaming_console"
   }
 };
 

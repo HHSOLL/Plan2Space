@@ -98,5 +98,93 @@
       "ao": "/assets/textures/linoleum_brown/linoleum_brown_ao_2k.jpg",
       "displacement": "/assets/textures/linoleum_brown/linoleum_brown_disp_2k.jpg"
     }
+  },
+  {
+    "id": "oak_veneer_01",
+    "maps": {
+      "diffuse": "/assets/textures/oak_veneer_01/oak_veneer_01_diff_2k.jpg",
+      "roughness": "/assets/textures/oak_veneer_01/oak_veneer_01_rough_2k.jpg",
+      "normal": "/assets/textures/oak_veneer_01/oak_veneer_01_nor_gl_2k.jpg",
+      "ao": "/assets/textures/oak_veneer_01/oak_veneer_01_ao_2k.jpg",
+      "displacement": "/assets/textures/oak_veneer_01/oak_veneer_01_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "kitchen_wood",
+    "maps": {
+      "diffuse": "/assets/textures/kitchen_wood/kitchen_wood_diff_2k.jpg",
+      "roughness": "/assets/textures/kitchen_wood/kitchen_wood_rough_2k.jpg",
+      "normal": "/assets/textures/kitchen_wood/kitchen_wood_nor_gl_2k.jpg",
+      "ao": "/assets/textures/kitchen_wood/kitchen_wood_ao_2k.jpg",
+      "displacement": "/assets/textures/kitchen_wood/kitchen_wood_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "wood_table_worn",
+    "maps": {
+      "diffuse": "/assets/textures/wood_table_worn/wood_table_worn_diff_2k.jpg",
+      "roughness": "/assets/textures/wood_table_worn/wood_table_worn_rough_2k.jpg",
+      "normal": "/assets/textures/wood_table_worn/wood_table_worn_nor_gl_2k.jpg",
+      "ao": "/assets/textures/wood_table_worn/wood_table_worn_ao_2k.jpg",
+      "displacement": "/assets/textures/wood_table_worn/wood_table_worn_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "fabric_pattern_07",
+    "maps": {
+      "roughness": "/assets/textures/fabric_pattern_07/fabric_pattern_07_rough_2k.jpg",
+      "normal": "/assets/textures/fabric_pattern_07/fabric_pattern_07_nor_gl_2k.jpg",
+      "ao": "/assets/textures/fabric_pattern_07/fabric_pattern_07_ao_2k.jpg"
+    }
+  },
+  {
+    "id": "fabric_leather_01",
+    "maps": {
+      "diffuse": "/assets/textures/fabric_leather_01/fabric_leather_01_diff_2k.jpg",
+      "roughness": "/assets/textures/fabric_leather_01/fabric_leather_01_rough_2k.jpg",
+      "normal": "/assets/textures/fabric_leather_01/fabric_leather_01_nor_gl_2k.jpg",
+      "ao": "/assets/textures/fabric_leather_01/fabric_leather_01_ao_2k.jpg",
+      "displacement": "/assets/textures/fabric_leather_01/fabric_leather_01_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "terrazzo_tiles",
+    "maps": {
+      "diffuse": "/assets/textures/terrazzo_tiles/terrazzo_tiles_diff_2k.jpg",
+      "roughness": "/assets/textures/terrazzo_tiles/terrazzo_tiles_rough_2k.jpg",
+      "normal": "/assets/textures/terrazzo_tiles/terrazzo_tiles_nor_gl_2k.jpg",
+      "ao": "/assets/textures/terrazzo_tiles/terrazzo_tiles_ao_2k.jpg",
+      "displacement": "/assets/textures/terrazzo_tiles/terrazzo_tiles_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "dirty_carpet",
+    "maps": {
+      "diffuse": "/assets/textures/dirty_carpet/dirty_carpet_diff_2k.jpg",
+      "roughness": "/assets/textures/dirty_carpet/dirty_carpet_rough_2k.jpg",
+      "normal": "/assets/textures/dirty_carpet/dirty_carpet_nor_gl_2k.jpg",
+      "ao": "/assets/textures/dirty_carpet/dirty_carpet_ao_2k.jpg",
+      "displacement": "/assets/textures/dirty_carpet/dirty_carpet_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "grey_plaster_02",
+    "maps": {
+      "diffuse": "/assets/textures/grey_plaster_02/grey_plaster_02_diff_2k.jpg",
+      "roughness": "/assets/textures/grey_plaster_02/grey_plaster_02_rough_2k.jpg",
+      "normal": "/assets/textures/grey_plaster_02/grey_plaster_02_nor_gl_2k.jpg",
+      "ao": "/assets/textures/grey_plaster_02/grey_plaster_02_ao_2k.jpg",
+      "displacement": "/assets/textures/grey_plaster_02/grey_plaster_02_disp_2k.jpg"
+    }
+  },
+  {
+    "id": "anti_skid_tiles",
+    "maps": {
+      "diffuse": "/assets/textures/anti_skid_tiles/anti_skid_tiles_diff_2k.jpg",
+      "roughness": "/assets/textures/anti_skid_tiles/anti_skid_tiles_rough_2k.jpg",
+      "normal": "/assets/textures/anti_skid_tiles/anti_skid_tiles_nor_gl_2k.jpg",
+      "ao": "/assets/textures/anti_skid_tiles/anti_skid_tiles_ao_2k.jpg",
+      "displacement": "/assets/textures/anti_skid_tiles/anti_skid_tiles_disp_2k.jpg"
+    }
   }
 ]

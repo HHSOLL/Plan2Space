@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -485,13 +485,18 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
   const updateFurniture = useAssetSelector((slice) => slice.updateFurniture);
   const recordSnapshot = usePublishSelector((slice) => slice.recordSnapshot);
   const [isDragging, setIsDragging] = useState(false);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const pendingPlacementRef = useRef<{
+    anchorType: SceneAsset["anchorType"];
+    supportAssetId: SceneAsset["supportAssetId"];
+    position: [number, number, number];
+    rotation: [number, number, number];
+  } | null>(null);
   const isSelected = selectedAssetId === asset.id;
   const lightProfile = useMemo(
     () => (enableDynamicLight ? resolveAssetLightProfile(asset) : null),
     [asset, enableDynamicLight]
   );
-
-  const position = useMemo(() => new THREE.Vector3(...asset.position), [asset.position]);
 
   const handleReadOnlySelect = (event: ThreeEvent<PointerEvent>) => {
     if (!readOnly) return;
@@ -505,6 +510,12 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     setSelectedAssetId(asset.id);
     setIsDragging(true);
     setIsTransforming(true);
+    pendingPlacementRef.current = {
+      anchorType: asset.anchorType,
+      supportAssetId: asset.supportAssetId,
+      position: asset.position,
+      rotation: asset.rotation
+    };
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.setPointerCapture(event.pointerId);
   };
@@ -512,9 +523,12 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
   const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
     if (viewMode !== "top" || readOnly) return;
     event.stopPropagation();
-    if (isDragging) {
+    const pendingPlacement = pendingPlacementRef.current;
+    if (isDragging && pendingPlacement) {
+      updateFurniture(asset.id, pendingPlacement);
       recordSnapshot("Move asset");
     }
+    pendingPlacementRef.current = null;
     setIsDragging(false);
     setIsTransforming(false);
     const target = event.nativeEvent.target as HTMLElement | null;
@@ -542,21 +556,31 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
         activeAssetId: asset.id
       }
     );
-    updateFurniture(asset.id, {
+    pendingPlacementRef.current = {
       anchorType: anchoredPlacement.anchorType,
       supportAssetId: anchoredPlacement.supportAssetId,
       position: anchoredPlacement.position,
       rotation: anchoredPlacement.rotation
-    });
+    };
+    groupRef.current?.position.set(...anchoredPlacement.position);
+    groupRef.current?.rotation.set(...anchoredPlacement.rotation);
   };
 
   useEffect(() => {
     return () => {
+      pendingPlacementRef.current = null;
       if (isDragging) {
         setIsTransforming(false);
       }
     };
   }, [isDragging, setIsTransforming]);
+
+  useEffect(() => {
+    if (viewMode === "walk" || isDragging || !groupRef.current) return;
+    groupRef.current.position.set(...asset.position);
+    groupRef.current.rotation.set(...asset.rotation);
+    groupRef.current.scale.set(...asset.scale);
+  }, [asset.position, asset.rotation, asset.scale, isDragging, viewMode]);
 
   const content = isPlaceholderAsset(asset.assetId) ? (
     <PlaceholderFurniture />
@@ -601,14 +625,15 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
 
   return (
     <group
+      ref={groupRef}
       name={`furniture:${asset.id}`}
-      position={position.toArray()}
+      position={asset.position}
       rotation={asset.rotation}
       scale={asset.scale}
       {...groupProps}
     >
       {content}
-      {lightProfile ? (
+      {lightProfile && viewMode !== "top" ? (
         <pointLight
           position={lightProfile.offset}
           color={lightProfile.color}
@@ -627,9 +652,12 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
   );
 }
 
-export default function Furniture() {
+export default function Furniture({ allowDynamicLights }: { allowDynamicLights: boolean }) {
   const assets = useAssetSelector((slice) => slice.assets);
   const emitterAssetIds = useMemo(() => {
+    if (!allowDynamicLights) {
+      return new Set<string>();
+    }
     const ids = new Set<string>();
     let count = 0;
     for (const asset of assets) {
@@ -639,7 +667,7 @@ export default function Furniture() {
       count += 1;
     }
     return ids;
-  }, [assets]);
+  }, [allowDynamicLights, assets]);
 
   return (
     <group>
