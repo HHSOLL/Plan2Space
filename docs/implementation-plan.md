@@ -9,6 +9,9 @@
 - `packages/floorplan-core` 및 floorplan 계약 파일 제거
 - bootstrap을 saved version(`sceneDocument`) 우선 경로로 단순화
 - 레거시 DB 제거용 마이그레이션 런북 + preflight/postcheck SQL 추가
+- live Supabase에서 legacy `floorplan*`/`intake_sessions` row purge + `floor-plans` bucket 삭제 완료
+- legacy `jobs` floorplan payload scrub 완료
+- live Supabase에서 `jobs.floorplan_id`, `project_versions.floor_plan`, `floorplans`, `intake_sessions`, `layout_revisions`, `source_assets`, `revision_source_links` 제거 완료
 
 ## P1
 목표: IKEA Kreativ 스타일 room builder 완성도 강화
@@ -34,6 +37,8 @@
 진행:
 - Blender 원본 -> GLB -> catalog sync 파이프라인 표준화
 - `assets:export:deskterior` / `assets:sync:deskterior` / `assets:verify:deskterior` 3단계 CLI 계약 고정
+- curated runtime asset delivery를 `apps/web/public/assets/*` 직접 서빙에서 storage/CDN 기반 release URL 구조로 옮기는 cutover 설계 진행
+- 신규 curated binary의 `apps/web/public/assets/*` 추가 동결
 - 제품 메타데이터(브랜드/가격/외부 링크/옵션) 채움률 개선
 - 제품 물리 메타데이터(`dimensionsMm`, `finishColor`, `finishMaterial`, `detailNotes`, `scaleLocked`)를 catalog/save/viewer 전 구간으로 확장
 - 실측 고정 제품의 스케일 변경 차단(Inspector + TransformControls) 적용
@@ -68,6 +73,7 @@
 - 자산 품질 편차(폴리곤/텍스처/스케일)는 Blender export 규칙 미준수 시 즉시 UX 저하로 이어진다.
 - Blender 실행 파일 미탐지 환경에서는 export 자동화가 실패할 수 있으며(`BLENDER_BIN` 필요), preflight/report 모드로 사전 점검이 필요하다.
 - 신규 자산 추가 경로에서 `activeAsset` 메타가 누락되면 fallback 규격으로 솔버가 동작하므로, catalog/입력 메타 품질 의존도가 남아 있다.
+- Vercel/Railway 원격 프로젝트/환경 변수 정리는 인증된 inventory 확인 전까지 자동 삭제할 수 없다.
 
 ## 2026-04-14 변경 동기화 (Legacy Hard Retirement + Deskterior Focus)
 Added:
@@ -180,6 +186,28 @@ Updated:
 
 Removed/Deprecated:
 - `/community`와 `/gallery`가 동일한 구조로만 유지된다는 가정.
+
+## 2026-04-17 변경 동기화 (Platform Cleanup Audit)
+Added:
+- P0 완료 항목에 live Supabase legacy data purge(`floorplan_match_events`, `floorplan_results`, `floorplans`, `intake_sessions`, `floor-plans` bucket)를 추가.
+- P2 진행 항목에 curated runtime asset의 storage/CDN cutover와 repo-public freeze를 추가.
+
+Updated:
+- platform cleanup 우선순위를 `live data purge -> direct DB migration -> Vercel/Railway authenticated inventory cleanup` 순서로 고정.
+
+Removed/Deprecated:
+- `apps/web/public/assets/*`를 계속 늘려도 운영 구조에 큰 문제가 없다는 가정.
+
+## 2026-04-18 변경 동기화 (Platform Runtime Hard Cleanup)
+Added:
+- P0 완료 항목에 live Supabase legacy schema drop(`jobs.floorplan_id`, `project_versions.floor_plan`, `floorplans`, `intake_sessions`, `layout_revisions`, `source_assets`, `revision_source_links`)을 추가.
+- Vercel preview 환경에 `RAILWAY_API_URL`, `SUPABASE_SERVICE_ROLE_KEY`를 채워 preview server-route parity를 확보한 운영 정리를 추가.
+
+Updated:
+- platform cleanup 상태를 `row purge only`에서 `row purge + schema drop + preview env parity` 완료로 상향.
+
+Removed/Deprecated:
+- legacy schema drop이 별도 maintenance window에 남아 있다는 이전 리스크.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

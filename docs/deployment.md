@@ -33,6 +33,9 @@
 - `NEXT_PUBLIC_APP_URL`
 - `PROJECT_MEDIA_BUCKET` (선택)
 
+운영 규칙:
+- `SUPABASE_SERVICE_ROLE_KEY`, `RAILWAY_API_URL`는 Production뿐 아니라 Preview에도 넣어 server route parity를 유지한다.
+
 ### Railway API (`apps/api`)
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
