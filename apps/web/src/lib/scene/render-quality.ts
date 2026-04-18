@@ -47,7 +47,7 @@ export function resolveSceneRenderQuality({
 
   if (isTopView) {
     return {
-      dpr: constrainedDevice ? clampRange(0.75, 1) : clampRange(0.85, 1.15),
+      dpr: constrainedDevice ? clampRange(0.7, 0.92) : clampRange(0.8, 1),
       enableShadows: false,
       shadowMapSize: 512,
       enablePostEffects: false,
@@ -63,31 +63,31 @@ export function resolveSceneRenderQuality({
 
   if (isBuilderPreview) {
     return {
-      dpr: constrainedDevice ? clampRange(0.85, 1.15) : clampRange(0.95, 1.35),
+      dpr: constrainedDevice ? clampRange(0.8, 1) : clampRange(0.9, 1.15),
       enableShadows: true,
-      shadowMapSize: constrainedDevice ? 768 : 1024,
-      enablePostEffects: true,
+      shadowMapSize: constrainedDevice ? 640 : 896,
+      enablePostEffects: !constrainedDevice,
       enableSsao: false,
       composerMultisampling: 0,
       enableContactShadows: true,
-      contactShadowResolution: constrainedDevice ? 256 : 384,
-      contactShadowBlur: 1.6,
-      contactShadowOpacity: 0.34,
+      contactShadowResolution: constrainedDevice ? 192 : 320,
+      contactShadowBlur: 1.45,
+      contactShadowOpacity: 0.28,
       allowDynamicLights: true
     };
   }
 
   return {
-    dpr: constrainedDevice ? clampRange(0.95, 1.3) : clampRange(1, 1.5),
+    dpr: constrainedDevice ? clampRange(0.88, 1.12) : clampRange(0.95, 1.3),
     enableShadows: true,
-    shadowMapSize: constrainedDevice ? 1024 : 1536,
+    shadowMapSize: constrainedDevice ? 768 : 1280,
     enablePostEffects: true,
     enableSsao: !constrainedDevice,
     composerMultisampling: constrainedDevice ? 0 : 2,
     enableContactShadows: true,
-    contactShadowResolution: constrainedDevice ? 384 : 640,
-    contactShadowBlur: constrainedDevice ? 1.8 : 2,
-    contactShadowOpacity: constrainedDevice ? 0.34 : 0.4,
+    contactShadowResolution: constrainedDevice ? 256 : 448,
+    contactShadowBlur: constrainedDevice ? 1.6 : 1.9,
+    contactShadowOpacity: constrainedDevice ? 0.28 : 0.36,
     allowDynamicLights: true
   };
 }

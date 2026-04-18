@@ -874,7 +874,6 @@ function StudioBuilderPageContent() {
             windowCount={scene.openings.filter((opening) => opening.type === "window").length}
             selectedWallLabel={wallEntries.find((wall) => wall.id === selectedWallId)?.label ?? null}
             selectedOpening={selectedOpening}
-            onDeleteSelectedOpening={selectedOpening ? () => deleteOpening(selectedOpening.id) : null}
           />
         </StudioWorkspaceShell>
       </div>

@@ -288,7 +288,6 @@ export function BuilderOpeningsStep({
                   value={selectedOpening.wallId}
                   onChange={(event) => {
                     const wallId = event.target.value;
-                    onSelectWall(wallId);
                     onPatchOpening(selectedOpening.id, { wallId });
                   }}
                   className="h-11 w-full rounded-[14px] border border-black/10 bg-white px-3 text-sm font-medium text-[#28231e]"

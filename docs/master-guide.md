@@ -218,6 +218,19 @@ Updated:
 Removed/Deprecated:
 - `jobs.floorplan_id`, `project_versions.floor_plan`, revision provenance 테이블이 운영 DB에 남아 있어도 무방하다는 가정.
 
+## 2026-04-18 변경 동기화 (Opening Asset Fidelity + Entry Performance)
+Added:
+- builder/editor opening render는 Blender source(`assets/blender/openings`)와 runtime GLB(`apps/web/public/assets/models/p2s_opening_*`)를 같이 관리하는 기준을 추가.
+- builder/editor top-view는 HDRI·interactive opening/light asset·full PBR floor/wall texture를 지연 로드하고, footprint/flat finish 중심으로 먼저 표시하는 성능 규칙을 추가.
+
+Updated:
+- builder step 3 opening 배치는 선택한 `벽 1~4`에 대해 center-ratio 기반 재배치로 보정하고, wall shell/collider/opening이 같은 wall placement 좌표계를 사용하도록 강화.
+- direct/indirect lighting 품질 기준을 `자연스러운 falloff + builder 진입 성능` 기준으로 다시 조정.
+
+Removed/Deprecated:
+- opening preview 내부의 별도 휴지통 버튼과 `Preview Controls` 카드.
+- top-view 진입 시 HDRI manifest와 모든 wall/floor texture set을 즉시 로드하는 가정.
+
 ## 2026-04-18 변경 동기화 (Builder Lighting Step + Top-View Controls)
 Added:
 - `/studio/builder` 최종 단계에 `직접등/간접등` 선택 step을 추가하고, 선택값을 scene lighting 계약에 저장하는 기준을 명시.

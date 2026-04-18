@@ -1,15 +1,60 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
+import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
 import { buildExteriorPolygon, buildFallbackShape } from "../../../lib/geometry/floor-shape";
 
-type TextureManifestEntry = {
+type FloorGeometryEntry = {
   id: string;
-  maps: Record<string, string>;
+  geometry: THREE.ShapeGeometry;
 };
+
+type FloorTextureConfig = {
+  topColor: string;
+  map: string;
+  roughnessMap: string;
+  normalMap: string;
+  bumpMap: string;
+  roughness: number;
+  bumpScale: number;
+  normalScale: number;
+};
+
+const FLOOR_TEXTURES: FloorTextureConfig[] = [
+  {
+    topColor: "#b79a75",
+    map: "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_diff_2k.jpg",
+    roughnessMap: "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_rough_2k.jpg",
+    normalMap: "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_disp_2k.png",
+    bumpMap: "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_disp_2k.png",
+    roughness: 0.7,
+    bumpScale: 0.012,
+    normalScale: 0.35
+  },
+  {
+    topColor: "#8f8479",
+    map: "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_diff_2k.jpg",
+    roughnessMap: "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_rough_2k.jpg",
+    normalMap: "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_disp_2k.png",
+    bumpMap: "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_disp_2k.png",
+    roughness: 0.9,
+    bumpScale: 0.015,
+    normalScale: 0.35
+  },
+  {
+    topColor: "#cbc4ba",
+    map: "/assets/textures/marble_01_2k.blend/textures/marble_01_diff_2k.jpg",
+    roughnessMap: "/assets/textures/marble_01_2k.blend/textures/marble_01_rough_2k.jpg",
+    normalMap: "/assets/textures/marble_01_2k.blend/textures/marble_01_disp_2k.png",
+    bumpMap: "/assets/textures/marble_01_2k.blend/textures/marble_01_disp_2k.png",
+    roughness: 0.5,
+    bumpScale: 0.01,
+    normalScale: 0.3
+  }
+];
 
 function computeBounds(walls: { start: [number, number]; end: [number, number] }[], scale: number) {
   if (walls.length === 0) {
@@ -36,29 +81,78 @@ function computeBounds(walls: { start: [number, number]; end: [number, number] }
   return { minX, maxX, minZ, maxZ };
 }
 
+function DetailedFloorMeshes({
+  geometries,
+  width,
+  depth,
+  floorMaterialIndex
+}: {
+  geometries: FloorGeometryEntry[];
+  width: number;
+  depth: number;
+  floorMaterialIndex: number;
+}) {
+  const textureConfig = FLOOR_TEXTURES[floorMaterialIndex % FLOOR_TEXTURES.length] ?? FLOOR_TEXTURES[0];
+  const textures = useTexture({
+    map: textureConfig.map,
+    roughnessMap: textureConfig.roughnessMap,
+    normalMap: textureConfig.normalMap,
+    bumpMap: textureConfig.bumpMap
+  });
+
+  useEffect(() => {
+    Object.values(textures).forEach((texture) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(Math.max(1, width / 3.8), Math.max(1, depth / 3.8));
+      texture.anisotropy = 8;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+    });
+
+    textures.map.colorSpace = THREE.SRGBColorSpace;
+    textures.roughnessMap.colorSpace = THREE.NoColorSpace;
+    textures.normalMap.colorSpace = THREE.NoColorSpace;
+    textures.bumpMap.colorSpace = THREE.NoColorSpace;
+  }, [depth, textures, width]);
+
+  const material = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        map: textures.map,
+        roughnessMap: textures.roughnessMap,
+        normalMap: textures.normalMap,
+        bumpMap: textures.bumpMap,
+        bumpScale: textureConfig.bumpScale,
+        roughness: textureConfig.roughness,
+        normalScale: new THREE.Vector2(textureConfig.normalScale, textureConfig.normalScale),
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
+      }),
+    [textureConfig.bumpScale, textureConfig.normalScale, textureConfig.roughness, textures]
+  );
+
+  useEffect(() => {
+    return () => {
+      material.dispose();
+    };
+  }, [material]);
+
+  return geometries.map((entry) => (
+    <mesh key={entry.id} name={`floor:${entry.id}`} geometry={entry.geometry} receiveShadow>
+      <primitive object={material} attach="material" />
+    </mesh>
+  ));
+}
+
 export default function ProceduralFloor() {
+  const viewMode = useEditorStore((state) => state.viewMode);
   const walls = useShellSelector((slice) => slice.walls);
   const floors = useShellSelector((slice) => slice.floors);
   const scale = useShellSelector((slice) => slice.scale);
   const floorMaterialIndex = useShellSelector((slice) => slice.floorMaterialIndex);
-
-  const [manifest, setManifest] = useState<TextureManifestEntry[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    fetch("/assets/textures/manifest.json")
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Texture manifest missing"))))
-      .then((data) => {
-        if (!active || !Array.isArray(data)) return;
-        setManifest(data as TextureManifestEntry[]);
-      })
-      .catch(() => {
-        if (active) setManifest([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const exterior = useMemo(() => buildExteriorPolygon(walls, scale), [walls, scale]);
@@ -95,107 +189,16 @@ export default function ProceduralFloor() {
             geometry
           };
         })
-        .filter((entry): entry is { id: string; geometry: THREE.ShapeGeometry } => Boolean(entry));
+        .filter((entry): entry is FloorGeometryEntry => Boolean(entry));
     }
 
-    const geo = new THREE.ShapeGeometry(shape);
-    geo.rotateX(Math.PI / 2);
-    if (geo.attributes.uv) {
-      geo.setAttribute("uv2", geo.attributes.uv.clone());
+    const geometry = new THREE.ShapeGeometry(shape);
+    geometry.rotateX(Math.PI / 2);
+    if (geometry.attributes.uv) {
+      geometry.setAttribute("uv2", geometry.attributes.uv.clone());
     }
-    return [{ id: "fallback-floor", geometry: geo }];
+    return [{ id: "fallback-floor", geometry }];
   }, [floors, scale, shape]);
-
-  const textureSources = useMemo(() => {
-    const pickTexture = (id: string) => manifest.find((entry) => entry.id === id)?.maps ?? {};
-    const wood = pickTexture("wood_floor");
-    const concrete = pickTexture("concrete_floor_worn_001");
-    const marble = pickTexture("marble_01");
-    return {
-      woodDiffuse: wood.diffuse ?? "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_diff_2k.jpg",
-      woodRough: wood.roughness ?? "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_rough_2k.jpg",
-      woodNormal: wood.normal ?? "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_disp_2k.png",
-      woodBump: wood.displacement ?? "/assets/textures/weathered_brown_planks_2k.blend/textures/weathered_brown_planks_disp_2k.png",
-      concreteDiffuse: concrete.diffuse ?? "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_diff_2k.jpg",
-      concreteRough: concrete.roughness ?? "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_rough_2k.jpg",
-      concreteNormal: concrete.normal ?? "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_disp_2k.png",
-      concreteBump: concrete.displacement ?? "/assets/textures/concrete_floor_worn_001_2k.blend/textures/concrete_floor_worn_001_disp_2k.png",
-      marbleDiffuse: marble.diffuse ?? "/assets/textures/marble_01_2k.blend/textures/marble_01_diff_2k.jpg",
-      marbleRough: marble.roughness ?? "/assets/textures/marble_01_2k.blend/textures/marble_01_rough_2k.jpg",
-      marbleNormal: marble.normal ?? "/assets/textures/marble_01_2k.blend/textures/marble_01_disp_2k.png",
-      marbleBump: marble.displacement ?? "/assets/textures/marble_01_2k.blend/textures/marble_01_disp_2k.png"
-    };
-  }, [manifest]);
-
-  const textures = useTexture(textureSources);
-
-  useEffect(() => {
-    Object.values(textures).forEach((texture) => {
-      if (!texture) return;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(Math.max(1, width / 3.4), Math.max(1, depth / 3.4));
-      texture.anisotropy = 16;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-    });
-    textures.woodDiffuse.colorSpace = THREE.SRGBColorSpace;
-    textures.concreteDiffuse.colorSpace = THREE.SRGBColorSpace;
-    textures.marbleDiffuse.colorSpace = THREE.SRGBColorSpace;
-    textures.woodRough.colorSpace = THREE.NoColorSpace;
-    textures.concreteRough.colorSpace = THREE.NoColorSpace;
-    textures.marbleRough.colorSpace = THREE.NoColorSpace;
-    textures.woodNormal.colorSpace = THREE.NoColorSpace;
-    textures.concreteNormal.colorSpace = THREE.NoColorSpace;
-    textures.marbleNormal.colorSpace = THREE.NoColorSpace;
-    textures.woodBump.colorSpace = THREE.NoColorSpace;
-    textures.concreteBump.colorSpace = THREE.NoColorSpace;
-    textures.marbleBump.colorSpace = THREE.NoColorSpace;
-  }, [depth, textures, width]);
-
-  const materials = useMemo(() => {
-    return [
-      new THREE.MeshStandardMaterial({
-        map: textures.woodDiffuse,
-        roughnessMap: textures.woodRough,
-        normalMap: textures.woodNormal,
-        bumpMap: textures.woodBump,
-        bumpScale: 0.012,
-        roughness: 0.7,
-        normalScale: new THREE.Vector2(0.35, 0.35),
-        side: THREE.DoubleSide,
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
-      }),
-      new THREE.MeshStandardMaterial({
-        map: textures.concreteDiffuse,
-        roughnessMap: textures.concreteRough,
-        normalMap: textures.concreteNormal,
-        bumpMap: textures.concreteBump,
-        bumpScale: 0.015,
-        roughness: 0.9,
-        normalScale: new THREE.Vector2(0.35, 0.35),
-        side: THREE.DoubleSide,
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
-      }),
-      new THREE.MeshStandardMaterial({
-        map: textures.marbleDiffuse,
-        roughnessMap: textures.marbleRough,
-        normalMap: textures.marbleNormal,
-        bumpMap: textures.marbleBump,
-        bumpScale: 0.01,
-        roughness: 0.5,
-        normalScale: new THREE.Vector2(0.3, 0.3),
-        side: THREE.DoubleSide,
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
-      })
-    ];
-  }, [textures]);
 
   useEffect(() => {
     return () => {
@@ -203,17 +206,30 @@ export default function ProceduralFloor() {
     };
   }, [geometries]);
 
-  useEffect(() => {
-    return () => {
-      materials.forEach((material) => material.dispose());
-    };
-  }, [materials]);
+  if (viewMode === "top") {
+    const topMaterial = FLOOR_TEXTURES[floorMaterialIndex % FLOOR_TEXTURES.length] ?? FLOOR_TEXTURES[0];
 
-  const activeMaterial = materials[floorMaterialIndex % materials.length];
+    return geometries.map((entry) => (
+      <mesh key={entry.id} name={`floor:${entry.id}`} geometry={entry.geometry} receiveShadow={false}>
+        <meshStandardMaterial
+          color={topMaterial.topColor}
+          roughness={0.92}
+          metalness={0.02}
+          side={THREE.DoubleSide}
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
+        />
+      </mesh>
+    ));
+  }
 
-  return geometries.map((entry) => (
-    <mesh key={entry.id} name={`floor:${entry.id}`} geometry={entry.geometry} receiveShadow>
-      <primitive object={activeMaterial} attach="material" />
-    </mesh>
-  ));
+  return (
+    <DetailedFloorMeshes
+      geometries={geometries}
+      width={width}
+      depth={depth}
+      floorMaterialIndex={floorMaterialIndex}
+    />
+  );
 }

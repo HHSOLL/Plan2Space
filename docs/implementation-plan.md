@@ -218,6 +218,18 @@ Removed/Deprecated:
 ## 2026-04-18 변경 동기화 (Viewport Performance Budget Pass)
 Added:
 - P2 진행 항목에 shared viewport mode-aware 품질 계단(top/builder 경량화, walk/viewer 유지)을 추가.
+
+## 2026-04-18 변경 동기화 (Opening Asset Pass + Builder Entry Perf)
+Added:
+- P1 안정화 항목에 `선택한 벽으로 door/window 재배치`, `wall corner closed shell`, `opening asset runtime 경로 검증`을 추가.
+- P2 진행 항목에 `top-view entry lazy load(HDRI/interactive lights/opening assets/full finish textures)`와 `opening GLB source/runtime 관리`를 추가.
+
+Updated:
+- builder opening step 완료 기준을 `wall 선택 + width/offset 조절 가능`에서 `wall reassignment가 시각적으로 즉시 반영되고, 코너 seam 없이 닫힌 shell이 유지됨`으로 강화.
+- 렌더 최적화 범위를 `quality ladder`에서 `top-entry lazy load + active finish only texture load`까지 확장.
+
+Removed/Deprecated:
+- builder opening preview 내부 delete FAB와 하단 preview instruction 카드 의존.
 - P2 안정화 항목에 top-view furniture drag local preview/commit 경로를 추가.
 
 Updated:

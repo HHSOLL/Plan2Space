@@ -164,25 +164,6 @@ function resolveEdgeAlignedOutwardNormal(wall: Wall, outline: [number, number][]
       : leftNormal;
 }
 
-function lineIntersection(
-  lineAStart: readonly [number, number],
-  lineAEnd: readonly [number, number],
-  lineBStart: readonly [number, number],
-  lineBEnd: readonly [number, number]
-) {
-  const r = [lineAEnd[0] - lineAStart[0], lineAEnd[1] - lineAStart[1]] as const;
-  const s = [lineBEnd[0] - lineBStart[0], lineBEnd[1] - lineBStart[1]] as const;
-  const denominator = r[0] * s[1] - r[1] * s[0];
-
-  if (!Number.isFinite(denominator) || Math.abs(denominator) <= POINT_TOLERANCE) {
-    return null;
-  }
-
-  const delta = [lineBStart[0] - lineAStart[0], lineBStart[1] - lineAStart[1]] as const;
-  const t = (delta[0] * s[1] - delta[1] * s[0]) / denominator;
-  return [lineAStart[0] + t * r[0], lineAStart[1] + t * r[1]] as const;
-}
-
 export function getWallRenderPlacement(wall: Wall, floors: Floor[], scale: number): WallRenderPlacement {
   const resolvedScale = Number.isFinite(scale) && scale > POINT_TOLERANCE ? scale : 1;
   const rawDx = wall.end[0] - wall.start[0];
@@ -193,65 +174,16 @@ export function getWallRenderPlacement(wall: Wall, floors: Floor[], scale: numbe
       ? ([rawDx / rawLength, rawDy / rawLength] as const)
       : ([1, 0] as const);
   const angle = Math.atan2(direction[1], direction[0]);
-  const outline = resolvePrimaryOutline(floors);
-  const rawDistance = Math.max(0.02 / resolvedScale, wall.thickness) / 2;
-  const match = resolveOutlineEdgeMatch(wall, outline);
-
-  if (!match) {
-    const [offsetX, offsetY] = getWallPlaneOffset(wall, floors, scale);
-    const start = [wall.start[0] * resolvedScale + offsetX, wall.start[1] * resolvedScale + offsetY] as const;
-    const end = [wall.end[0] * resolvedScale + offsetX, wall.end[1] * resolvedScale + offsetY] as const;
-    return {
-      start,
-      end,
-      direction,
-      angle,
-      length: Math.max(0.05, Math.hypot(end[0] - start[0], end[1] - start[1])),
-      startInset: 0
-    };
-  }
-
-  const outlineIsCounterClockwise = match.area > 0;
-  const count = outline.length;
-  const edgeStart = outline[match.index]!;
-  const edgeEnd = outline[(match.index + 1) % count]!;
-  const prevEdgeStart = outline[(match.index - 1 + count) % count]!;
-  const nextEdgeEnd = outline[(match.index + 2) % count]!;
-
-  const currentNormal = getEdgeOutwardNormal(edgeStart, edgeEnd, outlineIsCounterClockwise);
-  const previousNormal = getEdgeOutwardNormal(prevEdgeStart, edgeStart, outlineIsCounterClockwise);
-  const nextNormal = getEdgeOutwardNormal(edgeEnd, nextEdgeEnd, outlineIsCounterClockwise);
-
-  if (!currentNormal || !previousNormal || !nextNormal) {
-    const [offsetX, offsetY] = getWallPlaneOffset(wall, floors, scale);
-    const start = [wall.start[0] * resolvedScale + offsetX, wall.start[1] * resolvedScale + offsetY] as const;
-    const end = [wall.end[0] * resolvedScale + offsetX, wall.end[1] * resolvedScale + offsetY] as const;
-    return {
-      start,
-      end,
-      direction,
-      angle,
-      length: Math.max(0.05, Math.hypot(end[0] - start[0], end[1] - start[1])),
-      startInset: 0
-    };
-  }
-
-  const currentLineStart = [edgeStart[0] + currentNormal[0] * rawDistance, edgeStart[1] + currentNormal[1] * rawDistance] as const;
-  const currentLineEnd = [edgeEnd[0] + currentNormal[0] * rawDistance, edgeEnd[1] + currentNormal[1] * rawDistance] as const;
-  const previousLineStart = [prevEdgeStart[0] + previousNormal[0] * rawDistance, prevEdgeStart[1] + previousNormal[1] * rawDistance] as const;
-  const previousLineEnd = [edgeStart[0] + previousNormal[0] * rawDistance, edgeStart[1] + previousNormal[1] * rawDistance] as const;
-  const nextLineStart = [edgeEnd[0] + nextNormal[0] * rawDistance, edgeEnd[1] + nextNormal[1] * rawDistance] as const;
-  const nextLineEnd = [nextEdgeEnd[0] + nextNormal[0] * rawDistance, nextEdgeEnd[1] + nextNormal[1] * rawDistance] as const;
-
-  const forwardStart = lineIntersection(previousLineStart, previousLineEnd, currentLineStart, currentLineEnd) ?? currentLineStart;
-  const forwardEnd = lineIntersection(currentLineStart, currentLineEnd, nextLineStart, nextLineEnd) ?? currentLineEnd;
-  const rawStart = match.reversed ? forwardEnd : forwardStart;
-  const rawEnd = match.reversed ? forwardStart : forwardEnd;
-
-  const start = [rawStart[0] * resolvedScale, rawStart[1] * resolvedScale] as const;
-  const end = [rawEnd[0] * resolvedScale, rawEnd[1] * resolvedScale] as const;
-  const startInset =
-    ((wall.start[0] - rawStart[0]) * direction[0] + (wall.start[1] - rawStart[1]) * direction[1]) * resolvedScale;
+  const [offsetX, offsetY] = getWallPlaneOffset(wall, floors, scale);
+  const halfThickness = Math.max(0.02, wall.thickness * resolvedScale) / 2;
+  const start = [
+    wall.start[0] * resolvedScale + offsetX - direction[0] * halfThickness,
+    wall.start[1] * resolvedScale + offsetY - direction[1] * halfThickness
+  ] as const;
+  const end = [
+    wall.end[0] * resolvedScale + offsetX + direction[0] * halfThickness,
+    wall.end[1] * resolvedScale + offsetY + direction[1] * halfThickness
+  ] as const;
 
   return {
     start,
@@ -259,7 +191,7 @@ export function getWallRenderPlacement(wall: Wall, floors: Floor[], scale: numbe
     direction,
     angle,
     length: Math.max(0.05, Math.hypot(end[0] - start[0], end[1] - start[1])),
-    startInset
+    startInset: halfThickness
   };
 }
 

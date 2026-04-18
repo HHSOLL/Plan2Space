@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
 import type { Opening, Vector2 } from "../../lib/stores/useSceneStore";
 import { SceneViewport } from "../../components/editor/SceneViewport";
 import type { EditorViewMode } from "../../lib/stores/useEditorStore";
@@ -18,7 +17,6 @@ type BuilderPreviewPaneProps = {
   windowCount: number;
   selectedWallLabel: string | null;
   selectedOpening: Opening | null;
-  onDeleteSelectedOpening: (() => void) | null;
 };
 
 function formatDimension(value: number, unit: "ft" | "cm") {
@@ -165,12 +163,10 @@ function TopPlanBoard({
 
 function OpeningOverlay({
   selectedWallLabel,
-  selectedOpening,
-  onDeleteSelectedOpening
+  selectedOpening
 }: {
   selectedWallLabel: string | null;
   selectedOpening: Opening | null;
-  onDeleteSelectedOpening: (() => void) | null;
 }) {
   const openingLabel = selectedOpening ? (selectedOpening.type === "door" ? "문 선택됨" : "창문 선택됨") : null;
 
@@ -188,19 +184,6 @@ function OpeningOverlay({
               {openingLabel}
             </span>
           ) : null}
-        </div>
-      ) : null}
-
-      {selectedOpening && onDeleteSelectedOpening ? (
-        <div className="absolute right-[12%] top-[22%] z-20">
-          <button
-            type="button"
-            onClick={onDeleteSelectedOpening}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#141414] text-white shadow-[0_18px_35px_rgba(0,0,0,0.18)] transition hover:bg-black"
-            aria-label="선택한 개구부 삭제"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
         </div>
       ) : null}
     </>
@@ -255,8 +238,7 @@ export function BuilderPreviewPane({
   doorCount,
   windowCount,
   selectedWallLabel,
-  selectedOpening,
-  onDeleteSelectedOpening
+  selectedOpening
 }: BuilderPreviewPaneProps) {
   if (previewMode === "top") {
     return (
@@ -283,20 +265,10 @@ export function BuilderPreviewPane({
         chromeTone="light"
         showHud={false}
         interactionMode="preview"
-        bottomNotice={
-          <div className="space-y-1">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em]">Preview Controls</div>
-            <div className="text-sm leading-6">드래그로 회전하고 휠로 확대/축소하세요.</div>
-          </div>
-        }
       />
 
       {stepId === "opening" ? (
-        <OpeningOverlay
-          selectedWallLabel={selectedWallLabel}
-          selectedOpening={selectedOpening}
-          onDeleteSelectedOpening={onDeleteSelectedOpening}
-        />
+        <OpeningOverlay selectedWallLabel={selectedWallLabel} selectedOpening={selectedOpening} />
       ) : null}
       {stepId === "style" ? (
         <StyleSummary
