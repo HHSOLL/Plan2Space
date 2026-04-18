@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Environment as DreiEnvironment, ContactShadows } from "@react-three/drei";
+import type { SceneRenderQuality } from "../../../lib/scene/render-quality";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
 
@@ -36,7 +37,7 @@ function pickPreferredEnvironment(list: HdriEntry[]): EnvironmentSource | null {
   return first ? { type: "file", value: first.path } : null;
 }
 
-export default function SceneEnvironment() {
+export default function SceneEnvironment({ quality }: { quality: SceneRenderQuality }) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const lighting = useShellSelector((slice) => slice.lighting);
   const [environment, setEnvironment] = useState<EnvironmentSource>(FALLBACK_ENVIRONMENT);
@@ -72,14 +73,14 @@ export default function SceneEnvironment() {
           blur={Math.max(0.05, lighting.environmentBlur + 0.15)}
         />
       )}
-      {viewMode !== "top" ? (
+      {viewMode !== "top" && quality.enableContactShadows ? (
         <ContactShadows
           position={[0, -0.04, 0]}
-          opacity={0.42}
+          opacity={quality.contactShadowOpacity}
           scale={26}
-          blur={2.2}
+          blur={quality.contactShadowBlur}
           far={10}
-          resolution={1024}
+          resolution={quality.contactShadowResolution}
           color="#000000"
         />
       ) : null}

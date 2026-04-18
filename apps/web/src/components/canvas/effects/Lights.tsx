@@ -1,8 +1,9 @@
 "use client";
 
+import type { SceneRenderQuality } from "../../../lib/scene/render-quality";
 import { useShellSelector } from "../../../lib/stores/scene-slices";
 
-export default function Lights() {
+export default function Lights({ quality }: { quality: SceneRenderQuality }) {
   const lighting = useShellSelector((slice) => slice.lighting);
 
   return (
@@ -17,8 +18,8 @@ export default function Lights() {
         position={[8, 14, 6]}
         intensity={lighting.directionalIntensity * 1.08}
         color="#fff0de"
-        castShadow
-        shadow-mapSize={[2048, 2048]}
+        castShadow={quality.enableShadows}
+        shadow-mapSize={[quality.shadowMapSize, quality.shadowMapSize]}
         shadow-bias={-0.0001}
         shadow-normalBias={0.05}
         shadow-camera-near={0.5}

@@ -21,12 +21,13 @@
 - `빈 공간`/`가구가 비치된 공간` 템플릿 브라우저 추가
 - 템플릿 선택 즉시 project draft/save 후 editor로 직행하는 bootstrap 경로 적용
 - furnished template별 시드 자산 구성을 분리하고 pre-seeded editor 회귀 항목에 포함
-- 빌더를 레퍼런스 4-step split shell로 재구성하고 단계별 preview camera/overlay를 정렬
-- 빌더 단계(Shape/Dimension/Opening/Style)를 레퍼런스 density 기준으로 재작성
+- 빌더를 레퍼런스 5-step split shell로 재구성하고 단계별 preview camera/overlay를 정렬
+- 빌더 단계(Shape/Dimension/Opening/Style/Lighting)를 레퍼런스 density 기준으로 재작성
 - 개구부 스타일 retune 및 auth restore 이후 상태 덮어쓰기 버그 수정
 - builder desktop shell 무스크롤 fit 및 실 floor outline 기반 dimension overlay 적용
 - builder exterior polygon/snap 안정화 및 shape-specific geometry 정합성 보강
 - opening/style step preview에 orbit/zoom 카메라 UX 적용
+- lighting step에 direct/indirect mood 선택 및 scene lighting payload 연결
 - 템플릿 기반 방 생성 속도 개선
 - 저장 직후 에디터/뷰어 일관성 확인 자동화
 - project-media bucket 미구성 시 thumbnail upload 복구/재시도로 저장 실패를 완화
@@ -49,6 +50,11 @@
 - 에디터 shell을 레퍼런스 7번 기준(top bar / slim catalog rail / grey viewport / bottom pill toolbar)으로 통일
 - Blender 알려진 슬롯 기준(`DeskWood`, `DeskMetal`, `StandWood`, `StandPad`, `LampBody`, `LampAccent`, `LampBulb`)의 slot-aware finish 매핑 적용
 - 오픈소스/공식문서/논문 기반 개선안은 `docs/research-roadmap.md`를 기준으로 추적
+- shared viewport에 mode-aware render quality ladder 적용(top/builder 경량화, walk/viewer 품질 유지)
+- top-view 자산 drag를 local preview 후 commit 방식으로 전환해 pointer-move store churn 완화
+- physics/runtime shadow/contact shadow/post FX를 walk/viewer 중심으로 재배치해 furnished scene headroom 확보
+- editor top-view 회전을 drag에서 버튼형 90도 회전 rail로 단순화
+- direct lighting beam shader / indirect ceiling glow shader를 scene shell 렌더에 연결
 
 ## P3
 목표: 커뮤니티 공유/조회 경험 강화
@@ -208,6 +214,41 @@ Updated:
 
 Removed/Deprecated:
 - legacy schema drop이 별도 maintenance window에 남아 있다는 이전 리스크.
+
+## 2026-04-18 변경 동기화 (Viewport Performance Budget Pass)
+Added:
+- P2 진행 항목에 shared viewport mode-aware 품질 계단(top/builder 경량화, walk/viewer 유지)을 추가.
+- P2 안정화 항목에 top-view furniture drag local preview/commit 경로를 추가.
+
+Updated:
+- 데스크테리어 편집 성능 목표를 “기능 유지”에서 “60fps floor 확보를 위한 physics/shadow/post FX/drag churn 예산 관리”까지 확장.
+
+Removed/Deprecated:
+- builder/editor/viewer가 동일한 렌더 예산을 계속 공유해도 괜찮다는 가정.
+
+## 2026-04-18 변경 동기화 (Builder Lighting Step + Top-View Interaction Cleanup)
+Added:
+- P1 범위에 builder final lighting step과 direct/indirect 저장 계약을 추가.
+- P2 범위에 editor top-view button rotation 및 hidden material toggle 제거를 추가.
+
+Updated:
+- builder 완료 기준을 `4-step shell`에서 `5-step shell + lighting preview`까지 확장.
+- 상단뷰 안정화 목표를 `drag 충돌 방지`에서 `drag 제거 + explicit rotate control`까지 강화.
+
+Removed/Deprecated:
+- 상단뷰 빈 공간 drag 회전 전제.
+- 바닥/벽 클릭으로 재질을 바꾸는 임시 shortcut.
+
+## 2026-04-18 변경 동기화 (Deskterior Asset Density Pass)
+Added:
+- P2 진행 항목에 Blender deskterior 자산 5종(머그/북스택/트레이/스피커/플랜터) 추가와 catalog verify 범위 확장을 명시.
+- P2 안정화 항목에 `assets:optimize:deskterior` 기반 Meshopt 압축 루프를 추가.
+
+Updated:
+- 자산 품질 목표를 “source/export/sync 존재”에서 “source/export/sync/verify + open-source metadata density”까지 확장.
+
+Removed/Deprecated:
+- deskterior 신규 자산이 3종 curated baseline에만 머문다는 가정.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:

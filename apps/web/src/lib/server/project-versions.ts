@@ -70,10 +70,13 @@ export const SaveVersionSchema = z.object({
   }),
   lighting: z
     .object({
+      mode: z.enum(["direct", "indirect"]).optional(),
       ambientIntensity: z.number(),
       hemisphereIntensity: z.number(),
       directionalIntensity: z.number(),
-      environmentBlur: z.number()
+      environmentBlur: z.number(),
+      accentIntensity: z.number().optional(),
+      beamOpacity: z.number().optional()
     })
     .optional(),
   thumbnailDataUrl: z.string().nullable().optional(),
@@ -359,13 +362,17 @@ function buildRoomShell(roomShell: RoomShellPayload) {
 
 function resolveLightingSettings(lighting?: Partial<LightingPayload>): LightingPayload {
   const fallbackLighting: LightingPayload = {
+    mode: "direct",
     ambientIntensity: 0.44,
     hemisphereIntensity: 0.54,
     directionalIntensity: 1.24,
-    environmentBlur: 0.14
+    environmentBlur: 0.14,
+    accentIntensity: 0.82,
+    beamOpacity: 0.18
   };
 
   return {
+    mode: lighting?.mode === "indirect" ? "indirect" : fallbackLighting.mode,
     ambientIntensity:
       typeof lighting?.ambientIntensity === "number"
         ? lighting.ambientIntensity
@@ -381,7 +388,15 @@ function resolveLightingSettings(lighting?: Partial<LightingPayload>): LightingP
     environmentBlur:
       typeof lighting?.environmentBlur === "number"
         ? lighting.environmentBlur
-        : fallbackLighting.environmentBlur
+        : fallbackLighting.environmentBlur,
+    accentIntensity:
+      typeof lighting?.accentIntensity === "number"
+        ? lighting.accentIntensity
+        : fallbackLighting.accentIntensity,
+    beamOpacity:
+      typeof lighting?.beamOpacity === "number"
+        ? lighting.beamOpacity
+        : fallbackLighting.beamOpacity
   };
 }
 

@@ -3,7 +3,7 @@
 import "../../lib/polyfills/progress-event";
 import { Canvas } from "@react-three/fiber";
 import type { ReactNode, ComponentProps } from "react";
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 import CameraRig from "../canvas/core/CameraRig";
 import PhysicsWorld from "../canvas/core/PhysicsWorld";
@@ -23,12 +23,14 @@ import ViewerProductHotspots from "../canvas/interaction/ViewerProductHotspots";
 import Crosshair from "../overlay/hud/Crosshair";
 import MobileControls from "../overlay/hud/MobileControls";
 import MobileTouchHint from "../overlay/hud/MobileTouchHint";
+import { resolveSceneRenderQuality, type SceneInteractionMode } from "../../lib/scene/render-quality";
+import { useEditorStore } from "../../lib/stores/useEditorStore";
 
 type SceneViewportProps = {
   className?: string;
   gl?: ComponentProps<typeof Canvas>["gl"];
   camera: ComponentProps<typeof Canvas>["camera"];
-  interactionMode?: "editor" | "viewer" | "preview";
+  interactionMode?: SceneInteractionMode;
   toneMappingExposure?: number;
   modeBadge?: ReactNode;
   bottomNotice?: ReactNode;
@@ -54,10 +56,48 @@ export function SceneViewport({
   chromeTone = "dark",
   showHud = true
 }: SceneViewportProps) {
+  const viewMode = useEditorStore((state) => state.viewMode);
   const resolvedInteractionMode = interactionMode ?? "viewer";
   const renderViewerHotspots = resolvedInteractionMode === "viewer";
   const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
   const isLightTone = chromeTone === "light";
+  const quality = useMemo(() => {
+    const coarsePointer =
+      typeof window !== "undefined" &&
+      Boolean(window.matchMedia?.("(pointer: coarse)")?.matches || navigator.maxTouchPoints > 0);
+
+    return resolveSceneRenderQuality({
+      interactionMode: resolvedInteractionMode,
+      viewMode,
+      coarsePointer,
+      devicePixelRatio: typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
+      hardwareConcurrency:
+        typeof navigator !== "undefined" && typeof navigator.hardwareConcurrency === "number"
+          ? navigator.hardwareConcurrency
+          : 8,
+      viewportWidth: typeof window !== "undefined" ? window.innerWidth : 1440
+    });
+  }, [resolvedInteractionMode, viewMode]);
+
+  const sceneContent = (
+    <>
+      <Lights quality={quality} />
+      <SceneEnvironment quality={quality} />
+      <CameraRig />
+      <InteractionManager>
+        <ProceduralFloor />
+        <ProceduralCeiling />
+        <ProceduralWall />
+        {renderInteractiveShellControls ? <InteractiveDoors /> : null}
+        {renderInteractiveShellControls ? <InteractiveLights /> : null}
+        <Furniture allowDynamicLights={quality.allowDynamicLights} />
+        {resolvedInteractionMode === "editor" ? <AssetTransformControls /> : null}
+        {resolvedInteractionMode === "editor" ? <EditorHotkeys /> : null}
+        {renderViewerHotspots ? <ViewerProductHotspots /> : null}
+      </InteractionManager>
+    </>
+  );
+
   return (
     <div
       className={`relative h-full w-full overflow-hidden rounded-[28px] ${
@@ -65,14 +105,14 @@ export function SceneViewport({
       } ${className}`.trim()}
     >
       <Canvas
-        shadows
-        dpr={[1, 2]}
+        shadows={quality.enableShadows}
+        dpr={quality.dpr}
         gl={gl}
         camera={camera}
         className="h-full w-full"
         onCreated={({ gl: rendererContext }) => {
           const renderer = rendererContext as THREE.WebGLRenderer & { physicallyCorrectLights?: boolean };
-          renderer.shadowMap.enabled = true;
+          renderer.shadowMap.enabled = quality.enableShadows;
           renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
           renderer.toneMappingExposure = toneMappingExposure;
@@ -84,23 +124,8 @@ export function SceneViewport({
       >
         <color attach="background" args={[isLightTone ? "#d0d0ce" : "#0a0a0b"]} />
         <Suspense fallback={null}>
-          <PhysicsWorld>
-            <Lights />
-            <SceneEnvironment />
-            <CameraRig />
-            <InteractionManager>
-              <ProceduralFloor />
-              <ProceduralCeiling />
-              <ProceduralWall />
-              {renderInteractiveShellControls ? <InteractiveDoors /> : null}
-              {renderInteractiveShellControls ? <InteractiveLights /> : null}
-              <Furniture />
-              {resolvedInteractionMode === "editor" ? <AssetTransformControls /> : null}
-              {resolvedInteractionMode === "editor" ? <EditorHotkeys /> : null}
-              {renderViewerHotspots ? <ViewerProductHotspots /> : null}
-            </InteractionManager>
-          </PhysicsWorld>
-          <PostEffects />
+          {viewMode === "walk" ? <PhysicsWorld>{sceneContent}</PhysicsWorld> : sceneContent}
+          <PostEffects quality={quality} />
         </Suspense>
       </Canvas>
 

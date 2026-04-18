@@ -163,10 +163,13 @@ export type MaterialRef = {
 };
 
 export type LightingSettings = {
+  mode: "direct" | "indirect";
   ambientIntensity: number;
   hemisphereIntensity: number;
   directionalIntensity: number;
   environmentBlur: number;
+  accentIntensity: number;
+  beamOpacity: number;
 };
 
 export type Comment = {
@@ -272,10 +275,13 @@ const makeUnknownScaleInfo = (value = 1): ScaleInfo => ({
 });
 
 const DEFAULT_LIGHTING: LightingSettings = {
+  mode: "direct",
   ambientIntensity: 0.44,
   hemisphereIntensity: 0.54,
   directionalIntensity: 1.24,
-  environmentBlur: 0.14
+  environmentBlur: 0.14,
+  accentIntensity: 0.82,
+  beamOpacity: 0.18
 };
 
 const initialSceneState: SceneDataState = {

@@ -99,6 +99,46 @@ const curatedAssets: CuratedAsset[] = [
     expectedAssetId: "/assets/models/p2s_desk_lamp_glow/p2s_desk_lamp_glow.glb",
     requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
     optionsHint: "light-emitter"
+  },
+  {
+    key: "p2s_ceramic_mug",
+    manifestId: "p2s_ceramic_mug_sand",
+    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_ceramic_mug.blend"),
+    runtimePath: path.join(publicRoot, "assets", "models", "p2s_ceramic_mug", "p2s_ceramic_mug.glb"),
+    expectedAssetId: "/assets/models/p2s_ceramic_mug/p2s_ceramic_mug.glb",
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+  },
+  {
+    key: "p2s_book_stack_warm",
+    manifestId: "p2s_book_stack_warm",
+    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_book_stack_warm.blend"),
+    runtimePath: path.join(publicRoot, "assets", "models", "p2s_book_stack_warm", "p2s_book_stack_warm.glb"),
+    expectedAssetId: "/assets/models/p2s_book_stack_warm/p2s_book_stack_warm.glb",
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+  },
+  {
+    key: "p2s_desk_tray_oak",
+    manifestId: "p2s_desk_tray_oak",
+    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_tray_oak.blend"),
+    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_tray_oak", "p2s_desk_tray_oak.glb"),
+    expectedAssetId: "/assets/models/p2s_desk_tray_oak/p2s_desk_tray_oak.glb",
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+  },
+  {
+    key: "p2s_compact_speaker",
+    manifestId: "p2s_compact_speaker",
+    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_compact_speaker.blend"),
+    runtimePath: path.join(publicRoot, "assets", "models", "p2s_compact_speaker", "p2s_compact_speaker.glb"),
+    expectedAssetId: "/assets/models/p2s_compact_speaker/p2s_compact_speaker.glb",
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+  },
+  {
+    key: "p2s_desk_planter_pilea",
+    manifestId: "p2s_desk_planter_pilea",
+    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_planter_pilea.blend"),
+    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_planter_pilea", "p2s_desk_planter_pilea.glb"),
+    expectedAssetId: "/assets/models/p2s_desk_planter_pilea/p2s_desk_planter_pilea.glb",
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
   }
 ];
 

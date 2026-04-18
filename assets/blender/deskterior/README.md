@@ -7,12 +7,22 @@
 - `p2s_desk_oak.blend`
 - `p2s_monitor_stand.blend`
 - `p2s_desk_lamp_glow.blend`
+- `p2s_ceramic_mug.blend`
+- `p2s_book_stack_warm.blend`
+- `p2s_desk_tray_oak.blend`
+- `p2s_compact_speaker.blend`
+- `p2s_desk_planter_pilea.blend`
 
 런타임 GLB 출력 경로:
 
 - `/apps/web/public/assets/models/p2s_desk_oak/p2s_desk_oak.glb`
 - `/apps/web/public/assets/models/p2s_monitor_stand/p2s_monitor_stand.glb`
 - `/apps/web/public/assets/models/p2s_desk_lamp_glow/p2s_desk_lamp_glow.glb`
+- `/apps/web/public/assets/models/p2s_ceramic_mug/p2s_ceramic_mug.glb`
+- `/apps/web/public/assets/models/p2s_book_stack_warm/p2s_book_stack_warm.glb`
+- `/apps/web/public/assets/models/p2s_desk_tray_oak/p2s_desk_tray_oak.glb`
+- `/apps/web/public/assets/models/p2s_compact_speaker/p2s_compact_speaker.glb`
+- `/apps/web/public/assets/models/p2s_desk_planter_pilea/p2s_desk_planter_pilea.glb`
 
 ## 운영 규칙
 

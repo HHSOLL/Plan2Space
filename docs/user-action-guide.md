@@ -41,7 +41,7 @@
 
 ## 2) 핵심 QA/E2E 순서
 
-아래 14단계를 기본 회귀 기준으로 사용합니다.
+아래 체크리스트를 기본 회귀 기준으로 사용합니다.
 
 1. 홈(`/`)에서 상단 bar에 브랜드와 로그인/로그아웃 버튼이 노출되는지 확인하기
 2. 홈(`/`)에서 `공간 선택` 카드 진입하기
@@ -50,23 +50,24 @@
 5. 가구 배치 템플릿 하나를 골라 pre-seeded editor 흐름이 생성되는지 확인하기
 6. 템플릿 목록에서 `더보기` 버튼이 같은 mode 안에서만 동작하고, 실제 추가 템플릿이 없으면 노출되지 않는지 확인하기
 7. 홈(`/`)로 돌아와 `공간 만들기` 카드 진입하기
-8. builder step 2/3/4가 데스크톱 viewport 안에서 문서 스크롤 없이 보이는지 확인하기
+8. builder step 2/3/4/5가 데스크톱 viewport 안에서 고정 navbar 아래에 가려지지 않고 보이는지 확인하기
 9. 치수 조정 시 overlay와 실제 room shape가 같이 바뀌는지 확인하기
 10. step 2 좌측 guide와 우측 preview가 같은 실제 outline을 보여주는지 확인하기
-11. step 3/4 preview에서 휠 줌 + 드래그 orbit이 방 중심 기준으로 동작하는지 확인하기
+11. step 3/4/5 preview에서 휠 줌 + 드래그 orbit이 방 중심 기준으로 동작하는지 확인하기
 12. 문/창문 추가하기
-13. 스타일 선택 후 에디터 진입하기
+13. 스타일과 조명 모드(직접등/간접등)를 선택한 뒤 에디터로 진입하기
 14. 에디터에서 데스크테리어 가구 추가하기
 15. 가구 이동/회전하고 `월드/로컬` 좌표계를 전환해보기
 16. 저장/발행하기
 17. 공유 토큰 열기
 18. 읽기 전용 뷰어에서 제품 클릭하기
 19. 갤러리/커뮤니티에서 동일 장면 열기
-20. 에디터 상단뷰에서 drag rotation과 wheel zoom만 동작하고 pan은 되지 않는지 확인하기
+20. 에디터 상단뷰에서 우측 rail의 좌/우 회전 버튼과 wheel zoom만 동작하고 pan은 되지 않는지 확인하기
 21. `추가`/`설정` 버튼이 각각 좌측 drawer를 열고, 재클릭/바깥 클릭 시 닫히며 동시에 둘 다 열리지 않는지 확인하기
 22. 워크뷰에서는 ceiling이 보이고 상단뷰에서는 ceiling이 숨겨지는지 확인하기
 23. 모바일 viewport에서 share modal이 화면 안에 들어오고 내부만 스크롤되는지 확인하기
-24. 상단뷰에서 빈 공간 drag는 방 회전만 일으키고, 가구 drag/transform gizmo 조작 중에는 카메라가 같이 돌지 않는지 확인하기
+24. 상단뷰에서 바닥/벽을 클릭해도 재질이 바뀌지 않고, 가구 drag/transform gizmo 조작 중 카메라가 같이 돌지 않는지 확인하기
+25. builder lighting step에서 `직접등` 선택 시 beam glow가, `간접등` 선택 시 천장 확산광이 preview에 반영되는지 확인하기
 
 실행 명령:
 
@@ -258,6 +259,19 @@ Updated:
 
 Removed/Deprecated:
 - 드래그 중에는 room bounds 보정이 없어도 괜찮다는 운영 가정.
+
+## 2026-04-18 변경 동기화 (Builder Lighting Step + Top-View Controls)
+Added:
+- builder QA에 5단계 lighting 선택과 direct/indirect preview 차이 검증을 추가.
+- editor QA에 상단뷰 버튼 회전과 surface click non-toggle 확인 항목을 추가.
+
+Updated:
+- builder shell 기대값을 `4-step split shell`에서 `5-step shell + navbar safe offset`으로 갱신.
+- top-view 검증 기준을 `drag rotation`에서 `button rotation + zoom`으로 변경.
+
+Removed/Deprecated:
+- 상단뷰 drag rotation 전제.
+- 바닥/벽 클릭이 재질 shortcut으로 동작하는 가정.
 
 ## 2026-04-16 변경 동기화 (Editor Reference Chrome Pass)
 Added:

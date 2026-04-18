@@ -15,12 +15,10 @@ type TextureManifestEntry = {
 
 function WallMesh({
   wallId,
-  materialTemplate,
-  onToggle
+  materialTemplate
 }: {
   wallId: string;
   materialTemplate: THREE.Material;
-  onToggle: () => void;
 }) {
   const walls = useShellSelector((slice) => slice.walls);
   const openings = useShellSelector((slice) => slice.openings);
@@ -94,7 +92,6 @@ function WallMesh({
       rotation={rotation}
       castShadow
       receiveShadow
-      onPointerDown={onToggle}
     >
       <Geometry computeVertexNormals>
         <Base geometry={baseGeometry} />
@@ -108,11 +105,9 @@ function WallMesh({
 }
 
 function TopWallFootprint({
-  wallId,
-  onToggle
+  wallId
 }: {
   wallId: string;
-  onToggle: () => void;
 }) {
   const walls = useShellSelector((slice) => slice.walls);
   const floors = useShellSelector((slice) => slice.floors);
@@ -147,7 +142,6 @@ function TopWallFootprint({
       rotation={strip.rotation}
       receiveShadow={false}
       castShadow={false}
-      onPointerDown={onToggle}
     >
       <boxGeometry args={[strip.length, 0.036, strip.thickness]} />
       <meshStandardMaterial color="#cfc9c1" roughness={0.97} metalness={0.02} />
@@ -158,7 +152,6 @@ function TopWallFootprint({
 export default function ProceduralWall() {
   const viewMode = useEditorStore((state) => state.viewMode);
   const wallMaterialIndex = useShellSelector((slice) => slice.wallMaterialIndex);
-  const setWallMaterialIndex = useShellSelector((slice) => slice.setWallMaterialIndex);
   const walls = useShellSelector((slice) => slice.walls);
 
   const [manifest, setManifest] = useState<TextureManifestEntry[]>([]);
@@ -271,23 +264,13 @@ export default function ProceduralWall() {
 
   return (
     <group>
-      {walls.map((wall) => {
-        const handleToggle = () => {
-          if (viewMode !== "top") return;
-          setWallMaterialIndex((wallMaterialIndex + 1) % materials.length);
-        };
-
-        return viewMode === "top" ? (
-          <TopWallFootprint key={wall.id} wallId={wall.id} onToggle={handleToggle} />
+      {walls.map((wall) =>
+        viewMode === "top" ? (
+          <TopWallFootprint key={wall.id} wallId={wall.id} />
         ) : (
-          <WallMesh
-            key={wall.id}
-            wallId={wall.id}
-            materialTemplate={activeMaterial}
-            onToggle={handleToggle}
-          />
-        );
-      })}
+          <WallMesh key={wall.id} wallId={wall.id} materialTemplate={activeMaterial} />
+        )
+      )}
     </group>
   );
 }

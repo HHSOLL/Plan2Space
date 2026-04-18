@@ -286,10 +286,13 @@ function parseSceneDocumentFromVersion(version: Record<string, unknown>): SceneD
       floorMaterialIndex: toSafeNumber(rawMaterialOverride?.floorMaterialIndex, 0)
     },
     lighting: {
+      mode: rawLighting?.mode === "indirect" ? "indirect" : "direct",
       ambientIntensity: toSafeNumber(rawLighting?.ambientIntensity, 0.44),
       hemisphereIntensity: toSafeNumber(rawLighting?.hemisphereIntensity, 0.54),
       directionalIntensity: toSafeNumber(rawLighting?.directionalIntensity, 1.24),
-      environmentBlur: toSafeNumber(rawLighting?.environmentBlur, 0.14)
+      environmentBlur: toSafeNumber(rawLighting?.environmentBlur, 0.14),
+      accentIntensity: toSafeNumber(rawLighting?.accentIntensity, 0.82),
+      beamOpacity: toSafeNumber(rawLighting?.beamOpacity, 0.18)
     }
   };
 
