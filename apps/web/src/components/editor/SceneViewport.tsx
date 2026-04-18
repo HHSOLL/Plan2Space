@@ -60,6 +60,8 @@ export function SceneViewport({
   const resolvedInteractionMode = interactionMode ?? "viewer";
   const renderViewerHotspots = resolvedInteractionMode === "viewer";
   const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
+  const renderOpeningDecor = renderInteractiveShellControls && viewMode !== "top";
+  const renderLightingDecor = renderInteractiveShellControls && viewMode !== "top";
   const isLightTone = chromeTone === "light";
   const quality = useMemo(() => {
     const coarsePointer =
@@ -88,8 +90,8 @@ export function SceneViewport({
         <ProceduralFloor />
         <ProceduralCeiling />
         <ProceduralWall />
-        {renderInteractiveShellControls ? <InteractiveDoors /> : null}
-        {renderInteractiveShellControls ? <InteractiveLights /> : null}
+        {renderOpeningDecor ? <InteractiveDoors /> : null}
+        {renderLightingDecor ? <InteractiveLights /> : null}
         <Furniture allowDynamicLights={quality.allowDynamicLights} />
         {resolvedInteractionMode === "editor" ? <AssetTransformControls /> : null}
         {resolvedInteractionMode === "editor" ? <EditorHotkeys /> : null}

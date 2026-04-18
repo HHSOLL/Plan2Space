@@ -11,11 +11,11 @@
 
 ## 조명/환경
 `apps/web/src/components/canvas/core/SceneEnvironment.tsx`
-- HDRI manifest 기반 로딩
-- 미존재 시 preset 폴백
-- ContactShadows 유지
+- walk/builder-preview는 고정된 우선 HDRI(`kiara_interior_1k`)를 사용한다.
+- top-view는 HDRI/ContactShadows를 올리지 않고 평면 편집 가독성과 초기 진입 성능을 우선한다.
 - builder/editor lighting은 `direct`/`indirect` mood를 모두 지원하고, direct mode는 fixture emissive + beam/floor glow shader를 포함한다.
 - indirect mode는 천장 가장자리 확산광 위주의 additive glow를 사용하고 광원 본체 노출을 최소화한다.
+- direct mode는 최대 3개 fixture + spotlight/fill + beam/floor glow 조합으로 제한해 자연스러운 falloff와 성능 균형을 함께 맞춘다.
 
 ## 재질/텍스처
 - `apps/web/src/components/canvas/features/ProceduralWall.tsx`
@@ -25,6 +25,8 @@
 기준:
 - `MeshStandardMaterial` 기반 PBR
 - 색상 텍스처는 SRGB, roughness/normal은 Linear
+- top-view는 floor/wall full PBR texture load를 지연하고, flat material/footprint strip으로 먼저 렌더한다.
+- builder-preview/walk만 active finish texture set을 1종씩 로드한다. 선택되지 않은 texture set preload를 기본값으로 두지 않는다.
 - 알려진 Blender 슬롯(`DeskWood`, `DeskMetal`, `StandWood`, `StandPad`, `LampBody`, `LampAccent`, `LampBulb`)은 slot-aware finish를 우선 적용한다.
 
 ## 카메라/모드
@@ -152,6 +154,7 @@ Removed/Deprecated:
 Added:
 - top-view/editor precision 모드의 경량 렌더 예산(no physics, no SSAO, no contact shadows, capped DPR) 기준을 추가.
 - builder preview와 walk/viewer 사이의 mode-aware shadow/contact shadow/post FX 품질 계단을 추가.
+- top-view 진입 시 HDRI, interactive lights, runtime door/window asset, full PBR wall/floor texture를 지연 로드하는 기준을 추가.
 
 Updated:
 - shared viewport 품질 기준을 단일 최고품질 고정에서 mode/device-aware 예산 기반으로 갱신.
@@ -159,6 +162,19 @@ Updated:
 
 Removed/Deprecated:
 - editor/viewer/builder가 동일한 post FX, shadow, physics 비용을 항상 부담해야 한다는 가정.
+
+## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
+Added:
+- builder/editor opening render에 Blender 기반 경량 GLB(`single/double/french door`, `single/wide window`) 자산 사용 기준을 추가.
+- door/window/wall/collider가 같은 `wall render placement` 좌표계를 공유하고, 벽 끝은 반 두께 연장으로 코너를 닫는 규칙을 추가.
+
+Updated:
+- opening wall 변경은 단순 `wallId` 교체가 아니라 새 벽 길이에 맞춘 center-ratio 재매핑으로 보정하도록 갱신.
+- direct lighting 룩을 point-light 중심에서 `spotlight + fill + softer beam/glow` 조합으로 조정.
+
+Removed/Deprecated:
+- builder preview 하단 `Preview Controls` 카드와 프리뷰 내부 휴지통 버튼을 전제한 UX.
+- top-view 진입 시 HDRI manifest/모든 floor-wall texture set을 즉시 로드하던 가정.
 
 ## 2026-04-18 변경 동기화 (Lighting Mood Split + Button Rotation)
 Added:

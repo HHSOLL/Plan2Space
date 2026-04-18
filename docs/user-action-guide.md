@@ -363,3 +363,16 @@ Updated:
 
 Removed/Deprecated:
 - 장면 품질 판정을 제품 정보/배치 결과만으로 완료 처리하던 점검 방식.
+
+## 2026-04-18 변경 동기화 (Opening Asset + Entry Perf QA)
+Added:
+- builder step 3에서 `Preview Controls` 카드와 프리뷰 내부 휴지통 버튼이 더 이상 노출되지 않는지 확인하는 항목 추가.
+- 벽 모서리 확대 시 seam/gap 없이 반 두께 겹침으로 닫히는지, door/window cutout과 runtime asset 위치가 일치하는지 확인하는 항목 추가.
+- 문/창문을 `벽 1~4`로 바꿀 때 새 벽 길이에 맞춰 자연스럽게 재배치되고, editor 진입 후에도 같은 wall에 유지되는지 확인하는 항목 추가.
+- 공간 디자인 페이지 첫 진입 시 top-view가 flat finish/footprint 중심으로 먼저 뜨고, HDRI/조명/개구부 자산은 walk/builder-preview에서만 올라오는지 확인하는 항목 추가.
+
+Updated:
+- 조명 QA를 `direct/indirect 모드 차이 확인`에서 `direct spotlight falloff + indirect ceiling cove glow의 자연스러움 확인`까지 확장.
+
+Removed/Deprecated:
+- 프리뷰 내부 FAB delete와 안내 카드 존재를 전제로 한 builder QA 포인트.

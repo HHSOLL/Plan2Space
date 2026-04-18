@@ -26,6 +26,19 @@ export function getWindowWidthByStyle(style: WindowStyle) {
   return style === "wide" ? 2.4 : 1.8;
 }
 
+function getOpeningMargin(opening: Pick<Opening, "type">) {
+  return opening.type === "door" ? 0.38 : 0.32;
+}
+
+function getOpeningMinWidth(opening: Pick<Opening, "type">) {
+  return opening.type === "door" ? 0.72 : 0.92;
+}
+
+function resolveOpeningCenterRatio(opening: Opening, wallLength: number) {
+  const safeLength = Math.max(wallLength, 0.01);
+  return (opening.offset + opening.width / 2) / safeLength;
+}
+
 function ensureSingleEntranceDoor(openings: Opening[]) {
   const doors = openings.filter((opening) => opening.type === "door");
   if (doors.length === 0) return openings;
@@ -41,8 +54,8 @@ function sanitizeOpeningForWalls(opening: Opening, walls: Wall[]): Opening | nul
   if (!wall) return null;
 
   const wallLength = getWallLength(wall);
-  const margin = opening.type === "door" ? 0.38 : 0.32;
-  const minWidth = opening.type === "door" ? 0.72 : 0.92;
+  const margin = getOpeningMargin(opening);
+  const minWidth = getOpeningMinWidth(opening);
   const maxWidth = Math.max(minWidth, wallLength - margin * 2);
   const width = clamp(opening.width, minWidth, maxWidth);
   const maxOffset = Math.max(margin, wallLength - width - margin);
@@ -73,6 +86,30 @@ function sanitizeOpeningForWalls(opening: Opening, walls: Wall[]): Opening | nul
   };
 }
 
+export function reassignOpeningToWall(opening: Opening, nextWallId: string, walls: Wall[]) {
+  const currentWall = walls.find((wall) => wall.id === opening.wallId);
+  const nextWall = walls.find((wall) => wall.id === nextWallId) ?? currentWall ?? walls[0];
+
+  if (!nextWall) {
+    return opening;
+  }
+
+  const previousLength = currentWall ? getWallLength(currentWall) : getWallLength(nextWall);
+  const nextLength = getWallLength(nextWall);
+  const centerRatio = resolveOpeningCenterRatio(opening, previousLength);
+  const margin = getOpeningMargin(opening);
+  const minWidth = getOpeningMinWidth(opening);
+  const width = clamp(opening.width, minWidth, Math.max(minWidth, nextLength - margin * 2));
+  const offset = centerRatio * nextLength - width / 2;
+
+  return {
+    ...opening,
+    wallId: nextWall.id,
+    width,
+    offset
+  };
+}
+
 export function resolveWallOpeningOverlaps(openings: Opening[], walls: Wall[]) {
   const openingGap = 0.08;
   const byWall = new Map<string, Opening[]>();
@@ -94,8 +131,8 @@ export function resolveWallOpeningOverlaps(openings: Opening[], walls: Wall[]) {
     [...wallOpenings]
       .sort((a, b) => a.offset - b.offset)
       .forEach((opening) => {
-        const margin = opening.type === "door" ? 0.38 : 0.32;
-        const minWidth = opening.type === "door" ? 0.72 : 0.92;
+        const margin = getOpeningMargin(opening);
+        const minWidth = getOpeningMinWidth(opening);
         let width = clamp(opening.width, minWidth, Math.max(minWidth, wallLength - margin * 2));
         const minStart = Math.max(margin, Number.isFinite(cursor) ? cursor + openingGap : margin);
         let maxStart = wallLength - width - margin;
@@ -144,11 +181,12 @@ export function remapOpeningsToWalls(openings: Opening[], previousWalls: Wall[],
 
     const previousLength = Math.max(previousWall ? getWallLength(previousWall) : getWallLength(targetWall), 0.01);
     const nextLength = getWallLength(targetWall);
+    const centerRatio = resolveOpeningCenterRatio(opening, previousLength);
 
     return {
       ...opening,
       wallId: targetWall.id,
-      offset: (opening.offset / previousLength) * nextLength
+      offset: centerRatio * nextLength - opening.width / 2
     };
   });
 }

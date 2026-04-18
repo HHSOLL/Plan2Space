@@ -7,6 +7,7 @@ import {
   getWallLength,
   getWindowWidthByStyle,
   normalizeOpenings,
+  reassignOpeningToWall,
   remapOpeningsToWalls,
   tuneOpenings
 } from "../logic/openings";
@@ -130,15 +131,24 @@ export function useBuilderOpeningState({
         normalizeOpenings(
           current.map((opening) =>
             opening.id === openingId
-              ? {
-                  ...opening,
-                  ...patch
-                }
+              ? patch.wallId && patch.wallId !== opening.wallId
+                ? {
+                    ...reassignOpeningToWall(opening, patch.wallId, walls),
+                    ...patch
+                  }
+                : {
+                    ...opening,
+                    ...patch
+                  }
               : opening
           ),
           walls
         )
       );
+      setSelectedOpeningId(openingId);
+      if (patch.wallId && walls.some((wall) => wall.id === patch.wallId)) {
+        setSelectedWallId(patch.wallId);
+      }
     },
     [walls]
   );
