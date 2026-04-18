@@ -14,6 +14,8 @@
 - HDRI manifest 기반 로딩
 - 미존재 시 preset 폴백
 - ContactShadows 유지
+- builder/editor lighting은 `direct`/`indirect` mood를 모두 지원하고, direct mode는 fixture emissive + beam/floor glow shader를 포함한다.
+- indirect mode는 천장 가장자리 확산광 위주의 additive glow를 사용하고 광원 본체 노출을 최소화한다.
 
 ## 재질/텍스처
 - `apps/web/src/components/canvas/features/ProceduralWall.tsx`
@@ -34,7 +36,7 @@
 추가 기준:
 - builder opening/style preview는 room center를 target으로 하는 orbit camera를 사용한다.
 - preview orbit은 wheel zoom과 drag rotation을 기본 제스처로 제공하고 pan은 보조 동작으로 제한하거나 비활성화한다.
-- editor top-view는 orthographic top camera를 방 중심에 고정하고 drag rotation + zoom만 허용하며 pan은 금지한다.
+- editor top-view는 orthographic top camera를 방 중심에 고정하고 좌/우 회전 버튼 + zoom만 허용하며 pan은 금지한다.
 - editor top-view의 room shell은 floor 위 footprint strip으로 읽혀야 하고, walk/builder-preview에서만 full-height wall mesh를 사용한다.
 - walk view 진입 시 기본 시선은 room center/entrance target을 향해야 한다.
 
@@ -134,7 +136,7 @@ Added:
 Updated:
 - floor texture는 저각도 시점 shimmer를 줄이기 위해 보수적 repeat와 높은 anisotropy를 사용한다.
 - walk view contact shadow / directional shadow bias를 보수적으로 조정해 floor acne와 coplanar shimmer를 줄인다.
-- top-view camera drag는 빈 공간에서만 room rotation을 시작하고, furniture drag/transform controls hit와 충돌하지 않도록 분리한다.
+- top-view camera 조작은 빈 공간 drag가 아니라 우측 rail의 단계형 회전 버튼으로만 수행한다.
 
 Removed/Deprecated:
 - top-view에서 full-height wall mesh만으로 shell legibility를 확보한다는 가정.
@@ -157,6 +159,19 @@ Updated:
 
 Removed/Deprecated:
 - editor/viewer/builder가 동일한 post FX, shadow, physics 비용을 항상 부담해야 한다는 가정.
+
+## 2026-04-18 변경 동기화 (Lighting Mood Split + Button Rotation)
+Added:
+- direct lighting용 beam/floor glow shader와 indirect ceiling glow shader를 품질 기준에 추가.
+- builder final step에서 선택한 lighting mode를 preview/editor save payload까지 유지하는 계약을 명시.
+
+Updated:
+- editor top-view interaction 기준을 drag rotation에서 button rotation으로 갱신.
+- surface click은 material shortcut이 아니라 selection/hit-test 전용으로 유지하는 방향으로 상호작용 기준을 단순화.
+
+Removed/Deprecated:
+- top-view drag rotation 제스처 의존.
+- floor/wall click material cycling.
 
 ## 2026-04-18 변경 동기화 (Deskterior Asset Density Pass)
 Added:

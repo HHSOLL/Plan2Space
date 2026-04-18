@@ -255,10 +255,13 @@ function StudioSelectPageContent() {
             floorIndex: card.floorMaterialIndex
           },
           lighting: {
+            mode: "direct",
             ambientIntensity: 0.35,
             hemisphereIntensity: 0.4,
             directionalIntensity: 1.05,
-            environmentBlur: 0.2
+            environmentBlur: 0.2,
+            accentIntensity: 0.82,
+            beamOpacity: 0.18
           },
           assetSummary: seededAssets.length > 0 ? buildProjectAssetSummary(catalogSnapshot, seededAssets) : null,
           projectName: "projectName" in card ? card.projectName : card.title,

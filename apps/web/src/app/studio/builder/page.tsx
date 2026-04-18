@@ -9,9 +9,11 @@ import { BuilderFooter } from "../../../features/builder/BuilderFooter";
 import { BuilderPreviewPane } from "../../../features/builder/BuilderPreviewPane";
 import { BuilderStepHeader } from "../../../features/builder/BuilderStepHeader";
 import {
+  BUILDER_LIGHTING_SCENE,
   BUILDER_STEPS,
   DOOR_STYLE_LABEL,
   FLOOR_FINISH_SWATCH,
+  LIGHTING_MODE_LABEL,
   resolveBuilderStepIndex,
   WALL_FINISH_SWATCH,
   WINDOW_STYLE_LABEL
@@ -23,8 +25,9 @@ import { useBuilderSceneSync } from "../../../features/builder/state/useBuilderS
 import { BuilderDimensionsStep } from "../../../features/builder/steps/BuilderDimensionsStep";
 import { BuilderOpeningsStep } from "../../../features/builder/steps/BuilderOpeningsStep";
 import { BuilderShapeStep } from "../../../features/builder/steps/BuilderShapeStep";
+import { BuilderLightingStep } from "../../../features/builder/steps/BuilderLightingStep";
 import { BuilderStyleStep } from "../../../features/builder/steps/BuilderStyleStep";
-import type { DoorStyle, WindowStyle } from "../../../features/builder/types";
+import type { BuilderLightingMode, DoorStyle, WindowStyle } from "../../../features/builder/types";
 import { fetchAssetCatalog } from "../../../lib/api/catalog";
 import { fetchRoomTemplateConfig, type BuilderFinishOption } from "../../../lib/api/room-templates";
 import { createStudioProject } from "../../../lib/api/project";
@@ -66,6 +69,7 @@ type RouteOverrides = {
   projectName: string | null;
   seedPreset: TemplateSeedPreset;
   seedTemplateId: FurnishedRoomTemplateId | null;
+  lightingMode: BuilderLightingMode | null;
   doorStyle: DoorStyle | null;
   windowStyle: WindowStyle | null;
   addSecondaryWindow: boolean | null;
@@ -81,6 +85,7 @@ type BuilderAuthDraft = {
   nookDepth: number;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
+  lightingMode: BuilderLightingMode;
   projectName: string;
   projectDescription: string;
   doorStyle: DoorStyle;
@@ -128,6 +133,13 @@ function parseWindowStyle(value: string | null): WindowStyle {
   return "single";
 }
 
+function parseLightingMode(value: string | null): BuilderLightingMode {
+  if (value === "indirect") {
+    return "indirect";
+  }
+  return "direct";
+}
+
 function StudioBuilderPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -145,6 +157,7 @@ function StudioBuilderPageContent() {
   const [nookDepth, setNookDepth] = useState(2.4);
   const [wallMaterialIndex, setWallMaterialIndex] = useState(0);
   const [floorMaterialIndex, setFloorMaterialIndex] = useState(0);
+  const [lightingMode, setLightingMode] = useState<BuilderLightingMode>("direct");
   const [doorStyle, setDoorStyle] = useState<DoorStyle>("single");
   const [windowStyle, setWindowStyle] = useState<WindowStyle>("single");
   const [addSecondaryWindow, setAddSecondaryWindow] = useState(false);
@@ -167,6 +180,7 @@ function StudioBuilderPageContent() {
     nookDepth: null,
     wallMaterialIndex: null,
     floorMaterialIndex: null,
+    lightingMode: null,
     projectName: null,
     seedPreset: "none",
     seedTemplateId: null,
@@ -188,6 +202,7 @@ function StudioBuilderPageContent() {
     const nextNookDepth = parsePositiveNumber(query.get("nookDepth"));
     const nextWallMaterialIndex = parseIntegerValue(query.get("wall"));
     const nextFloorMaterialIndex = parseIntegerValue(query.get("floor"));
+    const nextLightingMode = parseLightingMode(query.get("lighting"));
     const nextSeedPreset = parseSeedPreset(query.get("seed"));
     const requestedSeedTemplateId = query.get("scenePreset");
     const nextSeedTemplateId = isFurnishedRoomTemplateId(requestedSeedTemplateId) ? requestedSeedTemplateId : null;
@@ -203,6 +218,7 @@ function StudioBuilderPageContent() {
       nookDepth: nextNookDepth,
       wallMaterialIndex: nextWallMaterialIndex,
       floorMaterialIndex: nextFloorMaterialIndex,
+      lightingMode: nextLightingMode,
       projectName: nextProjectName,
       seedPreset: nextSeedPreset,
       seedTemplateId: nextSeedTemplateId,
@@ -228,6 +244,7 @@ function StudioBuilderPageContent() {
     if (nextNookDepth !== null) setNookDepth(nextNookDepth);
     if (nextWallMaterialIndex !== null) setWallMaterialIndex(nextWallMaterialIndex);
     if (nextFloorMaterialIndex !== null) setFloorMaterialIndex(nextFloorMaterialIndex);
+    setLightingMode(nextLightingMode);
     setProjectName(nextProjectName ?? (nextIntent === "custom" ? "맞춤 공간 디자인" : "새 공간 디자인"));
   }, [searchParams]);
 
@@ -392,6 +409,7 @@ function StudioBuilderPageContent() {
           typeof draft.floorMaterialIndex === "number"
             ? draft.floorMaterialIndex
             : routeOverridesRef.current.floorMaterialIndex,
+        lightingMode: draft.lightingMode ? parseLightingMode(draft.lightingMode) : routeOverridesRef.current.lightingMode,
         projectName: typeof draft.projectName === "string" ? draft.projectName : routeOverridesRef.current.projectName,
         seedPreset: restoredSeedPreset,
         seedTemplateId: restoredSeedTemplateId,
@@ -418,6 +436,7 @@ function StudioBuilderPageContent() {
       if (typeof draft.nookDepth === "number") setNookDepth(draft.nookDepth);
       if (typeof draft.wallMaterialIndex === "number") setWallMaterialIndex(draft.wallMaterialIndex);
       if (typeof draft.floorMaterialIndex === "number") setFloorMaterialIndex(draft.floorMaterialIndex);
+      if (draft.lightingMode) setLightingMode(parseLightingMode(draft.lightingMode));
       if (typeof draft.projectName === "string") setProjectName(draft.projectName);
       if (typeof draft.projectDescription === "string") setProjectDescription(draft.projectDescription);
       if (restoredDoorStyle) setDoorStyle(restoredDoorStyle);
@@ -476,11 +495,14 @@ function StudioBuilderPageContent() {
     () => buildPreviewDataUrl(scene.floors[0]?.outline ?? [], scene.openings.map(({ type, wallId }) => ({ type, wallId }))),
     [scene.floors, scene.openings]
   );
+  const builderLighting = useMemo(() => BUILDER_LIGHTING_SCENE[lightingMode], [lightingMode]);
+
   useBuilderSceneSync({
     previewMode,
     derivedRoomShell,
     wallMaterialIndex,
-    floorMaterialIndex
+    floorMaterialIndex,
+    lighting: builderLighting
   });
 
   useEffect(() => {
@@ -494,6 +516,7 @@ function StudioBuilderPageContent() {
     nextQuery.set("depth", String(normalizedBuilderInput.depth));
     nextQuery.set("wall", String(wallMaterialIndex));
     nextQuery.set("floor", String(floorMaterialIndex));
+    nextQuery.set("lighting", lightingMode);
     nextQuery.set("projectName", projectName);
     nextQuery.set("doorStyle", doorStyle);
     nextQuery.set("windowStyle", windowStyle);
@@ -528,6 +551,7 @@ function StudioBuilderPageContent() {
     depth,
     doorStyle,
     floorMaterialIndex,
+    lightingMode,
     intent,
     nookDepth,
     nookWidth,
@@ -609,6 +633,7 @@ function StudioBuilderPageContent() {
     query.set("depth", String(normalizedBuilderInput.depth));
     query.set("wall", String(wallMaterialIndex));
     query.set("floor", String(floorMaterialIndex));
+    query.set("lighting", lightingMode);
     query.set("projectName", projectName);
     query.set("doorStyle", doorStyle);
     query.set("windowStyle", windowStyle);
@@ -635,6 +660,7 @@ function StudioBuilderPageContent() {
     addSecondaryWindow,
     doorStyle,
     floorMaterialIndex,
+    lightingMode,
     intent,
     nookDepth,
     nookWidth,
@@ -663,6 +689,7 @@ function StudioBuilderPageContent() {
       nookDepth: normalizedBuilderInput.nookDepth ?? nookDepth,
       wallMaterialIndex,
       floorMaterialIndex,
+      lightingMode,
       projectName,
       projectDescription,
       doorStyle,
@@ -678,6 +705,7 @@ function StudioBuilderPageContent() {
     addSecondaryWindow,
     doorStyle,
     floorMaterialIndex,
+    lightingMode,
     intent,
     nookDepth,
     nookWidth,
@@ -719,10 +747,7 @@ function StudioBuilderPageContent() {
             floorIndex: floorMaterialIndex
           },
           lighting: {
-            ambientIntensity: 0.35,
-            hemisphereIntensity: 0.4,
-            directionalIntensity: 1.05,
-            environmentBlur: 0.2
+            ...builderLighting
           },
           thumbnailDataUrl: previewDataUrl,
           assetSummary: buildProjectAssetSummary(catalogSnapshot, seededAssets),
@@ -753,7 +778,7 @@ function StudioBuilderPageContent() {
   };
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-[#f3f2ef] px-3 pb-3 pt-3 text-[#171411] sm:px-4 md:pt-4 lg:px-6">
+    <div className="mt-12 h-[calc(100dvh-3rem)] overflow-hidden bg-[#f3f2ef] px-3 pb-3 pt-3 text-[#171411] sm:px-4 md:pt-4 lg:px-6">
       <div className="mx-auto h-full max-w-[1540px]">
         <StudioWorkspaceShell className="h-full min-h-0 gap-0 overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(48,38,26,0.12)] md:grid-cols-[minmax(340px,34vw)_minmax(0,1fr)]">
           <StudioWorkspacePanel className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] rounded-none border-0 border-b border-black/10 bg-white shadow-none lg:border-b-0 lg:border-r lg:border-black/10">
@@ -817,6 +842,13 @@ function StudioBuilderPageContent() {
                     onFloorMaterialIndexChange={setFloorMaterialIndex}
                   />
                 ) : null}
+
+                {stepIndex === 4 ? (
+                  <BuilderLightingStep
+                    lightingMode={lightingMode}
+                    onLightingModeChange={setLightingMode}
+                  />
+                ) : null}
               </div>
             </div>
 
@@ -837,6 +869,7 @@ function StudioBuilderPageContent() {
             wallEntries={wallEntries}
             wallFinishName={activeWallFinish.name}
             floorFinishName={activeFloorFinish.name}
+            lightingModeLabel={LIGHTING_MODE_LABEL[lightingMode]}
             doorCount={scene.openings.filter((opening) => opening.type === "door").length}
             windowCount={scene.openings.filter((opening) => opening.type === "window").length}
             selectedWallLabel={wallEntries.find((wall) => wall.id === selectedWallId)?.label ?? null}

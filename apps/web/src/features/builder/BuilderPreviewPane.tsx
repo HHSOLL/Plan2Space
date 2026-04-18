@@ -13,6 +13,7 @@ type BuilderPreviewPaneProps = {
   wallEntries: BuilderWallEntry[];
   wallFinishName: string;
   floorFinishName: string;
+  lightingModeLabel: string;
   doorCount: number;
   windowCount: number;
   selectedWallLabel: string | null;
@@ -232,6 +233,16 @@ function StyleSummary({
   );
 }
 
+function LightingSummary({ lightingModeLabel }: { lightingModeLabel: string }) {
+  return (
+    <div className="pointer-events-none absolute bottom-6 left-6">
+      <span className="rounded-full bg-white/88 px-4 py-2 text-xs font-semibold text-[#2c2924] shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
+        선택한 조명 {lightingModeLabel}
+      </span>
+    </div>
+  );
+}
+
 export function BuilderPreviewPane({
   stepId,
   previewMode,
@@ -240,6 +251,7 @@ export function BuilderPreviewPane({
   wallEntries,
   wallFinishName,
   floorFinishName,
+  lightingModeLabel,
   doorCount,
   windowCount,
   selectedWallLabel,
@@ -294,6 +306,7 @@ export function BuilderPreviewPane({
           windowCount={windowCount}
         />
       ) : null}
+      {stepId === "lighting" ? <LightingSummary lightingModeLabel={lightingModeLabel} /> : null}
     </motion.section>
   );
 }

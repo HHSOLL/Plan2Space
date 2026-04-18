@@ -20,6 +20,8 @@ const WALK_SPEED = 3.5;
 const BODY_Y = 1;
 const EYE_HEIGHT = 0.6;
 const ZOOM_EVENT_NAME = "plan2space:zoom";
+const TOP_ROTATE_EVENT_NAME = "plan2space:top-rotate";
+const TOP_ROTATION_STEP = Math.PI / 2;
 
 function clampValue(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -163,7 +165,7 @@ function WalkRig({
 }
 
 export default function CameraRig() {
-  const { gl, scene, camera: activeCamera } = useThree();
+  const { gl } = useThree();
   const viewMode = useEditorStore((state) => state.viewMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const walls = useShellSelector((slice) => slice.walls);
@@ -176,8 +178,6 @@ export default function CameraRig() {
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);
   const controlsRef = useRef<any>(null);
   const topRotationRef = useRef(0);
-  const raycasterRef = useRef(new THREE.Raycaster());
-  const pointerRef = useRef(new THREE.Vector2());
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerZ = (bounds.minZ + bounds.maxZ) / 2;
@@ -285,53 +285,6 @@ export default function CameraRig() {
     if (viewMode !== "top") return;
 
     const element = gl.domElement;
-    let dragging = false;
-    let startX = 0;
-    let startRotation = topRotationRef.current;
-
-    const shouldBlockTopRotation = (clientX: number, clientY: number) => {
-      const rect = element.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return false;
-      pointerRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      pointerRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-      raycasterRef.current.setFromCamera(pointerRef.current, orthoRef.current ?? activeCamera);
-
-      return raycasterRef.current.intersectObjects(scene.children, true).some((hit) => {
-        let node: THREE.Object3D | null = hit.object;
-        while (node) {
-          if (node.name.startsWith("furniture:")) return true;
-          if (node.name.startsWith("wall:")) return true;
-          if (node.name.startsWith("top-wall:")) return true;
-          if (node.name.startsWith("door:")) return true;
-          if (node.name.startsWith("window:")) return true;
-          if (node.type.startsWith("TransformControls")) return true;
-          node = node.parent;
-        }
-        return false;
-      });
-    };
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
-      if (isTransforming) return;
-      if (shouldBlockTopRotation(event.clientX, event.clientY)) return;
-      dragging = true;
-      startX = event.clientX;
-      startRotation = topRotationRef.current;
-      element.setPointerCapture?.(event.pointerId);
-    };
-
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!dragging) return;
-      topRotationRef.current = startRotation - (event.clientX - startX) * 0.008;
-      applyTopCamera();
-    };
-
-    const handlePointerUp = (event: PointerEvent) => {
-      dragging = false;
-      element.releasePointerCapture?.(event.pointerId);
-    };
-
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       if (!orthoRef.current) return;
@@ -339,18 +292,12 @@ export default function CameraRig() {
       applyTopCamera(orthoRef.current.zoom * factor);
     };
 
-    element.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
     element.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {
-      element.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
       element.removeEventListener("wheel", handleWheel);
     };
-  }, [activeCamera, applyTopCamera, gl.domElement, isTransforming, scene, viewMode]);
+  }, [applyTopCamera, gl.domElement, viewMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -379,6 +326,25 @@ export default function CameraRig() {
     window.addEventListener(ZOOM_EVENT_NAME, handleZoomEvent as EventListener);
     return () => {
       window.removeEventListener(ZOOM_EVENT_NAME, handleZoomEvent as EventListener);
+    };
+  }, [applyTopCamera, viewMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleTopRotateEvent = (event: Event) => {
+      if (viewMode !== "top") return;
+      const customEvent = event as CustomEvent<{ direction?: "left" | "right" }>;
+      const direction = customEvent.detail?.direction;
+      if (direction !== "left" && direction !== "right") return;
+
+      topRotationRef.current += direction === "left" ? TOP_ROTATION_STEP : -TOP_ROTATION_STEP;
+      applyTopCamera();
+    };
+
+    window.addEventListener(TOP_ROTATE_EVENT_NAME, handleTopRotateEvent as EventListener);
+    return () => {
+      window.removeEventListener(TOP_ROTATE_EVENT_NAME, handleTopRotateEvent as EventListener);
     };
   }, [applyTopCamera, viewMode]);
 

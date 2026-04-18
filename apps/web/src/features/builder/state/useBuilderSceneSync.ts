@@ -10,13 +10,23 @@ type UseBuilderSceneSyncInput = {
   derivedRoomShell: ReturnType<typeof deriveBlankRoomShell>;
   wallMaterialIndex: number;
   floorMaterialIndex: number;
+  lighting: {
+    mode: "direct" | "indirect";
+    ambientIntensity: number;
+    hemisphereIntensity: number;
+    directionalIntensity: number;
+    environmentBlur: number;
+    accentIntensity: number;
+    beamOpacity: number;
+  };
 };
 
 export function useBuilderSceneSync({
   previewMode,
   derivedRoomShell,
   wallMaterialIndex,
-  floorMaterialIndex
+  floorMaterialIndex,
+  lighting
 }: UseBuilderSceneSyncInput) {
   const { setScene, resetScene } = useShellStore();
   const { setEntranceId } = useCameraStore();
@@ -53,14 +63,9 @@ export function useBuilderSceneSync({
       assets: [],
       wallMaterialIndex,
       floorMaterialIndex,
-      lighting: {
-        ambientIntensity: 0.35,
-        hemisphereIntensity: 0.4,
-        directionalIntensity: 1.05,
-        environmentBlur: 0.2
-      }
+      lighting
     });
 
     setEntranceId(derivedRoomShell.entranceId);
-  }, [derivedRoomShell, floorMaterialIndex, setEntranceId, setScene, wallMaterialIndex]);
+  }, [derivedRoomShell, floorMaterialIndex, lighting, setEntranceId, setScene, wallMaterialIndex]);
 }

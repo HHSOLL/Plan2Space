@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
+import { RotateCcw, RotateCw } from "lucide-react";
 import { BuilderLibraryShelf } from "../../../../components/editor/BuilderLibraryShelf";
 import {
   useEditorStore,
@@ -242,6 +243,11 @@ export default function ProjectEditorPage() {
   const triggerZoomControl = useCallback((direction: "in" | "out") => {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("plan2space:zoom", { detail: { direction } }));
+  }, []);
+
+  const triggerTopRotateControl = useCallback((direction: "left" | "right") => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("plan2space:top-rotate", { detail: { direction } }));
   }, []);
 
   const sceneCenter = useMemo(() => {
@@ -737,27 +743,51 @@ export default function ProjectEditorPage() {
                     </>
                   )}
 
-                  <div className="pointer-events-none absolute right-4 top-4 z-[24] flex flex-col gap-3">
-                    <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-black/10 bg-white/96 p-1 shadow-[0_10px_24px_rgba(19,21,24,0.12)]">
-                      <button
-                        type="button"
-                        onClick={() => triggerZoomControl("in")}
-                        className="rounded-full px-3 py-2 text-[16px] font-bold text-[#4d453a] transition hover:bg-[#f2eee7]"
-                        aria-label="확대"
-                      >
-                        +
-                      </button>
-                      <div className="mx-2 h-px bg-black/10" />
-                      <button
-                        type="button"
-                        onClick={() => triggerZoomControl("out")}
-                        className="rounded-full px-3 py-2 text-[16px] font-bold text-[#4d453a] transition hover:bg-[#f2eee7]"
-                        aria-label="축소"
-                      >
-                        -
-                      </button>
+                  {viewMode === "top" ? (
+                    <div className="pointer-events-none absolute right-4 top-4 z-[24] flex flex-col gap-3">
+                      <div className="pointer-events-auto flex flex-col overflow-hidden rounded-[22px] border border-black/10 bg-white/96 p-1 shadow-[0_10px_24px_rgba(19,21,24,0.12)]">
+                        <button
+                          type="button"
+                          onClick={() => triggerTopRotateControl("left")}
+                          className="inline-flex items-center justify-center gap-2 rounded-[18px] px-3 py-2 text-[11px] font-semibold text-[#4d453a] transition hover:bg-[#f2eee7]"
+                          aria-label="상단뷰 왼쪽으로 회전"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          좌회전
+                        </button>
+                        <div className="mx-2 h-px bg-black/10" />
+                        <button
+                          type="button"
+                          onClick={() => triggerTopRotateControl("right")}
+                          className="inline-flex items-center justify-center gap-2 rounded-[18px] px-3 py-2 text-[11px] font-semibold text-[#4d453a] transition hover:bg-[#f2eee7]"
+                          aria-label="상단뷰 오른쪽으로 회전"
+                        >
+                          <RotateCw className="h-4 w-4" />
+                          우회전
+                        </button>
+                      </div>
+
+                      <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-black/10 bg-white/96 p-1 shadow-[0_10px_24px_rgba(19,21,24,0.12)]">
+                        <button
+                          type="button"
+                          onClick={() => triggerZoomControl("in")}
+                          className="rounded-full px-3 py-2 text-[16px] font-bold text-[#4d453a] transition hover:bg-[#f2eee7]"
+                          aria-label="확대"
+                        >
+                          +
+                        </button>
+                        <div className="mx-2 h-px bg-black/10" />
+                        <button
+                          type="button"
+                          onClick={() => triggerZoomControl("out")}
+                          className="rounded-full px-3 py-2 text-[16px] font-bold text-[#4d453a] transition hover:bg-[#f2eee7]"
+                          aria-label="축소"
+                        >
+                          -
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
 
                   <ProjectEditorViewport
                     gl={
