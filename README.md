@@ -45,6 +45,7 @@ npm run dev:web
 npm run dev:web
 npm --workspace apps/web run qa:primary
 npm --workspace apps/web run primary:e2e:room-flow
+npm --workspace apps/web run assets:validate:deskterior
 npm --workspace apps/web run assets:sync:deskterior
 
 # strict 모드(실패를 fail-fast로 처리)
@@ -59,6 +60,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 
 - Blender 원본: `assets/blender/deskterior/*.blend`
 - 런타임 모델: `apps/web/public/assets/models/`
+- Khronos glTF 검증: `npm --workspace apps/web run assets:validate:deskterior`
 - 카탈로그 동기화: `npm --workspace apps/web run assets:sync:deskterior`
 - 오픈소스 자산은 라이선스 명시(CC0 우선)된 항목만 사용
 

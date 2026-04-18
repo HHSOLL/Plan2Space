@@ -14,6 +14,7 @@
     "primary:e2e:room-flow:full": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=flow --strict",
     "assets:export:deskterior": "node --import tsx scripts/export-deskterior-runtime.ts",
     "assets:sync:deskterior": "node --import tsx scripts/sync-deskterior-catalog.ts",
+    "assets:validate:deskterior": "node --import tsx scripts/validate-deskterior-gltf.ts",
     "assets:verify:deskterior": "node --import tsx scripts/verify-deskterior-pipeline.ts",
     "assets:optimize:deskterior": "node ../../scripts/meshopt-optimize.mjs --dest ./public/assets/models --match p2s_",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs"
@@ -55,6 +56,7 @@
     "autoprefixer": "^10.0.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.0",
+    "gltf-validator": "^2.0.0-dev.3.10",
     "postcss": "^8.0.0",
     "tailwindcss": "^3.0.0",
     "tsx": "^4.20.3",

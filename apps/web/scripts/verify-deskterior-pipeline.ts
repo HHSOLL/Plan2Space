@@ -1,16 +1,7 @@
 import { access, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
-type CuratedAsset = {
-  key: string;
-  manifestId: string;
-  sourcePath: string;
-  runtimePath: string;
-  expectedAssetId: string;
-  requiredMetadata: Array<"brand" | "externalUrl" | "description" | "category" | "options">;
-  optionsHint?: string;
-};
+import { curatedDeskteriorAssets } from "./deskterior-curated-assets";
 
 type ManifestEntry = Record<string, unknown> & {
   id?: unknown;
@@ -70,77 +61,8 @@ type Summary = {
 const scriptFile = fileURLToPath(import.meta.url);
 const scriptDir = path.dirname(scriptFile);
 const appRoot = path.resolve(scriptDir, "..");
-const repoRoot = path.resolve(appRoot, "../..");
 const publicRoot = path.join(appRoot, "public");
 const manifestPath = path.join(publicRoot, "assets", "catalog", "manifest.json");
-
-const curatedAssets: CuratedAsset[] = [
-  {
-    key: "p2s_desk_oak",
-    manifestId: "p2s_desk_oak_140",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_oak.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_oak", "p2s_desk_oak.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_oak/p2s_desk_oak.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_monitor_stand",
-    manifestId: "p2s_monitor_stand_wood",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_monitor_stand.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_monitor_stand", "p2s_monitor_stand.glb"),
-    expectedAssetId: "/assets/models/p2s_monitor_stand/p2s_monitor_stand.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_desk_lamp_glow",
-    manifestId: "p2s_desk_lamp_glow",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_lamp_glow.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_lamp_glow", "p2s_desk_lamp_glow.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_lamp_glow/p2s_desk_lamp_glow.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
-    optionsHint: "light-emitter"
-  },
-  {
-    key: "p2s_ceramic_mug",
-    manifestId: "p2s_ceramic_mug_sand",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_ceramic_mug.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_ceramic_mug", "p2s_ceramic_mug.glb"),
-    expectedAssetId: "/assets/models/p2s_ceramic_mug/p2s_ceramic_mug.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_book_stack_warm",
-    manifestId: "p2s_book_stack_warm",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_book_stack_warm.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_book_stack_warm", "p2s_book_stack_warm.glb"),
-    expectedAssetId: "/assets/models/p2s_book_stack_warm/p2s_book_stack_warm.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_desk_tray_oak",
-    manifestId: "p2s_desk_tray_oak",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_tray_oak.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_tray_oak", "p2s_desk_tray_oak.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_tray_oak/p2s_desk_tray_oak.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_compact_speaker",
-    manifestId: "p2s_compact_speaker",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_compact_speaker.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_compact_speaker", "p2s_compact_speaker.glb"),
-    expectedAssetId: "/assets/models/p2s_compact_speaker/p2s_compact_speaker.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_desk_planter_pilea",
-    manifestId: "p2s_desk_planter_pilea",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_planter_pilea.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_planter_pilea", "p2s_desk_planter_pilea.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_planter_pilea/p2s_desk_planter_pilea.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  }
-];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -254,7 +176,7 @@ async function buildSummary(): Promise<Summary> {
   let freshRuntimeFiles = 0;
   let curatedManifestEntriesValid = 0;
 
-  for (const asset of curatedAssets) {
+  for (const asset of curatedDeskteriorAssets) {
     const result: CuratedAssetResult = {
       key: asset.key,
       manifestId: asset.manifestId,
@@ -445,7 +367,7 @@ async function buildSummary(): Promise<Summary> {
   return {
     ok: errors.length === 0,
     counts: {
-      curatedAssets: curatedAssets.length,
+      curatedAssets: curatedDeskteriorAssets.length,
       manifestEntries: manifestEntries.length,
       sourceFilesFound,
       runtimeFilesFound,

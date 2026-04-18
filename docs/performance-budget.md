@@ -12,17 +12,41 @@
 
 ## Budget (P2)
 
+### Route shell
 - 빌더 경로 셸 FCP p95: `<= 2.8s`
 - 에디터 경로 셸 FCP p95: `<= 3.2s`
 - Shared/Gallery/Community route shell FCP p95: `<= 2.5s`
 - 연속 2회 진입 기준 heap 증가율: `<= 0.8%p`
-- 에디터 상호작용 프레임 드롭:
-  - 가구 선택/이동/회전 중 장시간(2초+) 지속 dropped frame 없음
-- 읽기 전용 뷰어 상호작용 트리:
-  - 에디터 전용 transform/delete 계층 미포함
+
+### Interaction
+- room mode FPS: 중간급 노트북에서 `55~60 FPS`
+- desk precision mode FPS: 중간급 노트북에서 `45~60 FPS`
+- 에디터 상호작용은 가구 선택/이동/회전 2초 이상 반복 시 장시간 dropped frame이 지속되지 않아야 한다.
+- picking latency(hover/select/drag 시작): `<= 50ms`
+- room placement tolerance: `<= 10mm`
+- desk placement tolerance: `1~5mm` 체감 오차 범위 유지
+- idle 상태에서는 CPU가 지속적으로 상승하지 않고 안정화되어야 한다.
+
+### Render cost
+- room mode draw calls: `300~500` 범위 내 관리
+- desk precision mode draw calls: `500~700` 범위 내 관리
+- `renderer.info.memory.textures`와 `renderer.info.memory.geometries`는 장시간 편집 중 지속 증가하지 않아야 한다.
+- hero asset runtime size: `5~15MB` 권장, 소품은 이보다 작아야 한다.
+- baseColor texture: 기본 `1K`, hero `2K`, 예외적으로만 `4K`
 - 동적 조명 예산:
-  - 가구 기반 point light 활성 수 `<= 6`
+  - 가구 기반 point/spot light 활성 수 `<= 6`
   - 조명 자산 없는 장면에서 추가 light pass 없음
+
+### Read-only viewer
+- 읽기 전용 뷰어는 에디터 전용 transform/delete 계층을 포함하지 않는다.
+- shared scene 초기 진입 시 editor보다 가벼운 interaction tree와 quality preset을 유지한다.
+
+## Scenario Matrix
+
+- empty room: builder 또는 editor에 빈 공간만 로드된 상태
+- furnished room: 대표 가구 10개 수준의 표준 장면
+- dense desk: 책상 위 소형 오브젝트 30개 이상 배치된 정밀 편집 장면
+- high fidelity toggle: shadow, post FX, lighting preset이 켜진 시각 품질 확인 장면
 
 ## Primary Contract Check
 
@@ -39,21 +63,52 @@ E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 
 1. `npm --workspace apps/web run build`
 2. `npm --workspace apps/web run start -- --hostname 127.0.0.1 --port 3100`
-3. DevTools Performance로 각 경로 최초 진입 3회, 재진입 2회 측정
-4. Web Vitals(FCP/LCP/INP)와 memory timeline을 함께 기록
-5. 결과를 PR 코멘트 또는 release note에 아래 형식으로 첨부
+3. 가능하면 `npm run dev:web`와 production build 둘 다 측정한다.
+4. DevTools Performance Monitor에서 FPS, CPU, JS heap을 켠다.
+5. DevTools Performance로 각 경로 최초 진입 3회, 재진입 2회 측정한다.
+6. 각 Scenario Matrix를 기준으로 20초 상호작용을 반복한다.
+7. 아래 토글을 하나씩 끄고 같은 장면을 다시 측정한다.
+   - shadows
+   - postprocessing
+   - SSR
+   - SSAO
+   - envMap
+   - antialias
+   - physics/collision
+   - selection outline
+   - grid/gizmo/labels
+8. Web Vitals(FCP/LCP/INP), memory timeline, `renderer.info` 수치를 함께 기록한다.
+9. 결과를 PR 코멘트 또는 release note에 아래 형식으로 첨부한다.
+
+## Required Metrics
+
+- DevTools Performance Monitor: FPS, CPU, JS heap
+- DevTools Performance: Frames, Main, GPU, Network
+- `renderer.info.render.calls`
+- `renderer.info.render.triangles`
+- `renderer.info.memory.textures`
+- `renderer.info.memory.geometries`
+- custom timestamp logs for hover/select/drag latency
 
 ```text
 route: /project/[id]
+scenario: dense desk
+build: production
 FCP p95: 2.9s
 heap growth (2nd load): +0.5%p
+draw calls: 612
+textures: 84
+geometries: 129
+picking latency p95: 42ms
 interaction note: drag/rotate 동안 눈에 띄는 frame drop 없음
 ```
 
 ## Guardrails
 
+- 성능 회귀는 추측으로 처리하지 않고 Scenario Matrix와 Required Metrics를 같이 남긴다.
 - heavy model은 lazy load를 기본으로 유지
 - 읽기 전용 뷰어는 에디터보다 가벼운 interaction tree 유지
 - 조명 제품은 카탈로그 힌트 기반으로만 동적 light를 켜고, 상한(6개)을 반드시 유지
+- 신규 runtime 자산은 파일 크기, texture 크기, draw call 영향도를 같이 검토한다.
 - publish/share/public 뷰어 실패는 로깅 이벤트로 남겨 재현 가능해야 함
 - 회귀가 budget 초과 시, 기능 추가보다 성능 회귀 원인 제거를 우선

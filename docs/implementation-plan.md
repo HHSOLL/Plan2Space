@@ -37,7 +37,9 @@
 
 진행:
 - Blender 원본 -> GLB -> catalog sync 파이프라인 표준화
-- `assets:export:deskterior` / `assets:sync:deskterior` / `assets:verify:deskterior` 3단계 CLI 계약 고정
+- `assets:export:deskterior` / `assets:sync:deskterior` / `assets:validate:deskterior` / `assets:verify:deskterior` 4단계 CLI 계약 고정
+- 저장/연산 경계에서 placement 데이터를 mm 정수 기준으로 정규화하고, 렌더 직전에만 meter float로 변환하는 계약 도입
+- `/project/[id]` 편집 흐름을 room mode와 desk precision mode로 분리하고 카메라/스냅/피킹 정책을 각 모드별로 고정
 - curated runtime asset delivery를 `apps/web/public/assets/*` 직접 서빙에서 storage/CDN 기반 release URL 구조로 옮기는 cutover 설계 진행
 - 신규 curated binary의 `apps/web/public/assets/*` 추가 동결
 - 제품 메타데이터(브랜드/가격/외부 링크/옵션) 채움률 개선
@@ -66,6 +68,103 @@
 - 공유 씬 성능 예산(초기 로드, draw call, texture budget) 모니터링
 - 활동성 지표(조회/반응) 수집 및 피드 랭킹 개선
 
+## 2026-04-19 심층 분석 기반 실행 순서
+이 순서는 `/Users/sol/Downloads/Plan2Space 정밀 공간 편집 시스템 심층 분석 보고서.docx`의 제안을 현재 room-first 제품 흐름에 맞게 재배열한 것이다. P0~P3의 큰 축은 유지하되, 실제 실행은 아래 Phase와 Slice 단위로 끊어서 진행한다.
+
+### Phase 1. 측정 기반 고정
+목표:
+- 추측이 아니라 숫자로 회귀를 잡을 수 있는 기준선을 먼저 만든다.
+
+이번 범위:
+- `docs/performance-budget.md`를 route shell 지표 중심 문서에서 편집/렌더/피킹 예산 문서로 확장
+- empty room, furnished room, dense desk, high fidelity toggle의 4개 시나리오를 공통 벤치마크로 고정
+- DevTools와 `renderer.info` 기준의 수집 템플릿을 정의
+
+세부 Slice:
+- Slice 1. 문서 기준선 정리
+- Slice 2. 계측 훅/로그 포인트 배치
+- Slice 3. 회귀 비교 포맷과 QA 루틴 연결
+
+완료 기준:
+- draw call, textures, geometries, heap, picking latency, placement tolerance 예산이 문서화된다.
+- 같은 장면을 dev/build 모두에서 반복 측정하는 절차가 고정된다.
+
+### Phase 2. 자산 파이프라인 강제
+목표:
+- Blender source -> runtime GLB -> manifest -> 검증/최적화까지를 끊기지 않는 체인으로 만든다.
+
+이번 범위:
+- `assets:sync:deskterior` 이후에 validate -> optimize -> verify 실행 순서를 고정
+- manifest에 물리 메타와 배치 앵커 품질 검증을 강화
+- 신규 curated binary의 repo-public 추가 동결 원칙을 storage/CDN cutover와 같이 추적
+
+세부 Slice:
+- Slice 1. validate:gltf 추가
+- Slice 2. optimize:gltf와 asset size budget 연결
+- Slice 3. anchor/support metadata 검증 확장
+
+완료 기준:
+- 새 deskterior 자산은 export -> sync -> validate -> optimize -> verify를 통과해야 한다.
+- hero asset size와 texture 예산 초과가 CI 혹은 verify 단계에서 드러난다.
+
+### Phase 3. 정밀 편집 엔진 분리
+목표:
+- room layout 편집과 desk precision 편집을 다른 조작 체계로 분리한다.
+
+이번 범위:
+- 저장 단위는 mm 정수, 렌더 경계는 meter float로 고정
+- room mode는 top-down layout, desk precision mode는 surface/anchor 중심 미세 배치로 분리
+- numeric inspector, measurement overlay, micro-view, surface lock의 우선순위를 명시
+
+세부 Slice:
+- Slice 1. 데이터 계약과 단위 타입 정리
+- Slice 2. 카메라/스냅/피킹 정책 분리
+- Slice 3. 정밀 배치 UI와 측정 오버레이
+- Slice 4. save/load와 viewer 재현성 검증
+
+완료 기준:
+- 책상 위 자산 배치가 1~5mm 체감 오차 범위에서 유지된다.
+- room mode와 desk precision mode가 서로의 조작 정책을 침범하지 않는다.
+
+### Phase 4. 모드별 렌더 품질 사다리
+목표:
+- top view, desk precision, walk/viewer가 같은 렌더 비용을 계속 지지 않도록 분리한다.
+
+이번 범위:
+- lazy load, active finish only, selective post FX, shadow budget, light budget을 모드별로 고정
+- builder/editor/viewer에 서로 다른 render ladder와 idle profile을 적용
+
+세부 Slice:
+- Slice 1. top-entry lazy load 정리
+- Slice 2. desk showcase preset과 shared viewer preset 분리
+- Slice 3. 조명/후처리/그림자 토글의 비용 재배치
+
+완료 기준:
+- room mode와 shared viewer는 안정적인 route shell 성능을 유지한다.
+- desk precision mode에서만 필요한 품질 효과가 선택적으로 활성화된다.
+
+### Phase 5. 공유/커뮤니티 안정화
+목표:
+- 정밀 편집 결과가 publish, shared viewer, gallery/community까지 동일하게 이어지게 한다.
+
+이번 범위:
+- read-only viewer 경량화
+- shared snapshot과 community feed의 메타/썸네일/sceneDocument 일치성 강화
+- 이후 collaboration/presence는 별도 실험 트랙으로 분리
+
+세부 Slice:
+- Slice 1. shared viewer runtime 경량화
+- Slice 2. gallery/community summary와 필터 정확도 보강
+- Slice 3. presence/realtime은 분리 브랜치에서 평가
+
+완료 기준:
+- publish 후 shared viewer와 community 카드가 같은 장면 상태를 재현한다.
+- viewer에는 editor 전용 affordance가 남지 않는다.
+
+현재 착수:
+- Phase 1 / Slice 1: 성능 예산과 측정 절차를 숫자 중심으로 재정렬
+- 다음 후보: Phase 2 / Slice 1 또는 Phase 3 / Slice 1
+
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`
 - `npm --workspace apps/web run lint`
@@ -80,6 +179,8 @@
 - Blender 실행 파일 미탐지 환경에서는 export 자동화가 실패할 수 있으며(`BLENDER_BIN` 필요), preflight/report 모드로 사전 점검이 필요하다.
 - 신규 자산 추가 경로에서 `activeAsset` 메타가 누락되면 fallback 규격으로 솔버가 동작하므로, catalog/입력 메타 품질 의존도가 남아 있다.
 - Vercel/Railway 원격 프로젝트/환경 변수 정리는 인증된 inventory 확인 전까지 자동 삭제할 수 없다.
+- mm 정수 계약 전환은 save/load, anchor solver, viewer 재현성을 동시에 건드리므로 단계적 마이그레이션이 필요하다.
+- room mode와 desk precision mode 분리가 늦어지면 카메라/스냅/피킹 회귀가 계속 교차 발생할 수 있다.
 
 ## 2026-04-14 변경 동기화 (Legacy Hard Retirement + Deskterior Focus)
 Added:
@@ -261,6 +362,19 @@ Updated:
 
 Removed/Deprecated:
 - deskterior 신규 자산이 3종 curated baseline에만 머문다는 가정.
+
+## 2026-04-19 변경 동기화 (Precision Editor Phase Plan From Analysis)
+Added:
+- 심층 분석 보고서 기반의 5단계 실행 순서(측정 기반 고정 -> 자산 파이프라인 강제 -> 정밀 편집 엔진 분리 -> 모드별 렌더 품질 사다리 -> 공유/커뮤니티 안정화)를 추가.
+- P2 범위에 mm 정수 기반 placement 계약과 room mode / desk precision mode 분리 계획을 명시.
+- 리스크 항목에 단위 계약 전환과 모드 분리 지연 리스크를 추가.
+
+Updated:
+- P2를 단일 대형 트랙이 아니라 Slice 단위로 끊어서 진행하는 실행 방식을 명시.
+- 현재 착수 범위를 Phase 1 / Slice 1(성능 예산 재정렬)로 고정.
+
+Removed/Deprecated:
+- 정밀 편집 엔진, 자산 파이프라인, 실사 렌더 개선을 한 번에 병렬 추진한다는 가정.
 
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:
