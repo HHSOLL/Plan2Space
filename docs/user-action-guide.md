@@ -191,19 +191,25 @@ BLENDER_BIN="/Applications/Blender.app/Contents/MacOS/Blender" \
 npm --workspace apps/web run assets:sync:deskterior
 ```
 
-5. Khronos glTF Validator로 런타임 GLB를 검증한다.
+5. Meshopt 최적화와 budget re-check를 수행한다.
+
+```bash
+npm --workspace apps/web run assets:optimize:deskterior
+```
+
+6. Khronos glTF Validator로 런타임 GLB를 검증한다.
 
 ```bash
 npm --workspace apps/web run assets:validate:deskterior
 ```
 
-6. 파이프라인 정합성(source/runtime/manifest)을 검증한다.
+7. 파이프라인 정합성(source/runtime/manifest)을 검증한다.
 
 ```bash
 npm --workspace apps/web run assets:verify:deskterior
 ```
 
-7. 에디터에서 자산 배치 후 저장/발행하고 shared viewer에서 제품 정보를 검증한다.
+8. 에디터에서 자산 배치 후 저장/발행하고 shared viewer에서 제품 정보를 검증한다.
   - 실측 고정(`scaleLocked=true`) 제품은 Inspector의 `크기 비율` 입력이 비활성화되는지 확인
   - shared viewer 제품 카드에서 W/D/H, 마감 색상/재질, 디테일 노트가 보이는지 확인
   - 데스크/선반 계열 support 배치 시 실측 기반으로 상면(top) 클램핑이 자연스럽게 유지되는지 확인
@@ -213,10 +219,11 @@ npm --workspace apps/web run assets:verify:deskterior
   - 상단뷰 room shell이 floor footprint를 감싸는 닫힌 strip 형태로 읽히는지 확인
   - finishColor/finishMaterial이 있는 제품은 GLB 표면 톤/질감이 기존 대비 반영되는지 확인
   - `DeskWood`/`DeskMetal`/`StandWood`/`StandPad`/`LampBody`/`LampAccent`/`LampBulb` 슬롯이 의도한 재질 특성으로 분리 반영되는지 확인
-8. 조명 제품은 뷰어에서 실제 광원 효과가 보이는지 확인한다.
+9. 조명 제품은 뷰어에서 실제 광원 효과가 보이는지 확인한다.
 
 실패 대응:
 - `assets:export:deskterior` 실패 시 `--report`로 누락/stale 원인을 먼저 확인한다.
+- `assets:optimize:deskterior`가 실패하면 draw call, triangle, runtime size budget 초과 asset부터 확인한다.
 - `assets:validate:deskterior`가 실패하면 해당 GLB의 구조 오류, 경고, draw call 수치를 먼저 확인한다.
 - `assets:verify:deskterior`가 실패하면 manifest의 `assetId`/필수 메타(`brand`, `externalUrl`, `description`, `category`, `options`)를 우선 수정한다.
 - 규격 불일치가 발견되면 `.blend` 실측 값을 기준으로 `dimensionsMm`/`supportProfile`/`options`를 함께 갱신한다.

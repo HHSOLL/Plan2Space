@@ -15,6 +15,11 @@ export type CuratedDeskteriorAsset = {
   runtimePath: string;
   expectedAssetId: string;
   requiredMetadata: CuratedManifestMetadataField[];
+  budget: {
+    maxFileSizeBytes: number;
+    maxDrawCalls: number;
+    maxTriangleCount: number;
+  };
   optionsHint?: string;
 };
 
@@ -43,7 +48,12 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_desk_oak"),
     runtimePath: runtimeAssetPath("p2s_desk_oak"),
     expectedAssetId: runtimeAssetId("p2s_desk_oak"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 1_000_000,
+      maxDrawCalls: 16,
+      maxTriangleCount: 2_000
+    }
   },
   {
     key: "p2s_monitor_stand",
@@ -51,7 +61,12 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_monitor_stand"),
     runtimePath: runtimeAssetPath("p2s_monitor_stand"),
     expectedAssetId: runtimeAssetId("p2s_monitor_stand"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 1_000_000,
+      maxDrawCalls: 8,
+      maxTriangleCount: 2_000
+    }
   },
   {
     key: "p2s_desk_lamp_glow",
@@ -60,6 +75,11 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     runtimePath: runtimeAssetPath("p2s_desk_lamp_glow"),
     expectedAssetId: runtimeAssetId("p2s_desk_lamp_glow"),
     requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 2_000_000,
+      maxDrawCalls: 12,
+      maxTriangleCount: 6_000
+    },
     optionsHint: "light-emitter"
   },
   {
@@ -68,7 +88,12 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_ceramic_mug"),
     runtimePath: runtimeAssetPath("p2s_ceramic_mug"),
     expectedAssetId: runtimeAssetId("p2s_ceramic_mug"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 1_000_000,
+      maxDrawCalls: 4,
+      maxTriangleCount: 4_000
+    }
   },
   {
     key: "p2s_book_stack_warm",
@@ -76,7 +101,12 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_book_stack_warm"),
     runtimePath: runtimeAssetPath("p2s_book_stack_warm"),
     expectedAssetId: runtimeAssetId("p2s_book_stack_warm"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 1_000_000,
+      maxDrawCalls: 6,
+      maxTriangleCount: 2_000
+    }
   },
   {
     key: "p2s_desk_tray_oak",
@@ -84,7 +114,12 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_desk_tray_oak"),
     runtimePath: runtimeAssetPath("p2s_desk_tray_oak"),
     expectedAssetId: runtimeAssetId("p2s_desk_tray_oak"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 1_000_000,
+      maxDrawCalls: 8,
+      maxTriangleCount: 2_000
+    }
   },
   {
     key: "p2s_compact_speaker",
@@ -92,7 +127,12 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_compact_speaker"),
     runtimePath: runtimeAssetPath("p2s_compact_speaker"),
     expectedAssetId: runtimeAssetId("p2s_compact_speaker"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 1_000_000,
+      maxDrawCalls: 8,
+      maxTriangleCount: 2_000
+    }
   },
   {
     key: "p2s_desk_planter_pilea",
@@ -100,6 +140,11 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
     sourcePath: sourceBlendPath("p2s_desk_planter_pilea"),
     runtimePath: runtimeAssetPath("p2s_desk_planter_pilea"),
     expectedAssetId: runtimeAssetId("p2s_desk_planter_pilea"),
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
+    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
+    budget: {
+      maxFileSizeBytes: 2_000_000,
+      maxDrawCalls: 10,
+      maxTriangleCount: 6_000
+    }
   }
 ];

@@ -45,8 +45,10 @@ npm run dev:web
 npm run dev:web
 npm --workspace apps/web run qa:primary
 npm --workspace apps/web run primary:e2e:room-flow
-npm --workspace apps/web run assets:validate:deskterior
 npm --workspace apps/web run assets:sync:deskterior
+npm --workspace apps/web run assets:optimize:deskterior
+npm --workspace apps/web run assets:validate:deskterior
+npm --workspace apps/web run assets:verify:deskterior
 
 # strict 모드(실패를 fail-fast로 처리)
 E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict

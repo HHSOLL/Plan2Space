@@ -26,9 +26,7 @@ import {
   KHRTextureTransform,
   KHRXMP
 } from "@gltf-transform/extensions";
-import { meshopt, textureCompress } from "@gltf-transform/functions";
 import draco3d from "draco3dgltf";
-import sharp from "sharp";
 import { MeshoptDecoder, MeshoptEncoder } from "meshoptimizer";
 
 const args = process.argv.slice(2);
@@ -50,11 +48,9 @@ const dryRun = hasFlag("dry-run");
 const skipTextures = hasFlag("skip-textures");
 const force = hasFlag("force");
 const match = getArg("match", "").trim().toLowerCase();
+const exclude = getArg("exclude", "").trim().toLowerCase();
 const limit = Number(getArg("limit", "0"));
 const level = getArg("level", "medium");
-const resize = Number(getArg("resize", "1024"));
-const quality = Number(getArg("quality", "82"));
-const effort = Number(getArg("effort", "6"));
 
 async function listAssets(rootDir) {
   const entries = await fs.readdir(rootDir, { withFileTypes: true });
@@ -134,6 +130,7 @@ async function main() {
   const files = await listAssets(destRoot);
   const filtered = files
     .filter((filePath) => (match ? filePath.toLowerCase().includes(match) : true))
+    .filter((filePath) => (exclude ? !filePath.toLowerCase().includes(exclude) : true))
     .sort((left, right) => left.localeCompare(right));
   const targetFiles = limit > 0 ? filtered.slice(0, limit) : filtered;
 
@@ -159,36 +156,31 @@ async function main() {
       const alreadyMeshopt = root
         .listExtensionsUsed()
         .some((extension) => extension.extensionName === "EXT_meshopt_compression");
-      const needsTexturePass =
-        !skipTextures && root.listTextures().some((texture) => texture.getMimeType() !== "image/webp");
+      const hasNonWebpTextures = root.listTextures().some((texture) => texture.getMimeType() !== "image/webp");
 
-      if (!force && alreadyMeshopt && !needsTexturePass) {
+      if (!force && alreadyMeshopt) {
         console.log(`Skipped: ${filePath} (already meshopt-compressed)`);
         processed += 1;
         continue;
       }
 
-      const transforms = [
-        meshopt({
-          encoder: MeshoptEncoder,
-          level: level === "high" ? "high" : "medium"
-        })
-      ];
+      const meshoptExtension = document
+        .createExtension(EXTMeshoptCompression)
+        .setRequired(true)
+        .setEncoderOptions({
+          method:
+            level === "high"
+              ? EXTMeshoptCompression.EncoderMethod.FILTER
+              : EXTMeshoptCompression.EncoderMethod.QUANTIZE
+        });
 
-      if (!skipTextures) {
-        transforms.push(
-          textureCompress({
-            encoder: sharp,
-            targetFormat: "webp",
-            resize: [resize, resize],
-            slots: /^(?!normalTexture).*$/,
-            quality,
-            effort
-          })
+      if (!skipTextures && hasNonWebpTextures) {
+        console.warn(
+          `Texture compression skipped for ${filePath}: runtime does not have a portable texture encoder in this environment.`
         );
       }
 
-      await document.transform(...transforms);
+      void meshoptExtension;
       await io.write(filePath, document);
 
       const afterSize = await getFileSize(filePath);

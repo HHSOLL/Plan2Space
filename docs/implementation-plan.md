@@ -99,8 +99,8 @@
 - 신규 curated binary의 repo-public 추가 동결 원칙을 storage/CDN cutover와 같이 추적
 
 세부 Slice:
-- Slice 1. validate:gltf 추가
-- Slice 2. optimize:gltf와 asset size budget 연결
+- Slice 1. validate:gltf 추가 (완료 2026-04-19)
+- Slice 2. optimize:gltf와 asset size/draw-call/triangle budget 연결 (완료 2026-04-19)
 - Slice 3. anchor/support metadata 검증 확장
 
 완료 기준:
@@ -162,8 +162,8 @@
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- Phase 1 / Slice 1: 성능 예산과 측정 절차를 숫자 중심으로 재정렬
-- 다음 후보: Phase 2 / Slice 1 또는 Phase 3 / Slice 1
+- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2
+- 다음 후보: Phase 2 / Slice 3 또는 Phase 3 / Slice 1
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`
@@ -368,6 +368,10 @@ Added:
 - 심층 분석 보고서 기반의 5단계 실행 순서(측정 기반 고정 -> 자산 파이프라인 강제 -> 정밀 편집 엔진 분리 -> 모드별 렌더 품질 사다리 -> 공유/커뮤니티 안정화)를 추가.
 - P2 범위에 mm 정수 기반 placement 계약과 room mode / desk precision mode 분리 계획을 명시.
 - 리스크 항목에 단위 계약 전환과 모드 분리 지연 리스크를 추가.
+
+Updated:
+- P2 Slice 1/2를 validate + optimize + budget gate 완료 상태로 갱신했다.
+- deskterior 자산 완료 기준을 file size, draw call, triangle budget까지 포함하는 runtime gate로 강화했다.
 
 Updated:
 - P2를 단일 대형 트랙이 아니라 Slice 단위로 끊어서 진행하는 실행 방식을 명시.

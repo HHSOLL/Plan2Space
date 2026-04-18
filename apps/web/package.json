@@ -16,7 +16,7 @@
     "assets:sync:deskterior": "node --import tsx scripts/sync-deskterior-catalog.ts",
     "assets:validate:deskterior": "node --import tsx scripts/validate-deskterior-gltf.ts",
     "assets:verify:deskterior": "node --import tsx scripts/verify-deskterior-pipeline.ts",
-    "assets:optimize:deskterior": "node ../../scripts/meshopt-optimize.mjs --dest ./public/assets/models --match p2s_",
+    "assets:optimize:deskterior": "node --import tsx scripts/optimize-deskterior-runtime.ts",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs"
   },
   "dependencies": {

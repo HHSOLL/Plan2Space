@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { validateBytes } from "gltf-validator";
 import { curatedDeskteriorAssets } from "./deskterior-curated-assets";
 
@@ -32,6 +32,7 @@ type ValidationResult = {
   runtimePath: string;
   ok: boolean;
   exists: boolean;
+  fileSizeBytes: number | null;
   numErrors: number;
   numWarnings: number;
   numInfos: number;
@@ -41,6 +42,7 @@ type ValidationResult = {
   totalVertexCount: number | null;
   materialCount: number | null;
   extensionsUsed: string[];
+  budgetViolations: string[];
   messages: ValidationMessage[];
 };
 
@@ -53,6 +55,7 @@ type Summary = {
     missingRuntime: number;
     errors: number;
     warnings: number;
+    budgetFailures: number;
   };
   results: ValidationResult[];
 };
@@ -88,16 +91,21 @@ function toSafeMetric(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function formatBytes(value: number | null) {
+  if (value === null) return "-";
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 async function validateRuntimeAsset(
-  key: string,
-  manifestId: string,
-  runtimePath: string,
+  asset: (typeof curatedDeskteriorAssets)[number],
   strictWarnings: boolean
 ): Promise<ValidationResult> {
   try {
-    const bytes = await readFile(runtimePath);
+    const [bytes, fileStats] = await Promise.all([readFile(asset.runtimePath), stat(asset.runtimePath)]);
     const report = (await validateBytes(new Uint8Array(bytes), {
-      uri: runtimePath,
+      uri: asset.runtimePath,
       maxIssues: 50,
       writeTimestamp: false
     })) as ValidationReport;
@@ -106,33 +114,53 @@ async function validateRuntimeAsset(
     const numWarnings = toSafeCount(issues.numWarnings);
     const numInfos = toSafeCount(issues.numInfos);
     const numHints = toSafeCount(issues.numHints);
+    const drawCallCount = toSafeMetric(report.info?.drawCallCount);
+    const totalTriangleCount = toSafeMetric(report.info?.totalTriangleCount);
+    const budgetViolations: string[] = [];
+
+    if (fileStats.size > asset.budget.maxFileSizeBytes) {
+      budgetViolations.push(
+        `runtime size ${formatBytes(fileStats.size)} exceeds budget ${formatBytes(asset.budget.maxFileSizeBytes)}`
+      );
+    }
+
+    if (drawCallCount !== null && drawCallCount > asset.budget.maxDrawCalls) {
+      budgetViolations.push(`draw calls ${drawCallCount} exceed budget ${asset.budget.maxDrawCalls}`);
+    }
+
+    if (totalTriangleCount !== null && totalTriangleCount > asset.budget.maxTriangleCount) {
+      budgetViolations.push(`triangles ${totalTriangleCount} exceed budget ${asset.budget.maxTriangleCount}`);
+    }
 
     return {
-      key,
-      manifestId,
-      runtimePath,
-      ok: numErrors === 0 && (!strictWarnings || numWarnings === 0),
+      key: asset.key,
+      manifestId: asset.manifestId,
+      runtimePath: asset.runtimePath,
+      ok: numErrors === 0 && (!strictWarnings || numWarnings === 0) && budgetViolations.length === 0,
       exists: true,
+      fileSizeBytes: fileStats.size,
       numErrors,
       numWarnings,
       numInfos,
       numHints,
-      drawCallCount: toSafeMetric(report.info?.drawCallCount),
-      totalTriangleCount: toSafeMetric(report.info?.totalTriangleCount),
+      drawCallCount,
+      totalTriangleCount,
       totalVertexCount: toSafeMetric(report.info?.totalVertexCount),
       materialCount: toSafeMetric(report.info?.materialCount),
       extensionsUsed: Array.isArray(report.info?.extensionsUsed)
         ? report.info.extensionsUsed.filter((value): value is string => typeof value === "string")
         : [],
+      budgetViolations,
       messages: Array.isArray(issues.messages) ? issues.messages : []
     };
   } catch (error) {
     return {
-      key,
-      manifestId,
-      runtimePath,
+      key: asset.key,
+      manifestId: asset.manifestId,
+      runtimePath: asset.runtimePath,
       ok: false,
       exists: false,
+      fileSizeBytes: null,
       numErrors: 1,
       numWarnings: 0,
       numInfos: 0,
@@ -142,6 +170,7 @@ async function validateRuntimeAsset(
       totalVertexCount: null,
       materialCount: null,
       extensionsUsed: [],
+      budgetViolations: [],
       messages: [
         {
           code: "RUNTIME_MISSING_OR_INVALID",
@@ -155,9 +184,7 @@ async function validateRuntimeAsset(
 
 async function buildSummary(strictWarnings: boolean): Promise<Summary> {
   const results = await Promise.all(
-    curatedDeskteriorAssets.map((asset) =>
-      validateRuntimeAsset(asset.key, asset.manifestId, asset.runtimePath, strictWarnings)
-    )
+    curatedDeskteriorAssets.map((asset) => validateRuntimeAsset(asset, strictWarnings))
   );
 
   return {
@@ -168,7 +195,8 @@ async function buildSummary(strictWarnings: boolean): Promise<Summary> {
       validated: results.filter((result) => result.exists).length,
       missingRuntime: results.filter((result) => !result.exists).length,
       errors: results.reduce((sum, result) => sum + result.numErrors, 0),
-      warnings: results.reduce((sum, result) => sum + result.numWarnings, 0)
+      warnings: results.reduce((sum, result) => sum + result.numWarnings, 0),
+      budgetFailures: results.filter((result) => result.budgetViolations.length > 0).length
     },
     results
   };
@@ -185,18 +213,23 @@ function printHumanReadable(summary: Summary) {
   console.log(`- Missing runtime files: ${summary.counts.missingRuntime}`);
   console.log(`- Errors: ${summary.counts.errors}`);
   console.log(`- Warnings: ${summary.counts.warnings}`);
+  console.log(`- Budget failures: ${summary.counts.budgetFailures}`);
   console.log("");
   console.log("Assets:");
 
   for (const result of summary.results) {
     console.log(
-      `- ${result.key} -> ${result.manifestId} | status=${result.ok ? "ok" : "fail"} | errors=${result.numErrors} | warnings=${result.numWarnings} | infos=${result.numInfos} | drawCalls=${result.drawCallCount ?? "-"} | triangles=${result.totalTriangleCount ?? "-"}`
+      `- ${result.key} -> ${result.manifestId} | status=${result.ok ? "ok" : "fail"} | size=${formatBytes(result.fileSizeBytes)} | errors=${result.numErrors} | warnings=${result.numWarnings} | infos=${result.numInfos} | drawCalls=${result.drawCallCount ?? "-"} | triangles=${result.totalTriangleCount ?? "-"}`
     );
 
     const surfacedMessages = result.messages.filter((message) => message.severity <= 1).slice(0, 5);
     for (const message of surfacedMessages) {
       const pointer = message.pointer ? ` @ ${message.pointer}` : "";
       console.log(`  • ${severityLabel(message.severity)} ${message.code}${pointer}: ${message.message}`);
+    }
+
+    for (const violation of result.budgetViolations) {
+      console.log(`  • budget: ${violation}`);
     }
   }
 }
