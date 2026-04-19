@@ -10,6 +10,10 @@ import {
 } from "../../lib/domain/scene-placement";
 import { SCENE_ANCHOR_TYPES, type SceneAnchorType } from "../../lib/scene/anchor-types";
 import { isSupportAnchorType } from "../../lib/scene/support-profiles";
+import {
+  PrecisionSurfaceMicroView,
+  type PrecisionSurfaceLockInfo
+} from "./PrecisionSurfaceMicroView";
 import { builderFloorFinishes, builderWallFinishes } from "../../lib/builder/templates";
 import {
   LIGHTING_PRESETS,
@@ -38,13 +42,7 @@ type BuilderInspectorPanelProps = {
   assetsCount: number;
   selectedAsset: SceneAsset | null;
   selectedAssetMeta: LibraryCatalogItem | null;
-  surfaceLockInfo: {
-    supportLabel: string;
-    surfaceLabel: string;
-    sizeMm: [number, number];
-    marginMm: [number, number];
-    topMm: number;
-  } | null;
+  surfaceLockInfo: PrecisionSurfaceLockInfo | null;
   onTransformModeChange: (mode: TransformMode) => void;
   onTransformSpaceChange: (space: TransformSpace) => void;
   onWallMaterialChange: (index: number) => void;
@@ -575,6 +573,9 @@ export function BuilderInspectorPanel({
                       <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[#8b8277]">
                         {surfaceLockInfo.surfaceLabel}
                       </div>
+                      <div className="mt-3">
+                        <PrecisionSurfaceMicroView surfaceLockInfo={surfaceLockInfo} />
+                      </div>
                       <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#5f574d]">
                         <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
                           <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
@@ -594,9 +595,25 @@ export function BuilderInspectorPanel({
                         </div>
                         <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
                           <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Offset
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.localOffsetMm[0]} / {surfaceLockInfo.localOffsetMm[1]} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
                             Top
                           </div>
                           <div className="mt-1 font-semibold text-[#1f1b16]">{surfaceLockInfo.topMm} mm</div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Usable
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.usableSizeMm[0]} x {surfaceLockInfo.usableSizeMm[1]} mm
+                          </div>
                         </div>
                         <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
                           <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">

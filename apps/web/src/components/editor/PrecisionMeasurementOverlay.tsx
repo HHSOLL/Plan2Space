@@ -2,17 +2,15 @@ import type { LibraryCatalogItem } from "../../lib/builder/catalog";
 import { metersToMillimeters, radiansToDegrees } from "../../lib/domain/scene-placement";
 import { isSupportAnchorType } from "../../lib/scene/support-profiles";
 import type { SceneAsset } from "../../lib/stores/useSceneStore";
+import {
+  PrecisionSurfaceMicroView,
+  type PrecisionSurfaceLockInfo
+} from "./PrecisionSurfaceMicroView";
 
 type PrecisionMeasurementOverlayProps = {
   selectedAsset: SceneAsset | null;
   selectedAssetMeta: LibraryCatalogItem | null;
-  surfaceLockInfo: {
-    supportLabel: string;
-    surfaceLabel: string;
-    sizeMm: [number, number];
-    marginMm: [number, number];
-    topMm: number;
-  } | null;
+  surfaceLockInfo: PrecisionSurfaceLockInfo | null;
   formatAssetLabel: (assetId: string) => string;
 };
 
@@ -75,11 +73,17 @@ export function PrecisionMeasurementOverlay({
           <div className="mt-1 font-semibold">
             {surfaceLockInfo.supportLabel} · {surfaceLockInfo.surfaceLabel}
           </div>
+          <div className="mt-3">
+            <PrecisionSurfaceMicroView surfaceLockInfo={surfaceLockInfo} variant="compact" />
+          </div>
           <div className="mt-1 text-[10px] text-[#356953]">
             {surfaceLockInfo.sizeMm[0]} x {surfaceLockInfo.sizeMm[1]} mm · margin{" "}
             {surfaceLockInfo.marginMm[0]} / {surfaceLockInfo.marginMm[1]} mm
           </div>
-          <div className="mt-1 text-[10px] text-[#356953]">top {surfaceLockInfo.topMm} mm</div>
+          <div className="mt-1 text-[10px] text-[#356953]">
+            offset {surfaceLockInfo.localOffsetMm[0]} / {surfaceLockInfo.localOffsetMm[1]} mm · top{" "}
+            {surfaceLockInfo.topMm} mm
+          </div>
         </div>
       ) : usesSurfaceLock ? (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-[#8a6a2c]">

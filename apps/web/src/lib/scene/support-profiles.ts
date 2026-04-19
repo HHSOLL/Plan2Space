@@ -39,7 +39,9 @@ export type ResolvedSupportSurfaceLock = {
   supportAssetId: string;
   surface: AssetSupportSurface;
   sizeMm: [number, number];
+  usableSizeMm: [number, number];
   marginMm: [number, number];
+  localOffsetMm: [number, number];
   topMm: number;
 };
 
@@ -380,7 +382,12 @@ export function resolveSupportSurfaceLock(
         supportAssetId: supportAsset.id,
         surface,
         sizeMm: [toMillimeters(surface.size[0] * scaleX), toMillimeters(surface.size[1] * scaleZ)],
+        usableSizeMm: [
+          toMillimeters(Math.max((halfWidth - marginX) * 2, 0)),
+          toMillimeters(Math.max((halfDepth - marginZ) * 2, 0))
+        ],
         marginMm: [toMillimeters(marginX), toMillimeters(marginZ)],
+        localOffsetMm: [toMillimeters(clampedLocalX), toMillimeters(clampedLocalZ)],
         topMm: toMillimeters(supportAsset.position[1] + surface.top * scaleY),
         distanceSq
       };

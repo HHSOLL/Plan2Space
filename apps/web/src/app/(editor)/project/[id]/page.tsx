@@ -334,7 +334,9 @@ export default function ProjectEditorPage() {
         formatAssetIdLabel(selectedSupportAsset.assetId),
       surfaceLabel: formatSupportSurfaceLabel(selectedSupportSurfaceLock.surface.id),
       sizeMm: selectedSupportSurfaceLock.sizeMm,
+      usableSizeMm: selectedSupportSurfaceLock.usableSizeMm,
       marginMm: selectedSupportSurfaceLock.marginMm,
+      localOffsetMm: selectedSupportSurfaceLock.localOffsetMm,
       topMm: selectedSupportSurfaceLock.topMm
     };
   }, [selectedSupportAsset, selectedSupportCatalogItem, selectedSupportSurfaceLock]);
