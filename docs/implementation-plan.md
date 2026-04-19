@@ -211,13 +211,23 @@ Updated:
 Removed/Deprecated:
 - filter 적용 후에도 total/latest/featured summary가 전체 공개 수나 현재 페이지 카드 일부에 의존해도 된다는 서술.
 
+## 2026-04-19 변경 동기화 (Phase 5 Slice 3 Complete)
+Added:
+- presence/realtime 실험을 hidden route `/labs/realtime`와 local-only feature gate로 분리하는 경계를 추가했다.
+
+Updated:
+- Phase 5 Slice 3을 `presence/realtime은 분리 브랜치에서 평가`에서 실제 `primary flow 미연결 local-only lab isolation` 완료 상태로 갱신한다.
+
+Removed/Deprecated:
+- Slice 3가 향후 즉시 community/editor flow에 섞여도 된다는 서술.
+
 완료 기준:
 - publish 후 shared viewer와 community 카드가 같은 장면 상태를 재현한다.
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2
-- 다음 후보: Phase 5 / Slice 3
+- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
+- 다음 후보: 후속 phase 재정의 또는 별도 실험 브랜치에서 presence/realtime prototype 착수
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`

@@ -21,6 +21,7 @@
 - `E2E_ROOM_FLOW_STRICT`
 - `E2E_ROOM_FLOW_PROJECT_ID`
 - `E2E_ROOM_FLOW_SHARED_TOKEN`
+- `NEXT_PUBLIC_ENABLE_REALTIME_LABS` (`1`일 때 local-only `/labs/realtime` 실험 게이트 노출)
 
 ### API (`apps/api/.env`)
 필수:
@@ -75,6 +76,7 @@
 30. gallery/community에서 room/tone/density 필터를 건 뒤 header count와 다음 페이지 total이 현재 필터 결과 기준으로 유지되는지 확인하기
 31. community에서 최신 게시, featured 장면, 주요 컬렉션 summary가 현재 페이지 카드 조각이 아니라 active filter scope 전체 기준으로 유지되는지 확인하기
 32. shared viewer와 builder preview가 constrained 환경에서 fill light + bloom 없이도 읽기 흐름을 유지하고, walk/showcase에서만 richer shadow/bloom이 유지되는지 확인하기
+33. `NEXT_PUBLIC_ENABLE_REALTIME_LABS=1`로 로컬 실행 시 `/labs/realtime`만 열리고, primary navigation에는 realtime/presence 진입점이 생기지 않는지 확인하기
 
 실행 명령:
 
@@ -97,6 +99,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - shared viewer walk HUD는 터치 조작용 요소만 남고 crosshair는 보이지 않는지 확인
 - shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
 - shared viewer와 builder preview는 lean light rig(no fill light)를 유지하고, constrained 환경에서는 directional shadow + bloom이 제거되는지 확인
+- realtime/presence 평가는 `/labs/realtime` hidden route에서만 노출되고, 홈/에디터/뷰어/갤러리/커뮤니티에는 진입 링크가 생기지 않는지 확인
 - 뷰어에 편집 affordance가 노출되지 않는지 확인
 - 갤러리/커뮤니티 카드가 `/shared/[token]` 읽기 전용 뷰어로 이동하는지 확인
 - 갤러리/커뮤니티 피드가 레퍼런스 8번 기준의 4열 카드 밀도와 상단 filter rail을 유지하는지 확인

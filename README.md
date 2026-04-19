@@ -38,6 +38,7 @@ npm run dev:web
 - `E2E_ROOM_FLOW_BASE_URL`
 - `E2E_ROOM_FLOW_SHARED_TOKEN`
 - `E2E_ROOM_FLOW_PROJECT_ID`
+- `NEXT_PUBLIC_ENABLE_REALTIME_LABS` (`1`일 때 local-only `/labs/realtime` 실험 게이트 활성화)
 
 ## 스크립트
 
