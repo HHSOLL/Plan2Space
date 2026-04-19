@@ -82,12 +82,24 @@
 
 세부 Slice:
 - Slice 1. 문서 기준선 정리
-- Slice 2. 계측 훅/로그 포인트 배치
+- Slice 2. 계측 훅/로그 포인트 배치 (완료 2026-04-19)
 - Slice 3. 회귀 비교 포맷과 QA 루틴 연결
 
 완료 기준:
 - draw call, textures, geometries, heap, picking latency, placement tolerance 예산이 문서화된다.
 - 같은 장면을 dev/build 모두에서 반복 측정하는 절차가 고정된다.
+
+## 2026-04-19 변경 동기화 (Phase 1 Slice 2 Complete)
+Added:
+- `SceneViewport`에 `plan2space:renderer-stats` 1초 샘플러를 붙여 FPS / draw calls / triangles / textures / geometries를 공통 이벤트 계약으로 노출했다.
+- hover / select / drag-start / gizmo-drag-start의 next-paint 지연을 `plan2space:interaction-latency` 이벤트로 기록하는 계측 훅을 추가했다.
+
+Updated:
+- Phase 1 Slice 2를 `계측 훅/로그 포인트 배치` 완료 상태로 갱신한다.
+- 원문 보고서의 `renderer.info 1초 샘플링 + 조작 지연 로그` 권고를 코드 계약 수준으로 반영한다.
+
+Removed/Deprecated:
+- SceneViewport 성능 계측을 수동 DevTools 세션에만 의존하던 상태.
 
 ### Phase 2. 자산 파이프라인 강제
 목표:

@@ -6,6 +6,7 @@ import type { ReactNode, ComponentProps } from "react";
 import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 import CameraRig from "../canvas/core/CameraRig";
+import ScenePerformanceTelemetry from "../canvas/debug/ScenePerformanceTelemetry";
 import PhysicsWorld from "../canvas/core/PhysicsWorld";
 import SceneEnvironment from "../canvas/core/SceneEnvironment";
 import Lights from "../canvas/effects/Lights";
@@ -131,6 +132,7 @@ export function SceneViewport({
       >
         <color attach="background" args={[isLightTone ? "#d0d0ce" : "#0a0a0b"]} />
         <Suspense fallback={null}>
+          <ScenePerformanceTelemetry interactionMode={resolvedInteractionMode} />
           {viewMode === "walk" ? <PhysicsWorld>{sceneContent}</PhysicsWorld> : sceneContent}
           <PostEffects quality={quality} />
         </Suspense>

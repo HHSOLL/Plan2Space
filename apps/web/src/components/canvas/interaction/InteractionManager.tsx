@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useInteractionStore } from "../../../lib/stores/useInteractionStore";
+import { scheduleInteractionLatency } from "../../../lib/performance/scene-telemetry";
 
 type InteractionManagerProps = {
   children: React.ReactNode;
@@ -118,10 +119,17 @@ export default function InteractionManager({ children }: InteractionManagerProps
       if (hoveredRef.current) setHover(null);
       return;
     }
+    const startedAt = performance.now();
     raycaster.setFromCamera(screenCenter, camera);
     raycaster.far = INTERACTION_DISTANCE;
     const hits = raycaster.intersectObjects(targetsRef.current, true);
     const interactive = hits.length > 0 ? findInteractiveTarget(hits[0].object) : null;
+    if (hoveredRef.current !== interactive) {
+      scheduleInteractionLatency("hover", startedAt, {
+        viewMode,
+        targetId: interactive?.name ?? null
+      });
+    }
     setHover(interactive);
   });
 
@@ -142,8 +150,15 @@ export default function InteractionManager({ children }: InteractionManagerProps
       <group
         onPointerMove={(event) => {
           if (viewMode !== "top" || readOnly) return;
+          const startedAt = performance.now();
           const target = findInteractiveTarget(event.object);
           document.body.style.cursor = target ? "pointer" : "default";
+          if (hoveredRef.current !== target) {
+            scheduleInteractionLatency("hover", startedAt, {
+              viewMode,
+              targetId: target?.name ?? null
+            });
+          }
           setHover(target);
         }}
         onPointerOut={() => {

@@ -8,6 +8,7 @@ import { resolveTopViewInteractionPolicy } from "../../../lib/editor/top-view-po
 import { useGLBAsset } from "../../../lib/loaders/AssetLoader";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
+import { scheduleInteractionLatency } from "../../../lib/performance/scene-telemetry";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import {
   useAssetSelector,
@@ -509,14 +510,26 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
   const handleReadOnlySelect = (event: ThreeEvent<PointerEvent>) => {
     if (!readOnly) return;
     event.stopPropagation();
+    const startedAt = performance.now();
     setSelectedAssetId(asset.id);
+    scheduleInteractionLatency("select", startedAt, {
+      viewMode,
+      topMode,
+      targetId: asset.id
+    });
   };
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     if (viewMode !== "top" || isTransforming || readOnly) return;
     event.stopPropagation();
+    const startedAt = performance.now();
     setSelectedAssetId(asset.id);
     if (!topViewPolicy.allowDirectAssetDrag) {
+      scheduleInteractionLatency("select", startedAt, {
+        viewMode,
+        topMode,
+        targetId: asset.id
+      });
       return;
     }
     setIsDragging(true);
@@ -529,6 +542,11 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     };
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.setPointerCapture(event.pointerId);
+    scheduleInteractionLatency("drag-start", startedAt, {
+      viewMode,
+      topMode,
+      targetId: asset.id
+    });
   };
 
   const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {

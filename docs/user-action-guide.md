@@ -95,6 +95,11 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 
 `primary:e2e:room-flow:full`은 Supabase 환경 변수가 없는 환경에서는 실행되지 않습니다.
 
+성능 계측 팁:
+- dev에서는 브라우저 콘솔에서 바로 `plan2space:renderer-stats`, `plan2space:interaction-latency` 이벤트를 구독하면 된다.
+- production build 측정 시에는 URL에 `?telemetry=1`을 붙이거나 콘솔에서 `window.__PLAN2SPACE_TELEMETRY__ = true`를 설정한 뒤 새로고침한다.
+- 최신 샘플은 `window.__PLAN2SPACE_LAST_RENDERER_STATS__`, `window.__PLAN2SPACE_LAST_INTERACTION_LATENCY__`에서도 확인할 수 있다.
+
 ## 3) 배포 전 체크리스트
 
 - 빌더/에디터/뷰어 공통 레이아웃이 유지되는지 확인
@@ -106,6 +111,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay가 동일한 support asset / support surface / surface size / margin / top 높이 기준으로 동기화되는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay micro-view가 동일한 support-local marker / offset 위치를 가리키는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay가 footprint / projected footprint / edge clearance / relative yaw 기준까지 동기화되는지 확인
+- 필요 시 브라우저 콘솔에서 `plan2space:renderer-stats` / `plan2space:interaction-latency` 이벤트를 구독해 draw call, texture, hover/select/drag-start 지연을 같이 기록하는지 확인
 - `npm --workspace apps/web run verify:scene-document`가 placement/support/product metadata roundtrip 검증을 통과하는지 확인
 - `npm --workspace apps/web run verify:public-scene`가 shared viewer payload에서 placement/support/product metadata roundtrip 검증을 통과하는지 확인
 - `npm --workspace apps/web run verify:showcase-scene`가 gallery/community 카드 projection과 shared viewer public payload의 version/preview asset summary 정합성 검증을 통과하는지 확인

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { TransformControls as TransformControlsImpl } from "three-stdlib";
 import { resolveTopViewInteractionPolicy } from "../../../lib/editor/top-view-policy";
+import { scheduleInteractionLatency } from "../../../lib/performance/scene-telemetry";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import type { Floor, RoomZone, Wall } from "../../../lib/stores/useSceneStore";
@@ -297,7 +298,15 @@ export default function AssetTransformControls() {
       translationSnap={topViewPolicy.translationSnap}
       rotationSnap={topViewPolicy.rotationSnap}
       onObjectChange={applyLiveConstraints}
-      onMouseDown={() => setIsTransforming(true)}
+      onMouseDown={() => {
+        const startedAt = performance.now();
+        setIsTransforming(true);
+        scheduleInteractionLatency("gizmo-drag-start", startedAt, {
+          viewMode,
+          topMode,
+          targetId: selectedAssetId
+        });
+      }}
       onMouseUp={() => {
         setIsTransforming(false);
         const didCommit = commitTarget();

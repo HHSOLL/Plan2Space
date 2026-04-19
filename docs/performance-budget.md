@@ -93,6 +93,24 @@ E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 - `renderer.info.memory.geometries`
 - custom timestamp logs for hover/select/drag latency
 
+## Telemetry Hooks
+
+- 개발 모드에서는 `/project/[id]`, `/shared/[token]` 등 `SceneViewport`를 쓰는 경로가 기본으로 `plan2space:renderer-stats`, `plan2space:interaction-latency` 브라우저 이벤트를 발행한다.
+- production build에서는 URL에 `?telemetry=1`을 붙이거나 `window.__PLAN2SPACE_TELEMETRY__ = true`를 먼저 설정한 뒤 같은 이벤트를 켠다.
+- 최신 샘플은 `window.__PLAN2SPACE_LAST_RENDERER_STATS__`, `window.__PLAN2SPACE_LAST_INTERACTION_LATENCY__`에 남는다.
+- `renderer-stats`는 약 1초 간격으로 FPS / draw calls / triangles / textures / geometries를 보낸다.
+- `interaction-latency`는 hover / select / drag-start / gizmo-drag-start의 next-paint 기준 지연을 보낸다.
+
+```js
+window.addEventListener("plan2space:renderer-stats", (event) => {
+  console.table(event.detail);
+});
+
+window.addEventListener("plan2space:interaction-latency", (event) => {
+  console.log(event.detail);
+});
+```
+
 ```text
 route: /project/[id]
 scenario: dense desk
@@ -155,3 +173,13 @@ Updated:
 
 Removed/Deprecated:
 - 모든 non-top 모드가 같은 bloom/shadow/fill-light 비용을 측정한다는 가정.
+
+## 2026-04-19 변경 동기화 (Telemetry Hooks)
+Added:
+- `SceneViewport` 공용 경로에 `plan2space:renderer-stats` / `plan2space:interaction-latency` 브라우저 이벤트 기반 계측 훅을 추가했다.
+
+Updated:
+- `renderer.info` 측정 절차를 "수동 콘솔 조회"에서 "1초 샘플링 이벤트 + 최신 스냅샷 window slot" 기준으로 구체화했다.
+
+Removed/Deprecated:
+- 조작 지연을 ad-hoc DevTools 타임라인에서만 확인하던 측정 방식.
