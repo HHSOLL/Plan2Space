@@ -40,6 +40,7 @@
 - preview orbit은 wheel zoom과 drag rotation을 기본 제스처로 제공하고 pan은 보조 동작으로 제한하거나 비활성화한다.
 - editor top-view는 orthographic top camera를 방 중심에 고정하고 좌/우 회전 버튼 + zoom만 허용하며 pan은 금지한다.
 - editor top-view의 room shell은 floor 위 footprint strip으로 읽혀야 하고, walk/builder-preview에서만 full-height wall mesh를 사용한다.
+- desk precision mode는 선택 제품의 위치/회전 값을 `mm/deg` measurement overlay로 함께 노출해 미세 배치 확인을 보조한다.
 - walk view 진입 시 기본 시선은 room center/entrance target을 향해야 한다.
 
 ## 뷰어 규칙
@@ -219,6 +220,16 @@ Updated:
 
 Removed/Deprecated:
 - shared viewer와 builder preview가 full walk/showcase와 같은 fill-light/bloom/shadow pass를 기본으로 유지한다는 가정.
+
+## 2026-04-19 변경 동기화 (Desk Precision Measurements)
+Added:
+- desk precision mode에서 선택 자산의 위치/회전을 `mm/deg` overlay로 표시하는 품질 기준을 추가한다.
+
+Updated:
+- 정밀 편집 inspector 입력 기준을 meter/radian이 아니라 `mm/deg` 사용자 단위 기준으로 갱신한다.
+
+Removed/Deprecated:
+- 정밀 편집 inspector가 내부 renderer 단위를 그대로 보여주는 가정.
 
 ## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
 Added:

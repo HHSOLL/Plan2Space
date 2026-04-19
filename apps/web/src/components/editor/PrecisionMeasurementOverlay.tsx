@@ -1,0 +1,69 @@
+import type { LibraryCatalogItem } from "../../lib/builder/catalog";
+import { metersToMillimeters, radiansToDegrees } from "../../lib/domain/scene-placement";
+import type { SceneAsset } from "../../lib/stores/useSceneStore";
+
+type PrecisionMeasurementOverlayProps = {
+  selectedAsset: SceneAsset | null;
+  selectedAssetMeta: LibraryCatalogItem | null;
+  formatAssetLabel: (assetId: string) => string;
+};
+
+function toRoundedDegree(value: number) {
+  return Math.round(radiansToDegrees(value) * 10) / 10;
+}
+
+function formatDimensions(
+  dimensions: { width: number; depth: number; height: number } | null | undefined
+) {
+  if (!dimensions) return null;
+  return `W ${dimensions.width} / D ${dimensions.depth} / H ${dimensions.height} mm`;
+}
+
+export function PrecisionMeasurementOverlay({
+  selectedAsset,
+  selectedAssetMeta,
+  formatAssetLabel
+}: PrecisionMeasurementOverlayProps) {
+  if (!selectedAsset) {
+    return null;
+  }
+
+  const dimensions = selectedAsset.product?.dimensionsMm ?? selectedAssetMeta?.dimensionsMm ?? null;
+  const dimensionsLabel = formatDimensions(dimensions);
+  const anchorLabel = selectedAsset.anchorType?.replaceAll("_", " ") ?? "floor";
+
+  return (
+    <div className="pointer-events-none absolute bottom-4 right-4 z-[24] w-[min(92vw,320px)] rounded-[22px] border border-black/10 bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,18,22,0.14)] backdrop-blur-xl">
+      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">Desk Precision</div>
+      <div className="mt-2 text-sm font-semibold text-[#1f1b16]">
+        {selectedAssetMeta?.label ?? formatAssetLabel(selectedAsset.assetId)}
+      </div>
+      <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[#8b8277]">{anchorLabel}</div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#5f574d]">
+        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">X</div>
+          <div className="mt-1 font-semibold text-[#1f1b16]">{metersToMillimeters(selectedAsset.position[0])} mm</div>
+        </div>
+        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">Z</div>
+          <div className="mt-1 font-semibold text-[#1f1b16]">{metersToMillimeters(selectedAsset.position[2])} mm</div>
+        </div>
+        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">Y</div>
+          <div className="mt-1 font-semibold text-[#1f1b16]">{metersToMillimeters(selectedAsset.position[1])} mm</div>
+        </div>
+        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">회전</div>
+          <div className="mt-1 font-semibold text-[#1f1b16]">{toRoundedDegree(selectedAsset.rotation[1])} deg</div>
+        </div>
+      </div>
+
+      {dimensionsLabel ? (
+        <div className="mt-3 rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-[11px] font-semibold text-[#1f1b16]">
+          {dimensionsLabel}
+        </div>
+      ) : null}
+    </div>
+  );
+}

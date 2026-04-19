@@ -2,6 +2,12 @@
 
 import { SlidersHorizontal, Trash2 } from "lucide-react";
 import type { LibraryCatalogItem } from "../../lib/builder/catalog";
+import {
+  degreesToRadians,
+  metersToMillimeters,
+  millimetersToMeters,
+  radiansToDegrees
+} from "../../lib/domain/scene-placement";
 import { SCENE_ANCHOR_TYPES, type SceneAnchorType } from "../../lib/scene/anchor-types";
 import { builderFloorFinishes, builderWallFinishes } from "../../lib/builder/templates";
 import {
@@ -48,6 +54,10 @@ function formatDimensionsMm(
 ) {
   if (!dimensions) return null;
   return `W ${dimensions.width} / D ${dimensions.depth} / H ${dimensions.height} mm`;
+}
+
+function toRoundedDegree(value: number) {
+  return Math.round(radiansToDegrees(value) * 10) / 10;
 }
 
 export function BuilderInspectorPanel({
@@ -393,15 +403,15 @@ export function BuilderInspectorPanel({
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                  X
+                  X (mm)
                   <input
                     type="number"
-                    step="0.25"
-                    value={selectedAsset.position[0]}
+                    step="1"
+                    value={metersToMillimeters(selectedAsset.position[0])}
                     onChange={(event) =>
                       onUpdateAsset(selectedAsset.id, {
                         position: [
-                          Number(event.target.value),
+                          millimetersToMeters(Number(event.target.value)),
                           selectedAsset.position[1],
                           selectedAsset.position[2]
                         ]
@@ -411,17 +421,17 @@ export function BuilderInspectorPanel({
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                  Z
+                  Z (mm)
                   <input
                     type="number"
-                    step="0.25"
-                    value={selectedAsset.position[2]}
+                    step="1"
+                    value={metersToMillimeters(selectedAsset.position[2])}
                     onChange={(event) =>
                       onUpdateAsset(selectedAsset.id, {
                         position: [
                           selectedAsset.position[0],
                           selectedAsset.position[1],
-                          Number(event.target.value)
+                          millimetersToMeters(Number(event.target.value))
                         ]
                       })
                     }
@@ -429,17 +439,17 @@ export function BuilderInspectorPanel({
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                  Y
+                  Y (mm)
                   <input
                     type="number"
-                    step="0.1"
-                    value={selectedAsset.position[1]}
+                    step="1"
+                    value={metersToMillimeters(selectedAsset.position[1])}
                     disabled={isYManagedByAnchor}
                     onChange={(event) =>
                       onUpdateAsset(selectedAsset.id, {
                         position: [
                           selectedAsset.position[0],
-                          Number(event.target.value),
+                          millimetersToMeters(Number(event.target.value)),
                           selectedAsset.position[2]
                         ]
                       })
@@ -452,17 +462,17 @@ export function BuilderInspectorPanel({
                   />
                 </label>
                 <label className="space-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
-                  Y축 회전
+                  Y축 회전 (deg)
                   <input
                     type="number"
-                    step="0.1"
-                    value={selectedAsset.rotation[1]}
+                    step="1"
+                    value={toRoundedDegree(selectedAsset.rotation[1])}
                     disabled={isRotationManagedByAnchor}
                     onChange={(event) =>
                       onUpdateAsset(selectedAsset.id, {
                         rotation: [
                           selectedAsset.rotation[0],
-                          Number(event.target.value),
+                          degreesToRadians(Number(event.target.value)),
                           selectedAsset.rotation[2]
                         ]
                       })
@@ -495,6 +505,39 @@ export function BuilderInspectorPanel({
                   />
                 </label>
               </div>
+              {topMode === "desk-precision" ? (
+                <div className="rounded-[18px] border border-black/10 bg-white p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
+                    정밀 측정
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#5f574d]">
+                    <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">X</div>
+                      <div className="mt-1 font-semibold text-[#1f1b16]">
+                        {metersToMillimeters(selectedAsset.position[0])} mm
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">Z</div>
+                      <div className="mt-1 font-semibold text-[#1f1b16]">
+                        {metersToMillimeters(selectedAsset.position[2])} mm
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">Y</div>
+                      <div className="mt-1 font-semibold text-[#1f1b16]">
+                        {metersToMillimeters(selectedAsset.position[1])} mm
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">회전</div>
+                      <div className="mt-1 font-semibold text-[#1f1b16]">
+                        {toRoundedDegree(selectedAsset.rotation[1])} deg
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               {isYManagedByAnchor || isRotationManagedByAnchor ? (
                 <div className="text-[10px] uppercase tracking-[0.14em] text-[#8b8277]">
                   현재 기준면이

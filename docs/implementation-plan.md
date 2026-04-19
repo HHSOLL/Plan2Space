@@ -126,6 +126,16 @@
 - 책상 위 자산 배치가 1~5mm 체감 오차 범위에서 유지된다.
 - room mode와 desk precision mode가 서로의 조작 정책을 침범하지 않는다.
 
+## 2026-04-19 변경 동기화 (Phase 3 Slice 3 Sub-slice 1)
+Added:
+- desk precision mode에서 선택 자산의 X/Y/Z + Yaw를 `mm/deg` 기준으로 보여주는 numeric inspector와 measurement overlay를 추가했다.
+
+Updated:
+- Phase 3 Slice 3을 `정밀 배치 UI와 측정 오버레이` 전체 완료 전 단계로 유지하되, sub-slice 1 범위를 `mm/deg numeric inspector + measurement overlay` 완료 상태로 기록한다.
+
+Removed/Deprecated:
+- inspector가 내부 meter/radian 값을 그대로 노출하던 기준.
+
 ### Phase 4. 모드별 렌더 품질 사다리
 목표:
 - top view, desk precision, walk/viewer가 같은 렌더 비용을 계속 지지 않도록 분리한다.
@@ -227,7 +237,8 @@ Removed/Deprecated:
 
 현재 착수:
 - 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
-- 다음 후보: 후속 phase 재정의 또는 별도 실험 브랜치에서 presence/realtime prototype 착수
+- 진행 중: Phase 3 / Slice 3 (sub-slice 1 완료, micro-view / surface lock / extended measurement는 후속)
+- 다음 후보: Phase 3 / Slice 3 sub-slice 2 또는 Phase 3 / Slice 4
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`

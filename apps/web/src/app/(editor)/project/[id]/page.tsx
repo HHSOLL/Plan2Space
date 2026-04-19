@@ -21,6 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { BuilderInspectorPanel } from "../../../../components/editor/BuilderInspectorPanel";
 import { BuilderLaunchState } from "../../../../components/editor/BuilderLaunchState";
+import { PrecisionMeasurementOverlay } from "../../../../components/editor/PrecisionMeasurementOverlay";
 import { ProjectEditorViewport } from "../../../../components/editor/ProjectEditorViewport";
 import { ProjectEditorHeader } from "../../../../components/editor/ProjectEditorHeader";
 import { ShareModal } from "../../../../components/editor/ShareModal";
@@ -838,6 +839,13 @@ export default function ProjectEditorPage() {
                     modeBadge={viewMode === "top" ? topViewPolicy.shortLabel : undefined}
                     bottomNotice={viewMode === "top" ? topModeNotice : undefined}
                   />
+                  {viewMode === "top" && topMode === "desk-precision" ? (
+                    <PrecisionMeasurementOverlay
+                      selectedAsset={selectedAsset}
+                      selectedAssetMeta={selectedCatalogItem}
+                      formatAssetLabel={formatAssetIdLabel}
+                    />
+                  ) : null}
                 </div>
               </div>
             </motion.div>

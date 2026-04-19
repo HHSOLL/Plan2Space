@@ -16,10 +16,26 @@ export type ScenePlacementVectors = {
   scale: MeterVector3;
 };
 
-const MILLIMETERS_PER_METER = 1000;
-const MILLIDEGREES_PER_RADIAN = (180 * 1000) / Math.PI;
-const RADIANS_PER_MILLIDEGREE = Math.PI / (180 * 1000);
+export const MILLIMETERS_PER_METER = 1000;
+export const MILLIDEGREES_PER_RADIAN = (180 * 1000) / Math.PI;
+export const RADIANS_PER_MILLIDEGREE = Math.PI / (180 * 1000);
 const SCALE_PERMILLE_FACTOR = 1000;
+
+export function metersToMillimeters(value: number) {
+  return Math.round(value * MILLIMETERS_PER_METER);
+}
+
+export function millimetersToMeters(value: number) {
+  return value / MILLIMETERS_PER_METER;
+}
+
+export function radiansToDegrees(value: number) {
+  return (value * 180) / Math.PI;
+}
+
+export function degreesToRadians(value: number) {
+  return (value * Math.PI) / 180;
+}
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -60,9 +76,9 @@ export function serializeScenePlacement(input: ScenePlacementVectors): ScenePlac
   return {
     unit: "mm",
     positionMm: [
-      Math.round(input.position[0] * MILLIMETERS_PER_METER),
-      Math.round(input.position[1] * MILLIMETERS_PER_METER),
-      Math.round(input.position[2] * MILLIMETERS_PER_METER)
+      metersToMillimeters(input.position[0]),
+      metersToMillimeters(input.position[1]),
+      metersToMillimeters(input.position[2])
     ],
     rotationMilliDeg: [
       Math.round(input.rotation[0] * MILLIDEGREES_PER_RADIAN),
