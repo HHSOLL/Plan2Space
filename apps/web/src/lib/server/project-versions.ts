@@ -524,6 +524,19 @@ function buildProjectVersionCustomization(
   };
 }
 
+export function buildSceneDocumentBootstrapFromSavePayload(rawPayload: unknown) {
+  const payload = SaveVersionSchema.parse(rawPayload);
+  const resolvedRoomShell = buildRoomShell(payload.roomShell);
+
+  return {
+    document: buildSceneDocument(payload.roomShell, payload.assets, payload.materials, payload.lighting),
+    entranceId: resolvedRoomShell.entranceId,
+    diagnostics: {
+      source: "save-payload"
+    }
+  };
+}
+
 async function requireOwnedProject(
   supabase: SupabaseClient<Database>,
   projectId: string,

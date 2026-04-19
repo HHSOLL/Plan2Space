@@ -260,6 +260,16 @@ Removed/Deprecated:
 - 진행 중: Phase 3 / Slice 3 (sub-slice 1, 2, 3 완료, extended measurement는 후속)
 - 다음 후보: Phase 3 / Slice 4
 
+## 2026-04-19 변경 동기화 (Phase 3 Slice 4 Sub-slice 1)
+Added:
+- save payload -> sceneDocument -> parse/load roundtrip에서 placement/support/product metadata를 검증하는 `verify:scene-document` 스크립트를 추가했다.
+
+Updated:
+- Phase 3 Slice 4를 구현 전 단계에서 `재현성 검증 게이트 추가` 진행 상태로 갱신한다.
+
+Removed/Deprecated:
+- save/load 재현성 점검이 수동 editor/viewer 확인에만 의존하던 기준.
+
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`
 - `npm --workspace apps/web run lint`

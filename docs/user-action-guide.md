@@ -85,6 +85,7 @@
 
 ```bash
 npm --workspace apps/web run qa:primary
+npm --workspace apps/web run verify:scene-document
 E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 npm --workspace apps/web run primary:e2e:room-flow:full
 ```
@@ -101,6 +102,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - desk precision mode에서 선택 자산의 inspector와 measurement overlay가 동일한 X/Z/Y(mm), Yaw(deg), 실측 W/D/H(mm) 기준으로 동기화되는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay가 동일한 support asset / support surface / surface size / margin / top 높이 기준으로 동기화되는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay micro-view가 동일한 support-local marker / offset 위치를 가리키는지 확인
+- `npm --workspace apps/web run verify:scene-document`가 placement/support/product metadata roundtrip 검증을 통과하는지 확인
 - shared viewer가 generic showcase viewer와 다른 경량 preset으로 동작해도 제품 hotspot / drawer 읽기 흐름은 유지되는지 확인
 - shared viewer walk HUD는 터치 조작용 요소만 남고 crosshair는 보이지 않는지 확인
 - shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
@@ -457,3 +459,13 @@ Updated:
 
 Removed/Deprecated:
 - support-local 위치를 숫자 텍스트만 맞으면 충분하다는 QA 가정.
+
+## 2026-04-19 변경 동기화 (SceneDocument Roundtrip Verify)
+Added:
+- `verify:scene-document` 실행으로 placement/support/product metadata roundtrip 검증을 수행하는 QA 항목을 추가.
+
+Updated:
+- 정밀 편집 회귀 확인을 UI 점검만이 아니라 저장/복원 재현성 스크립트 통과까지 포함하도록 확장.
+
+Removed/Deprecated:
+- save/load 재현성 검증을 수동 editor/shared viewer 확인에만 의존하던 QA 기준.

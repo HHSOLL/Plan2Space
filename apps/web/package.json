@@ -17,6 +17,7 @@
     "assets:validate:deskterior": "node --import tsx scripts/validate-deskterior-gltf.ts",
     "assets:verify:deskterior": "node --import tsx scripts/verify-deskterior-pipeline.ts",
     "assets:optimize:deskterior": "node --import tsx scripts/optimize-deskterior-runtime.ts",
+    "verify:scene-document": "node --import tsx scripts/verify-scene-document-roundtrip.ts",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs"
   },
   "dependencies": {
