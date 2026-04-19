@@ -165,6 +165,7 @@ Added:
 - `/community`를 질문/피드백/챌린지 성격의 커뮤니티 허브로 구분하는 규칙을 추가.
 - `/studio`를 gallery 톤의 개인 프로젝트 아카이브로 재정의하고, 프로젝트 필터/검색 UI를 허용한다.
 - 전역 navbar 탭을 우측 정렬로 통일하고, non-editor 페이지에는 navbar 높이만큼의 전역 오프셋을 적용한다.
+- gallery/community의 summary, featured, latest metadata는 현재 페이지 조각이 아니라 active filter scope 전체를 대표해야 한다.
 
 Updated:
 - gallery는 발행 장면 아카이브, community는 대화 중심 허브라는 역할 차이를 명시.
@@ -238,6 +239,16 @@ Updated:
 
 Removed/Deprecated:
 - shared viewer가 editor와 같은 crosshair 계열 HUD를 기본으로 노출한다는 가정.
+
+## 2026-04-19 변경 동기화 (Gallery + Community Filter Scope Summary)
+Added:
+- gallery/community가 active filter scope 기준 `matching total`, `latest publish`, `featured scene`, `top collection` summary를 읽는 규칙을 추가한다.
+
+Updated:
+- community header/side summary가 현재 페이지 카드 묶음이 아니라 필터 전체 아카이브를 대표하도록 갱신한다.
+
+Removed/Deprecated:
+- 페이지네이션 cursor 이후에도 summary가 현재 페이지 조각만 대표해도 충분하다는 가정.
 
 ## 2026-04-17 변경 동기화 (Platform Cleanup + Asset Delivery Freeze)
 Added:

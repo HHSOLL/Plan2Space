@@ -30,6 +30,14 @@ export type ShowcaseSnapshotFeed = {
   hasMore: boolean;
 };
 
+export type ShowcaseArchiveSummary = {
+  matchingTotal: number;
+  archiveTotal: number;
+  latestPublishedAt: string | null;
+  topCollection: { label: string; count: number } | null;
+  featuredItem: ShowcaseSnapshotItem | null;
+};
+
 type ShowcaseProjectRow = {
   meta: Record<string, unknown> | null;
   thumbnail_path: string | null;
@@ -269,6 +277,54 @@ async function collectFilteredPageRows(
   return matches;
 }
 
+async function scanShowcaseArchiveSummary(filters: ReturnType<typeof normalizeShowcaseFilters>) {
+  let matchingTotal = 0;
+  let batchCursor: ShowcaseCursorPayload | null = null;
+  let featuredRow: ShowcaseBatchRow | null = null;
+  const collectionCounts = new Map<string, number>();
+  const batchSize = 120;
+
+  while (true) {
+    const batch = await fetchShowcaseBatch(batchCursor, batchSize);
+    if (batch.length === 0) {
+      break;
+    }
+
+    for (const row of batch) {
+      if (!matchesFilters(row, filters)) {
+        continue;
+      }
+
+      matchingTotal += 1;
+      featuredRow ??= row;
+
+      const assetSummary = getSharePreviewMeta(row.preview_meta)?.assetSummary;
+      for (const collection of assetSummary?.collections ?? []) {
+        collectionCounts.set(collection.label, (collectionCounts.get(collection.label) ?? 0) + collection.count);
+      }
+    }
+
+    if (batch.length < batchSize) {
+      break;
+    }
+
+    batchCursor = getItemCursor(batch[batch.length - 1]);
+  }
+
+  const topCollection =
+    Array.from(collectionCounts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))[0] ?? null;
+  const featuredItem = featuredRow ? (await mapShowcaseRows([featuredRow]))[0] ?? null : null;
+
+  return {
+    matchingTotal,
+    latestPublishedAt: featuredRow?.published_at ?? null,
+    topCollection,
+    featuredItem
+  };
+}
+
 async function mapShowcaseRows(rows: ShowcaseBatchRow[]) {
   return Promise.all(
     rows.map(async (item) => {
@@ -362,6 +418,26 @@ export async function fetchShowcaseSnapshotFeed(input: number | ShowcaseFeedInpu
     total,
     nextCursor,
     hasMore
+  };
+}
+
+export async function fetchShowcaseArchiveSummary(
+  input: Pick<ShowcaseFeedInput, "room" | "tone" | "density"> = {}
+): Promise<ShowcaseArchiveSummary> {
+  const filters = normalizeShowcaseFilters({
+    room: input.room,
+    tone: input.tone,
+    density: input.density
+  });
+  const summary = await scanShowcaseArchiveSummary(filters);
+  const archiveTotal = hasActiveFilters(filters) ? await countAllShowcaseRows() : summary.matchingTotal;
+
+  return {
+    matchingTotal: summary.matchingTotal,
+    archiveTotal,
+    latestPublishedAt: summary.latestPublishedAt,
+    topCollection: summary.topCollection,
+    featuredItem: summary.featuredItem
   };
 }
 

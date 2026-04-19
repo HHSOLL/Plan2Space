@@ -14,7 +14,7 @@ import {
   type ShowcaseFilters,
   type ShowcaseSnapshotItem
 } from "../../lib/api/showcase";
-import { fetchShowcaseSnapshotFeed } from "../../lib/server/showcase";
+import { fetchShowcaseArchiveSummary, fetchShowcaseSnapshotFeed } from "../../lib/server/showcase";
 
 export const revalidate = 0;
 
@@ -81,18 +81,22 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
   });
   const currentCursor = readSearchParam(searchParams?.cursor) ?? null;
   const totalHint = parseTotalHint(readSearchParam(searchParams?.total) ?? null);
+  const archiveSummary = await fetchShowcaseArchiveSummary(filters).catch(() => null);
+  const resolvedTotalHint = totalHint ?? archiveSummary?.matchingTotal ?? null;
 
   const {
     items: snapshots,
-    total: totalPublished,
+    total: feedTotal,
     nextCursor,
     hasMore,
     error: showcaseError
-  } = await fetchShowcaseArchivePage(currentCursor, totalHint, filters);
+  } = await fetchShowcaseArchivePage(currentCursor, resolvedTotalHint, filters);
 
   const activeFilterCount =
     Number(filters.room !== "all") + Number(filters.tone !== "all") + Number(filters.density !== "all");
-  const collections = Array.from(
+  const matchingTotal = archiveSummary?.matchingTotal ?? feedTotal;
+  const archiveTotal = archiveSummary?.archiveTotal ?? matchingTotal;
+  const collectionFallback = Array.from(
     snapshots
       .flatMap((snapshot) => snapshot.previewMeta?.assetSummary?.collections ?? [])
       .reduce<Map<string, number>>((map, collection) => {
@@ -100,10 +104,13 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
         return map;
       }, new Map())
       .entries()
-  );
-  const latestPublish = snapshots[0]?.published_at ?? null;
-  const loadMoreHref = nextCursor ? buildPageHref("/community", filters, nextCursor, totalPublished) : null;
-  const featuredSnapshot = snapshots[0] ?? null;
+  )
+    .map(([label, count]) => ({ label, count }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))[0] ?? null;
+  const latestPublish = archiveSummary?.latestPublishedAt ?? snapshots[0]?.published_at ?? null;
+  const loadMoreHref = nextCursor ? buildPageHref("/community", filters, nextCursor, matchingTotal) : null;
+  const featuredSnapshot = archiveSummary?.featuredItem ?? snapshots[0] ?? null;
+  const topCollection = archiveSummary?.topCollection ?? collectionFallback;
   const conversationCards = snapshots.slice(0, 3).map((snapshot, index) => {
     const profile = getShowcaseSnapshotProfileFromPreviewMeta(snapshot.previewMeta);
     return {
@@ -135,8 +142,8 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
   const statusDescription = showcaseError
     ? "커뮤니티 목록을 확인할 수 없습니다."
     : activeFilterCount > 0
-      ? `현재 조건에 맞는 장면 ${snapshots.length}개를 불러왔습니다.`
-      : `현재 공개된 발행 장면 ${totalPublished}개를 탐색할 수 있습니다.`;
+      ? `현재 조건 결과 ${matchingTotal}개 / 공개 전체 ${archiveTotal}개를 탐색할 수 있습니다.`
+      : `현재 공개된 발행 장면 ${archiveTotal}개를 탐색할 수 있습니다.`;
 
   return (
     <div className="min-h-screen bg-[#f6f5f1] px-4 pb-20 pt-6 text-[#171411] sm:px-6 lg:px-10">
@@ -179,16 +186,14 @@ export default async function CommunityPage({ searchParams }: { searchParams?: S
               </div>
               <div className="rounded-[24px] border border-black/10 bg-white/82 p-5 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
                 <div className="text-[10px] font-semibold tracking-[0.2em] text-[#8a8177]">활동 지표</div>
-                <div className="mt-4 text-3xl font-semibold text-[#171411]">{totalPublished}</div>
+                <div className="mt-4 text-3xl font-semibold text-[#171411]">{archiveTotal}</div>
                 <p className="mt-2 text-sm leading-6 text-[#625a51]">지금 공개된 커뮤니티 장면 수</p>
               </div>
               <div className="rounded-[24px] border border-black/10 bg-white/82 p-5 shadow-[0_18px_46px_rgba(68,52,34,0.07)]">
                 <div className="text-[10px] font-semibold tracking-[0.2em] text-[#8a8177]">주요 컬렉션</div>
-                <div className="mt-4 text-sm font-semibold text-[#171411]">
-                  {collections[0]?.[0] ?? "가구 레이어"}
-                </div>
+                <div className="mt-4 text-sm font-semibold text-[#171411]">{topCollection?.label ?? "가구 레이어"}</div>
                 <p className="mt-2 text-sm leading-6 text-[#625a51]">
-                  {collections[0]?.[1] ?? 0}개 장면에서 가장 많이 등장했습니다.
+                  {topCollection?.count ?? 0}회 등장한 대표 컬렉션입니다.
                 </p>
               </div>
             </div>

@@ -72,6 +72,8 @@
 27. room mode에서는 후처리/동적 조명이 꺼지고, desk precision mode에서는 정밀 확인에 필요한 저비용 bloom/조명만 선택적으로 올라오는지 확인하기
 28. shared viewer는 editor보다 더 가벼운 read-only preset으로 열리고, hotspot drawer 동작에는 영향이 없는지 확인하기
 29. shared viewer 첫 진입 시 어떤 제품도 자동 선택되지 않고, hotspot 또는 목록 선택 이후에만 상세 카드가 열리는지 확인하기
+30. gallery/community에서 room/tone/density 필터를 건 뒤 header count와 다음 페이지 total이 현재 필터 결과 기준으로 유지되는지 확인하기
+31. community에서 최신 게시, featured 장면, 주요 컬렉션 summary가 현재 페이지 카드 조각이 아니라 active filter scope 전체 기준으로 유지되는지 확인하기
 
 실행 명령:
 
@@ -96,6 +98,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - 뷰어에 편집 affordance가 노출되지 않는지 확인
 - 갤러리/커뮤니티 카드가 `/shared/[token]` 읽기 전용 뷰어로 이동하는지 확인
 - 갤러리/커뮤니티 피드가 레퍼런스 8번 기준의 4열 카드 밀도와 상단 filter rail을 유지하는지 확인
+- 갤러리 필터 결과 수, 커뮤니티 latest/featured/top collection summary가 페이지네이션 이후에도 같은 filter scope 기준으로 유지되는지 확인
 - 커뮤니티가 갤러리와 달리 토론/챌린지/최신 게시물로 구분된 허브 구조를 가지는지 확인
 - `/studio`가 개인 프로젝트 아카이브 톤으로 정리되고 필터/검색이 동작하는지 확인
 - 제품 클릭 시 정보 drawer가 열리고 최소 필드가 노출되는지 확인
