@@ -13,6 +13,9 @@ Plan2Space의 메인 자산 경로는 **deskterior 카탈로그 + Blender/오픈
 npm --workspace apps/web run assets:export:deskterior -- --report
 npm --workspace apps/web run assets:export:deskterior
 npm --workspace apps/web run assets:sync:deskterior
+npm --workspace apps/web run assets:sync:ktx2-transcoder
+npm --workspace apps/web run assets:optimize:deskterior
+npm --workspace apps/web run assets:validate:deskterior
 npm --workspace apps/web run assets:verify:deskterior
 ```
 
@@ -20,6 +23,10 @@ npm --workspace apps/web run assets:verify:deskterior
 
 - Blender source(.blend) 존재/신선도 검사 + 런타임 GLB export
 - Plan2Space 제작 deskterior 자산(p2s_*) upsert
+- basis transcoder public sync(`apps/web/public/assets/transcoders/basis`)
+- Meshopt 최적화와 budget re-check
+- curated supportProfile surface/anchor metadata 검증
+- Khronos glTF Validator 기반 구조/리소스 검증
 - 오픈소스 desk/chair/lamp 메타데이터(brand/options/externalUrl) 보강
 - 제품 인스펙터 표준 필드(thumbnail/price/options/externalUrl/brand) 유지
 
@@ -49,6 +56,8 @@ npm --workspace apps/web run assets:verify:deskterior
 현재 상태:
 - curated catalog는 아직 `apps/web/public/assets/*`를 fallback runtime으로 사용한다.
 - generated asset은 Supabase Storage(`assets-glb`)를 사용한다.
+- KTX2 runtime decode 경로는 준비됐고, `assets:sync:ktx2-transcoder`가 three basis transcoder를 public 경로에 동기화한다.
+- 실제 `KHR_texture_basisu` 인코딩은 로컬 `toktx` 같은 encoder가 있는 환경에서만 추가할 수 있다.
 - 2026-04-18 정리에서 legacy floorplan/intake/revision live data와 `floor-plans` bucket이 제거되었고, active bucket은 `assets-glb`, `project-media`만 남는다.
 
 ## 4) 레거시/보조 경로: Worker 생성형 GLB

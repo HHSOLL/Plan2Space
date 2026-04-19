@@ -1,16 +1,8 @@
 import { access, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
-type CuratedAsset = {
-  key: string;
-  manifestId: string;
-  sourcePath: string;
-  runtimePath: string;
-  expectedAssetId: string;
-  requiredMetadata: Array<"brand" | "externalUrl" | "description" | "category" | "options">;
-  optionsHint?: string;
-};
+import { curatedDeskteriorAssets } from "./deskterior-curated-assets";
+import { normalizeAssetSupportProfile } from "../src/lib/scene/support-profiles";
 
 type ManifestEntry = Record<string, unknown> & {
   id?: unknown;
@@ -25,6 +17,7 @@ type ManifestEntry = Record<string, unknown> & {
   finishMaterial?: unknown;
   detailNotes?: unknown;
   scaleLocked?: unknown;
+  supportProfile?: unknown;
 };
 
 type VerificationError = {
@@ -47,6 +40,7 @@ type CuratedAssetResult = {
   manifestEntryExists: boolean;
   manifestAssetIdMatches: boolean;
   metadataValid: boolean;
+  supportProfileValid: boolean;
   optionsHintValid: boolean;
 };
 
@@ -59,6 +53,7 @@ type Summary = {
     runtimeFilesFound: number;
     freshRuntimeFiles: number;
     curatedManifestEntriesValid: number;
+    curatedSupportProfilesValid: number;
     duplicateManifestIds: number;
     errors: number;
   };
@@ -70,77 +65,8 @@ type Summary = {
 const scriptFile = fileURLToPath(import.meta.url);
 const scriptDir = path.dirname(scriptFile);
 const appRoot = path.resolve(scriptDir, "..");
-const repoRoot = path.resolve(appRoot, "../..");
 const publicRoot = path.join(appRoot, "public");
 const manifestPath = path.join(publicRoot, "assets", "catalog", "manifest.json");
-
-const curatedAssets: CuratedAsset[] = [
-  {
-    key: "p2s_desk_oak",
-    manifestId: "p2s_desk_oak_140",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_oak.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_oak", "p2s_desk_oak.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_oak/p2s_desk_oak.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_monitor_stand",
-    manifestId: "p2s_monitor_stand_wood",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_monitor_stand.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_monitor_stand", "p2s_monitor_stand.glb"),
-    expectedAssetId: "/assets/models/p2s_monitor_stand/p2s_monitor_stand.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_desk_lamp_glow",
-    manifestId: "p2s_desk_lamp_glow",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_lamp_glow.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_lamp_glow", "p2s_desk_lamp_glow.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_lamp_glow/p2s_desk_lamp_glow.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"],
-    optionsHint: "light-emitter"
-  },
-  {
-    key: "p2s_ceramic_mug",
-    manifestId: "p2s_ceramic_mug_sand",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_ceramic_mug.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_ceramic_mug", "p2s_ceramic_mug.glb"),
-    expectedAssetId: "/assets/models/p2s_ceramic_mug/p2s_ceramic_mug.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_book_stack_warm",
-    manifestId: "p2s_book_stack_warm",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_book_stack_warm.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_book_stack_warm", "p2s_book_stack_warm.glb"),
-    expectedAssetId: "/assets/models/p2s_book_stack_warm/p2s_book_stack_warm.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_desk_tray_oak",
-    manifestId: "p2s_desk_tray_oak",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_tray_oak.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_tray_oak", "p2s_desk_tray_oak.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_tray_oak/p2s_desk_tray_oak.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_compact_speaker",
-    manifestId: "p2s_compact_speaker",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_compact_speaker.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_compact_speaker", "p2s_compact_speaker.glb"),
-    expectedAssetId: "/assets/models/p2s_compact_speaker/p2s_compact_speaker.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  },
-  {
-    key: "p2s_desk_planter_pilea",
-    manifestId: "p2s_desk_planter_pilea",
-    sourcePath: path.join(repoRoot, "assets", "blender", "deskterior", "p2s_desk_planter_pilea.blend"),
-    runtimePath: path.join(publicRoot, "assets", "models", "p2s_desk_planter_pilea", "p2s_desk_planter_pilea.glb"),
-    expectedAssetId: "/assets/models/p2s_desk_planter_pilea/p2s_desk_planter_pilea.glb",
-    requiredMetadata: ["brand", "externalUrl", "description", "category", "options"]
-  }
-];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -152,6 +78,22 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
 
 function isPositiveNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isWithinTolerance(actual: number, expected: number, tolerance = 0.005) {
+  return Math.abs(actual - expected) <= tolerance;
+}
+
+function sortStrings(values: readonly string[]) {
+  return [...values].sort((left, right) => left.localeCompare(right));
+}
+
+function formatMeters(value: number) {
+  return `${value.toFixed(3)} m`;
 }
 
 function toAssetId(runtimePath: string) {
@@ -253,8 +195,9 @@ async function buildSummary(): Promise<Summary> {
   let runtimeFilesFound = 0;
   let freshRuntimeFiles = 0;
   let curatedManifestEntriesValid = 0;
+  let curatedSupportProfilesValid = 0;
 
-  for (const asset of curatedAssets) {
+  for (const asset of curatedDeskteriorAssets) {
     const result: CuratedAssetResult = {
       key: asset.key,
       manifestId: asset.manifestId,
@@ -267,6 +210,7 @@ async function buildSummary(): Promise<Summary> {
       manifestEntryExists: false,
       manifestAssetIdMatches: false,
       metadataValid: false,
+      supportProfileValid: asset.supportProfileExpectation ? false : true,
       optionsHintValid: asset.optionsHint ? false : true
     };
 
@@ -412,6 +356,191 @@ async function buildSummary(): Promise<Summary> {
 
     result.metadataValid = metadataValid;
 
+    let supportProfileValid = asset.supportProfileExpectation ? false : true;
+    if (asset.supportProfileExpectation) {
+      const actualSupportProfile = normalizeAssetSupportProfile(entry.supportProfile);
+      if (!actualSupportProfile) {
+        createError(
+          errors,
+          "manifest.support_profile_missing",
+          'Manifest field "supportProfile" must be a valid support surface object for this curated asset.',
+          {
+            assetKey: asset.key,
+            manifestId: asset.manifestId,
+            path: manifestPath
+          }
+        );
+      } else {
+        supportProfileValid = true;
+        const expectedSurfaces = asset.supportProfileExpectation.surfaces;
+        const actualSurfaces = actualSupportProfile.surfaces;
+
+        if (actualSurfaces.length !== expectedSurfaces.length) {
+          supportProfileValid = false;
+          createError(
+            errors,
+            "manifest.support_profile_surface_count_mismatch",
+            `Manifest supportProfile must contain ${expectedSurfaces.length} surface(s) for this curated asset.`,
+            {
+              assetKey: asset.key,
+              manifestId: asset.manifestId,
+              path: manifestPath
+            }
+          );
+        }
+
+        const expectedSurfaceIds = new Set(expectedSurfaces.map((surface) => surface.id));
+        for (const actualSurface of actualSurfaces) {
+          if (!expectedSurfaceIds.has(actualSurface.id)) {
+            supportProfileValid = false;
+            createError(
+              errors,
+              "manifest.support_profile_unexpected_surface",
+              `Manifest supportProfile contains unexpected surface "${actualSurface.id}".`,
+              {
+                assetKey: asset.key,
+                manifestId: asset.manifestId,
+                path: manifestPath
+              }
+            );
+          }
+        }
+
+        for (const expectedSurface of expectedSurfaces) {
+          const actualSurface = actualSurfaces.find((surface) => surface.id === expectedSurface.id);
+          if (!actualSurface) {
+            supportProfileValid = false;
+            createError(
+              errors,
+              "manifest.support_profile_surface_missing",
+              `Manifest supportProfile is missing required surface "${expectedSurface.id}".`,
+              {
+                assetKey: asset.key,
+                manifestId: asset.manifestId,
+                path: manifestPath
+              }
+            );
+            continue;
+          }
+
+          const expectedAnchorTypes = sortStrings(expectedSurface.anchorTypes);
+          const actualAnchorTypes = sortStrings(actualSurface.anchorTypes);
+          if (expectedAnchorTypes.join("|") !== actualAnchorTypes.join("|")) {
+            supportProfileValid = false;
+            createError(
+              errors,
+              "manifest.support_profile_anchor_types_mismatch",
+              `Surface "${expectedSurface.id}" anchorTypes must be ${expectedAnchorTypes.join(", ")}.`,
+              {
+                assetKey: asset.key,
+                manifestId: asset.manifestId,
+                path: manifestPath
+              }
+            );
+          }
+
+          for (const [index, axis] of ["x", "z"].entries()) {
+            if (!isWithinTolerance(actualSurface.center[index], expectedSurface.center[index])) {
+              supportProfileValid = false;
+              createError(
+                errors,
+                "manifest.support_profile_center_mismatch",
+                `Surface "${expectedSurface.id}" center.${axis} must be ${formatMeters(expectedSurface.center[index])}.`,
+                {
+                  assetKey: asset.key,
+                  manifestId: asset.manifestId,
+                  path: manifestPath
+                }
+              );
+            }
+          }
+
+          for (const [index, axis] of ["width", "depth"].entries()) {
+            if (!isPositiveNumber(actualSurface.size[index])) {
+              supportProfileValid = false;
+              createError(
+                errors,
+                "manifest.support_profile_size_invalid",
+                `Surface "${expectedSurface.id}" size.${axis} must be a positive number.`,
+                {
+                  assetKey: asset.key,
+                  manifestId: asset.manifestId,
+                  path: manifestPath
+                }
+              );
+            } else if (!isWithinTolerance(actualSurface.size[index], expectedSurface.size[index])) {
+              supportProfileValid = false;
+              createError(
+                errors,
+                "manifest.support_profile_size_mismatch",
+                `Surface "${expectedSurface.id}" size.${axis} must be ${formatMeters(expectedSurface.size[index])}.`,
+                {
+                  assetKey: asset.key,
+                  manifestId: asset.manifestId,
+                  path: manifestPath
+                }
+              );
+            }
+          }
+
+          if (!isNonNegativeNumber(actualSurface.top) || !isWithinTolerance(actualSurface.top, expectedSurface.top)) {
+            supportProfileValid = false;
+            createError(
+              errors,
+              "manifest.support_profile_top_mismatch",
+              `Surface "${expectedSurface.id}" top must be ${formatMeters(expectedSurface.top)}.`,
+              {
+                assetKey: asset.key,
+                manifestId: asset.manifestId,
+                path: manifestPath
+              }
+            );
+          }
+
+          const expectedMargin = expectedSurface.margin;
+          if (expectedMargin) {
+            if (!actualSurface.margin || actualSurface.margin.length < 2) {
+              supportProfileValid = false;
+              createError(
+                errors,
+                "manifest.support_profile_margin_missing",
+                `Surface "${expectedSurface.id}" margin must be defined for this curated asset.`,
+                {
+                  assetKey: asset.key,
+                  manifestId: asset.manifestId,
+                  path: manifestPath
+                }
+              );
+            } else {
+              for (const [index, axis] of ["x", "z"].entries()) {
+                if (
+                  !isNonNegativeNumber(actualSurface.margin[index]) ||
+                  !isWithinTolerance(actualSurface.margin[index], expectedMargin[index])
+                ) {
+                  supportProfileValid = false;
+                  createError(
+                    errors,
+                    "manifest.support_profile_margin_mismatch",
+                    `Surface "${expectedSurface.id}" margin.${axis} must be ${formatMeters(expectedMargin[index])}.`,
+                    {
+                      assetKey: asset.key,
+                      manifestId: asset.manifestId,
+                      path: manifestPath
+                    }
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    result.supportProfileValid = supportProfileValid;
+    if (supportProfileValid) {
+      curatedSupportProfilesValid += 1;
+    }
+
     if (asset.optionsHint) {
       const options = entry.options;
       if (isNonEmptyString(options) && options.includes(asset.optionsHint)) {
@@ -434,6 +563,7 @@ async function buildSummary(): Promise<Summary> {
       result.manifestEntryExists &&
       result.manifestAssetIdMatches &&
       result.metadataValid &&
+      result.supportProfileValid &&
       result.optionsHintValid
     ) {
       curatedManifestEntriesValid += 1;
@@ -445,12 +575,13 @@ async function buildSummary(): Promise<Summary> {
   return {
     ok: errors.length === 0,
     counts: {
-      curatedAssets: curatedAssets.length,
+      curatedAssets: curatedDeskteriorAssets.length,
       manifestEntries: manifestEntries.length,
       sourceFilesFound,
       runtimeFilesFound,
       freshRuntimeFiles,
       curatedManifestEntriesValid,
+      curatedSupportProfilesValid,
       duplicateManifestIds,
       errors: errors.length
     },
@@ -474,6 +605,9 @@ function printHumanReadable(summary: Summary) {
   console.log(
     `- Curated manifest entries valid: ${summary.counts.curatedManifestEntriesValid}/${summary.counts.curatedAssets}`
   );
+  console.log(
+    `- Curated support profiles valid: ${summary.counts.curatedSupportProfilesValid}/${summary.counts.curatedAssets}`
+  );
   console.log(`- Duplicate manifest ids: ${summary.counts.duplicateManifestIds}`);
   console.log(`- Errors: ${summary.counts.errors}`);
   console.log("");
@@ -484,7 +618,9 @@ function printHumanReadable(summary: Summary) {
         asset.runtimeExists ? "ok" : "missing"
       } | fresh=${asset.runtimeFresh ? "ok" : "fail"} | manifest=${asset.manifestEntryExists ? "ok" : "missing"} | assetId=${
         asset.manifestAssetIdMatches ? "ok" : "fail"
-      } | metadata=${asset.metadataValid ? "ok" : "fail"} | optionsHint=${asset.optionsHintValid ? "ok" : "fail"}`
+      } | metadata=${asset.metadataValid ? "ok" : "fail"} | supportProfile=${
+        asset.supportProfileValid ? "ok" : "fail"
+      } | optionsHint=${asset.optionsHintValid ? "ok" : "fail"}`
     );
   }
 

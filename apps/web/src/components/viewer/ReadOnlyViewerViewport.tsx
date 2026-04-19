@@ -55,8 +55,9 @@ export function ReadOnlyViewerViewport({
           camera={{ fov: 45, position: [0, 8, 14] }}
           toneMappingExposure={1.12}
           chromeTone="light"
-          interactionMode="viewer"
+          interactionMode="viewer-shared"
           showHud={true}
+          hudProfile="shared-viewer"
         />
 
         {(showReadOnlyNotice || selectedLabel) ? (

@@ -1,4 +1,8 @@
 import { normalizeAssetSupportProfile } from "../scene/support-profiles";
+import {
+  resolveScenePlacementVectors,
+  type ScenePlacementSnapshot
+} from "./scene-placement";
 import type { ProductDimensionsMm, ProductPhysicalMetadata } from "../builder/catalog";
 import type { AssetSupportProfile } from "../scene/support-profiles";
 import type {
@@ -60,6 +64,7 @@ export type ProductMetadata = {
 
 export type SceneObject = SceneAsset & {
   metadata?: ProductMetadata;
+  placement?: ScenePlacementSnapshot | null;
 };
 
 export type SceneNode = SceneObject;
@@ -72,7 +77,7 @@ export type MaterialOverride = {
 export type LightInstance = LightingSettings;
 
 export type SceneDocument = {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   roomShell: RoomShell;
   nodes: SceneNode[];
   materialOverride: MaterialOverride;
@@ -265,7 +270,7 @@ function parseSceneDocumentFromVersion(version: Record<string, unknown>): SceneD
   const entranceId =
     typeof rawRoomShell.entranceId === "string" && rawRoomShell.entranceId.length > 0 ? rawRoomShell.entranceId : null;
   const mappedDocument: SceneDocument = {
-    schemaVersion: 1,
+    schemaVersion: rawDocument.schemaVersion === 2 ? 2 : 1,
     roomShell: {
       scale: toSafeNumber(rawRoomShell.scale, 1),
       scaleInfo: toScaleInfo(rawRoomShell.scaleInfo),
@@ -320,18 +325,31 @@ export function toSceneStorePatch(scene: SceneDocumentBootstrap): SceneStorePatc
     rooms: scene.document.roomShell.rooms,
     cameraAnchors: scene.document.roomShell.cameraAnchors,
     navGraph: scene.document.roomShell.navGraph,
-    assets: scene.document.nodes.map((node) => ({
-      ...node,
-      catalogItemId: node.metadata?.catalogItemId ?? node.catalogItemId,
-      product: toSceneAssetProduct(node.metadata, node.product) ?? node.product ?? null,
-      supportAssetId:
-        (node.metadata && typeof node.metadata.supportAssetId === "string" && node.metadata.supportAssetId.length > 0
-          ? node.metadata.supportAssetId
-          : typeof node.supportAssetId === "string" && node.supportAssetId.length > 0
-            ? node.supportAssetId
-            : null),
-      supportProfile: normalizeAssetSupportProfile(node.metadata?.supportProfile ?? node.supportProfile)
-    })),
+    assets: scene.document.nodes.map((node) => {
+      const { placement: _placement, ...sceneNode } = node;
+      const placement = resolveScenePlacementVectors({
+        placement: node.placement,
+        position: node.position,
+        rotation: node.rotation,
+        scale: node.scale
+      });
+
+      return {
+        ...sceneNode,
+        position: placement.position,
+        rotation: placement.rotation,
+        scale: placement.scale,
+        catalogItemId: node.metadata?.catalogItemId ?? node.catalogItemId,
+        product: toSceneAssetProduct(node.metadata, node.product) ?? node.product ?? null,
+        supportAssetId:
+          (node.metadata && typeof node.metadata.supportAssetId === "string" && node.metadata.supportAssetId.length > 0
+            ? node.metadata.supportAssetId
+            : typeof node.supportAssetId === "string" && node.supportAssetId.length > 0
+              ? node.supportAssetId
+              : null),
+        supportProfile: normalizeAssetSupportProfile(node.metadata?.supportProfile ?? node.supportProfile)
+      };
+    }),
     wallMaterialIndex: scene.document.materialOverride.wallMaterialIndex,
     floorMaterialIndex: scene.document.materialOverride.floorMaterialIndex,
     lighting: scene.document.lighting,

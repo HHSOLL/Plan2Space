@@ -2,6 +2,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "../../../../../types/database";
 import type { ProductDimensionsMm } from "../builder/catalog";
+import {
+  resolveScenePlacementVectors,
+  serializeScenePlacement
+} from "../domain/scene-placement";
 import { deriveBlankRoomShell } from "../domain/room-shell";
 import type { Floor, Opening, ScaleInfo, Wall } from "../stores/useSceneStore";
 
@@ -262,6 +266,19 @@ function buildAssetProductMetadata(asset: Record<string, unknown>) {
   };
 }
 
+function buildSerializedAssetPlacement(asset: Record<string, unknown>) {
+  const vectors = resolveScenePlacementVectors({
+    position: asset.position,
+    rotation: asset.rotation,
+    scale: asset.scale
+  });
+
+  return {
+    vectors,
+    snapshot: serializeScenePlacement(vectors)
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -410,11 +427,12 @@ function buildSceneDocument(
   const normalizedLighting = resolveLightingSettings(lighting);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     roomShell: resolvedRoomShell,
     nodes: assets.map((asset) => {
       const anchorType = normalizeAssetAnchor(asset.anchorType);
       const productMetadata = buildAssetProductMetadata(asset);
+      const placement = buildSerializedAssetPlacement(asset);
       return {
         id: asset.id,
         assetId: asset.assetId,
@@ -423,9 +441,10 @@ function buildSceneDocument(
         supportAssetId:
           typeof asset.supportAssetId === "string" && asset.supportAssetId.length > 0 ? asset.supportAssetId : null,
         supportProfile: asset.supportProfile ?? null,
-        position: asset.position,
-        rotation: asset.rotation,
-        scale: asset.scale,
+        placement: placement.snapshot,
+        position: placement.vectors.position,
+        rotation: placement.vectors.rotation,
+        scale: placement.vectors.scale,
         materialId: asset.materialId ?? null,
         metadata: {
           anchorType,
@@ -460,19 +479,21 @@ function buildProjectVersionCustomization(
   const sceneDocument = buildSceneDocument(roomShell, assets, materials, lighting);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     furniture: assets.map((asset) => {
       const anchorType = normalizeAssetAnchor(asset.anchorType);
       const productMetadata = buildAssetProductMetadata(asset);
+      const placement = buildSerializedAssetPlacement(asset);
       return {
         id: asset.id,
         modelId: asset.assetId,
         anchor: anchorType,
         supportAssetId:
           typeof asset.supportAssetId === "string" && asset.supportAssetId.length > 0 ? asset.supportAssetId : null,
-        position: asset.position,
-        rotation: asset.rotation,
-        scale: asset.scale,
+        placement: placement.snapshot,
+        position: placement.vectors.position,
+        rotation: placement.vectors.rotation,
+        scale: placement.vectors.scale,
         metadata: {
           path: asset.assetId,
           anchorType,
@@ -500,6 +521,19 @@ function buildProjectVersionCustomization(
       lighting: normalizedLighting
     },
     sceneDocument
+  };
+}
+
+export function buildSceneDocumentBootstrapFromSavePayload(rawPayload: unknown) {
+  const payload = SaveVersionSchema.parse(rawPayload);
+  const resolvedRoomShell = buildRoomShell(payload.roomShell);
+
+  return {
+    document: buildSceneDocument(payload.roomShell, payload.assets, payload.materials, payload.lighting),
+    entranceId: resolvedRoomShell.entranceId,
+    diagnostics: {
+      source: "save-payload"
+    }
   };
 }
 

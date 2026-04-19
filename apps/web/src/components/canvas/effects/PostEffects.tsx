@@ -7,6 +7,8 @@ import type { SceneRenderQuality } from "../../../lib/scene/render-quality";
 
 export default function PostEffects({ quality }: { quality: SceneRenderQuality }) {
   const { size, gl, scene, camera } = useThree();
+  const hasVisibleEffects =
+    quality.enableSsao || quality.enableBloom || quality.vignetteDarkness > 0 || quality.noiseOpacity > 0;
 
   const isReady = useMemo(() => {
     return (
@@ -20,7 +22,7 @@ export default function PostEffects({ quality }: { quality: SceneRenderQuality }
     );
   }, [gl, scene, camera, size]);
 
-  if (!isReady || !quality.enablePostEffects) {
+  if (!isReady || !quality.enablePostEffects || !hasVisibleEffects) {
     return null;
   }
 
@@ -47,9 +49,11 @@ export default function PostEffects({ quality }: { quality: SceneRenderQuality }
             rings={3}
           />
         ) : null}
-        <Bloom intensity={0.35} luminanceThreshold={0.9} luminanceSmoothing={0.2} />
-        <Vignette offset={0.22} darkness={0.28} />
-        <Noise opacity={0.006} />
+        {quality.enableBloom ? (
+          <Bloom intensity={quality.bloomIntensity} luminanceThreshold={0.9} luminanceSmoothing={0.2} />
+        ) : null}
+        {quality.vignetteDarkness > 0 ? <Vignette offset={0.22} darkness={quality.vignetteDarkness} /> : null}
+        {quality.noiseOpacity > 0 ? <Noise opacity={quality.noiseOpacity} /> : null}
       </EffectComposer>
     </Suspense>
   );

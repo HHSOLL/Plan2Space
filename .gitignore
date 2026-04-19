@@ -9,6 +9,7 @@ coverage
 .codex
 apps/web/.cache
 apps/web/.vercel
+apps/web/public/assets/transcoders
 vercel-labs
 .vercel
 supabase/.temp

@@ -6,6 +6,7 @@ import type { ReactNode, ComponentProps } from "react";
 import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 import CameraRig from "../canvas/core/CameraRig";
+import ScenePerformanceTelemetry from "../canvas/debug/ScenePerformanceTelemetry";
 import PhysicsWorld from "../canvas/core/PhysicsWorld";
 import SceneEnvironment from "../canvas/core/SceneEnvironment";
 import Lights from "../canvas/effects/Lights";
@@ -23,6 +24,7 @@ import ViewerProductHotspots from "../canvas/interaction/ViewerProductHotspots";
 import Crosshair from "../overlay/hud/Crosshair";
 import MobileControls from "../overlay/hud/MobileControls";
 import MobileTouchHint from "../overlay/hud/MobileTouchHint";
+import { configureRuntimeAssetLoaders } from "../../lib/loaders/AssetLoader";
 import { resolveSceneRenderQuality, type SceneInteractionMode } from "../../lib/scene/render-quality";
 import { useEditorStore } from "../../lib/stores/useEditorStore";
 
@@ -36,6 +38,7 @@ type SceneViewportProps = {
   bottomNotice?: ReactNode;
   chromeTone?: "dark" | "light";
   showHud?: boolean;
+  hudProfile?: "full" | "shared-viewer" | "none";
 };
 
 export function SceneViewport({
@@ -54,12 +57,15 @@ export function SceneViewport({
   modeBadge,
   bottomNotice,
   chromeTone = "dark",
-  showHud = true
+  showHud = true,
+  hudProfile = "full"
 }: SceneViewportProps) {
   const viewMode = useEditorStore((state) => state.viewMode);
-  const resolvedInteractionMode = interactionMode ?? "viewer";
-  const renderViewerHotspots = resolvedInteractionMode === "viewer";
-  const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
+  const topMode = useEditorStore((state) => state.topMode);
+  const resolvedInteractionMode = interactionMode ?? "viewer-showcase";
+  const renderViewerHotspots = resolvedInteractionMode === "viewer-shared";
+  const renderInteractiveShellControls =
+    resolvedInteractionMode === "editor" || resolvedInteractionMode === "preview";
   const renderOpeningDecor = renderInteractiveShellControls && viewMode !== "top";
   const renderLightingDecor = renderInteractiveShellControls && viewMode !== "top";
   const isLightTone = chromeTone === "light";
@@ -71,6 +77,7 @@ export function SceneViewport({
     return resolveSceneRenderQuality({
       interactionMode: resolvedInteractionMode,
       viewMode,
+      topMode,
       coarsePointer,
       devicePixelRatio: typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
       hardwareConcurrency:
@@ -79,7 +86,7 @@ export function SceneViewport({
           : 8,
       viewportWidth: typeof window !== "undefined" ? window.innerWidth : 1440
     });
-  }, [resolvedInteractionMode, viewMode]);
+  }, [resolvedInteractionMode, topMode, viewMode]);
 
   const sceneContent = (
     <>
@@ -107,6 +114,7 @@ export function SceneViewport({
       } ${className}`.trim()}
     >
       <Canvas
+        frameloop={quality.frameLoop}
         shadows={quality.enableShadows}
         dpr={quality.dpr}
         gl={gl}
@@ -114,6 +122,7 @@ export function SceneViewport({
         className="h-full w-full"
         onCreated={({ gl: rendererContext }) => {
           const renderer = rendererContext as THREE.WebGLRenderer & { physicallyCorrectLights?: boolean };
+          configureRuntimeAssetLoaders(renderer);
           renderer.shadowMap.enabled = quality.enableShadows;
           renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -126,14 +135,15 @@ export function SceneViewport({
       >
         <color attach="background" args={[isLightTone ? "#d0d0ce" : "#0a0a0b"]} />
         <Suspense fallback={null}>
+          <ScenePerformanceTelemetry interactionMode={resolvedInteractionMode} />
           {viewMode === "walk" ? <PhysicsWorld>{sceneContent}</PhysicsWorld> : sceneContent}
           <PostEffects quality={quality} />
         </Suspense>
       </Canvas>
 
-      {showHud ? (
+      {showHud && hudProfile !== "none" ? (
         <>
-          <Crosshair />
+          {hudProfile === "full" ? <Crosshair /> : null}
           <MobileTouchHint />
           <MobileControls />
         </>

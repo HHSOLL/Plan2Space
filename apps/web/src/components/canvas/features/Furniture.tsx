@@ -3,10 +3,12 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
-import type { ThreeEvent } from "@react-three/fiber";
+import { useThree, type ThreeEvent } from "@react-three/fiber";
+import { resolveTopViewInteractionPolicy } from "../../../lib/editor/top-view-policy";
 import { useGLBAsset } from "../../../lib/loaders/AssetLoader";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { normalizeSceneAnchorType } from "../../../lib/scene/anchor-types";
+import { scheduleInteractionLatency } from "../../../lib/performance/scene-telemetry";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import {
   useAssetSelector,
@@ -17,7 +19,6 @@ import {
 import type { SceneAsset } from "../../../lib/stores/useSceneStore";
 
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-const GRID_SNAP = 0.25;
 const MAX_DYNAMIC_EMITTERS = 6;
 const LIGHT_EMITTER_HINT_IDS = new Set([
   "p2s_desk_lamp_glow",
@@ -472,7 +473,9 @@ function ModelInstance({ asset }: { asset: SceneAsset }) {
 }
 
 function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enableDynamicLight: boolean }) {
+  const invalidate = useThree((state) => state.invalidate);
   const viewMode = useEditorStore((state) => state.viewMode);
+  const topMode = useEditorStore((state) => state.topMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
   const readOnly = useEditorStore((state) => state.readOnly);
@@ -493,21 +496,45 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     rotation: [number, number, number];
   } | null>(null);
   const isSelected = selectedAssetId === asset.id;
+  const topViewPolicy = useMemo(
+    () => resolveTopViewInteractionPolicy(topMode),
+    [topMode]
+  );
   const lightProfile = useMemo(
     () => (enableDynamicLight ? resolveAssetLightProfile(asset) : null),
     [asset, enableDynamicLight]
   );
+  const shouldRenderLight =
+    lightProfile != null &&
+    (viewMode !== "top" || topMode === "desk-precision");
 
   const handleReadOnlySelect = (event: ThreeEvent<PointerEvent>) => {
     if (!readOnly) return;
     event.stopPropagation();
+    const startedAt = performance.now();
     setSelectedAssetId(asset.id);
+    invalidate();
+    scheduleInteractionLatency("select", startedAt, {
+      viewMode,
+      topMode,
+      targetId: asset.id
+    });
   };
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     if (viewMode !== "top" || isTransforming || readOnly) return;
     event.stopPropagation();
+    const startedAt = performance.now();
     setSelectedAssetId(asset.id);
+    invalidate();
+    if (!topViewPolicy.allowDirectAssetDrag) {
+      scheduleInteractionLatency("select", startedAt, {
+        viewMode,
+        topMode,
+        targetId: asset.id
+      });
+      return;
+    }
     setIsDragging(true);
     setIsTransforming(true);
     pendingPlacementRef.current = {
@@ -518,6 +545,12 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     };
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.setPointerCapture(event.pointerId);
+    invalidate();
+    scheduleInteractionLatency("drag-start", startedAt, {
+      viewMode,
+      topMode,
+      targetId: asset.id
+    });
   };
 
   const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
@@ -533,6 +566,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     setIsTransforming(false);
     const target = event.nativeEvent.target as HTMLElement | null;
     target?.releasePointerCapture(event.pointerId);
+    invalidate();
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
@@ -540,7 +574,8 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     event.stopPropagation();
     const intersection = new THREE.Vector3();
     if (!event.ray.intersectPlane(groundPlane, intersection)) return;
-    const snap = (value: number) => Math.round(value / GRID_SNAP) * GRID_SNAP;
+    const snap = (value: number) =>
+      Math.round(value / topViewPolicy.translationSnap) * topViewPolicy.translationSnap;
     const anchoredPlacement = constrainPlacementToAnchor(
       {
         position: [snap(intersection.x), asset.position[1], snap(intersection.z)],
@@ -564,6 +599,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     };
     groupRef.current?.position.set(...anchoredPlacement.position);
     groupRef.current?.rotation.set(...anchoredPlacement.rotation);
+    invalidate();
   };
 
   useEffect(() => {
@@ -580,7 +616,8 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     groupRef.current.position.set(...asset.position);
     groupRef.current.rotation.set(...asset.rotation);
     groupRef.current.scale.set(...asset.scale);
-  }, [asset.position, asset.rotation, asset.scale, isDragging, viewMode]);
+    invalidate();
+  }, [asset.position, asset.rotation, asset.scale, invalidate, isDragging, viewMode]);
 
   const content = isPlaceholderAsset(asset.assetId) ? (
     <PlaceholderFurniture />
@@ -596,12 +633,16 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
           onPointerDown: handleReadOnlySelect
         }
       : viewMode === "top"
-      ? {
-          onPointerDown: handlePointerDown,
-          onPointerUp: handlePointerUp,
-          onPointerMove: handlePointerMove,
-          onPointerLeave: handlePointerUp
-        }
+      ? topViewPolicy.allowDirectAssetDrag
+        ? {
+            onPointerDown: handlePointerDown,
+            onPointerUp: handlePointerUp,
+            onPointerMove: handlePointerMove,
+            onPointerLeave: handlePointerUp
+          }
+        : {
+            onPointerDown: handlePointerDown
+          }
       : {};
 
   if (viewMode === "walk") {
@@ -609,7 +650,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
       <RigidBody type="fixed" colliders="cuboid" position={asset.position} rotation={asset.rotation}>
         <group name={`furniture:${asset.id}`} scale={asset.scale} {...groupProps}>
           {content}
-          {lightProfile ? (
+          {shouldRenderLight ? (
             <pointLight
               position={lightProfile.offset}
               color={lightProfile.color}
@@ -633,7 +674,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
       {...groupProps}
     >
       {content}
-      {lightProfile && viewMode !== "top" ? (
+      {shouldRenderLight ? (
         <pointLight
           position={lightProfile.offset}
           color={lightProfile.color}
