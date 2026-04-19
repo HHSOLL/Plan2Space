@@ -43,6 +43,7 @@
 - desk precision mode는 선택 제품의 위치/회전 값을 `mm/deg` measurement overlay로 함께 노출해 미세 배치 확인을 보조한다.
 - desk precision mode는 surface anchor 제품의 support asset / support surface / surface size / margin / top 높이를 surface lock 상태로 함께 노출한다.
 - desk precision mode는 support surface 내부 상대 위치를 보여주는 surface-local micro-view를 inspector/overlay에 함께 노출한다.
+- desk precision mode는 support surface 위 제품 footprint, projected footprint, edge clearance, relative yaw를 함께 노출해 usable area 침범 여부를 즉시 판단할 수 있어야 한다.
 - walk view 진입 시 기본 시선은 room center/entrance target을 향해야 한다.
 
 ## 뷰어 규칙
@@ -285,6 +286,16 @@ Updated:
 
 Removed/Deprecated:
 - gallery/community 카드가 shared viewer와 다른 preview version/asset summary를 참조해도 된다는 가정.
+
+## 2026-04-19 변경 동기화 (Desk Precision Extended Measurement)
+Added:
+- support surface 위 제품 footprint / projected footprint / edge clearance / relative yaw를 노출하는 측정 기준을 추가한다.
+
+Updated:
+- surface-local micro-view를 point marker 중심에서 `footprint + clearance` 확인 가능한 정밀 시각화로 확장한다.
+
+Removed/Deprecated:
+- support surface 위 제품이 usable area 안에 있는지 offset 숫자만으로 판단하던 기준.
 
 ## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
 Added:

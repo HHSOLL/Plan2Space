@@ -311,16 +311,31 @@ export default function ProjectEditorPage() {
     () => (selectedSupportAsset ? findCatalogItem(libraryCatalog, selectedSupportAsset) : null),
     [libraryCatalog, selectedSupportAsset]
   );
+  const selectedMeasurementAsset = useMemo(() => {
+    if (!selectedAsset) {
+      return null;
+    }
+
+    return {
+      assetId: selectedAsset.assetId,
+      position: selectedAsset.position,
+      rotation: selectedAsset.rotation,
+      scale: selectedAsset.scale,
+      product: {
+        dimensionsMm: selectedAsset.product?.dimensionsMm ?? selectedCatalogItem?.dimensionsMm ?? null
+      }
+    };
+  }, [selectedAsset, selectedCatalogItem]);
   const selectedSupportSurfaceLock = useMemo(
     () =>
-      selectedAsset && selectedSupportAsset
+      selectedAsset && selectedSupportAsset && selectedMeasurementAsset
         ? resolveSupportSurfaceLock(
             selectedAsset.anchorType,
-            selectedAsset.position,
+            selectedMeasurementAsset,
             selectedSupportAsset
           )
         : null,
-    [selectedAsset, selectedSupportAsset]
+    [selectedAsset, selectedMeasurementAsset, selectedSupportAsset]
   );
   const selectedSurfaceLockInfo = useMemo(() => {
     if (!selectedSupportAsset || !selectedSupportSurfaceLock) {
@@ -337,7 +352,12 @@ export default function ProjectEditorPage() {
       usableSizeMm: selectedSupportSurfaceLock.usableSizeMm,
       marginMm: selectedSupportSurfaceLock.marginMm,
       localOffsetMm: selectedSupportSurfaceLock.localOffsetMm,
-      topMm: selectedSupportSurfaceLock.topMm
+      topMm: selectedSupportSurfaceLock.topMm,
+      footprintMm: selectedSupportSurfaceLock.footprintMm,
+      projectedFootprintMm: selectedSupportSurfaceLock.projectedFootprintMm,
+      relativeYawDeg: selectedSupportSurfaceLock.relativeYawDeg,
+      clearanceMm: selectedSupportSurfaceLock.clearanceMm,
+      withinUsableBounds: selectedSupportSurfaceLock.withinUsableBounds
     };
   }, [selectedSupportAsset, selectedSupportCatalogItem, selectedSupportSurfaceLock]);
 

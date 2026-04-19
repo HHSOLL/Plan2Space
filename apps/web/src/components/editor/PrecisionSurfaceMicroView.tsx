@@ -8,6 +8,17 @@ export type PrecisionSurfaceLockInfo = {
   marginMm: [number, number];
   localOffsetMm: [number, number];
   topMm: number;
+  footprintMm: [number, number];
+  projectedFootprintMm: [number, number];
+  relativeYawDeg: number;
+  clearanceMm: {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    min: number;
+  };
+  withinUsableBounds: boolean;
 };
 
 type PrecisionSurfaceMicroViewProps = {
@@ -46,6 +57,22 @@ function resolveSurfaceFrame(sizeMm: [number, number]) {
   };
 }
 
+function degreesToRadians(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function toSvgPoint(
+  frame: { x: number; y: number; width: number; height: number },
+  surfaceSizeMm: [number, number],
+  point: { x: number; z: number }
+) {
+  const [surfaceWidth, surfaceDepth] = surfaceSizeMm;
+  return {
+    x: frame.x + ((point.x + surfaceWidth / 2) / Math.max(surfaceWidth, 1)) * frame.width,
+    y: frame.y + ((surfaceDepth / 2 - point.z) / Math.max(surfaceDepth, 1)) * frame.height
+  };
+}
+
 export function PrecisionSurfaceMicroView({
   surfaceLockInfo,
   variant = "panel"
@@ -54,6 +81,7 @@ export function PrecisionSurfaceMicroView({
   const [marginX, marginZ] = surfaceLockInfo.marginMm;
   const [offsetX, offsetZ] = surfaceLockInfo.localOffsetMm;
   const [usableWidth, usableDepth] = surfaceLockInfo.usableSizeMm;
+  const [footprintWidth, footprintDepth] = surfaceLockInfo.footprintMm;
   const frame = resolveSurfaceFrame(surfaceLockInfo.sizeMm);
   const markerX = frame.x + ((offsetX + surfaceWidth / 2) / Math.max(surfaceWidth, 1)) * frame.width;
   const markerY = frame.y + ((surfaceDepth / 2 - offsetZ) / Math.max(surfaceDepth, 1)) * frame.height;
@@ -61,11 +89,32 @@ export function PrecisionSurfaceMicroView({
   const usableY = frame.y + (marginZ / Math.max(surfaceDepth, 1)) * frame.height;
   const usableFrameWidth = (usableWidth / Math.max(surfaceWidth, 1)) * frame.width;
   const usableFrameHeight = (usableDepth / Math.max(surfaceDepth, 1)) * frame.height;
+  const assetYaw = degreesToRadians(surfaceLockInfo.relativeYawDeg);
+  const halfFootprintWidth = footprintWidth / 2;
+  const halfFootprintDepth = footprintDepth / 2;
+  const corners = [
+    { x: -halfFootprintWidth, z: -halfFootprintDepth },
+    { x: halfFootprintWidth, z: -halfFootprintDepth },
+    { x: halfFootprintWidth, z: halfFootprintDepth },
+    { x: -halfFootprintWidth, z: halfFootprintDepth }
+  ].map((corner) => {
+    const rotatedX = corner.x * Math.cos(assetYaw) - corner.z * Math.sin(assetYaw);
+    const rotatedZ = corner.x * Math.sin(assetYaw) + corner.z * Math.cos(assetYaw);
+    return toSvgPoint(frame, surfaceLockInfo.sizeMm, {
+      x: rotatedX + offsetX,
+      z: rotatedZ + offsetZ
+    });
+  });
+  const assetPolygon = corners.map((point) => `${point.x},${point.y}`).join(" ");
   const panelClassName =
     variant === "compact"
-      ? "rounded-[16px] border border-emerald-200/80 bg-emerald-50/60 p-2.5"
+      ? surfaceLockInfo.withinUsableBounds
+        ? "rounded-[16px] border border-emerald-200/80 bg-emerald-50/60 p-2.5"
+        : "rounded-[16px] border border-amber-200 bg-amber-50/70 p-2.5"
       : "rounded-[16px] border border-black/10 bg-[#faf9f7] p-3";
   const svgClassName = variant === "compact" ? "h-28 w-full" : "h-36 w-full";
+  const footprintStroke = surfaceLockInfo.withinUsableBounds ? "#111316" : "#b45309";
+  const footprintFill = surfaceLockInfo.withinUsableBounds ? "rgba(17,19,22,0.14)" : "rgba(180,83,9,0.18)";
 
   return (
     <div className={panelClassName}>
@@ -103,6 +152,13 @@ export function PrecisionSurfaceMicroView({
           strokeWidth="1.6"
           strokeDasharray="4 3"
         />
+        <polygon
+          points={assetPolygon}
+          fill={footprintFill}
+          stroke={footprintStroke}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
         <line
           x1={frame.x + frame.width / 2}
           y1={frame.y}
@@ -121,13 +177,30 @@ export function PrecisionSurfaceMicroView({
           strokeWidth="1"
           strokeDasharray="2 3"
         />
-        <circle cx={clamp(markerX, frame.x, frame.x + frame.width)} cy={clamp(markerY, frame.y, frame.y + frame.height)} r="4.4" fill="#111316" />
-        <circle cx={clamp(markerX, frame.x, frame.x + frame.width)} cy={clamp(markerY, frame.y, frame.y + frame.height)} r="7.4" fill="none" stroke="#111316" strokeOpacity="0.18" strokeWidth="2" />
+        <circle
+          cx={clamp(markerX, frame.x, frame.x + frame.width)}
+          cy={clamp(markerY, frame.y, frame.y + frame.height)}
+          r="4.4"
+          fill={footprintStroke}
+        />
+        <circle
+          cx={clamp(markerX, frame.x, frame.x + frame.width)}
+          cy={clamp(markerY, frame.y, frame.y + frame.height)}
+          r="7.4"
+          fill="none"
+          stroke={footprintStroke}
+          strokeOpacity="0.18"
+          strokeWidth="2"
+        />
       </svg>
 
       <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f665a]">
         <span>X {offsetX} mm</span>
         <span>Z {offsetZ} mm</span>
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f665a]">
+        <span>Yaw {surfaceLockInfo.relativeYawDeg} deg</span>
+        <span>Min {surfaceLockInfo.clearanceMm.min} mm</span>
       </div>
     </div>
   );

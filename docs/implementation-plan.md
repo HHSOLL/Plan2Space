@@ -156,6 +156,17 @@ Updated:
 Removed/Deprecated:
 - support-local 위치를 숫자 텍스트만으로 확인하던 기준.
 
+## 2026-04-19 변경 동기화 (Phase 3 Slice 3 Sub-slice 4)
+Added:
+- desk precision mode에서 surface anchor 제품의 footprint, projected footprint, edge clearance, relative yaw를 inspector/overlay/micro-view에 함께 노출했다.
+
+Updated:
+- Phase 3 Slice 3을 `정밀 배치 UI와 측정 오버레이` 완료 상태로 갱신한다.
+- Phase 3 전체를 `Slice 1~4 완료` 상태로 갱신한다.
+
+Removed/Deprecated:
+- surface-local 위치를 point marker와 offset만으로 확인하던 기준.
+
 ### Phase 4. 모드별 렌더 품질 사다리
 목표:
 - top view, desk precision, walk/viewer가 같은 렌더 비용을 계속 지지 않도록 분리한다.
@@ -256,9 +267,8 @@ Removed/Deprecated:
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
-- 진행 중: Phase 3 / Slice 3 (sub-slice 1, 2, 3 완료, extended measurement는 후속)
-- 다음 후보: Phase 3 / Slice 3 extended measurement
+- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 3 / Slice 3, Phase 3 / Slice 4, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
+- 다음 후보: P3 활동성 지표(조회/반응) 수집 및 피드 랭킹 개선
 
 ## 2026-04-19 변경 동기화 (Phase 3 Slice 4 Sub-slice 1)
 Added:

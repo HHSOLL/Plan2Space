@@ -39,6 +39,19 @@ export function PrecisionMeasurementOverlay({
   const dimensionsLabel = formatDimensions(dimensions);
   const anchorLabel = selectedAsset.anchorType?.replaceAll("_", " ") ?? "floor";
   const usesSurfaceLock = isSupportAnchorType(selectedAsset.anchorType);
+  const surfaceLockTone = surfaceLockInfo
+    ? surfaceLockInfo.withinUsableBounds
+      ? {
+          panel: "border-emerald-200 bg-emerald-50/70 text-[#245c46]",
+          accent: "text-[#3b7d63]",
+          detail: "text-[#356953]"
+        }
+      : {
+          panel: "border-amber-200 bg-amber-50 text-[#8a6a2c]",
+          accent: "text-[#9a6a14]",
+          detail: "text-[#8a6a2c]"
+        }
+    : null;
 
   return (
     <div className="pointer-events-none absolute bottom-4 right-4 z-[24] w-[min(92vw,320px)] rounded-[22px] border border-black/10 bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,18,22,0.14)] backdrop-blur-xl">
@@ -68,21 +81,34 @@ export function PrecisionMeasurementOverlay({
       </div>
 
       {surfaceLockInfo ? (
-        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[11px] text-[#245c46]">
-          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#3b7d63]">Surface Lock</div>
+        <div className={`mt-3 rounded-xl border px-3 py-2 text-[11px] ${surfaceLockTone?.panel ?? ""}`}>
+          <div className={`text-[9px] font-bold uppercase tracking-[0.14em] ${surfaceLockTone?.accent ?? ""}`}>
+            Surface Lock
+          </div>
           <div className="mt-1 font-semibold">
             {surfaceLockInfo.supportLabel} · {surfaceLockInfo.surfaceLabel}
+          </div>
+          <div className="mt-1 text-[10px]">
+            {surfaceLockInfo.withinUsableBounds ? "usable area 안에 배치됨" : "usable area 가장자리를 넘어섬"}
           </div>
           <div className="mt-3">
             <PrecisionSurfaceMicroView surfaceLockInfo={surfaceLockInfo} variant="compact" />
           </div>
-          <div className="mt-1 text-[10px] text-[#356953]">
+          <div className={`mt-1 text-[10px] ${surfaceLockTone?.detail ?? ""}`}>
             {surfaceLockInfo.sizeMm[0]} x {surfaceLockInfo.sizeMm[1]} mm · margin{" "}
             {surfaceLockInfo.marginMm[0]} / {surfaceLockInfo.marginMm[1]} mm
           </div>
-          <div className="mt-1 text-[10px] text-[#356953]">
-            offset {surfaceLockInfo.localOffsetMm[0]} / {surfaceLockInfo.localOffsetMm[1]} mm · top{" "}
-            {surfaceLockInfo.topMm} mm
+          <div className={`mt-1 text-[10px] ${surfaceLockTone?.detail ?? ""}`}>
+            footprint {surfaceLockInfo.footprintMm[0]} x {surfaceLockInfo.footprintMm[1]} mm · projected{" "}
+            {surfaceLockInfo.projectedFootprintMm[0]} x {surfaceLockInfo.projectedFootprintMm[1]} mm
+          </div>
+          <div className={`mt-1 text-[10px] ${surfaceLockTone?.detail ?? ""}`}>
+            clearance L {surfaceLockInfo.clearanceMm.left} / R {surfaceLockInfo.clearanceMm.right} / T{" "}
+            {surfaceLockInfo.clearanceMm.top} / B {surfaceLockInfo.clearanceMm.bottom} mm
+          </div>
+          <div className={`mt-1 text-[10px] ${surfaceLockTone?.detail ?? ""}`}>
+            offset {surfaceLockInfo.localOffsetMm[0]} / {surfaceLockInfo.localOffsetMm[1]} mm · yaw Δ{" "}
+            {surfaceLockInfo.relativeYawDeg} deg · top {surfaceLockInfo.topMm} mm
           </div>
         </div>
       ) : usesSurfaceLock ? (

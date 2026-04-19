@@ -118,6 +118,25 @@ export function BuilderInspectorPanel({
   const activeLightingPresetId = inferLightingPresetId(lighting);
   const topModeLabel = topMode === "room" ? "룸 배치" : "데스크 정밀";
   const usesSurfaceLock = isSupportAnchorType(selectedAsset?.anchorType);
+  const surfaceLockStatus = surfaceLockInfo
+    ? surfaceLockInfo.withinUsableBounds
+      ? {
+          label: "Locked",
+          className: "border border-emerald-200 bg-emerald-50 text-emerald-700"
+        }
+      : {
+          label: "Overflow",
+          className: "border border-amber-200 bg-amber-50 text-amber-700"
+        }
+    : usesSurfaceLock
+      ? {
+          label: "Pending",
+          className: "border border-amber-200 bg-amber-50 text-amber-700"
+        }
+      : {
+          label: "Off",
+          className: "border border-black/10 bg-[#f4f1eb] text-[#7a7064]"
+        };
   const topModeDescription =
     topMode === "room"
       ? "제품 본체를 직접 드래그해 큰 위치를 옮깁니다. 250mm 그리드와 월드 기준 정렬만 유지합니다."
@@ -553,15 +572,9 @@ export function BuilderInspectorPanel({
                       Surface Lock
                     </div>
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${
-                        surfaceLockInfo
-                          ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : usesSurfaceLock
-                            ? "border border-amber-200 bg-amber-50 text-amber-700"
-                            : "border border-black/10 bg-[#f4f1eb] text-[#7a7064]"
-                      }`}
+                      className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${surfaceLockStatus.className}`}
                     >
-                      {surfaceLockInfo ? "Locked" : usesSurfaceLock ? "Pending" : "Off"}
+                      {surfaceLockStatus.label}
                     </span>
                   </div>
 
@@ -572,6 +585,11 @@ export function BuilderInspectorPanel({
                       </div>
                       <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[#8b8277]">
                         {surfaceLockInfo.surfaceLabel}
+                      </div>
+                      <div className="mt-2 text-[11px] leading-5 text-[#6f665b]">
+                        {surfaceLockInfo.withinUsableBounds
+                          ? "현재 footprint가 usable area 안에 들어와 있습니다."
+                          : "현재 footprint가 usable area 가장자리를 넘어서고 있습니다."}
                       </div>
                       <div className="mt-3">
                         <PrecisionSurfaceMicroView surfaceLockInfo={surfaceLockInfo} />
@@ -595,6 +613,30 @@ export function BuilderInspectorPanel({
                         </div>
                         <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
                           <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Footprint
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.footprintMm[0]} x {surfaceLockInfo.footprintMm[1]} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Projected
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.projectedFootprintMm[0]} x {surfaceLockInfo.projectedFootprintMm[1]} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Usable
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.usableSizeMm[0]} x {surfaceLockInfo.usableSizeMm[1]} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
                             Offset
                           </div>
                           <div className="mt-1 font-semibold text-[#1f1b16]">
@@ -609,10 +651,26 @@ export function BuilderInspectorPanel({
                         </div>
                         <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
                           <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
-                            Usable
+                            Clearance X
                           </div>
                           <div className="mt-1 font-semibold text-[#1f1b16]">
-                            {surfaceLockInfo.usableSizeMm[0]} x {surfaceLockInfo.usableSizeMm[1]} mm
+                            L {surfaceLockInfo.clearanceMm.left} / R {surfaceLockInfo.clearanceMm.right} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Clearance Z
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            T {surfaceLockInfo.clearanceMm.top} / B {surfaceLockInfo.clearanceMm.bottom} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Yaw Delta
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.relativeYawDeg} deg
                           </div>
                         </div>
                         <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
@@ -624,6 +682,12 @@ export function BuilderInspectorPanel({
                           </div>
                         </div>
                       </div>
+                      {!surfaceLockInfo.withinUsableBounds ? (
+                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+                          최소 edge clearance가 {surfaceLockInfo.clearanceMm.min} mm 입니다. usable area 안으로 다시
+                          옮기거나 회전을 줄여 주세요.
+                        </div>
+                      ) : null}
                     </>
                   ) : usesSurfaceLock ? (
                     <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-[#8a6a2c]">
