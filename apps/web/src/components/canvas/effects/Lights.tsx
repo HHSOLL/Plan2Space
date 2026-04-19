@@ -29,11 +29,13 @@ export default function Lights({ quality }: { quality: SceneRenderQuality }) {
         shadow-camera-top={14}
         shadow-camera-bottom={-14}
       />
-      <directionalLight
-        position={[-9, 10, -7]}
-        intensity={Math.max(0.16, lighting.directionalIntensity * 0.24)}
-        color="#d7e4ff"
-      />
+      {quality.enableFillLight ? (
+        <directionalLight
+          position={[-9, 10, -7]}
+          intensity={Math.max(0.16, lighting.directionalIntensity * 0.24)}
+          color="#d7e4ff"
+        />
+      ) : null}
     </>
   );
 }

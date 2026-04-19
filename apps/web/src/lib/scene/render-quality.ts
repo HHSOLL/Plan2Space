@@ -11,6 +11,10 @@ export type SceneRenderQuality = {
   enableShadows: boolean;
   shadowMapSize: number;
   enablePostEffects: boolean;
+  enableBloom: boolean;
+  bloomIntensity: number;
+  vignetteDarkness: number;
+  noiseOpacity: number;
   enableSsao: boolean;
   composerMultisampling: number;
   enableContactShadows: boolean;
@@ -18,6 +22,7 @@ export type SceneRenderQuality = {
   contactShadowBlur: number;
   contactShadowOpacity: number;
   allowDynamicLights: boolean;
+  enableFillLight: boolean;
 };
 
 type SceneRenderQualityInput = {
@@ -60,13 +65,18 @@ export function resolveSceneRenderQuality({
         enableShadows: false,
         shadowMapSize: 512,
         enablePostEffects: false,
+        enableBloom: false,
+        bloomIntensity: 0,
+        vignetteDarkness: 0,
+        noiseOpacity: 0,
         enableSsao: false,
         composerMultisampling: 0,
         enableContactShadows: false,
         contactShadowResolution: 0,
         contactShadowBlur: 0,
         contactShadowOpacity: 0,
-        allowDynamicLights: false
+        allowDynamicLights: false,
+        enableFillLight: false
       };
     }
 
@@ -76,13 +86,18 @@ export function resolveSceneRenderQuality({
         enableShadows: false,
         shadowMapSize: 512,
         enablePostEffects: !constrainedDevice,
+        enableBloom: !constrainedDevice,
+        bloomIntensity: constrainedDevice ? 0 : 0.18,
+        vignetteDarkness: constrainedDevice ? 0 : 0.18,
+        noiseOpacity: constrainedDevice ? 0 : 0.0025,
         enableSsao: false,
         composerMultisampling: 0,
         enableContactShadows: false,
         contactShadowResolution: 0,
         contactShadowBlur: 0,
         contactShadowOpacity: 0,
-        allowDynamicLights: true
+        allowDynamicLights: true,
+        enableFillLight: false
       };
     }
 
@@ -92,13 +107,18 @@ export function resolveSceneRenderQuality({
         enableShadows: false,
         shadowMapSize: 512,
         enablePostEffects: !constrainedDevice,
+        enableBloom: !constrainedDevice,
+        bloomIntensity: constrainedDevice ? 0 : 0.2,
+        vignetteDarkness: constrainedDevice ? 0 : 0.2,
+        noiseOpacity: constrainedDevice ? 0 : 0.003,
         enableSsao: false,
         composerMultisampling: 0,
         enableContactShadows: false,
         contactShadowResolution: 0,
         contactShadowBlur: 0,
         contactShadowOpacity: 0,
-        allowDynamicLights: true
+        allowDynamicLights: true,
+        enableFillLight: false
       };
     }
 
@@ -107,45 +127,60 @@ export function resolveSceneRenderQuality({
       enableShadows: false,
       shadowMapSize: 512,
       enablePostEffects: false,
+      enableBloom: false,
+      bloomIntensity: 0,
+      vignetteDarkness: 0,
+      noiseOpacity: 0,
       enableSsao: false,
       composerMultisampling: 0,
       enableContactShadows: false,
       contactShadowResolution: 0,
       contactShadowBlur: 0,
       contactShadowOpacity: 0,
-      allowDynamicLights: false
+      allowDynamicLights: false,
+      enableFillLight: false
     };
   }
 
   if (isBuilderPreview) {
     return {
       dpr: constrainedDevice ? clampRange(0.8, 1) : clampRange(0.9, 1.15),
-      enableShadows: true,
-      shadowMapSize: constrainedDevice ? 640 : 896,
+      enableShadows: !constrainedDevice,
+      shadowMapSize: constrainedDevice ? 512 : 768,
       enablePostEffects: !constrainedDevice,
+      enableBloom: !constrainedDevice,
+      bloomIntensity: constrainedDevice ? 0 : 0.18,
+      vignetteDarkness: constrainedDevice ? 0 : 0.18,
+      noiseOpacity: constrainedDevice ? 0 : 0.003,
       enableSsao: false,
       composerMultisampling: 0,
       enableContactShadows: true,
       contactShadowResolution: constrainedDevice ? 192 : 320,
       contactShadowBlur: 1.45,
       contactShadowOpacity: 0.28,
-      allowDynamicLights: true
+      allowDynamicLights: true,
+      enableFillLight: false
     };
   }
 
   if (isSharedViewer) {
     return {
       dpr: constrainedDevice ? clampRange(0.82, 1) : clampRange(0.9, 1.08),
-      enableShadows: true,
-      shadowMapSize: constrainedDevice ? 640 : 896,
+      enableShadows: !constrainedDevice,
+      shadowMapSize: constrainedDevice ? 512 : 640,
       enablePostEffects: !constrainedDevice,
+      enableBloom: false,
+      bloomIntensity: 0,
+      vignetteDarkness: constrainedDevice ? 0 : 0.18,
+      noiseOpacity: constrainedDevice ? 0 : 0.0025,
       enableSsao: false,
       composerMultisampling: 0,
       enableContactShadows: constrainedDevice ? false : true,
       contactShadowResolution: constrainedDevice ? 0 : 224,
       contactShadowBlur: 1.45,
       contactShadowOpacity: 0.24,
-      allowDynamicLights: true
+      allowDynamicLights: true,
+      enableFillLight: false
     };
   }
 
@@ -154,12 +189,17 @@ export function resolveSceneRenderQuality({
     enableShadows: true,
     shadowMapSize: constrainedDevice ? 768 : 1280,
     enablePostEffects: true,
+    enableBloom: true,
+    bloomIntensity: constrainedDevice ? 0.24 : 0.35,
+    vignetteDarkness: constrainedDevice ? 0.22 : 0.28,
+    noiseOpacity: constrainedDevice ? 0.004 : 0.006,
     enableSsao: !constrainedDevice,
     composerMultisampling: constrainedDevice ? 0 : 2,
     enableContactShadows: true,
     contactShadowResolution: constrainedDevice ? 256 : 448,
     contactShadowBlur: constrainedDevice ? 1.6 : 1.9,
     contactShadowOpacity: constrainedDevice ? 0.28 : 0.36,
-    allowDynamicLights: true
+    allowDynamicLights: true,
+    enableFillLight: true
   };
 }

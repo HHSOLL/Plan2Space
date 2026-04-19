@@ -36,6 +36,9 @@
 - 동적 조명 예산:
   - 가구 기반 point/spot light 활성 수 `<= 6`
   - 조명 자산 없는 장면에서 추가 light pass 없음
+- 품질 프로필 예산:
+  - `viewer-shared`와 builder preview는 secondary fill directional light를 기본으로 켜지 않는다.
+  - constrained shared/viewer-preview는 directional shadow + bloom을 우선 제거하고, subtle vignette/noise만 허용한다.
 
 ### Read-only viewer
 - 읽기 전용 뷰어는 에디터 전용 transform/delete 계층을 포함하지 않는다.
@@ -142,3 +145,13 @@ Updated:
 
 Removed/Deprecated:
 - shared viewer idle baseline에 자동 선택 상태와 crosshair HUD를 포함하는 가정.
+
+## 2026-04-19 변경 동기화 (Render Cost Reallocation)
+Added:
+- shared viewer / builder preview의 fill light, bloom, shadow 제거 순서를 예산 문서에 고정했다.
+
+Updated:
+- post FX 측정 기준을 `shared=subtle`, `desk precision=selective bloom`, `full walk/showcase=richer pass`로 구분한다.
+
+Removed/Deprecated:
+- 모든 non-top 모드가 같은 bloom/shadow/fill-light 비용을 측정한다는 가정.

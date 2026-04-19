@@ -165,6 +165,17 @@ Updated:
 Removed/Deprecated:
 - shared viewer를 generic viewer preset에 계속 묶어두는 서술.
 
+## 2026-04-19 변경 동기화 (Phase 4 Slice 3 Complete)
+Added:
+- builder preview / shared viewer / showcase-walk 간 fill light, bloom, shadow 제거 순서를 명시한 cost reallocation 규칙을 추가했다.
+
+Updated:
+- Phase 4 Slice 3을 `조명/후처리/그림자 토글의 비용 재배치` 완료 상태로 갱신한다.
+- shared viewer와 builder preview는 lean light rig, shared subtle post FX, constrained no shadow/bloom 기준으로 구체화한다.
+
+Removed/Deprecated:
+- Slice 3가 단순 토글 분리만 남은 상태라는 서술.
+
 ### Phase 5. 공유/커뮤니티 안정화
 목표:
 - 정밀 편집 결과가 publish, shared viewer, gallery/community까지 동일하게 이어지게 한다.
@@ -205,8 +216,8 @@ Removed/Deprecated:
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 5 / Slice 1, Phase 5 / Slice 2
-- 다음 후보: Phase 4 / Slice 3 또는 Phase 5 / Slice 3
+- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2
+- 다음 후보: Phase 5 / Slice 3
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`
