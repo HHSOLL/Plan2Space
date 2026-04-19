@@ -197,6 +197,18 @@ Updated:
 Removed/Deprecated:
 - 상단뷰 pan 중심 탐색과 `목록/속성/항목뷰/이동/회전` 보조 affordance 의존.
 
+## 2026-04-19 변경 동기화 (Room Mode + Desk Precision Mode Split)
+Added:
+- editor `top` 뷰 내부에 `room mode`와 `desk precision mode`의 별도 정책 상태를 둔다.
+- room mode는 직접 드래그 기반 coarse layout, desk precision mode는 gizmo 기반 fine placement를 기본 조작으로 고정한다.
+
+Updated:
+- 상단뷰 카메라 정책을 단일 규칙에서 `room mode(넓은 framing + 90도 회전 단계)`와 `desk precision mode(더 높은 기본 zoom + 15도 회전 단계)`로 분리한다.
+- 상단뷰 편집 affordance를 `가구 직접 drag + transform gizmo 혼합`에서 `room mode=drag`, `desk precision mode=gizmo`로 명확히 나눈다.
+
+Removed/Deprecated:
+- 상단뷰 하나가 room layout과 desk surface 정밀 배치를 같은 snap/picking 정책으로 동시에 처리한다는 가정.
+
 ## 2026-04-17 변경 동기화 (Platform Cleanup + Asset Delivery Freeze)
 Added:
 - curated runtime asset의 장기 목표를 `repo public -> storage/CDN` cutover로 고정하고, 목적별 bucket 분리(`catalog-public`, `project-media`, generated staging/publish)를 기준 구조로 추가.

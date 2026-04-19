@@ -382,6 +382,18 @@ Updated:
 Removed/Deprecated:
 - 정밀 편집 엔진, 자산 파이프라인, 실사 렌더 개선을 한 번에 병렬 추진한다는 가정.
 
+## 2026-04-19 변경 동기화 (Phase 3 Slice 2 Complete)
+Added:
+- editor 상단뷰에 `room mode` / `desk precision mode` 토글을 추가하고, mode badge + bottom notice로 현재 정책을 노출한다.
+- desk precision mode에서만 transform gizmo / hotkey / local transform space를 기본 사용하도록 편집 경계를 추가한다.
+
+Updated:
+- Phase 3 Slice 2를 `camera + snap + picking 정책 분리` 완료 상태로 갱신한다.
+- room mode는 direct drag + 250mm snap, desk precision mode는 gizmo + 25mm / 15도 snap 기준으로 완료 조건을 구체화한다.
+
+Removed/Deprecated:
+- Phase 3 Slice 2를 단순 “향후 분리 예정” 상태로 두는 서술.
+
 ## 2026-04-14 변경 동기화 (Physical Fidelity Stage-1)
 Added:
 - Blender 실측 envelope를 기준으로 curated deskterior 규격 메타를 동기화하고 pipeline verify PASS 확보.

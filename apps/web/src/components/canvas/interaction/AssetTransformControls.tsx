@@ -5,6 +5,7 @@ import { useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { TransformControls as TransformControlsImpl } from "three-stdlib";
+import { resolveTopViewInteractionPolicy } from "../../../lib/editor/top-view-policy";
 import { constrainPlacementToAnchor } from "../../../lib/scene/anchors";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import type { Floor, RoomZone, Wall } from "../../../lib/stores/useSceneStore";
@@ -15,8 +16,6 @@ import {
   useShellSelector
 } from "../../../lib/stores/scene-slices";
 
-const GRID_SNAP = 0.25;
-const ROTATION_SNAP = Math.PI / 2;
 const DEFAULT_HALF_FOOTPRINT = 0.12;
 
 type PlacementBounds = {
@@ -144,6 +143,7 @@ function clampPositionToBounds(
 export default function AssetTransformControls() {
   const { scene } = useThree();
   const viewMode = useEditorStore((state) => state.viewMode);
+  const topMode = useEditorStore((state) => state.topMode);
   const transformMode = useEditorStore((state) => state.transformMode);
   const transformSpace = useEditorStore((state) => state.transformSpace);
   const setIsTransforming = useEditorStore((state) => state.setIsTransforming);
@@ -164,20 +164,37 @@ export default function AssetTransformControls() {
     () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
     [assets, selectedAssetId]
   );
+  const topViewPolicy = useMemo(
+    () => resolveTopViewInteractionPolicy(topMode),
+    [topMode]
+  );
   const placementBounds = useMemo(
     () => resolvePlacementBounds(floors, rooms, walls, scale),
     [floors, rooms, scale, walls]
   );
 
   useEffect(() => {
-    if (!selectedAssetId || viewMode !== "top" || readOnly) {
+    if (
+      !selectedAssetId ||
+      viewMode !== "top" ||
+      readOnly ||
+      !topViewPolicy.allowTransformControls
+    ) {
       setTarget(null);
       setIsTransforming(false);
       return;
     }
     const object = scene.getObjectByName(`furniture:${selectedAssetId}`) ?? null;
     setTarget(object);
-  }, [assets, readOnly, scene, selectedAssetId, setIsTransforming, viewMode]);
+  }, [
+    assets,
+    readOnly,
+    scene,
+    selectedAssetId,
+    setIsTransforming,
+    topViewPolicy.allowTransformControls,
+    viewMode
+  ]);
 
   useEffect(() => {
     const controls = controlsRef.current;
@@ -266,7 +283,9 @@ export default function AssetTransformControls() {
     return true;
   }, [applyLiveConstraints, selectedAssetId, target, updateFurniture]);
 
-  if (viewMode !== "top" || readOnly || !target) return null;
+  if (viewMode !== "top" || readOnly || !target || !topViewPolicy.allowTransformControls) {
+    return null;
+  }
 
   return (
     <TransformControls
@@ -275,8 +294,8 @@ export default function AssetTransformControls() {
       mode={transformMode}
       showY={false}
       space={transformSpace}
-      translationSnap={GRID_SNAP}
-      rotationSnap={ROTATION_SNAP}
+      translationSnap={topViewPolicy.translationSnap}
+      rotationSnap={topViewPolicy.rotationSnap}
       onObjectChange={applyLiveConstraints}
       onMouseDown={() => setIsTransforming(true)}
       onMouseUp={() => {

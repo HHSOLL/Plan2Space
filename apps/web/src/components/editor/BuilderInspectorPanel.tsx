@@ -9,13 +9,18 @@ import {
   inferLightingPresetId,
   type LightingPresetId
 } from "../../lib/scene/lighting-presets";
-import type { TransformMode, TransformSpace } from "../../lib/stores/useEditorStore";
+import type {
+  EditorTopMode,
+  TransformMode,
+  TransformSpace
+} from "../../lib/stores/useEditorStore";
 import type { LightingSettings, SceneAsset } from "../../lib/stores/useSceneStore";
 
 type BuilderInspectorPanelProps = {
   visible: boolean;
   layout?: "overlay" | "inline";
   className?: string;
+  topMode: EditorTopMode;
   transformMode: TransformMode;
   transformSpace: TransformSpace;
   wallMaterialIndex: number;
@@ -49,6 +54,7 @@ export function BuilderInspectorPanel({
   visible,
   layout = "overlay",
   className,
+  topMode,
   transformMode,
   transformSpace,
   wallMaterialIndex,
@@ -93,6 +99,11 @@ export function BuilderInspectorPanel({
     selectedAsset?.product?.scaleLocked ?? selectedAssetMeta?.scaleLocked ?? false;
   const dimensionsLabel = formatDimensionsMm(productDimensions);
   const activeLightingPresetId = inferLightingPresetId(lighting);
+  const topModeLabel = topMode === "room" ? "룸 배치" : "데스크 정밀";
+  const topModeDescription =
+    topMode === "room"
+      ? "제품 본체를 직접 드래그해 큰 위치를 옮깁니다. 250mm 그리드와 월드 기준 정렬만 유지합니다."
+      : "선택한 제품에 gizmo를 붙여 surface/anchor 기준 미세 위치와 회전을 조정합니다. 25mm / 15도 snap이 적용됩니다.";
   const containerClassName =
     layout === "inline"
       ? `flex h-full min-h-0 flex-col bg-white ${className ?? ""}`.trim()
@@ -113,53 +124,67 @@ export function BuilderInspectorPanel({
       </div>
       <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">변형 모드</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { id: "translate", label: "이동" },
-              { id: "rotate", label: "회전" }
-            ].map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => onTransformModeChange(mode.id as TransformMode)}
-                className={`rounded-full px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-                  transformMode === mode.id
-                    ? "bg-[#1c1a17] text-white"
-                    : "border border-black/10 bg-[#f4f4f1] text-[#4e473d] hover:border-black/20 hover:bg-white"
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">편집 정책</p>
+          <div className="rounded-[20px] border border-black/10 bg-[#faf9f7] p-4">
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#4e473d]">
+              {topModeLabel}
+            </div>
+            <p className="mt-2 text-[12px] leading-6 text-[#746b60]">{topModeDescription}</p>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">좌표계</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { id: "world", label: "월드" },
-              { id: "local", label: "로컬" }
-            ].map((space) => (
-              <button
-                key={space.id}
-                type="button"
-                onClick={() => onTransformSpaceChange(space.id as TransformSpace)}
-                className={`rounded-full px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-                  transformSpace === space.id
-                    ? "bg-[#1c1a17] text-white"
-                    : "border border-black/10 bg-[#f4f4f1] text-[#4e473d] hover:border-black/20 hover:bg-white"
-                }`}
-              >
-                {space.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] leading-5 text-[#82796d]">
-            월드는 방 기준, 로컬은 선택한 제품 기준 축으로 이동/회전합니다.
-          </p>
-        </div>
+        {topMode === "desk-precision" ? (
+          <>
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">변형 모드</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "translate", label: "이동" },
+                  { id: "rotate", label: "회전" }
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => onTransformModeChange(mode.id as TransformMode)}
+                    className={`rounded-full px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                      transformMode === mode.id
+                        ? "bg-[#1c1a17] text-white"
+                        : "border border-black/10 bg-[#f4f4f1] text-[#4e473d] hover:border-black/20 hover:bg-white"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">좌표계</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "world", label: "월드" },
+                  { id: "local", label: "로컬" }
+                ].map((space) => (
+                  <button
+                    key={space.id}
+                    type="button"
+                    onClick={() => onTransformSpaceChange(space.id as TransformSpace)}
+                    className={`rounded-full px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
+                      transformSpace === space.id
+                        ? "bg-[#1c1a17] text-white"
+                        : "border border-black/10 bg-[#f4f4f1] text-[#4e473d] hover:border-black/20 hover:bg-white"
+                    }`}
+                  >
+                    {space.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] leading-5 text-[#82796d]">
+                월드는 방 기준, 로컬은 선택한 제품 기준 축으로 이동/회전합니다.
+              </p>
+            </div>
+          </>
+        ) : null}
 
         <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a7064]">벽 마감</p>

@@ -57,7 +57,7 @@
 12. 문/창문 추가하기
 13. 스타일과 조명 모드(직접등/간접등)를 선택한 뒤 에디터로 진입하기
 14. 에디터에서 데스크테리어 가구 추가하기
-15. 가구 이동/회전하고 `월드/로컬` 좌표계를 전환해보기
+15. 상단뷰에서 `룸 배치`와 `데스크 정밀`을 각각 열어 가구 이동/회전 정책이 달라지는지 확인하기
 16. 저장/발행하기
 17. 공유 토큰 열기
 18. 읽기 전용 뷰어에서 제품 클릭하기
@@ -66,8 +66,9 @@
 21. `추가`/`설정` 버튼이 각각 좌측 drawer를 열고, 재클릭/바깥 클릭 시 닫히며 동시에 둘 다 열리지 않는지 확인하기
 22. 워크뷰에서는 ceiling이 보이고 상단뷰에서는 ceiling이 숨겨지는지 확인하기
 23. 모바일 viewport에서 share modal이 화면 안에 들어오고 내부만 스크롤되는지 확인하기
-24. 상단뷰에서 바닥/벽을 클릭해도 재질이 바뀌지 않고, 가구 drag/transform gizmo 조작 중 카메라가 같이 돌지 않는지 확인하기
-25. builder lighting step에서 `직접등` 선택 시 beam glow가, `간접등` 선택 시 천장 확산광이 preview에 반영되는지 확인하기
+24. 상단뷰에서 바닥/벽을 클릭해도 재질이 바뀌지 않고, room mode에서는 direct drag만, desk precision mode에서는 gizmo만 활성인지 확인하기
+25. room mode에서는 250mm snap과 90도 회전 단계가, desk precision mode에서는 25mm snap과 15도 회전 단계가 적용되는지 확인하기
+26. builder lighting step에서 `직접등` 선택 시 beam glow가, `간접등` 선택 시 천장 확산광이 preview에 반영되는지 확인하기
 
 실행 명령:
 
@@ -84,6 +85,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - 빌더/에디터/뷰어 공통 레이아웃이 유지되는지 확인
 - 에디터 상단 bar, 좌측 rail, 우측 zoom rail, 하단 pill toolbar가 레퍼런스 7번 shell로 노출되는지 확인
 - 상단뷰에서는 `목록/속성/항목뷰/이동/회전` 보조 UI가 사라지고 `추가/설정` drawer 패턴만 남는지 확인
+- 상단뷰 하단 pill toolbar에서 `룸 배치` / `데스크 정밀` 토글이 보이고, 워크뷰에서는 사라지는지 확인
 - shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
 - 뷰어에 편집 affordance가 노출되지 않는지 확인
 - 갤러리/커뮤니티 카드가 `/shared/[token]` 읽기 전용 뷰어로 이동하는지 확인
@@ -214,7 +216,7 @@ npm --workspace apps/web run assets:verify:deskterior
   - shared viewer 제품 카드에서 W/D/H, 마감 색상/재질, 디테일 노트가 보이는지 확인
   - 데스크/선반 계열 support 배치 시 실측 기반으로 상면(top) 클램핑이 자연스럽게 유지되는지 확인
   - floor/surface 배치 시 벽 관통 없이 wall clearance가 적용되고, 인접 자산과 과도한 중첩이 완화되는지 확인
-  - 상단뷰 하단 툴바와 속성 패널에서 `월드/로컬` 토글이 동일하게 동작하는지 확인
+  - room mode에서는 제품 본체 direct drag만, desk precision mode에서는 gizmo와 `월드/로컬` 토글만 동작하는지 확인
   - gizmo 드래그 중 방 외곽으로 나가려 하면 live clamp가 걸리고, mouse-up 후 위치가 다시 튀지 않는지 확인
   - 상단뷰 room shell이 floor footprint를 감싸는 닫힌 strip 형태로 읽히는지 확인
   - finishColor/finishMaterial이 있는 제품은 GLB 표면 톤/질감이 기존 대비 반영되는지 확인
@@ -391,3 +393,14 @@ Updated:
 
 Removed/Deprecated:
 - 프리뷰 내부 FAB delete와 안내 카드 존재를 전제로 한 builder QA 포인트.
+
+## 2026-04-19 변경 동기화 (Room Mode + Desk Precision QA)
+Added:
+- 상단뷰 하단 pill toolbar의 `룸 배치` / `데스크 정밀` 토글 검증 항목 추가.
+- room mode의 250mm snap / 90도 회전, desk precision mode의 25mm snap / 15도 회전 검증 항목 추가.
+
+Updated:
+- 에디터 QA를 `상단뷰 공통 drag/transform`에서 `room mode=direct drag`, `desk precision mode=gizmo + local/world` 분리 확인으로 갱신.
+
+Removed/Deprecated:
+- 상단뷰 하나에서 direct drag와 gizmo가 항상 동시에 활성이라는 운영 점검 가정.

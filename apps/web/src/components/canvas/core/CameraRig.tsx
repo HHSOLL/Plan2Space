@@ -5,6 +5,10 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { CapsuleCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import {
+  resolvePreferredTopViewZoom,
+  resolveTopViewInteractionPolicy
+} from "../../../lib/editor/top-view-policy";
 import { useEditorStore } from "../../../lib/stores/useEditorStore";
 import { useCameraSelector, useShellSelector } from "../../../lib/stores/scene-slices";
 import { useMobileControlsStore } from "../../../lib/stores/useMobileControlsStore";
@@ -21,7 +25,6 @@ const BODY_Y = 1;
 const EYE_HEIGHT = 0.6;
 const ZOOM_EVENT_NAME = "plan2space:zoom";
 const TOP_ROTATE_EVENT_NAME = "plan2space:top-rotate";
-const TOP_ROTATION_STEP = Math.PI / 2;
 
 function clampValue(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -167,6 +170,7 @@ function WalkRig({
 export default function CameraRig() {
   const { gl } = useThree();
   const viewMode = useEditorStore((state) => state.viewMode);
+  const topMode = useEditorStore((state) => state.topMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
   const walls = useShellSelector((slice) => slice.walls);
   const openings = useShellSelector((slice) => slice.openings);
@@ -178,6 +182,10 @@ export default function CameraRig() {
   const orthoRef = useRef<THREE.OrthographicCamera | null>(null);
   const controlsRef = useRef<any>(null);
   const topRotationRef = useRef(0);
+  const topViewPolicy = useMemo(
+    () => resolveTopViewInteractionPolicy(topMode),
+    [topMode]
+  );
   const bounds = useMemo(() => computeBounds(walls, scale), [walls, scale]);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerZ = (bounds.minZ + bounds.maxZ) / 2;
@@ -268,18 +276,30 @@ export default function CameraRig() {
       const camera = orthoRef.current;
       camera.position.set(centerX, topHeight, centerZ);
       camera.up.set(Math.sin(topRotationRef.current), 0, -Math.cos(topRotationRef.current));
-      camera.zoom = clampValue(nextZoom ?? camera.zoom ?? zoom, 32, 360);
+      camera.zoom = clampValue(
+        nextZoom ?? resolvePreferredTopViewZoom(topMode, zoom, camera.zoom),
+        topViewPolicy.zoomBounds.min,
+        topViewPolicy.zoomBounds.max
+      );
       camera.lookAt(centerX, 0, centerZ);
       camera.updateProjectionMatrix();
     },
-    [centerX, centerZ, topHeight, zoom]
+    [
+      centerX,
+      centerZ,
+      topHeight,
+      topMode,
+      topViewPolicy.zoomBounds.max,
+      topViewPolicy.zoomBounds.min,
+      zoom
+    ]
   );
 
   useEffect(() => {
     if (viewMode === "top") {
-      applyTopCamera(orthoRef.current?.zoom ?? zoom);
+      applyTopCamera(resolvePreferredTopViewZoom(topMode, zoom, orthoRef.current?.zoom));
     }
-  }, [applyTopCamera, viewMode, zoom]);
+  }, [applyTopCamera, topMode, viewMode, zoom]);
 
   useEffect(() => {
     if (viewMode !== "top") return;
@@ -338,7 +358,8 @@ export default function CameraRig() {
       const direction = customEvent.detail?.direction;
       if (direction !== "left" && direction !== "right") return;
 
-      topRotationRef.current += direction === "left" ? TOP_ROTATION_STEP : -TOP_ROTATION_STEP;
+      topRotationRef.current +=
+        direction === "left" ? topViewPolicy.rotateStep : -topViewPolicy.rotateStep;
       applyTopCamera();
     };
 
@@ -346,7 +367,7 @@ export default function CameraRig() {
     return () => {
       window.removeEventListener(TOP_ROTATE_EVENT_NAME, handleTopRotateEvent as EventListener);
     };
-  }, [applyTopCamera, viewMode]);
+  }, [applyTopCamera, topViewPolicy.rotateStep, viewMode]);
 
   if (viewMode === "walk") {
     return <WalkRig initialPosition={initialPosition} initialTarget={initialTarget} isTouch={isTouch} farClip={walkFarClip} />;
