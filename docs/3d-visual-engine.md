@@ -41,6 +41,7 @@
 - editor top-view는 orthographic top camera를 방 중심에 고정하고 좌/우 회전 버튼 + zoom만 허용하며 pan은 금지한다.
 - editor top-view의 room shell은 floor 위 footprint strip으로 읽혀야 하고, walk/builder-preview에서만 full-height wall mesh를 사용한다.
 - desk precision mode는 선택 제품의 위치/회전 값을 `mm/deg` measurement overlay로 함께 노출해 미세 배치 확인을 보조한다.
+- desk precision mode는 surface anchor 제품의 support asset / support surface / surface size / margin / top 높이를 surface lock 상태로 함께 노출한다.
 - walk view 진입 시 기본 시선은 room center/entrance target을 향해야 한다.
 
 ## 뷰어 규칙
@@ -230,6 +231,16 @@ Updated:
 
 Removed/Deprecated:
 - 정밀 편집 inspector가 내부 renderer 단위를 그대로 보여주는 가정.
+
+## 2026-04-19 변경 동기화 (Desk Precision Surface Lock)
+Added:
+- desk precision mode에서 surface anchor 제품의 support surface lock 상태를 inspector/overlay에서 확인하는 상호작용 품질 기준을 추가한다.
+
+Updated:
+- 정밀 배치 확인 범위를 위치/회전 수치 외에 support surface size / margin / top 높이까지 확장한다.
+
+Removed/Deprecated:
+- support surface lock 상태를 사용자가 눈대중으로만 확인해도 충분하다는 가정.
 
 ## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
 Added:

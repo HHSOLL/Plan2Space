@@ -18,6 +18,31 @@ export type AssetSupportProfile = {
   surfaces: AssetSupportSurface[];
 };
 
+export type SupportSurfaceLockAssetLike = {
+  id: string;
+  assetId: string;
+  catalogItemId?: string | null;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+  supportProfile?: AssetSupportProfile | null;
+  product?: {
+    dimensionsMm?: {
+      width: number;
+      depth: number;
+      height: number;
+    } | null;
+  } | null;
+};
+
+export type ResolvedSupportSurfaceLock = {
+  supportAssetId: string;
+  surface: AssetSupportSurface;
+  sizeMm: [number, number];
+  marginMm: [number, number];
+  topMm: number;
+};
+
 type SupportProfileDescriptor = {
   catalogItemId?: string | null;
   assetId: string;
@@ -41,8 +66,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function isSupportAnchorType(value: unknown): value is SupportAnchorType {
+export function isSupportAnchorType(value: unknown): value is SupportAnchorType {
   return typeof value === "string" && SUPPORT_ANCHOR_TYPES.includes(normalizeSceneAnchorType(value) as SupportAnchorType);
+}
+
+function rotateXZ(x: number, z: number, yaw: number) {
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  return {
+    x: x * cos - z * sin,
+    z: x * sin + z * cos
+  };
+}
+
+function inverseRotateXZ(x: number, z: number, yaw: number) {
+  return rotateXZ(x, z, -yaw);
 }
 
 function toNumber(value: unknown, fallback: number) {
@@ -96,6 +134,10 @@ function normalizeDimensionsMm(
 
 function toMeters(value: number) {
   return value / 1000;
+}
+
+function toMillimeters(value: number) {
+  return Math.round(value * 1000);
 }
 
 function resolveDimensionBounds(descriptor: SupportProfileDescriptor) {
@@ -285,4 +327,68 @@ export function resolveAssetSupportProfile(
   descriptor: SupportProfileDescriptor & { supportProfile?: AssetSupportProfile | null }
 ): AssetSupportProfile | null {
   return normalizeAssetSupportProfile(descriptor.supportProfile) ?? inferAssetSupportProfile(descriptor);
+}
+
+export function formatSupportSurfaceLabel(surfaceId: string) {
+  return surfaceId
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function resolveSupportSurfaceLock(
+  anchorType: SceneAnchorType | undefined,
+  position: [number, number, number],
+  supportAsset: SupportSurfaceLockAssetLike | null
+): ResolvedSupportSurfaceLock | null {
+  if (!supportAsset || !isSupportAnchorType(anchorType)) {
+    return null;
+  }
+
+  const profile = resolveAssetSupportProfile({
+    catalogItemId: supportAsset.catalogItemId,
+    assetId: supportAsset.assetId,
+    dimensionsMm: supportAsset.product?.dimensionsMm ?? null,
+    supportProfile: supportAsset.supportProfile
+  });
+
+  if (!profile) {
+    return null;
+  }
+
+  const yaw = supportAsset.rotation[1] ?? 0;
+  const scaleX = Math.max(Math.abs(supportAsset.scale[0] ?? 1), 0.0001);
+  const scaleY = Math.max(Math.abs(supportAsset.scale[1] ?? 1), 0.0001);
+  const scaleZ = Math.max(Math.abs(supportAsset.scale[2] ?? 1), 0.0001);
+  const [x, , z] = position;
+  type SupportSurfaceCandidate = ResolvedSupportSurfaceLock & { distanceSq: number };
+
+  return profile.surfaces
+    .filter((surface) => surface.anchorTypes.includes(anchorType))
+    .reduce<SupportSurfaceCandidate | null>((best, surface) => {
+      const centerOffset = rotateXZ(surface.center[0] * scaleX, surface.center[1] * scaleZ, yaw);
+      const surfaceCenterX = supportAsset.position[0] + centerOffset.x;
+      const surfaceCenterZ = supportAsset.position[2] + centerOffset.z;
+      const localPoint = inverseRotateXZ(x - surfaceCenterX, z - surfaceCenterZ, yaw);
+      const halfWidth = Math.max((surface.size[0] * scaleX) / 2, 0);
+      const halfDepth = Math.max((surface.size[1] * scaleZ) / 2, 0);
+      const marginX = Math.min((surface.margin?.[0] ?? 0.08) * scaleX, halfWidth);
+      const marginZ = Math.min((surface.margin?.[1] ?? 0.06) * scaleZ, halfDepth);
+      const clampedLocalX = Math.min(halfWidth, Math.max(-halfWidth, localPoint.x));
+      const clampedLocalZ = Math.min(halfDepth, Math.max(-halfDepth, localPoint.z));
+      const distanceSq = (clampedLocalX - localPoint.x) ** 2 + (clampedLocalZ - localPoint.z) ** 2;
+      const candidate: SupportSurfaceCandidate = {
+        supportAssetId: supportAsset.id,
+        surface,
+        sizeMm: [toMillimeters(surface.size[0] * scaleX), toMillimeters(surface.size[1] * scaleZ)],
+        marginMm: [toMillimeters(marginX), toMillimeters(marginZ)],
+        topMm: toMillimeters(supportAsset.position[1] + surface.top * scaleY),
+        distanceSq
+      };
+
+      if (!best) {
+        return candidate;
+      }
+
+      return distanceSq < best.distanceSq ? candidate : best;
+    }, null);
 }

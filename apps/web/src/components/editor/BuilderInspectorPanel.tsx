@@ -9,6 +9,7 @@ import {
   radiansToDegrees
 } from "../../lib/domain/scene-placement";
 import { SCENE_ANCHOR_TYPES, type SceneAnchorType } from "../../lib/scene/anchor-types";
+import { isSupportAnchorType } from "../../lib/scene/support-profiles";
 import { builderFloorFinishes, builderWallFinishes } from "../../lib/builder/templates";
 import {
   LIGHTING_PRESETS,
@@ -37,6 +38,13 @@ type BuilderInspectorPanelProps = {
   assetsCount: number;
   selectedAsset: SceneAsset | null;
   selectedAssetMeta: LibraryCatalogItem | null;
+  surfaceLockInfo: {
+    supportLabel: string;
+    surfaceLabel: string;
+    sizeMm: [number, number];
+    marginMm: [number, number];
+    topMm: number;
+  } | null;
   onTransformModeChange: (mode: TransformMode) => void;
   onTransformSpaceChange: (space: TransformSpace) => void;
   onWallMaterialChange: (index: number) => void;
@@ -75,6 +83,7 @@ export function BuilderInspectorPanel({
   assetsCount,
   selectedAsset,
   selectedAssetMeta,
+  surfaceLockInfo,
   onTransformModeChange,
   onTransformSpaceChange,
   onWallMaterialChange,
@@ -110,6 +119,7 @@ export function BuilderInspectorPanel({
   const dimensionsLabel = formatDimensionsMm(productDimensions);
   const activeLightingPresetId = inferLightingPresetId(lighting);
   const topModeLabel = topMode === "room" ? "룸 배치" : "데스크 정밀";
+  const usesSurfaceLock = isSupportAnchorType(selectedAsset?.anchorType);
   const topModeDescription =
     topMode === "room"
       ? "제품 본체를 직접 드래그해 큰 위치를 옮깁니다. 250mm 그리드와 월드 기준 정렬만 유지합니다."
@@ -536,6 +546,77 @@ export function BuilderInspectorPanel({
                       </div>
                     </div>
                   </div>
+                </div>
+              ) : null}
+              {topMode === "desk-precision" ? (
+                <div className="rounded-[18px] border border-black/10 bg-white p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a7064]">
+                      Surface Lock
+                    </div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${
+                        surfaceLockInfo
+                          ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : usesSurfaceLock
+                            ? "border border-amber-200 bg-amber-50 text-amber-700"
+                            : "border border-black/10 bg-[#f4f1eb] text-[#7a7064]"
+                      }`}
+                    >
+                      {surfaceLockInfo ? "Locked" : usesSurfaceLock ? "Pending" : "Off"}
+                    </span>
+                  </div>
+
+                  {surfaceLockInfo ? (
+                    <>
+                      <div className="mt-3 text-sm font-semibold text-[#1f1b16]">
+                        {surfaceLockInfo.supportLabel}
+                      </div>
+                      <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[#8b8277]">
+                        {surfaceLockInfo.surfaceLabel}
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#5f574d]">
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Surface
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.sizeMm[0]} x {surfaceLockInfo.sizeMm[1]} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Margin
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {surfaceLockInfo.marginMm[0]} / {surfaceLockInfo.marginMm[1]} mm
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Top
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">{surfaceLockInfo.topMm} mm</div>
+                        </div>
+                        <div className="rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2">
+                          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b8277]">
+                            Anchor
+                          </div>
+                          <div className="mt-1 font-semibold text-[#1f1b16]">
+                            {anchorLabel[selectedAsset.anchorType ?? "floor"]}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : usesSurfaceLock ? (
+                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-[#8a6a2c]">
+                      현재 기준면은 support surface를 사용하지만, 아직 잠긴 상면 정보를 확인하지 못했습니다.
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-[11px] leading-5 text-[#6f665b]">
+                      floor / wall / ceiling 기준면은 surface lock을 사용하지 않습니다.
+                    </div>
+                  )}
                 </div>
               ) : null}
               {isYManagedByAnchor || isRotationManagedByAnchor ? (

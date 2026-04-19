@@ -1,10 +1,18 @@
 import type { LibraryCatalogItem } from "../../lib/builder/catalog";
 import { metersToMillimeters, radiansToDegrees } from "../../lib/domain/scene-placement";
+import { isSupportAnchorType } from "../../lib/scene/support-profiles";
 import type { SceneAsset } from "../../lib/stores/useSceneStore";
 
 type PrecisionMeasurementOverlayProps = {
   selectedAsset: SceneAsset | null;
   selectedAssetMeta: LibraryCatalogItem | null;
+  surfaceLockInfo: {
+    supportLabel: string;
+    surfaceLabel: string;
+    sizeMm: [number, number];
+    marginMm: [number, number];
+    topMm: number;
+  } | null;
   formatAssetLabel: (assetId: string) => string;
 };
 
@@ -22,6 +30,7 @@ function formatDimensions(
 export function PrecisionMeasurementOverlay({
   selectedAsset,
   selectedAssetMeta,
+  surfaceLockInfo,
   formatAssetLabel
 }: PrecisionMeasurementOverlayProps) {
   if (!selectedAsset) {
@@ -31,6 +40,7 @@ export function PrecisionMeasurementOverlay({
   const dimensions = selectedAsset.product?.dimensionsMm ?? selectedAssetMeta?.dimensionsMm ?? null;
   const dimensionsLabel = formatDimensions(dimensions);
   const anchorLabel = selectedAsset.anchorType?.replaceAll("_", " ") ?? "floor";
+  const usesSurfaceLock = isSupportAnchorType(selectedAsset.anchorType);
 
   return (
     <div className="pointer-events-none absolute bottom-4 right-4 z-[24] w-[min(92vw,320px)] rounded-[22px] border border-black/10 bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,18,22,0.14)] backdrop-blur-xl">
@@ -58,6 +68,24 @@ export function PrecisionMeasurementOverlay({
           <div className="mt-1 font-semibold text-[#1f1b16]">{toRoundedDegree(selectedAsset.rotation[1])} deg</div>
         </div>
       </div>
+
+      {surfaceLockInfo ? (
+        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[11px] text-[#245c46]">
+          <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#3b7d63]">Surface Lock</div>
+          <div className="mt-1 font-semibold">
+            {surfaceLockInfo.supportLabel} · {surfaceLockInfo.surfaceLabel}
+          </div>
+          <div className="mt-1 text-[10px] text-[#356953]">
+            {surfaceLockInfo.sizeMm[0]} x {surfaceLockInfo.sizeMm[1]} mm · margin{" "}
+            {surfaceLockInfo.marginMm[0]} / {surfaceLockInfo.marginMm[1]} mm
+          </div>
+          <div className="mt-1 text-[10px] text-[#356953]">top {surfaceLockInfo.topMm} mm</div>
+        </div>
+      ) : usesSurfaceLock ? (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-[#8a6a2c]">
+          support surface lock가 아직 확인되지 않았습니다.
+        </div>
+      ) : null}
 
       {dimensionsLabel ? (
         <div className="mt-3 rounded-xl border border-black/10 bg-[#faf9f7] px-3 py-2 text-[11px] font-semibold text-[#1f1b16]">

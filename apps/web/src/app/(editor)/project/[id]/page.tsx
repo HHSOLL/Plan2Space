@@ -50,6 +50,10 @@ import { resolveTopViewInteractionPolicy } from "../../../../lib/editor/top-view
 import { constrainPlacementToAnchor, inferAnchorTypeForCatalogItem } from "../../../../lib/scene/anchors";
 import { normalizeSceneAnchorType } from "../../../../lib/scene/anchor-types";
 import { getLightingPreset, type LightingPresetId } from "../../../../lib/scene/lighting-presets";
+import {
+  formatSupportSurfaceLabel,
+  resolveSupportSurfaceLock
+} from "../../../../lib/scene/support-profiles";
 
 const STARTER_SET_OFFSETS: Array<[number, number]> = [
   [-2.2, -1.2],
@@ -296,6 +300,44 @@ export default function ProjectEditorPage() {
     () => (selectedAsset ? findCatalogItem(libraryCatalog, selectedAsset) : null),
     [libraryCatalog, selectedAsset]
   );
+  const selectedSupportAsset = useMemo(
+    () =>
+      selectedAsset?.supportAssetId
+        ? assets.find((asset) => asset.id === selectedAsset.supportAssetId) ?? null
+        : null,
+    [assets, selectedAsset]
+  );
+  const selectedSupportCatalogItem = useMemo(
+    () => (selectedSupportAsset ? findCatalogItem(libraryCatalog, selectedSupportAsset) : null),
+    [libraryCatalog, selectedSupportAsset]
+  );
+  const selectedSupportSurfaceLock = useMemo(
+    () =>
+      selectedAsset && selectedSupportAsset
+        ? resolveSupportSurfaceLock(
+            selectedAsset.anchorType,
+            selectedAsset.position,
+            selectedSupportAsset
+          )
+        : null,
+    [selectedAsset, selectedSupportAsset]
+  );
+  const selectedSurfaceLockInfo = useMemo(() => {
+    if (!selectedSupportAsset || !selectedSupportSurfaceLock) {
+      return null;
+    }
+
+    return {
+      supportLabel:
+        selectedSupportAsset.product?.name ??
+        selectedSupportCatalogItem?.label ??
+        formatAssetIdLabel(selectedSupportAsset.assetId),
+      surfaceLabel: formatSupportSurfaceLabel(selectedSupportSurfaceLock.surface.id),
+      sizeMm: selectedSupportSurfaceLock.sizeMm,
+      marginMm: selectedSupportSurfaceLock.marginMm,
+      topMm: selectedSupportSurfaceLock.topMm
+    };
+  }, [selectedSupportAsset, selectedSupportCatalogItem, selectedSupportSurfaceLock]);
 
   const createAssetId = useCallback(
     () =>
@@ -760,6 +802,7 @@ export default function ProjectEditorPage() {
                                   assetsCount={assets.length}
                                   selectedAsset={selectedAsset}
                                   selectedAssetMeta={selectedCatalogItem}
+                                  surfaceLockInfo={selectedSurfaceLockInfo}
                                   onTransformModeChange={setTransformMode}
                                   onTransformSpaceChange={setTransformSpace}
                                   onWallMaterialChange={applyWallFinish}
@@ -843,6 +886,7 @@ export default function ProjectEditorPage() {
                     <PrecisionMeasurementOverlay
                       selectedAsset={selectedAsset}
                       selectedAssetMeta={selectedCatalogItem}
+                      surfaceLockInfo={selectedSurfaceLockInfo}
                       formatAssetLabel={formatAssetIdLabel}
                     />
                   ) : null}

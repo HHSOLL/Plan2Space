@@ -70,14 +70,15 @@
 24. 상단뷰에서 바닥/벽을 클릭해도 재질이 바뀌지 않고, room mode에서는 direct drag만, desk precision mode에서는 gizmo만 활성인지 확인하기
 25. room mode에서는 250mm snap과 90도 회전 단계가, desk precision mode에서는 25mm snap과 15도 회전 단계가 적용되는지 확인하기
 26. desk precision mode에서 선택 자산을 고르면 inspector와 measurement overlay가 같은 X/Z/Y(mm), Yaw(deg), 실측 W/D/H(mm)를 일관되게 보여주는지 확인하기
-27. builder lighting step에서 `직접등` 선택 시 beam glow가, `간접등` 선택 시 천장 확산광이 preview에 반영되는지 확인하기
-28. room mode에서는 후처리/동적 조명이 꺼지고, desk precision mode에서는 정밀 확인에 필요한 저비용 bloom/조명만 선택적으로 올라오는지 확인하기
-29. shared viewer는 editor보다 더 가벼운 read-only preset으로 열리고, hotspot drawer 동작에는 영향이 없는지 확인하기
-30. shared viewer 첫 진입 시 어떤 제품도 자동 선택되지 않고, hotspot 또는 목록 선택 이후에만 상세 카드가 열리는지 확인하기
-31. gallery/community에서 room/tone/density 필터를 건 뒤 header count와 다음 페이지 total이 현재 필터 결과 기준으로 유지되는지 확인하기
-32. community에서 최신 게시, featured 장면, 주요 컬렉션 summary가 현재 페이지 카드 조각이 아니라 active filter scope 전체 기준으로 유지되는지 확인하기
-33. shared viewer와 builder preview가 constrained 환경에서 fill light + bloom 없이도 읽기 흐름을 유지하고, walk/showcase에서만 richer shadow/bloom이 유지되는지 확인하기
-34. `NEXT_PUBLIC_ENABLE_REALTIME_LABS=1`로 로컬 실행 시 `/labs/realtime`만 열리고, primary navigation에는 realtime/presence 진입점이 생기지 않는지 확인하기
+27. desk precision mode에서 surface anchor 제품을 고르면 inspector와 overlay에 같은 support asset / support surface / surface size / margin / top 높이가 표시되고, 비-surface anchor에서는 lock off로 보이는지 확인하기
+28. builder lighting step에서 `직접등` 선택 시 beam glow가, `간접등` 선택 시 천장 확산광이 preview에 반영되는지 확인하기
+29. room mode에서는 후처리/동적 조명이 꺼지고, desk precision mode에서는 정밀 확인에 필요한 저비용 bloom/조명만 선택적으로 올라오는지 확인하기
+30. shared viewer는 editor보다 더 가벼운 read-only preset으로 열리고, hotspot drawer 동작에는 영향이 없는지 확인하기
+31. shared viewer 첫 진입 시 어떤 제품도 자동 선택되지 않고, hotspot 또는 목록 선택 이후에만 상세 카드가 열리는지 확인하기
+32. gallery/community에서 room/tone/density 필터를 건 뒤 header count와 다음 페이지 total이 현재 필터 결과 기준으로 유지되는지 확인하기
+33. community에서 최신 게시, featured 장면, 주요 컬렉션 summary가 현재 페이지 카드 조각이 아니라 active filter scope 전체 기준으로 유지되는지 확인하기
+34. shared viewer와 builder preview가 constrained 환경에서 fill light + bloom 없이도 읽기 흐름을 유지하고, walk/showcase에서만 richer shadow/bloom이 유지되는지 확인하기
+35. `NEXT_PUBLIC_ENABLE_REALTIME_LABS=1`로 로컬 실행 시 `/labs/realtime`만 열리고, primary navigation에는 realtime/presence 진입점이 생기지 않는지 확인하기
 
 실행 명령:
 
@@ -97,6 +98,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - 상단뷰 하단 pill toolbar에서 `룸 배치` / `데스크 정밀` 토글이 보이고, 워크뷰에서는 사라지는지 확인
 - room mode와 desk precision mode 전환 시 체감 화질과 idle 비용이 달라지고, 워크뷰 품질에는 영향을 주지 않는지 확인
 - desk precision mode에서 선택 자산의 inspector와 measurement overlay가 동일한 X/Z/Y(mm), Yaw(deg), 실측 W/D/H(mm) 기준으로 동기화되는지 확인
+- desk precision mode에서 surface anchor 제품의 inspector와 overlay가 동일한 support asset / support surface / surface size / margin / top 높이 기준으로 동기화되는지 확인
 - shared viewer가 generic showcase viewer와 다른 경량 preset으로 동작해도 제품 hotspot / drawer 읽기 흐름은 유지되는지 확인
 - shared viewer walk HUD는 터치 조작용 요소만 남고 crosshair는 보이지 않는지 확인
 - shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
@@ -234,6 +236,7 @@ npm --workspace apps/web run assets:verify:deskterior
   - floor/surface 배치 시 벽 관통 없이 wall clearance가 적용되고, 인접 자산과 과도한 중첩이 완화되는지 확인
   - room mode에서는 제품 본체 direct drag만, desk precision mode에서는 gizmo와 `월드/로컬` 토글만 동작하는지 확인
   - desk precision mode에서 inspector와 measurement overlay가 선택 자산의 X/Z/Y(mm), Yaw(deg), 실측 W/D/H(mm)를 같은 값으로 유지하는지 확인
+  - desk precision mode에서 surface anchor 제품의 inspector와 overlay가 support asset / support surface / surface size / margin / top 높이를 같은 값으로 유지하는지 확인
   - gizmo 드래그 중 방 외곽으로 나가려 하면 live clamp가 걸리고, mouse-up 후 위치가 다시 튀지 않는지 확인
   - 상단뷰 room shell이 floor footprint를 감싸는 닫힌 strip 형태로 읽히는지 확인
   - finishColor/finishMaterial이 있는 제품은 GLB 표면 톤/질감이 기존 대비 반영되는지 확인
@@ -431,3 +434,13 @@ Updated:
 
 Removed/Deprecated:
 - 정밀 편집 수치가 inspector 내부 값만 맞으면 충분하다는 QA 가정.
+
+## 2026-04-19 변경 동기화 (Desk Precision Surface Lock)
+Added:
+- desk precision mode에서 surface anchor 제품의 support asset / support surface / surface size / margin / top 높이를 inspector와 overlay 양쪽에서 함께 검증하는 QA 항목을 추가.
+
+Updated:
+- 정밀 배치 QA 기준을 수치 측정만이 아니라 surface lock 상태 동기화 확인까지 확장.
+
+Removed/Deprecated:
+- support surface lock 상태를 사용자 추정에만 맡겨도 된다는 QA 가정.
