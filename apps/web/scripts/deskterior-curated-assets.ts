@@ -20,6 +20,16 @@ export type CuratedDeskteriorAsset = {
     maxDrawCalls: number;
     maxTriangleCount: number;
   };
+  supportProfileExpectation?: {
+    surfaces: Array<{
+      id: string;
+      anchorTypes: Array<"desk_surface" | "shelf_surface" | "furniture_surface">;
+      center: [number, number];
+      size: [number, number];
+      top: number;
+      margin?: [number, number];
+    }>;
+  };
   optionsHint?: string;
 };
 
@@ -53,6 +63,18 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
       maxFileSizeBytes: 1_000_000,
       maxDrawCalls: 16,
       maxTriangleCount: 2_000
+    },
+    supportProfileExpectation: {
+      surfaces: [
+        {
+          id: "desk-top",
+          anchorTypes: ["desk_surface", "furniture_surface"],
+          center: [0, 0],
+          size: [1.33, 0.58],
+          top: 0.755,
+          margin: [0.08, 0.08]
+        }
+      ]
     }
   },
   {
@@ -66,6 +88,18 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
       maxFileSizeBytes: 1_000_000,
       maxDrawCalls: 8,
       maxTriangleCount: 2_000
+    },
+    supportProfileExpectation: {
+      surfaces: [
+        {
+          id: "stand-top",
+          anchorTypes: ["desk_surface", "furniture_surface"],
+          center: [0, 0],
+          size: [0.56, 0.13],
+          top: 0.072,
+          margin: [0.02, 0.02]
+        }
+      ]
     }
   },
   {
@@ -119,6 +153,18 @@ export const curatedDeskteriorAssets: CuratedDeskteriorAsset[] = [
       maxFileSizeBytes: 1_000_000,
       maxDrawCalls: 8,
       maxTriangleCount: 2_000
+    },
+    supportProfileExpectation: {
+      surfaces: [
+        {
+          id: "tray-base",
+          anchorTypes: ["desk_surface", "shelf_surface", "furniture_surface"],
+          center: [0, 0],
+          size: [0.22, 0.14],
+          top: 0.012,
+          margin: [0.01, 0.01]
+        }
+      ]
     }
   },
   {

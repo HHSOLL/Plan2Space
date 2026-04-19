@@ -226,6 +226,7 @@ npm --workspace apps/web run assets:verify:deskterior
 - `assets:optimize:deskterior`가 실패하면 draw call, triangle, runtime size budget 초과 asset부터 확인한다.
 - `assets:validate:deskterior`가 실패하면 해당 GLB의 구조 오류, 경고, draw call 수치를 먼저 확인한다.
 - `assets:verify:deskterior`가 실패하면 manifest의 `assetId`/필수 메타(`brand`, `externalUrl`, `description`, `category`, `options`)를 우선 수정한다.
+- support surface 자산에서 `assets:verify:deskterior`가 실패하면 `supportProfile.surfaces[].{id,anchorTypes,center,size,top,margin}` 계약을 먼저 맞춘다.
 - 규격 불일치가 발견되면 `.blend` 실측 값을 기준으로 `dimensionsMm`/`supportProfile`/`options`를 함께 갱신한다.
 - `p2s_desk_lamp_glow`의 `options`에는 반드시 `light-emitter` 힌트를 유지한다.
 
