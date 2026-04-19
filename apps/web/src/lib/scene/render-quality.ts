@@ -1,6 +1,10 @@
 import type { EditorTopMode, EditorViewMode } from "../stores/useEditorStore";
 
-export type SceneInteractionMode = "editor" | "viewer" | "preview";
+export type SceneInteractionMode =
+  | "editor"
+  | "viewer-shared"
+  | "viewer-showcase"
+  | "preview";
 
 export type SceneRenderQuality = {
   dpr: [number, number];
@@ -40,6 +44,8 @@ export function resolveSceneRenderQuality({
   viewportWidth
 }: SceneRenderQualityInput): SceneRenderQuality {
   const isTopView = viewMode === "top";
+  const isSharedViewer = interactionMode === "viewer-shared";
+  const isViewerShowcase = interactionMode === "viewer-showcase";
   const isBuilderPreview = interactionMode === "preview" || viewMode === "builder-preview";
   const constrainedDevice =
     coarsePointer ||
@@ -48,6 +54,38 @@ export function resolveSceneRenderQuality({
     (hardwareConcurrency > 0 && hardwareConcurrency <= 6);
 
   if (isTopView) {
+    if (isSharedViewer) {
+      return {
+        dpr: constrainedDevice ? clampRange(0.66, 0.84) : clampRange(0.72, 0.92),
+        enableShadows: false,
+        shadowMapSize: 512,
+        enablePostEffects: false,
+        enableSsao: false,
+        composerMultisampling: 0,
+        enableContactShadows: false,
+        contactShadowResolution: 0,
+        contactShadowBlur: 0,
+        contactShadowOpacity: 0,
+        allowDynamicLights: false
+      };
+    }
+
+    if (isViewerShowcase) {
+      return {
+        dpr: constrainedDevice ? clampRange(0.8, 1) : clampRange(0.92, 1.14),
+        enableShadows: false,
+        shadowMapSize: 512,
+        enablePostEffects: !constrainedDevice,
+        enableSsao: false,
+        composerMultisampling: 0,
+        enableContactShadows: false,
+        contactShadowResolution: 0,
+        contactShadowBlur: 0,
+        contactShadowOpacity: 0,
+        allowDynamicLights: true
+      };
+    }
+
     if (topMode === "desk-precision") {
       return {
         dpr: constrainedDevice ? clampRange(0.78, 1) : clampRange(0.9, 1.12),
@@ -91,6 +129,22 @@ export function resolveSceneRenderQuality({
       contactShadowResolution: constrainedDevice ? 192 : 320,
       contactShadowBlur: 1.45,
       contactShadowOpacity: 0.28,
+      allowDynamicLights: true
+    };
+  }
+
+  if (isSharedViewer) {
+    return {
+      dpr: constrainedDevice ? clampRange(0.82, 1) : clampRange(0.9, 1.08),
+      enableShadows: true,
+      shadowMapSize: constrainedDevice ? 640 : 896,
+      enablePostEffects: !constrainedDevice,
+      enableSsao: false,
+      composerMultisampling: 0,
+      enableContactShadows: constrainedDevice ? false : true,
+      contactShadowResolution: constrainedDevice ? 0 : 224,
+      contactShadowBlur: 1.45,
+      contactShadowOpacity: 0.24,
       allowDynamicLights: true
     };
   }

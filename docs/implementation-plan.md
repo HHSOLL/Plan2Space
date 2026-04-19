@@ -154,6 +154,17 @@ Updated:
 Removed/Deprecated:
 - Phase 4 Slice 1을 단순 lazy-load 정리만 남은 상태로 보는 서술.
 
+## 2026-04-19 변경 동기화 (Phase 4 Slice 2 Complete)
+Added:
+- `viewer-shared`와 `viewer-showcase` 품질 슬롯을 추가하고, shared viewer를 전용 preset으로 연결했다.
+
+Updated:
+- Phase 4 Slice 2를 `desk showcase preset과 shared viewer preset 분리` 완료 상태로 갱신한다.
+- shared viewer는 hotspot/read-only 중심 경량 preset, showcase는 richer viewer preset 슬롯으로 문서상 역할을 분리한다.
+
+Removed/Deprecated:
+- shared viewer를 generic viewer preset에 계속 묶어두는 서술.
+
 ### Phase 5. 공유/커뮤니티 안정화
 목표:
 - 정밀 편집 결과가 publish, shared viewer, gallery/community까지 동일하게 이어지게 한다.

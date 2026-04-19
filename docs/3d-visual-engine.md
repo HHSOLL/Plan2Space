@@ -187,6 +187,17 @@ Updated:
 Removed/Deprecated:
 - room mode와 desk precision mode가 같은 DPR/post FX/light budget을 공유한다는 가정.
 
+## 2026-04-19 변경 동기화 (Viewer Preset Split)
+Added:
+- read-only shared viewer 전용 `viewer-shared` 품질 슬롯과, 추후 desk showcase용 `viewer-showcase` 품질 슬롯을 구분하는 기준을 추가한다.
+
+Updated:
+- shared viewer는 hotspot drawer 중심 읽기 전용 경험에 맞춰 더 낮은 DPR/보수적 shadow-contact shadow/post FX 예산을 사용하도록 갱신한다.
+- generic showcase viewer는 shared viewer보다 풍부한 조명/후처리 여지를 갖는 preset으로 정의한다.
+
+Removed/Deprecated:
+- 모든 viewer 경로가 동일한 walk/top 품질 preset을 공유한다는 가정.
+
 ## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
 Added:
 - builder/editor opening render에 Blender 기반 경량 GLB(`single/double/french door`, `single/wide window`) 자산 사용 기준을 추가.

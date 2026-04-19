@@ -122,3 +122,13 @@ Updated:
 
 Removed/Deprecated:
 - 상단뷰 전체를 하나의 render budget으로만 취급하는 측정 가정.
+
+## 2026-04-19 변경 동기화 (Viewer Preset Split)
+Added:
+- shared viewer는 `viewer-shared` 경량 preset 기준으로 측정하고, 향후 showcase viewer는 별도 `viewer-showcase` 기준으로 측정한다.
+
+Updated:
+- read-only viewer 측정을 단일 viewer preset에서 shared viewer 전용 preset 기준으로 분리한다.
+
+Removed/Deprecated:
+- shared viewer와 showcase viewer를 같은 walk/top 예산으로 합산 측정하는 가정.

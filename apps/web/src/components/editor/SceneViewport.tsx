@@ -58,9 +58,10 @@ export function SceneViewport({
 }: SceneViewportProps) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const topMode = useEditorStore((state) => state.topMode);
-  const resolvedInteractionMode = interactionMode ?? "viewer";
-  const renderViewerHotspots = resolvedInteractionMode === "viewer";
-  const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
+  const resolvedInteractionMode = interactionMode ?? "viewer-showcase";
+  const renderViewerHotspots = resolvedInteractionMode === "viewer-shared";
+  const renderInteractiveShellControls =
+    resolvedInteractionMode === "editor" || resolvedInteractionMode === "preview";
   const renderOpeningDecor = renderInteractiveShellControls && viewMode !== "top";
   const renderLightingDecor = renderInteractiveShellControls && viewMode !== "top";
   const isLightTone = chromeTone === "light";

@@ -219,6 +219,16 @@ Updated:
 Removed/Deprecated:
 - room mode와 desk precision mode가 동일한 top-view 렌더 품질 프로필을 공유해도 된다는 가정.
 
+## 2026-04-19 변경 동기화 (Shared Viewer Preset Split)
+Added:
+- read-only shared viewer는 `viewer-shared` preset, 추후 desk showcase는 `viewer-showcase` preset을 사용하도록 품질 슬롯을 분리한다.
+
+Updated:
+- shared viewer는 더 보수적인 DPR/그림자/후처리 예산을 쓰고, showcase preset은 richer visual 여지를 남기는 방향으로 기준을 갱신한다.
+
+Removed/Deprecated:
+- shared viewer와 desk showcase가 동일한 viewer 품질 preset을 그대로 공유한다는 가정.
+
 ## 2026-04-17 변경 동기화 (Platform Cleanup + Asset Delivery Freeze)
 Added:
 - curated runtime asset의 장기 목표를 `repo public -> storage/CDN` cutover로 고정하고, 목적별 bucket 분리(`catalog-public`, `project-media`, generated staging/publish)를 기준 구조로 추가.
