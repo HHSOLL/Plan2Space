@@ -502,6 +502,9 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
     () => (enableDynamicLight ? resolveAssetLightProfile(asset) : null),
     [asset, enableDynamicLight]
   );
+  const shouldRenderLight =
+    lightProfile != null &&
+    (viewMode !== "top" || topMode === "desk-precision");
 
   const handleReadOnlySelect = (event: ThreeEvent<PointerEvent>) => {
     if (!readOnly) return;
@@ -622,7 +625,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
       <RigidBody type="fixed" colliders="cuboid" position={asset.position} rotation={asset.rotation}>
         <group name={`furniture:${asset.id}`} scale={asset.scale} {...groupProps}>
           {content}
-          {lightProfile ? (
+          {shouldRenderLight ? (
             <pointLight
               position={lightProfile.offset}
               color={lightProfile.color}
@@ -646,7 +649,7 @@ function FurnitureItem({ asset, enableDynamicLight }: { asset: SceneAsset; enabl
       {...groupProps}
     >
       {content}
-      {lightProfile && viewMode !== "top" ? (
+      {shouldRenderLight ? (
         <pointLight
           position={lightProfile.offset}
           color={lightProfile.color}

@@ -112,3 +112,13 @@ interaction note: drag/rotate 동안 눈에 띄는 frame drop 없음
 - 신규 runtime 자산은 파일 크기, texture 크기, draw call 영향도를 같이 검토한다.
 - publish/share/public 뷰어 실패는 로깅 이벤트로 남겨 재현 가능해야 함
 - 회귀가 budget 초과 시, 기능 추가보다 성능 회귀 원인 제거를 우선
+
+## 2026-04-19 변경 동기화 (Top Render Ladder Split)
+Added:
+- room mode는 low-DPR / no post FX / no dynamic lights, desk precision mode는 higher-DPR / selective post FX / capped dynamic lights로 측정한다.
+
+Updated:
+- top-view 측정 대상을 단일 preset에서 `room mode`와 `desk precision mode`로 분리한다.
+
+Removed/Deprecated:
+- 상단뷰 전체를 하나의 render budget으로만 취급하는 측정 가정.

@@ -57,6 +57,7 @@ export function SceneViewport({
   showHud = true
 }: SceneViewportProps) {
   const viewMode = useEditorStore((state) => state.viewMode);
+  const topMode = useEditorStore((state) => state.topMode);
   const resolvedInteractionMode = interactionMode ?? "viewer";
   const renderViewerHotspots = resolvedInteractionMode === "viewer";
   const renderInteractiveShellControls = resolvedInteractionMode !== "viewer";
@@ -71,6 +72,7 @@ export function SceneViewport({
     return resolveSceneRenderQuality({
       interactionMode: resolvedInteractionMode,
       viewMode,
+      topMode,
       coarsePointer,
       devicePixelRatio: typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
       hardwareConcurrency:
@@ -79,7 +81,7 @@ export function SceneViewport({
           : 8,
       viewportWidth: typeof window !== "undefined" ? window.innerWidth : 1440
     });
-  }, [resolvedInteractionMode, viewMode]);
+  }, [resolvedInteractionMode, topMode, viewMode]);
 
   const sceneContent = (
     <>

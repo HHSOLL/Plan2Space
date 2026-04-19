@@ -1,4 +1,4 @@
-import type { EditorViewMode } from "../stores/useEditorStore";
+import type { EditorTopMode, EditorViewMode } from "../stores/useEditorStore";
 
 export type SceneInteractionMode = "editor" | "viewer" | "preview";
 
@@ -19,6 +19,7 @@ export type SceneRenderQuality = {
 type SceneRenderQualityInput = {
   interactionMode: SceneInteractionMode;
   viewMode: EditorViewMode;
+  topMode: EditorTopMode;
   coarsePointer: boolean;
   devicePixelRatio: number;
   hardwareConcurrency: number;
@@ -32,6 +33,7 @@ function clampRange(min: number, max: number): [number, number] {
 export function resolveSceneRenderQuality({
   interactionMode,
   viewMode,
+  topMode,
   coarsePointer,
   devicePixelRatio,
   hardwareConcurrency,
@@ -46,8 +48,24 @@ export function resolveSceneRenderQuality({
     (hardwareConcurrency > 0 && hardwareConcurrency <= 6);
 
   if (isTopView) {
+    if (topMode === "desk-precision") {
+      return {
+        dpr: constrainedDevice ? clampRange(0.78, 1) : clampRange(0.9, 1.12),
+        enableShadows: false,
+        shadowMapSize: 512,
+        enablePostEffects: !constrainedDevice,
+        enableSsao: false,
+        composerMultisampling: 0,
+        enableContactShadows: false,
+        contactShadowResolution: 0,
+        contactShadowBlur: 0,
+        contactShadowOpacity: 0,
+        allowDynamicLights: true
+      };
+    }
+
     return {
-      dpr: constrainedDevice ? clampRange(0.7, 0.92) : clampRange(0.8, 1),
+      dpr: constrainedDevice ? clampRange(0.68, 0.88) : clampRange(0.74, 0.96),
       enableShadows: false,
       shadowMapSize: 512,
       enablePostEffects: false,

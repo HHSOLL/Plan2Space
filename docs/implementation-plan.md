@@ -143,6 +143,17 @@
 - room mode와 shared viewer는 안정적인 route shell 성능을 유지한다.
 - desk precision mode에서만 필요한 품질 효과가 선택적으로 활성화된다.
 
+## 2026-04-19 변경 동기화 (Phase 4 Slice 1 Complete)
+Added:
+- top-view render-quality가 `topMode`를 읽고 room mode / desk precision mode에 다른 DPR, post FX, dynamic light budget을 적용하도록 연결했다.
+
+Updated:
+- Phase 4 Slice 1을 `top-entry lean preset + desk precision selective fidelity preset` 완료 상태로 갱신한다.
+- room mode는 no post FX / no dynamic lights, desk precision mode는 capped dynamic lights / selective post FX 기준으로 범위를 구체화한다.
+
+Removed/Deprecated:
+- Phase 4 Slice 1을 단순 lazy-load 정리만 남은 상태로 보는 서술.
+
 ### Phase 5. 공유/커뮤니티 안정화
 목표:
 - 정밀 편집 결과가 publish, shared viewer, gallery/community까지 동일하게 이어지게 한다.
