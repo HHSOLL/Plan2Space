@@ -198,6 +198,16 @@ Updated:
 Removed/Deprecated:
 - 모든 viewer 경로가 동일한 walk/top 품질 preset을 공유한다는 가정.
 
+## 2026-04-19 변경 동기화 (Shared Viewer Runtime Lightweight Pass)
+Added:
+- shared viewer는 기본 선택 상태 없이 시작하고, hotspot/list 선택 시에만 상세 패널이 활성화되는 기준을 추가한다.
+
+Updated:
+- shared viewer HUD를 crosshair 제거 + walk touch HUD 유지 구조로 단순화한다.
+
+Removed/Deprecated:
+- shared viewer가 editor와 같은 crosshair 시각 피드백을 기본으로 유지한다는 가정.
+
 ## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
 Added:
 - builder/editor opening render에 Blender 기반 경량 GLB(`single/double/french door`, `single/wide window`) 자산 사용 기준을 추가.

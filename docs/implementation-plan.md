@@ -179,13 +179,23 @@ Removed/Deprecated:
 - Slice 2. gallery/community summary와 필터 정확도 보강
 - Slice 3. presence/realtime은 분리 브랜치에서 평가
 
+## 2026-04-19 변경 동기화 (Phase 5 Slice 1 Complete)
+Added:
+- shared viewer 첫 진입을 `선택 없음` 상태로 시작하고, read-only HUD를 crosshair 제거 + walk touch HUD 유지 구조로 경량화했다.
+
+Updated:
+- Phase 5 Slice 1을 `shared viewer runtime 경량화` 완료 상태로 갱신한다.
+
+Removed/Deprecated:
+- shared viewer가 첫 자산 자동 선택과 editor형 HUD를 기본으로 유지한다는 서술.
+
 완료 기준:
 - publish 후 shared viewer와 community 카드가 같은 장면 상태를 재현한다.
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1
-- 다음 후보: Phase 3 / Slice 2
+- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 5 / Slice 1
+- 다음 후보: Phase 4 / Slice 3 또는 Phase 5 / Slice 2
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`

@@ -36,6 +36,7 @@ type SceneViewportProps = {
   bottomNotice?: ReactNode;
   chromeTone?: "dark" | "light";
   showHud?: boolean;
+  hudProfile?: "full" | "shared-viewer" | "none";
 };
 
 export function SceneViewport({
@@ -54,7 +55,8 @@ export function SceneViewport({
   modeBadge,
   bottomNotice,
   chromeTone = "dark",
-  showHud = true
+  showHud = true,
+  hudProfile = "full"
 }: SceneViewportProps) {
   const viewMode = useEditorStore((state) => state.viewMode);
   const topMode = useEditorStore((state) => state.topMode);
@@ -134,9 +136,9 @@ export function SceneViewport({
         </Suspense>
       </Canvas>
 
-      {showHud ? (
+      {showHud && hudProfile !== "none" ? (
         <>
-          <Crosshair />
+          {hudProfile === "full" ? <Crosshair /> : null}
           <MobileTouchHint />
           <MobileControls />
         </>

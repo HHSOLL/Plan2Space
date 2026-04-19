@@ -57,6 +57,7 @@ export function ReadOnlyViewerViewport({
           chromeTone="light"
           interactionMode="viewer-shared"
           showHud={true}
+          hudProfile="shared-viewer"
         />
 
         {(showReadOnlyNotice || selectedLabel) ? (

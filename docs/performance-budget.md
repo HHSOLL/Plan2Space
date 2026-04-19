@@ -132,3 +132,13 @@ Updated:
 
 Removed/Deprecated:
 - shared viewer와 showcase viewer를 같은 walk/top 예산으로 합산 측정하는 가정.
+
+## 2026-04-19 변경 동기화 (Shared Viewer Runtime Lightweight Pass)
+Added:
+- shared viewer 최초 진입 시 자동 제품 선택 없이 baseline idle 비용을 측정한다.
+
+Updated:
+- shared viewer HUD 측정을 crosshair 제외 기준으로 갱신한다.
+
+Removed/Deprecated:
+- shared viewer idle baseline에 자동 선택 상태와 crosshair HUD를 포함하는 가정.

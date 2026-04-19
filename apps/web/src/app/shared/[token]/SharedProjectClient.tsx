@@ -191,7 +191,7 @@ export function SharedProjectClient({
       floorMaterialIndex: scenePayload.floorMaterialIndex,
       lighting: scenePayload.lighting
     });
-    setSelectedAssetId(scenePayload.assets[0]?.id ?? null);
+    setSelectedAssetId(null);
     setEntranceId(scenePayload.entranceId);
     applyShellPreset("viewer");
     return () => {

@@ -229,6 +229,16 @@ Updated:
 Removed/Deprecated:
 - shared viewer와 desk showcase가 동일한 viewer 품질 preset을 그대로 공유한다는 가정.
 
+## 2026-04-19 변경 동기화 (Shared Viewer Runtime Lightweight Pass)
+Added:
+- shared viewer 첫 진입은 제품 자동 선택 없이 시작하고, 사용자가 hotspot 또는 목록에서 명시적으로 선택하도록 기준을 추가한다.
+
+Updated:
+- read-only shared viewer HUD는 crosshair를 제거하고, walk 전용 모바일 조작 HUD만 유지하도록 경량화한다.
+
+Removed/Deprecated:
+- shared viewer가 editor와 같은 crosshair 계열 HUD를 기본으로 노출한다는 가정.
+
 ## 2026-04-17 변경 동기화 (Platform Cleanup + Asset Delivery Freeze)
 Added:
 - curated runtime asset의 장기 목표를 `repo public -> storage/CDN` cutover로 고정하고, 목적별 bucket 분리(`catalog-public`, `project-media`, generated staging/publish)를 기준 구조로 추가.
