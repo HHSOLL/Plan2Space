@@ -117,7 +117,7 @@
 - numeric inspector, measurement overlay, micro-view, surface lock의 우선순위를 명시
 
 세부 Slice:
-- Slice 1. 데이터 계약과 단위 타입 정리
+- Slice 1. 데이터 계약과 단위 타입 정리 (완료 2026-04-19)
 - Slice 2. 카메라/스냅/피킹 정책 분리
 - Slice 3. 정밀 배치 UI와 측정 오버레이
 - Slice 4. save/load와 viewer 재현성 검증
@@ -162,8 +162,8 @@
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3
-- 다음 후보: Phase 3 / Slice 1
+- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1
+- 다음 후보: Phase 3 / Slice 2
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`
@@ -373,6 +373,7 @@ Updated:
 - P2 Slice 1/2를 validate + optimize + budget gate 완료 상태로 갱신했다.
 - deskterior 자산 완료 기준을 file size, draw call, triangle budget까지 포함하는 runtime gate로 강화했다.
 - P2 Slice 3를 supportProfile surface/anchor metadata verify 완료 상태로 갱신했다.
+- Phase 3 Slice 1을 `sceneDocument` mm 정수 placement snapshot 계약 도입 완료 상태로 갱신했다.
 
 Updated:
 - P2를 단일 대형 트랙이 아니라 Slice 단위로 끊어서 진행하는 실행 방식을 명시.
