@@ -86,6 +86,7 @@
 ```bash
 npm --workspace apps/web run qa:primary
 npm --workspace apps/web run verify:scene-document
+npm --workspace apps/web run verify:public-scene
 E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 npm --workspace apps/web run primary:e2e:room-flow:full
 ```
@@ -103,6 +104,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay가 동일한 support asset / support surface / surface size / margin / top 높이 기준으로 동기화되는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay micro-view가 동일한 support-local marker / offset 위치를 가리키는지 확인
 - `npm --workspace apps/web run verify:scene-document`가 placement/support/product metadata roundtrip 검증을 통과하는지 확인
+- `npm --workspace apps/web run verify:public-scene`가 shared viewer payload에서 placement/support/product metadata roundtrip 검증을 통과하는지 확인
 - shared viewer가 generic showcase viewer와 다른 경량 preset으로 동작해도 제품 hotspot / drawer 읽기 흐름은 유지되는지 확인
 - shared viewer walk HUD는 터치 조작용 요소만 남고 crosshair는 보이지 않는지 확인
 - shared viewer가 상단 light bar, 우측 zoom rail, 하단 readonly status pill 기준으로 노출되는지 확인
@@ -469,3 +471,13 @@ Updated:
 
 Removed/Deprecated:
 - save/load 재현성 검증을 수동 editor/shared viewer 확인에만 의존하던 QA 기준.
+
+## 2026-04-19 변경 동기화 (Public Scene Payload Verify)
+Added:
+- `verify:public-scene` 실행으로 shared viewer payload의 placement/support/product metadata 재현성을 검증하는 QA 항목을 추가.
+
+Updated:
+- publish/shared 재현성 점검을 수동 링크 확인만이 아니라 public payload verify 통과까지 포함하도록 확장.
+
+Removed/Deprecated:
+- shared viewer payload 회귀를 수동 링크 열기만으로 감지하던 QA 기준.

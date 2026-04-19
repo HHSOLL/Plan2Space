@@ -70,6 +70,7 @@
 - 저장 경계에서는 placement를 `unit="mm"` 정수 스냅샷으로 보관하고, renderer/store는 meter float 파생값만 소비한다.
 - 제품 물리 메타데이터(`dimensionsMm`, `finishColor`, `finishMaterial`, `detailNotes`, `scaleLocked`)를 누락 없이 전달한다.
 - `verify:scene-document`는 save payload -> sceneDocument -> parse/load roundtrip에서 placement/support metadata/product metadata가 유지되는지 점검한다.
+- `verify:public-scene`는 shared_projects + pinned version + preview meta에서 shared viewer payload가 같은 placement/support/product metadata를 재현하는지 점검한다.
 
 ## 물리 정합성 기준
 - Blender 소스(`assets/blender/deskterior`)의 실측 envelope 기준으로 카탈로그 규격을 관리한다.
@@ -263,6 +264,16 @@ Updated:
 
 Removed/Deprecated:
 - sceneDocument roundtrip 회귀를 수동 뷰어 확인만으로 감지하던 기준.
+
+## 2026-04-19 변경 동기화 (Public Scene Payload Verify)
+Added:
+- public scene payload verify 스크립트가 shared viewer payload의 placement/support/product metadata 재현성을 점검하는 품질 기준을 추가한다.
+
+Updated:
+- 공유 경로 품질 기준을 shared viewer 렌더 결과 확인뿐 아니라 public payload 구성 검증까지 포함하도록 확장한다.
+
+Removed/Deprecated:
+- shared viewer payload 회귀를 수동 링크 열기만으로 감지하던 기준.
 
 ## 2026-04-18 변경 동기화 (Opening Asset + Top-Entry Optimization)
 Added:
