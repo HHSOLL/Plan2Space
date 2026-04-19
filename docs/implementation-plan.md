@@ -52,6 +52,7 @@
 - 에디터 shell을 레퍼런스 7번 기준(top bar / slim catalog rail / grey viewport / bottom pill toolbar)으로 통일
 - Blender 알려진 슬롯 기준(`DeskWood`, `DeskMetal`, `StandWood`, `StandPad`, `LampBody`, `LampAccent`, `LampBulb`)의 slot-aware finish 매핑 적용
 - 오픈소스/공식문서/논문 기반 개선안은 `docs/research-roadmap.md`를 기준으로 추적
+- loaded GLB 자산에 `three-mesh-bvh` bounds tree를 생성해 hover/select raycast 비용을 완화
 - shared viewport에 mode-aware render quality ladder 적용(top/builder 경량화, walk/viewer 품질 유지)
 - top-view 자산 drag를 local preview 후 commit 방식으로 전환해 pointer-move store churn 완화
 - physics/runtime shadow/contact shadow/post FX를 walk/viewer 중심으로 재배치해 furnished scene headroom 확보
@@ -83,7 +84,7 @@
 세부 Slice:
 - Slice 1. 문서 기준선 정리
 - Slice 2. 계측 훅/로그 포인트 배치 (완료 2026-04-19)
-- Slice 3. 회귀 비교 포맷과 QA 루틴 연결
+- Slice 3. 회귀 비교 포맷과 QA 루틴 연결 (완료 2026-04-19)
 
 완료 기준:
 - draw call, textures, geometries, heap, picking latency, placement tolerance 예산이 문서화된다.
@@ -100,6 +101,18 @@ Updated:
 
 Removed/Deprecated:
 - SceneViewport 성능 계측을 수동 DevTools 세션에만 의존하던 상태.
+
+## 2026-04-19 변경 동기화 (Phase 1 Slice 3 Complete)
+Added:
+- `window.__PLAN2SPACE_TELEMETRY_CAPTURE__` capture helper로 telemetry 이벤트를 regression entry JSON으로 묶는 경로를 추가했다.
+- `perf:report:verify` / `qa:primary:perf` 스크립트로 예산 검증과 baseline delta 비교 루틴을 추가했다.
+
+Updated:
+- Phase 1 Slice 3을 `회귀 비교 포맷과 QA 루틴 연결` 완료 상태로 갱신한다.
+- 원문 보고서의 `같은 장면 dev/build 비교` 권고를 JSON report + CLI 검증 흐름으로 고정한다.
+
+Removed/Deprecated:
+- 회귀 수치를 개발자별 자유 형식 메모에만 의존하던 상태.
 
 ### Phase 2. 자산 파이프라인 강제
 목표:

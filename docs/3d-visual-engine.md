@@ -64,6 +64,7 @@
 - builder preview와 `viewer-shared`는 fill directional light를 기본으로 올리지 않고, constrained profile에서는 directional shadow와 bloom을 먼저 제거한다.
 - `viewer-shared`는 subtle vignette/noise까지만 허용하고, bloom은 `desk precision` 또는 richer walk/showcase preset에서만 선택적으로 사용한다.
 - 가구 drag는 local preview 후 pointer-up 시점에 store commit을 우선 적용해 전역 scene 재직렬화를 매 pointer move마다 유발하지 않는다.
+- loaded GLB 자산의 hover/select raycast는 `three-mesh-bvh` bounds tree를 우선 사용해 작은 desk asset 다수 배치 시 raycast 비용을 낮춘다.
 
 ## Scene 데이터 소비 규칙
 - `apps/web/src/lib/domain/scene-document.ts`를 scene 복원의 canonical 매핑 계층으로 사용
@@ -256,6 +257,16 @@ Updated:
 
 Removed/Deprecated:
 - support-local 위치를 숫자만으로 확인해도 충분하다는 가정.
+
+## 2026-04-19 변경 동기화 (BVH Raycast Baseline)
+Added:
+- `useGLBAsset` 로드 경로에서 loaded scene geometry에 bounds tree를 생성하고, `THREE.Mesh.raycast`를 accelerated raycast로 교체하는 기준을 추가했다.
+
+Updated:
+- 정밀 편집 picking 성능 기준을 "telemetry로 지연 측정"뿐 아니라 "BVH-backed raycast 기본 사용"까지 포함하도록 확장한다.
+
+Removed/Deprecated:
+- desk precision picking이 raw triangle raycast 위에서만 동작한다는 가정.
 
 ## 2026-04-19 변경 동기화 (SceneDocument Roundtrip Verify)
 Added:

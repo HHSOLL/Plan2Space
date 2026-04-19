@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { useLoader } from "@react-three/fiber";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { ensureSceneBoundsTrees } from "../performance/mesh-bvh";
 
 const dracoLoader = new DRACOLoader();
 const decoderPathRaw =
@@ -19,8 +21,14 @@ dracoLoader.setWorkerLimit(workerLimit);
 dracoLoader.preload();
 
 export function useGLBAsset(path: string): GLTF {
-  return useLoader(GLTFLoader, path, (loader) => {
+  const gltf = useLoader(GLTFLoader, path, (loader) => {
     loader.setDRACOLoader(dracoLoader);
     loader.setMeshoptDecoder(MeshoptDecoder);
   });
+
+  useEffect(() => {
+    ensureSceneBoundsTrees(gltf.scene);
+  }, [gltf]);
+
+  return gltf;
 }

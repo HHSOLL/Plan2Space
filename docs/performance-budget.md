@@ -98,6 +98,7 @@ E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 - 개발 모드에서는 `/project/[id]`, `/shared/[token]` 등 `SceneViewport`를 쓰는 경로가 기본으로 `plan2space:renderer-stats`, `plan2space:interaction-latency` 브라우저 이벤트를 발행한다.
 - production build에서는 URL에 `?telemetry=1`을 붙이거나 `window.__PLAN2SPACE_TELEMETRY__ = true`를 먼저 설정한 뒤 같은 이벤트를 켠다.
 - 최신 샘플은 `window.__PLAN2SPACE_LAST_RENDERER_STATS__`, `window.__PLAN2SPACE_LAST_INTERACTION_LATENCY__`에 남는다.
+- 캡처 세션은 `window.__PLAN2SPACE_TELEMETRY_CAPTURE__`로 시작/종료하며, 종료 시 예산 검증용 regression entry JSON을 반환한다.
 - `renderer-stats`는 약 1초 간격으로 FPS / draw calls / triangles / textures / geometries를 보낸다.
 - `interaction-latency`는 hover / select / drag-start / gizmo-drag-start의 next-paint 기준 지연을 보낸다.
 
@@ -110,6 +111,38 @@ window.addEventListener("plan2space:interaction-latency", (event) => {
   console.log(event.detail);
 });
 ```
+
+```js
+window.__PLAN2SPACE_TELEMETRY_CAPTURE__.start({
+  scenario: "dense-desk",
+  build: "production",
+  interactionProfile: "desk-precision"
+});
+
+// 20초 정도 상호작용 후
+window.__PLAN2SPACE_TELEMETRY_CAPTURE__.stop({
+  fcpP95Ms: 2890,
+  heapGrowthPercentPoints: 0.4,
+  placementToleranceMm: 3,
+  interactionNote: "drag/rotate 중 지속 frame drop 없음"
+});
+```
+
+## Regression Report Format
+
+- 리포트 파일은 `entries` 배열을 가진 JSON 객체이거나, entry 배열 단독 JSON이어도 된다.
+- 각 entry는 최소한 `route`, `scenario`, `build`, `interactionProfile`, `fcpP95Ms`, `heapGrowthPercentPoints`, `fpsAvg`, `fpsMin`, `drawCalls`, `triangles`, `textures`, `geometries`, `pickingLatencyP95Ms`, `interactionNote`를 포함해야 한다.
+- `room-mode`, `desk-precision` entry는 `placementToleranceMm`도 필수다.
+- 보고서 전체는 4개 시나리오(`empty-room`, `furnished-room`, `dense-desk`, `high-fidelity-toggle`)와 2개 build(`dev`, `production`)를 모두 포함해야 한다.
+
+검증 명령:
+
+```bash
+npm --workspace apps/web run perf:report:verify -- --report=/absolute/path/to/perf-report.json
+npm --workspace apps/web run perf:report:verify -- --report=/absolute/path/to/perf-report.json --baseline=/absolute/path/to/perf-baseline.json
+```
+
+`--baseline`를 같이 주면 동일한 `route + scenario + build + interactionProfile` 키 기준으로 delta를 출력한다.
 
 ```text
 route: /project/[id]
@@ -183,3 +216,13 @@ Updated:
 
 Removed/Deprecated:
 - 조작 지연을 ad-hoc DevTools 타임라인에서만 확인하던 측정 방식.
+
+## 2026-04-19 변경 동기화 (Regression Report Workflow)
+Added:
+- `window.__PLAN2SPACE_TELEMETRY_CAPTURE__` 기반 capture session과 `perf:report:verify` CLI를 regression report 표준 경로로 추가했다.
+
+Updated:
+- Phase 1 측정 절차를 `이벤트 구독`에서 `capture -> JSON report -> budget/baseline verify` 루프로 확장했다.
+
+Removed/Deprecated:
+- PR 코멘트에 수치를 자유 형식 텍스트로만 남기던 방식.

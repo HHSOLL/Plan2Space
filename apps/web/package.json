@@ -9,6 +9,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit --incremental false",
     "qa:primary": "npm run type-check && npm run lint && npm run build",
+    "qa:primary:perf": "npm run qa:primary && node --import tsx scripts/verify-performance-regression-report.ts",
     "primary:e2e:room-flow": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=smoke",
     "primary:e2e:room-flow:strict": "E2E_ROOM_FLOW_STRICT=1 node --import tsx scripts/e2e-primary-room-flow.ts --mode=contract",
     "primary:e2e:room-flow:full": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=flow --strict",
@@ -20,6 +21,7 @@
     "verify:scene-document": "node --import tsx scripts/verify-scene-document-roundtrip.ts",
     "verify:public-scene": "node --import tsx scripts/verify-public-scene-payload.ts",
     "verify:showcase-scene": "node --import tsx scripts/verify-showcase-scene-consistency.ts",
+    "perf:report:verify": "node --import tsx scripts/verify-performance-regression-report.ts",
     "smoke:preview-runtime": "node scripts/smoke-preview-runtime.mjs"
   },
   "dependencies": {
