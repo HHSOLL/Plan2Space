@@ -46,6 +46,24 @@ type ShowcaseVersionRow = {
   snapshot_path: string | null;
 };
 
+type ShowcaseProjectLike = {
+  meta: Record<string, unknown> | null;
+  thumbnail_path: string | null;
+};
+
+type ShowcaseVersionLike = {
+  snapshot_path: string | null;
+};
+
+type ShowcaseShareLike = {
+  id: string;
+  token: string;
+  project_id: string;
+  project_version_id: string | null;
+  preview_meta: unknown;
+  published_at: string;
+};
+
 type ShowcaseRow = {
   id: string;
   token: string;
@@ -116,6 +134,30 @@ async function resolveProjectThumbnail(thumbnailPath: string | null, metadata: R
   }
 
   return signed.data.signedUrl;
+}
+
+export function resolveShowcaseThumbnailSource(
+  project: ShowcaseProjectLike | null,
+  versionRow: ShowcaseVersionLike | null
+) {
+  return versionRow?.snapshot_path ?? project?.thumbnail_path ?? null;
+}
+
+export function buildShowcaseSnapshotItem(input: {
+  sharedProject: ShowcaseShareLike;
+  thumbnail?: string;
+}): ShowcaseSnapshotItem {
+  const { sharedProject, thumbnail } = input;
+  return {
+    id: sharedProject.id,
+    token: sharedProject.token,
+    project_id: sharedProject.project_id,
+    project_version_id: sharedProject.project_version_id,
+    preview_meta: sharedProject.preview_meta,
+    published_at: sharedProject.published_at,
+    thumbnail,
+    previewMeta: getSharePreviewMeta(sharedProject.preview_meta)
+  };
 }
 
 function resolveProjectRow(value: ShowcaseProjectRow | ShowcaseProjectRow[] | null) {
@@ -330,19 +372,12 @@ async function mapShowcaseRows(rows: ShowcaseBatchRow[]) {
     rows.map(async (item) => {
       const project = resolveProjectRow(item.projects);
       const version = resolveVersionRow(item.project_versions);
-      return {
-        id: item.id,
-        token: item.token,
-        project_id: item.project_id,
-        project_version_id: item.project_version_id,
-        preview_meta: item.preview_meta,
-        published_at: item.published_at,
-        thumbnail: await resolveProjectThumbnail(
-          version?.snapshot_path ?? project?.thumbnail_path ?? null,
-          project?.meta ?? null
-        ),
-        previewMeta: getSharePreviewMeta(item.preview_meta)
-      } satisfies ShowcaseSnapshotItem;
+      const thumbnail = await resolveProjectThumbnail(resolveShowcaseThumbnailSource(project, version), project?.meta ?? null);
+
+      return buildShowcaseSnapshotItem({
+        sharedProject: item,
+        thumbnail
+      });
     })
   );
 }

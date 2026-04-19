@@ -258,7 +258,7 @@ Removed/Deprecated:
 현재 착수:
 - 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
 - 진행 중: Phase 3 / Slice 3 (sub-slice 1, 2, 3 완료, extended measurement는 후속)
-- 다음 후보: Phase 3 / Slice 4 sub-slice 2
+- 다음 후보: Phase 3 / Slice 3 extended measurement
 
 ## 2026-04-19 변경 동기화 (Phase 3 Slice 4 Sub-slice 1)
 Added:
@@ -279,6 +279,16 @@ Updated:
 
 Removed/Deprecated:
 - publish/shared 재현성 점검이 수동 링크 확인에만 의존하던 기준.
+
+## 2026-04-19 변경 동기화 (Phase 3 Slice 4 Sub-slice 3)
+Added:
+- gallery/community 카드 projection이 shared viewer public payload와 같은 token/version/preview asset summary를 유지하는지 검증하는 `verify:showcase-scene` 스크립트를 추가했다.
+
+Updated:
+- Phase 3 Slice 4를 `sceneDocument roundtrip -> shared viewer payload -> showcase card projection`까지 포함한 완료 상태로 갱신한다.
+
+Removed/Deprecated:
+- gallery/community 카드 메타 정합성을 수동 피드 확인에만 의존하던 기준.
 
 ## 품질/회귀 게이트
 - `npm --workspace apps/web run type-check`
