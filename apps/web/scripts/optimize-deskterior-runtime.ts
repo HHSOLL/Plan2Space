@@ -13,6 +13,7 @@ function parseArgs(argv: string[]) {
       "--force",
       "--json",
       "--strict-warnings",
+      "--require-ktx2",
       "--help"
     ].includes(arg)
   );
@@ -33,6 +34,7 @@ async function main() {
         "  --skip-textures    Skip the optional texture compression pass",
         "  --force            Re-optimize assets even if meshopt extension already exists",
         "  --strict-warnings  Pass through to post-optimize validation",
+        "  --require-ktx2     Pass through to post-optimize validation",
         "  --help             Show help"
       ].join("\n")
     );

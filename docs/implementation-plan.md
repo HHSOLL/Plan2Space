@@ -53,11 +53,13 @@
 - Blender 알려진 슬롯 기준(`DeskWood`, `DeskMetal`, `StandWood`, `StandPad`, `LampBody`, `LampAccent`, `LampBulb`)의 slot-aware finish 매핑 적용
 - 오픈소스/공식문서/논문 기반 개선안은 `docs/research-roadmap.md`를 기준으로 추적
 - loaded GLB 자산에 `three-mesh-bvh` bounds tree를 생성해 hover/select raycast 비용을 완화
+- `KTX2Loader` + local basis transcoder sync 경로를 runtime decode 기본선으로 추가
 - shared viewport에 mode-aware render quality ladder 적용(top/builder 경량화, walk/viewer 품질 유지)
 - top-view 자산 drag를 local preview 후 commit 방식으로 전환해 pointer-move store churn 완화
 - physics/runtime shadow/contact shadow/post FX를 walk/viewer 중심으로 재배치해 furnished scene headroom 확보
 - editor top-view 회전을 drag에서 버튼형 90도 회전 rail로 단순화
 - direct lighting beam shader / indirect ceiling glow shader를 scene shell 렌더에 연결
+- room/desk top-view와 builder preview에 demand frame loop + explicit invalidate 경로를 적용
 
 ## P3
 목표: 커뮤니티 공유/조회 경험 강화
@@ -242,6 +244,18 @@ Updated:
 Removed/Deprecated:
 - Slice 3가 단순 토글 분리만 남은 상태라는 서술.
 
+## 2026-04-19 변경 동기화 (KTX2 Runtime Ready + Demand Frame Loop)
+Added:
+- `assets:sync:ktx2-transcoder` 스크립트와 local basis transcoder public sync 경로를 추가했다.
+- editor top-view와 builder preview에 demand frame loop + explicit invalidation 경로를 추가했다.
+
+Updated:
+- P2 자산 파이프라인 범위를 `Meshopt optimize + validate`에서 `Meshopt optimize + KTX2 runtime-ready decode + validate/require-ktx2 gate`까지 확장했다.
+- Phase 4 idle profile 범위를 품질 ladder 설명에서 실제 frame loop 정책 적용까지 확장했다.
+
+Removed/Deprecated:
+- top-view와 builder preview가 idle 상태에서도 continuous frame loop를 유지한다는 서술.
+
 ### Phase 5. 공유/커뮤니티 안정화
 목표:
 - 정밀 편집 결과가 publish, shared viewer, gallery/community까지 동일하게 이어지게 한다.
@@ -292,8 +306,8 @@ Removed/Deprecated:
 - viewer에는 editor 전용 affordance가 남지 않는다.
 
 현재 착수:
-- 완료: Phase 1 / Slice 1, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 3 / Slice 3, Phase 3 / Slice 4, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
-- 다음 후보: P3 활동성 지표(조회/반응) 수집 및 피드 랭킹 개선
+- 완료: Phase 1 / Slice 1, Phase 1 / Slice 2, Phase 1 / Slice 3, Phase 2 / Slice 1, Phase 2 / Slice 2, Phase 2 / Slice 3, Phase 3 / Slice 1, Phase 3 / Slice 2, Phase 3 / Slice 3, Phase 3 / Slice 4, Phase 4 / Slice 1, Phase 4 / Slice 2, Phase 4 / Slice 3, Phase 5 / Slice 1, Phase 5 / Slice 2, Phase 5 / Slice 3
+- 다음 후보: KTX2 실제 encoder(`toktx`) 연결, side/front helper view, worker offload, P3 활동성 지표(조회/반응) 수집 및 피드 랭킹 개선
 
 ## 2026-04-19 변경 동기화 (Phase 3 Slice 4 Sub-slice 1)
 Added:

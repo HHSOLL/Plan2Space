@@ -31,7 +31,8 @@ export default function InteractionManager({ children }: InteractionManagerProps
   const setHint = useInteractionStore((state) => state.setHint);
   const hoveredRef = useRef<THREE.Object3D | null>(null);
   const targetsRef = useRef<THREE.Object3D[]>([]);
-  const { camera } = useThree();
+  const camera = useThree((state) => state.camera);
+  const invalidate = useThree((state) => state.invalidate);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const screenCenter = useMemo(() => new THREE.Vector2(0, 0), []);
 
@@ -82,7 +83,8 @@ export default function InteractionManager({ children }: InteractionManagerProps
     }
     const hint = target?.userData?.interactionLabel as string | undefined;
     setHint(hint ?? null);
-  }, [setHint]);
+    invalidate();
+  }, [invalidate, setHint]);
 
   useEffect(() => {
     if (readOnly) {

@@ -7,6 +7,7 @@ export type SceneInteractionMode =
   | "preview";
 
 export type SceneRenderQuality = {
+  frameLoop: "always" | "demand";
   dpr: [number, number];
   enableShadows: boolean;
   shadowMapSize: number;
@@ -61,6 +62,7 @@ export function resolveSceneRenderQuality({
   if (isTopView) {
     if (isSharedViewer) {
       return {
+        frameLoop: "always",
         dpr: constrainedDevice ? clampRange(0.66, 0.84) : clampRange(0.72, 0.92),
         enableShadows: false,
         shadowMapSize: 512,
@@ -82,6 +84,7 @@ export function resolveSceneRenderQuality({
 
     if (isViewerShowcase) {
       return {
+        frameLoop: "always",
         dpr: constrainedDevice ? clampRange(0.8, 1) : clampRange(0.92, 1.14),
         enableShadows: false,
         shadowMapSize: 512,
@@ -103,6 +106,7 @@ export function resolveSceneRenderQuality({
 
     if (topMode === "desk-precision") {
       return {
+        frameLoop: "demand",
         dpr: constrainedDevice ? clampRange(0.78, 1) : clampRange(0.9, 1.12),
         enableShadows: false,
         shadowMapSize: 512,
@@ -123,6 +127,7 @@ export function resolveSceneRenderQuality({
     }
 
     return {
+      frameLoop: "demand",
       dpr: constrainedDevice ? clampRange(0.68, 0.88) : clampRange(0.74, 0.96),
       enableShadows: false,
       shadowMapSize: 512,
@@ -144,6 +149,7 @@ export function resolveSceneRenderQuality({
 
   if (isBuilderPreview) {
     return {
+      frameLoop: "demand",
       dpr: constrainedDevice ? clampRange(0.8, 1) : clampRange(0.9, 1.15),
       enableShadows: !constrainedDevice,
       shadowMapSize: constrainedDevice ? 512 : 768,
@@ -165,6 +171,7 @@ export function resolveSceneRenderQuality({
 
   if (isSharedViewer) {
     return {
+      frameLoop: "always",
       dpr: constrainedDevice ? clampRange(0.82, 1) : clampRange(0.9, 1.08),
       enableShadows: !constrainedDevice,
       shadowMapSize: constrainedDevice ? 512 : 640,
@@ -185,6 +192,7 @@ export function resolveSceneRenderQuality({
   }
 
   return {
+    frameLoop: "always",
     dpr: constrainedDevice ? clampRange(0.88, 1.12) : clampRange(0.95, 1.3),
     enableShadows: true,
     shadowMapSize: constrainedDevice ? 768 : 1280,

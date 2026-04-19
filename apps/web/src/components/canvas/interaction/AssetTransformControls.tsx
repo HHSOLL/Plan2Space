@@ -142,7 +142,8 @@ function clampPositionToBounds(
 }
 
 export default function AssetTransformControls() {
-  const { scene } = useThree();
+  const scene = useThree((state) => state.scene);
+  const invalidate = useThree((state) => state.invalidate);
   const viewMode = useEditorStore((state) => state.viewMode);
   const topMode = useEditorStore((state) => state.topMode);
   const transformMode = useEditorStore((state) => state.transformMode);
@@ -256,6 +257,8 @@ export default function AssetTransformControls() {
       target.scale.set(...selectedAsset.scale);
     }
 
+    invalidate();
+
     return {
       scaleLocked,
       updates: {
@@ -265,7 +268,7 @@ export default function AssetTransformControls() {
         rotation: anchoredPlacement.rotation
       } as const
     };
-  }, [assets, ceilings, placementBounds, scale, selectedAsset, target, walls]);
+  }, [assets, ceilings, invalidate, placementBounds, scale, selectedAsset, target, walls]);
 
   const commitTarget = useCallback(() => {
     if (!selectedAssetId || !target) return false;
@@ -301,6 +304,7 @@ export default function AssetTransformControls() {
       onMouseDown={() => {
         const startedAt = performance.now();
         setIsTransforming(true);
+        invalidate();
         scheduleInteractionLatency("gizmo-drag-start", startedAt, {
           viewMode,
           topMode,
@@ -313,6 +317,7 @@ export default function AssetTransformControls() {
         if (didCommit) {
           recordSnapshot("Transform asset");
         }
+        invalidate();
       }}
     />
   );

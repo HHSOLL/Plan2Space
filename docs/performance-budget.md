@@ -39,6 +39,7 @@
 - 품질 프로필 예산:
   - `viewer-shared`와 builder preview는 secondary fill directional light를 기본으로 켜지 않는다.
   - constrained shared/viewer-preview는 directional shadow + bloom을 우선 제거하고, subtle vignette/noise만 허용한다.
+  - room mode, desk precision mode, builder preview는 idle 상태에서 `frameloop="demand"`를 기본으로 사용한다.
 
 ### Read-only viewer
 - 읽기 전용 뷰어는 에디터 전용 transform/delete 계층을 포함하지 않는다.
@@ -70,7 +71,8 @@ E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
 4. DevTools Performance Monitor에서 FPS, CPU, JS heap을 켠다.
 5. DevTools Performance로 각 경로 최초 진입 3회, 재진입 2회 측정한다.
 6. 각 Scenario Matrix를 기준으로 20초 상호작용을 반복한다.
-7. 아래 토글을 하나씩 끄고 같은 장면을 다시 측정한다.
+7. room mode, desk precision mode, builder preview는 조작을 멈춘 뒤 5초간 idle CPU와 frame 발생이 안정화되는지 본다.
+8. 아래 토글을 하나씩 끄고 같은 장면을 다시 측정한다.
    - shadows
    - postprocessing
    - SSR
@@ -80,8 +82,8 @@ E2E_ROOM_FLOW_STRICT=1 npm --workspace apps/web run primary:e2e:room-flow:strict
    - physics/collision
    - selection outline
    - grid/gizmo/labels
-8. Web Vitals(FCP/LCP/INP), memory timeline, `renderer.info` 수치를 함께 기록한다.
-9. 결과를 PR 코멘트 또는 release note에 아래 형식으로 첨부한다.
+9. Web Vitals(FCP/LCP/INP), memory timeline, `renderer.info` 수치를 함께 기록한다.
+10. 결과를 PR 코멘트 또는 release note에 아래 형식으로 첨부한다.
 
 ## Required Metrics
 
@@ -164,6 +166,7 @@ interaction note: drag/rotate 동안 눈에 띄는 frame drop 없음
 - 읽기 전용 뷰어는 에디터보다 가벼운 interaction tree 유지
 - 조명 제품은 카탈로그 힌트 기반으로만 동적 light를 켜고, 상한(6개)을 반드시 유지
 - 신규 runtime 자산은 파일 크기, texture 크기, draw call 영향도를 같이 검토한다.
+- top-view / builder-preview가 continuous frameloop를 다시 사용해야 한다면 이유와 invalidate 대체 경로를 함께 남긴다.
 - publish/share/public 뷰어 실패는 로깅 이벤트로 남겨 재현 가능해야 함
 - 회귀가 budget 초과 시, 기능 추가보다 성능 회귀 원인 제거를 우선
 
@@ -226,3 +229,13 @@ Updated:
 
 Removed/Deprecated:
 - PR 코멘트에 수치를 자유 형식 텍스트로만 남기던 방식.
+
+## 2026-04-19 변경 동기화 (Demand Frame Loop Budget)
+Added:
+- room mode, desk precision mode, builder preview의 idle 안정화 측정과 demand frameloop 기본 예산을 추가했다.
+
+Updated:
+- 성능 가드레일을 draw call/DPR/post FX 예산 중심에서 frame loop 정책과 invalidate 규칙 확인까지 포함하도록 갱신했다.
+
+Removed/Deprecated:
+- top-view와 builder preview가 idle 상태에서도 연속 프레임을 그려도 무방하다는 가정.

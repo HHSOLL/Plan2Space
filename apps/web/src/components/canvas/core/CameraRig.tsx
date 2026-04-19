@@ -168,7 +168,8 @@ function WalkRig({
 }
 
 export default function CameraRig() {
-  const { gl } = useThree();
+  const gl = useThree((state) => state.gl);
+  const invalidate = useThree((state) => state.invalidate);
   const viewMode = useEditorStore((state) => state.viewMode);
   const topMode = useEditorStore((state) => state.topMode);
   const isTransforming = useEditorStore((state) => state.isTransforming);
@@ -283,10 +284,12 @@ export default function CameraRig() {
       );
       camera.lookAt(centerX, 0, centerZ);
       camera.updateProjectionMatrix();
+      invalidate();
     },
     [
       centerX,
       centerZ,
+      invalidate,
       topHeight,
       topMode,
       topViewPolicy.zoomBounds.max,
@@ -340,6 +343,7 @@ export default function CameraRig() {
           controlsRef.current.dollyOut?.(1.15);
         }
         controlsRef.current.update?.();
+        invalidate();
       }
     };
 
@@ -347,7 +351,7 @@ export default function CameraRig() {
     return () => {
       window.removeEventListener(ZOOM_EVENT_NAME, handleZoomEvent as EventListener);
     };
-  }, [applyTopCamera, viewMode]);
+  }, [applyTopCamera, invalidate, viewMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

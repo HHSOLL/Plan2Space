@@ -22,6 +22,7 @@
 - `E2E_ROOM_FLOW_PROJECT_ID`
 - `E2E_ROOM_FLOW_SHARED_TOKEN`
 - `NEXT_PUBLIC_ENABLE_REALTIME_LABS` (`1`일 때 local-only `/labs/realtime` 실험 게이트 노출)
+- `NEXT_PUBLIC_KTX2_TRANSCODER_PATH` (기본값 `/assets/transcoders/basis/`, 필요 시만 override)
 
 ### API (`apps/api/.env`)
 필수:
@@ -111,6 +112,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - 상단뷰에서는 `목록/속성/항목뷰/이동/회전` 보조 UI가 사라지고 `추가/설정` drawer 패턴만 남는지 확인
 - 상단뷰 하단 pill toolbar에서 `룸 배치` / `데스크 정밀` 토글이 보이고, 워크뷰에서는 사라지는지 확인
 - room mode와 desk precision mode 전환 시 체감 화질과 idle 비용이 달라지고, 워크뷰 품질에는 영향을 주지 않는지 확인
+- room mode, desk precision mode, builder preview는 조작을 멈췄을 때 continuous redraw 없이 idle이 안정화되는지 확인
 - desk precision mode에서 선택 자산의 inspector와 measurement overlay가 동일한 X/Z/Y(mm), Yaw(deg), 실측 W/D/H(mm) 기준으로 동기화되는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay가 동일한 support asset / support surface / surface size / margin / top 높이 기준으로 동기화되는지 확인
 - desk precision mode에서 surface anchor 제품의 inspector와 overlay micro-view가 동일한 support-local marker / offset 위치를 가리키는지 확인
@@ -118,6 +120,7 @@ npm --workspace apps/web run primary:e2e:room-flow:full
 - 필요 시 브라우저 콘솔에서 `plan2space:renderer-stats` / `plan2space:interaction-latency` 이벤트를 구독해 draw call, texture, hover/select/drag-start 지연을 같이 기록하는지 확인
 - 필요 시 `window.__PLAN2SPACE_TELEMETRY_CAPTURE__`로 builder/editor/shared viewer 측정 세션을 각각 묶고 `perf:report:verify`로 JSON report를 검증하는지 확인
 - loaded GLB 자산이 많은 장면에서 hover/select 시작 지연이 BVH 적용 후에도 50ms 예산 안에 들어오는지 확인
+- `npm --workspace apps/web run assets:sync:ktx2-transcoder -- --check`가 basis transcoder public 파일을 PASS로 검증하는지 확인
 - `npm --workspace apps/web run verify:scene-document`가 placement/support/product metadata roundtrip 검증을 통과하는지 확인
 - `npm --workspace apps/web run verify:public-scene`가 shared viewer payload에서 placement/support/product metadata roundtrip 검증을 통과하는지 확인
 - `npm --workspace apps/web run verify:showcase-scene`가 gallery/community 카드 projection과 shared viewer public payload의 version/preview asset summary 정합성 검증을 통과하는지 확인
@@ -233,25 +236,31 @@ BLENDER_BIN="/Applications/Blender.app/Contents/MacOS/Blender" \
 npm --workspace apps/web run assets:sync:deskterior
 ```
 
-5. Meshopt 최적화와 budget re-check를 수행한다.
+5. KTX2 basis transcoder public 파일을 동기화한다.
+
+```bash
+npm --workspace apps/web run assets:sync:ktx2-transcoder
+```
+
+6. Meshopt 최적화와 budget re-check를 수행한다.
 
 ```bash
 npm --workspace apps/web run assets:optimize:deskterior
 ```
 
-6. Khronos glTF Validator로 런타임 GLB를 검증한다.
+7. Khronos glTF Validator로 런타임 GLB를 검증한다.
 
 ```bash
 npm --workspace apps/web run assets:validate:deskterior
 ```
 
-7. 파이프라인 정합성(source/runtime/manifest)을 검증한다.
+8. 파이프라인 정합성(source/runtime/manifest)을 검증한다.
 
 ```bash
 npm --workspace apps/web run assets:verify:deskterior
 ```
 
-8. 에디터에서 자산 배치 후 저장/발행하고 shared viewer에서 제품 정보를 검증한다.
+9. 에디터에서 자산 배치 후 저장/발행하고 shared viewer에서 제품 정보를 검증한다.
   - 실측 고정(`scaleLocked=true`) 제품은 Inspector의 `크기 비율` 입력이 비활성화되는지 확인
   - shared viewer 제품 카드에서 W/D/H, 마감 색상/재질, 디테일 노트가 보이는지 확인
   - 데스크/선반 계열 support 배치 시 실측 기반으로 상면(top) 클램핑이 자연스럽게 유지되는지 확인
@@ -517,3 +526,14 @@ Updated:
 
 Removed/Deprecated:
 - support surface 배치 품질을 offset 숫자와 점 marker만으로 확인하던 QA 기준.
+
+## 2026-04-19 변경 동기화 (KTX2 Runtime Ready + Demand Frame Loop QA)
+Added:
+- `assets:sync:ktx2-transcoder -- --check`와 idle 안정화 확인 항목을 QA 체크리스트에 추가했다.
+- 자산 운영 단계에 basis transcoder public sync 절차를 추가했다.
+
+Updated:
+- 배포 전 체크리스트를 render ladder 확인에서 `frameloop demand + KTX2 runtime-ready` 운영 점검까지 포함하도록 갱신했다.
+
+Removed/Deprecated:
+- runtime transcoder 동기화 없이도 KTX2 준비 상태를 추정만으로 확인하던 QA 방식.

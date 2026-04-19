@@ -39,6 +39,7 @@ npm run dev:web
 - `E2E_ROOM_FLOW_SHARED_TOKEN`
 - `E2E_ROOM_FLOW_PROJECT_ID`
 - `NEXT_PUBLIC_ENABLE_REALTIME_LABS` (`1`일 때 local-only `/labs/realtime` 실험 게이트 활성화)
+- `NEXT_PUBLIC_KTX2_TRANSCODER_PATH` (기본값 `/assets/transcoders/basis/`)
 
 ## 스크립트
 
@@ -47,6 +48,7 @@ npm run dev:web
 npm --workspace apps/web run qa:primary
 npm --workspace apps/web run primary:e2e:room-flow
 npm --workspace apps/web run assets:sync:deskterior
+npm --workspace apps/web run assets:sync:ktx2-transcoder
 npm --workspace apps/web run assets:optimize:deskterior
 npm --workspace apps/web run assets:validate:deskterior
 npm --workspace apps/web run assets:verify:deskterior

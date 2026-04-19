@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "predev": "node --import tsx scripts/sync-ktx2-transcoder.ts",
+    "prebuild": "node --import tsx scripts/sync-ktx2-transcoder.ts",
     "dev": "next dev -p 3100 -H 127.0.0.1",
     "build": "next build",
     "start": "next start",
@@ -15,6 +17,7 @@
     "primary:e2e:room-flow:full": "node --import tsx scripts/e2e-primary-room-flow.ts --mode=flow --strict",
     "assets:export:deskterior": "node --import tsx scripts/export-deskterior-runtime.ts",
     "assets:sync:deskterior": "node --import tsx scripts/sync-deskterior-catalog.ts",
+    "assets:sync:ktx2-transcoder": "node --import tsx scripts/sync-ktx2-transcoder.ts",
     "assets:validate:deskterior": "node --import tsx scripts/validate-deskterior-gltf.ts",
     "assets:verify:deskterior": "node --import tsx scripts/verify-deskterior-pipeline.ts",
     "assets:optimize:deskterior": "node --import tsx scripts/optimize-deskterior-runtime.ts",

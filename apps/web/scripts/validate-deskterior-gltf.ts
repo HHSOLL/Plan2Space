@@ -42,6 +42,7 @@ type ValidationResult = {
   totalVertexCount: number | null;
   materialCount: number | null;
   extensionsUsed: string[];
+  usesKtx2: boolean;
   budgetViolations: string[];
   messages: ValidationMessage[];
 };
@@ -49,6 +50,7 @@ type ValidationResult = {
 type Summary = {
   ok: boolean;
   strictWarnings: boolean;
+  requireKtx2: boolean;
   counts: {
     assets: number;
     validated: number;
@@ -56,6 +58,7 @@ type Summary = {
     errors: number;
     warnings: number;
     budgetFailures: number;
+    ktx2Assets: number;
   };
   results: ValidationResult[];
 };
@@ -63,9 +66,12 @@ type Summary = {
 function parseArgs(argv: string[]) {
   const json = argv.includes("--json");
   const strictWarnings = argv.includes("--strict-warnings");
+  const requireKtx2 = argv.includes("--require-ktx2");
   const help = argv.includes("--help");
-  const unknownArgs = argv.filter((arg) => !["--json", "--strict-warnings", "--help"].includes(arg));
-  return { json, strictWarnings, help, unknownArgs };
+  const unknownArgs = argv.filter(
+    (arg) => !["--json", "--strict-warnings", "--require-ktx2", "--help"].includes(arg)
+  );
+  return { json, strictWarnings, requireKtx2, help, unknownArgs };
 }
 
 function severityLabel(severity: number) {
@@ -100,7 +106,8 @@ function formatBytes(value: number | null) {
 
 async function validateRuntimeAsset(
   asset: (typeof curatedDeskteriorAssets)[number],
-  strictWarnings: boolean
+  strictWarnings: boolean,
+  requireKtx2: boolean
 ): Promise<ValidationResult> {
   try {
     const [bytes, fileStats] = await Promise.all([readFile(asset.runtimePath), stat(asset.runtimePath)]);
@@ -116,6 +123,10 @@ async function validateRuntimeAsset(
     const numHints = toSafeCount(issues.numHints);
     const drawCallCount = toSafeMetric(report.info?.drawCallCount);
     const totalTriangleCount = toSafeMetric(report.info?.totalTriangleCount);
+    const extensionsUsed = Array.isArray(report.info?.extensionsUsed)
+      ? report.info.extensionsUsed.filter((value): value is string => typeof value === "string")
+      : [];
+    const usesKtx2 = extensionsUsed.includes("KHR_texture_basisu");
     const budgetViolations: string[] = [];
 
     if (fileStats.size > asset.budget.maxFileSizeBytes) {
@@ -130,6 +141,10 @@ async function validateRuntimeAsset(
 
     if (totalTriangleCount !== null && totalTriangleCount > asset.budget.maxTriangleCount) {
       budgetViolations.push(`triangles ${totalTriangleCount} exceed budget ${asset.budget.maxTriangleCount}`);
+    }
+
+    if (requireKtx2 && !usesKtx2) {
+      budgetViolations.push("missing KHR_texture_basisu extension");
     }
 
     return {
@@ -147,9 +162,8 @@ async function validateRuntimeAsset(
       totalTriangleCount,
       totalVertexCount: toSafeMetric(report.info?.totalVertexCount),
       materialCount: toSafeMetric(report.info?.materialCount),
-      extensionsUsed: Array.isArray(report.info?.extensionsUsed)
-        ? report.info.extensionsUsed.filter((value): value is string => typeof value === "string")
-        : [],
+      extensionsUsed,
+      usesKtx2,
       budgetViolations,
       messages: Array.isArray(issues.messages) ? issues.messages : []
     };
@@ -170,6 +184,7 @@ async function validateRuntimeAsset(
       totalVertexCount: null,
       materialCount: null,
       extensionsUsed: [],
+      usesKtx2: false,
       budgetViolations: [],
       messages: [
         {
@@ -182,21 +197,23 @@ async function validateRuntimeAsset(
   }
 }
 
-async function buildSummary(strictWarnings: boolean): Promise<Summary> {
+async function buildSummary(strictWarnings: boolean, requireKtx2: boolean): Promise<Summary> {
   const results = await Promise.all(
-    curatedDeskteriorAssets.map((asset) => validateRuntimeAsset(asset, strictWarnings))
+    curatedDeskteriorAssets.map((asset) => validateRuntimeAsset(asset, strictWarnings, requireKtx2))
   );
 
   return {
     ok: results.every((result) => result.ok),
     strictWarnings,
+    requireKtx2,
     counts: {
       assets: curatedDeskteriorAssets.length,
       validated: results.filter((result) => result.exists).length,
       missingRuntime: results.filter((result) => !result.exists).length,
       errors: results.reduce((sum, result) => sum + result.numErrors, 0),
       warnings: results.reduce((sum, result) => sum + result.numWarnings, 0),
-      budgetFailures: results.filter((result) => result.budgetViolations.length > 0).length
+      budgetFailures: results.filter((result) => result.budgetViolations.length > 0).length,
+      ktx2Assets: results.filter((result) => result.usesKtx2).length
     },
     results
   };
@@ -206,6 +223,7 @@ function printHumanReadable(summary: Summary) {
   console.log("Deskterior GLTF Validation");
   console.log(`Status: ${summary.ok ? "PASS" : "FAIL"}`);
   console.log(`Strict warnings: ${summary.strictWarnings ? "on" : "off"}`);
+  console.log(`KTX2 required: ${summary.requireKtx2 ? "yes" : "no"}`);
   console.log("");
   console.log("Counts:");
   console.log(`- Curated assets: ${summary.counts.assets}`);
@@ -214,6 +232,7 @@ function printHumanReadable(summary: Summary) {
   console.log(`- Errors: ${summary.counts.errors}`);
   console.log(`- Warnings: ${summary.counts.warnings}`);
   console.log(`- Budget failures: ${summary.counts.budgetFailures}`);
+  console.log(`- KTX2 assets: ${summary.counts.ktx2Assets}`);
   console.log("");
   console.log("Assets:");
 
@@ -235,7 +254,7 @@ function printHumanReadable(summary: Summary) {
 }
 
 async function main() {
-  const { json, strictWarnings, help, unknownArgs } = parseArgs(process.argv.slice(2));
+  const { json, strictWarnings, requireKtx2, help, unknownArgs } = parseArgs(process.argv.slice(2));
 
   if (help) {
     console.log(
@@ -245,6 +264,7 @@ async function main() {
         "Options:",
         "  --json             Print machine-readable summary JSON",
         "  --strict-warnings  Treat warnings as failures",
+        "  --require-ktx2     Fail when runtime assets do not use KHR_texture_basisu",
         "  --help             Show help"
       ].join("\n")
     );
@@ -256,7 +276,7 @@ async function main() {
     process.exit(1);
   }
 
-  const summary = await buildSummary(strictWarnings);
+  const summary = await buildSummary(strictWarnings, requireKtx2);
 
   if (json) {
     console.log(JSON.stringify(summary, null, 2));

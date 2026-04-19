@@ -24,6 +24,7 @@ import ViewerProductHotspots from "../canvas/interaction/ViewerProductHotspots";
 import Crosshair from "../overlay/hud/Crosshair";
 import MobileControls from "../overlay/hud/MobileControls";
 import MobileTouchHint from "../overlay/hud/MobileTouchHint";
+import { configureRuntimeAssetLoaders } from "../../lib/loaders/AssetLoader";
 import { resolveSceneRenderQuality, type SceneInteractionMode } from "../../lib/scene/render-quality";
 import { useEditorStore } from "../../lib/stores/useEditorStore";
 
@@ -113,6 +114,7 @@ export function SceneViewport({
       } ${className}`.trim()}
     >
       <Canvas
+        frameloop={quality.frameLoop}
         shadows={quality.enableShadows}
         dpr={quality.dpr}
         gl={gl}
@@ -120,6 +122,7 @@ export function SceneViewport({
         className="h-full w-full"
         onCreated={({ gl: rendererContext }) => {
           const renderer = rendererContext as THREE.WebGLRenderer & { physicallyCorrectLights?: boolean };
+          configureRuntimeAssetLoaders(renderer);
           renderer.shadowMap.enabled = quality.enableShadows;
           renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
